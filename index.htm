@@ -197,39 +197,44 @@
             -ms-user-select: none !important;
             user-select: none !important;           
             touch-action: manipulation !important;  
-        }
-        /* =================================================================
-       📱 ALL-MOBILE SCREEN SIZE & VERTICAL SPACING FIX (MEDIA QUERY)
+        }/* =================================================================
+       📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (NO FIXED PIXELS)
        ================================================================= */
-
-    @media screen and (max-width: 767px) {
-        /* 1. Reduce massive gaps at the top of the whole page on mobile */
-        main, .container { 
-            padding-top: 15px !important; /* Minimizes top spacing */
-            margin-top: 15px !important;
+    @media screen and (and-width: 100%, max-width: 767px) {
+        
+        /* 1. Main container screen ke hisab se 95% width le lega */
+        .game-box, .container {
+            width: 95% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 2% !important; /* Percentage padding */
+            box-sizing: border-box !important;
         }
 
-        /* 2. Pull the game title ("SPACE SHOOTER") and Canvas UP */
-        .game-box, .game-area, #spaceShooterGame { 
-            margin-top: 5px !important; /* Pulls elements UP */
-            padding: 10px !important;   /* Shrinks container padding */
-        }
-
-        /* 3. Ensure canvas fits dynamic screen sizes (WIDTH & HEIGHT) */
+        /* 2. Canvas ab screen ke width ke sath khud ko adjust karega */
         canvas {
-            max-width: 100% !important; /* Standard width fix */
-            /* CRUCIAL: Canvas won't be taller than 70% of dynamic screen height */
-            max-height: 70vh !important; 
-            object-fit: contain;          /* Maintains ratio without cutting off */
-            height: auto !important;
-            width: auto !important;
+            width: 100% !important;       /* Humesha container ki full width pr fit hoga */
+            max-width: 100% !important;   
+            height: auto !important;      /* Aspect ratio kharab nahi hone dega */
+            max-height: 45vh !important;  /* Screen unchai ke hisab se automatic adjust hoga */
+            display: block !important;
+            margin: 0 auto !important;
         }
 
-        /* 4. Fix Control Button Position so they are always visible */
+        /* 3. Controls bhi screen ke sath flex (adjust) honge */
+        .control-pad, .snake-grid-pad {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            flex-wrap: wrap !important; /* Agar jagah kam hogi toh buttons automatic next line me adjust ho jayenge */
+            gap: 8px !important;
+            margin-top: 3% !important;
+        }
+
+        /* 4. Buttons bhi fluid rahengi */
         .try-again-btn, #restartButton, .ctrl-btn {
-            margin-top: 10px !important;
-            position: relative; /* Ensure it stays in document flow */
-            display: block; /* Force visible */
+            padding: 10px 20px !important;
+            font-size: 1rem !important; /* Dynamic font size based on device root */
         }
     }
     /* ================================================================= */
