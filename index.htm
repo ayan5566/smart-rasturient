@@ -198,6 +198,41 @@
             user-select: none !important;           
             touch-action: manipulation !important;  
         }
+        /* =================================================================
+       📱 ALL-MOBILE SCREEN SIZE & VERTICAL SPACING FIX (MEDIA QUERY)
+       ================================================================= */
+
+    @media screen and (max-width: 767px) {
+        /* 1. Reduce massive gaps at the top of the whole page on mobile */
+        main, .container { 
+            padding-top: 15px !important; /* Minimizes top spacing */
+            margin-top: 15px !important;
+        }
+
+        /* 2. Pull the game title ("SPACE SHOOTER") and Canvas UP */
+        .game-box, .game-area, #spaceShooterGame { 
+            margin-top: 5px !important; /* Pulls elements UP */
+            padding: 10px !important;   /* Shrinks container padding */
+        }
+
+        /* 3. Ensure canvas fits dynamic screen sizes (WIDTH & HEIGHT) */
+        canvas {
+            max-width: 100% !important; /* Standard width fix */
+            /* CRUCIAL: Canvas won't be taller than 70% of dynamic screen height */
+            max-height: 70vh !important; 
+            object-fit: contain;          /* Maintains ratio without cutting off */
+            height: auto !important;
+            width: auto !important;
+        }
+
+        /* 4. Fix Control Button Position so they are always visible */
+        .try-again-btn, #restartButton, .ctrl-btn {
+            margin-top: 10px !important;
+            position: relative; /* Ensure it stays in document flow */
+            display: block; /* Force visible */
+        }
+    }
+    /* ================================================================= */
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
