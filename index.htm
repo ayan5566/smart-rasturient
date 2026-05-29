@@ -179,6 +179,25 @@
             text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
             display: none;
         }    
+    /* --- 📱 MOBILE RESPONSIVE & TOUCH FIXES MAP --- */
+        body { 
+            padding: 10px !important; 
+        }
+
+        canvas {
+            max-width: 100% !important; 
+            height: auto !important;
+        }
+
+        .ctrl-btn, .snk-btn, .floating-btn, .order-btn, .action-btn, canvas, .game-box {
+            -webkit-touch-callout: none !important; 
+            -webkit-user-select: none !important;   
+            -khtml-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;           
+            touch-action: manipulation !important;  
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
