@@ -560,20 +560,11 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
         let fBird = {}, fPipes = [], flappyScoreTracker = 0;
         let cosmicBackgroundStars = [];
-        
-        function initApp() {
-            if(menuCategories.length > 0) customerActiveCategoryName = menuCategories[0].categoryName;
-            localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-            maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
-
-            cosmicBackgroundStars = [];
-            for(let s=0; s<45; s++) {
-                cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
-            }
-
-            renderCustomerMenu(); generateMathQuestion(); generateAdminTableGrid(); updateFrontEndClassificationLabels(); setupGlobalKeyboardBindings(); populateWaiterPanelDropdownList();
-        }
-
+    
+        async function initApp() {
+            // 1. URL parameters se table reading ka logic
+            const urlParams = new URLSearchParams
+    }
         function updateFrontEndClassificationLabels() {
             document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
             document.getElementById('displayHotelRegistryScopeLabel').innerText = "Hotel Stack Scope: " + hotelGlobalScopeID;
