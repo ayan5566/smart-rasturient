@@ -200,23 +200,26 @@
         }/* =================================================================
        📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (NO FIXED PIXELS)
        ================================================================= */
-    @media screen and (and-width: 100%, max-width: 767px) {
+  /* =================================================================
+       📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (FIXED ERROR)
+       ================================================================= */
+    @media screen and (max-width: 767px) {
         
         /* 1. Main container screen ke hisab se 95% width le lega */
         .game-box, .container {
             width: 95% !important;
             max-width: 100% !important;
             margin: 0 auto !important;
-            padding: 2% !important; /* Percentage padding */
+            padding: 2% !important; 
             box-sizing: border-box !important;
         }
 
         /* 2. Canvas ab screen ke width ke sath khud ko adjust karega */
         canvas {
-            width: 100% !important;       /* Humesha container ki full width pr fit hoga */
+            width: 100% !important;       
             max-width: 100% !important;   
-            height: auto !important;      /* Aspect ratio kharab nahi hone dega */
-            max-height: 45vh !important;  /* Screen unchai ke hisab se automatic adjust hoga */
+            height: auto !important;      
+            max-height: 45vh !important;  
             display: block !important;
             margin: 0 auto !important;
         }
@@ -226,7 +229,7 @@
             width: 100% !important;
             display: flex !important;
             justify-content: center !important;
-            flex-wrap: wrap !important; /* Agar jagah kam hogi toh buttons automatic next line me adjust ho jayenge */
+            flex-wrap: wrap !important; 
             gap: 8px !important;
             margin-top: 3% !important;
         }
@@ -234,7 +237,7 @@
         /* 4. Buttons bhi fluid rahengi */
         .try-again-btn, #restartButton, .ctrl-btn {
             padding: 10px 20px !important;
-            font-size: 1rem !important; /* Dynamic font size based on device root */
+            font-size: 1rem !important; 
         }
     }
     /* ================================================================= */
@@ -476,7 +479,25 @@
     </div>
 
     <script>    
-        
+        // Cloud par table ka live data sync (Save/Update) karne ke liye
+async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
+    try {
+        const { error } = await supabase
+            .from('table_sessions')
+            .upsert({
+                table_id: tableId,
+                live_bill: bill,
+                discount_claimed: discount,
+                waiter_bell: bellStatus,
+                payment_status: payStatus
+            }, { onConflict: 'table_id' }); // Agar table_id pehle se hai, toh update karega
+
+        if (error) console.error("Supabase Sync Error:", error.message);
+        else console.log(`🚀 Table ${tableId} data successfully synced to cloud.`);
+    } catch (err) {
+        console.error("System Error:", err);
+    }
+}
         let fallbackMenu = [
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
             { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
@@ -650,6 +671,8 @@ function executeSimulatedMobilePaymentSuccessSequence() {
 }
 
 function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
+    // Purane code ke bilkul aakhiri mein is line ko jod dein
+syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
     
@@ -858,17 +881,29 @@ function executeCustomerOrderCommitLink(priceDomId, dishName) {
 
 
 
-        function executeAdminManualBillWipeSettlement() {
-            let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
-            if(confirm(`Wipe/Clear all archived items and payment tokens for Table ${activeOwnerAuditTable}?`)) {
-                localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
-                localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
-                localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
-                floorData.forEach(floor => { floor.tables.forEach(t => { if(t.id === activeOwnerAuditTable) { t.state = 0; t.waiterBell = false; } }); });
-                saveAdminConfig(); generateAdminTableGrid(); auditSelectedTableBillInvoiceLive();
-                alert(`🧹 Table ${activeOwnerAuditTable} session records completely wiped clean.`);
-            }
-        }
+       async function executeAdminManualBillWipeSettlement() {
+    let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
+    
+    if(confirm(`Wipe/Clear all archived items and payment tokens for Table ${activeOwnerAuditTable}?`)) {
+        
+        // 1. Local storage saaf karein
+        localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
+        localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
+        localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
+        
+        // 2. 🔥 SUPABASE SE BHI DATA RESET KAREIN (Default state par bhej dein)
+        await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+
+        // 3. UI refresh logic
+        floorData.forEach(floor => { floor.tables.forEach(t => { if(t.id === activeOwnerAuditTable) { t.state = 0; t.waiterBell = false; } }); });
+        saveAdminConfig(); 
+        generateAdminTableGrid(); 
+        auditSelectedTableBillInvoiceLive();
+        
+        alert(`🧹 Table ${activeOwnerAuditTable} session records completely wiped clean from Cloud & Local storage.`);
+    }
+}
+        
 
         function addNewCategory() { menuCategories.push({ categoryName: "New Category Section", items: [] }); saveAdminConfig(); populateAdminForms(); }
         
@@ -1007,6 +1042,8 @@ function exitGameEngine() {
             floorData.forEach(floor => { floor.tables.forEach(t => { if(t.id === clientCurrentActiveTable) t.waiterBell = true; }); });
             saveAdminConfig(); generateAdminTableGrid();
             alert(`🔔 Waiter Called! Table [${clientCurrentActiveTable}] alert signal dispatched to owner panel.`);
+        // Bell status true karke cloud par bhejein
+syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
         }
 
         
@@ -1106,6 +1143,8 @@ function exitGameEngine() {
         }
 
         function triggerRewardCoupon(earnedPercent) {
+            // Coupon applied hone ke baad cloud par discount sync karein
+syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earnedPercent, false, 'PENDING');
             let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
             if(earnedPercent > activeTableDiscount) {
                 activeTableDiscount = earnedPercent; maximumClaimedDisc = activeTableDiscount;
@@ -1471,3 +1510,5 @@ function injectExtraItemFromBillPanel() {
     </script>
 </body>
 </html>
+
+       
