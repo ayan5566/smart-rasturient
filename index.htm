@@ -321,7 +321,6 @@
         <p id="displayHotelRegistryScopeLabel" style="font-size:11px; font-weight:bold; margin-top:-8px; color:#7f8c8d; text-align:left;">Hotel Stack Scope: Default_HQ_Arena</p>
         
         <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
-       <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
         <div id="menuContainer"></div>
         
         <div class="game-box">
@@ -333,6 +332,42 @@
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
             </div>
 
+            <div id="gameWindow">
+                <div id="gameScreenStatusMsg"></div>
+                <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
+                
+                <div id="mathGameSection">  
+                    <h2 id="mathQuestion" style="background:#f4f1ea; padding:10px; border-radius:8px;"></h2>
+                    <input type="number" id="mathCustomerAnswer" placeholder="Type answer...">
+                    <button class="action-btn" onclick="verifyMathAnswer()" style="background: var(--dark-charcoal);">Submit Answer</button>
+                    <div id="mathStatus" style="font-weight:bold; margin-top:8px;"></div>
+                </div>
+
+                <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
+                <canvas id="spaceCanvas" width="320" height="400" style="background:#0c0d14;"></canvas>
+                <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
+
+                <div class="control-pad" id="spaceControls">
+                    <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
+                    <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
+                </div>
+                <div class="snake-grid-pad" id="snakeControls">
+                    <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
+                    <div class="snake-row">
+                        <button class="snk-btn" onclick="setSnakeDirection('LEFT')">◀</button>
+                        <button class="snk-btn" style="background:#7f8c8d; cursor:default;">•</button>
+                        <button class="snk-btn" onclick="setSnakeDirection('RIGHT')">▶</button>
+                    </div>
+                    <button class="snk-btn" onclick="setSnakeDirection('DOWN')">▼</button>
+                </div>
+
+                <button id="startBtn" class="action-btn" onclick="startSelectedGame()" style="display:none; margin-top:15px; background: var(--accent-gold); color:black;">Launch Engine Run</button>
+            </div>
+            <div id="couponDisplay" style="display:none; margin-top:12px; font-size:15px; color:green; font-weight:bold;"></div>
+        </div>
+
+        <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
+    </div>
             <div id="gameWindow">
                 <div id="gameScreenStatusMsg"></div>
                 <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
@@ -389,12 +424,7 @@
         <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
     </div>
 
-    <div class="container" id="authPanel" style="display: none;">
-        <h2>Hotel Master Authentication</h2>
-        <input type="password" id="adminPassword" placeholder="Enter Password (admin)">
-        <button class="action-btn" onclick="checkAdminPassword()" style="background: #27ae60;">Unlock Panel</button>
-        <button class="action-btn" onclick="hideAdminAuth()" style="background:#7f8c8d; margin-top:5px;">Cancel</button>
-    </div>
+   
 
     <div class="container admin-panel" id="adminDashboard">
         <h2>🛠️ Variable Control Master Dashboard</h2>
@@ -444,6 +474,10 @@
             </div>
             <button class="order-btn" style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;" onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
         </div>
+        <h3>📊 Real-time Popularity & Dish Analytics</h3>
+        <div style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
+            <div id="adminAnalyticsLiveOutputGrid"></div>
+        </div>
 
         <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
         <div style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
@@ -479,29 +513,29 @@
     </div>
 
     <script>    
-        // 🔥 YEH VALI LINES FUNCTION SE PEHLE HONI CHAHIYE
-        const SUPABASE_URL = "https://your-project-url.supabase.co"; 
-        const SUPABASE_ANON_KEY = "your-actual-anon-key";      
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // 🔥 INITIALIZE SUPABASE NODES WITH UNIQUE VARIABLE NAME
+        const SUPABASE_URL = "https://your-project-url.supabase.co"; // Apni real URL daalein
+        const SUPABASE_ANON_KEY = "your-actual-anon-key";         // Apni real Key daalein
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
-    try {
-        const { error } = await supabase
-            .from('table_sessions')
-            .upsert({
-                table_id: tableId,
-                live_bill: bill,
-                discount_claimed: discount,
-                waiter_bell: bellStatus,
-                payment_status: payStatus
-            }, { onConflict: 'table_id' }); // Agar table_id pehle se hai, toh update karega
+        async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
+            try {
+                const { error } = await supabaseClient
+                    .from('table_sessions')
+                    .upsert({
+                        table_id: tableId,
+                        live_bill: bill,
+                        discount_claimed: discount,
+                        waiter_bell: bellStatus,
+                        payment_status: payStatus
+                    }, { onConflict: 'table_id' });
 
-        if (error) console.error("Supabase Sync Error:", error.message);
-        else console.log(`🚀 Table ${tableId} data successfully synced to cloud.`);
-    } catch (err) {
-        console.error("System Error:", err);
-    }
-}
+                if (error) console.error("Supabase Sync Error:", error.message);
+                else console.log(`🚀 Table ${tableId} data successfully synced to cloud.`);
+            } catch (err) {
+                console.error("System Error:", err);
+            }
+        }
         let fallbackMenu = [
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
             { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
@@ -566,7 +600,6 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let cosmicBackgroundStars = [];
     
 async function initApp() {
-            // 1. URL parameters se Table aur Hotel ID read karna (QR Target Fix)
             const urlParams = new URLSearchParams(window.location.search);
             const urlTable = urlParams.get('table');
             const urlHotel = urlParams.get('hotel');
@@ -574,25 +607,23 @@ async function initApp() {
             if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
             if (urlHotel) hotelGlobalScopeID = urlHotel;
 
-            // 2. 🔥 CLOUD MENU LOAD LOGIC (Supabase se permanent menu load karega)
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('hotel_config')
                     .select('menu_data')
                     .eq('id', hotelGlobalScopeID)
                     .single();
 
                 if (!error && data && data.menu_data) {
-                    menuCategories = data.menu_data; // Cloud menu fallback menu ko overwrite kar dega
+                    menuCategories = data.menu_data;
                     console.log("🚀 Real Menu Loaded from Cloud Database!");
                 }
             } catch (err) {
                 console.log("Database fetch failed, playing on local menu fallback:", err);
             }
 
-            // 3. Active table ka running live session database se load karna
             try {
-                const { data: sessionData } = await supabase
+                const { data: sessionData } = await supabaseClient
                     .from('table_sessions')
                     .select('*')
                     .eq('table_id', clientCurrentActiveTable)
@@ -620,22 +651,15 @@ async function initApp() {
                     maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
                 }
             } catch(e) {
-                console.log("Session recovery failed, shifting to local cache storage:", e);
+                console.log("Session recovery failed:", e);
             }
 
-            // 4. Background Starfield Array Generator
             cosmicBackgroundStars = [];
             for(let s=0; s<45; s++) {
                 cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
             }
 
-            // 5. Interface Layout Engine Nodes
-            renderCustomerMenu(); 
-            generateMathQuestion(); 
-            generateAdminTableGrid(); 
-            updateFrontEndClassificationLabels(); 
-            setupGlobalKeyboardBindings(); 
-            populateWaiterPanelDropdownList();
+            renderCustomerMenu(); generateMathQuestion(); generateAdminTableGrid(); updateFrontEndClassificationLabels(); setupGlobalKeyboardBindings(); populateWaiterPanelDropdownList();
         }
         function updateFrontEndClassificationLabels() {
             document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
@@ -760,11 +784,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         auditSelectedTableBillInvoiceLive();
     }
 
-    if(document.getElementById('adminDashboard').style.display === 'block') {
-        auditSelectedTableBillInvoiceLive();
-    }
-
-    // 🔥 Pehla function yahan khatam hoga
+    // Cloud par session update bhej dena
     syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
 }
 
@@ -788,7 +808,7 @@ function executeCustomerOrderCommitLink(priceDomId, dishName) {
         price = bluePrint[size];
     }
     
-    appendDishToBillInvoice(dishName, size, price);
+    appendDishToBillInvoice(dishName, size, price)
     
     // RESTORED VIA ON-SCREEN TOAST
     showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
@@ -915,9 +935,9 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
     // If admin is actively auditing, flash refresh the desk node maps
     if(document.getElementById('adminDashboard').style.display === 'block') {
         auditSelectedTableBillInvoiceLive();
+    // 🔥 LINE 938 PAR YEH LINE INSERT KAREIN (Closing bracket } se theek upar)
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
     }
-}
-
 function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
@@ -929,7 +949,6 @@ function executeCustomerOrderCommitLink(priceDomId, dishName) {
         let iIdx = selectorNode.getAttribute('data-i');
         let bluePrint = menuCategories[cIdx].items[iIdx];
         
-        // Auto allocation logic following blueprint active parameters matrix
         size = bluePrint.mActive && bluePrint.m > 0 ? 'm' : (bluePrint.sActive && bluePrint.s > 0 ? 's' : 'l'); 
         price = bluePrint[size];
     }
@@ -937,8 +956,8 @@ function executeCustomerOrderCommitLink(priceDomId, dishName) {
     // Run core database push sequence
     appendDishToBillInvoice(dishName, size, price);
     
-    // INSTANT USER VISUAL CONFIRMATION NOTIFICATION (FIXED CHANNELS)
-    alert(`🛒 Item Added Successfully!\n-------------------------\nDish: ${dishName}\nSize: [${size.toUpperCase()}]\nPrice: ₹${price}\n\n👉 Click the floating receipt (🧾) icon on bottom right to view live invoice total!`);
+    // INSTANT USER VISUAL CONFIRMATION NOTIFICATION
+    showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
 }
     // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER
     setTimeout(function() {
@@ -1553,15 +1572,18 @@ function injectExtraItemFromBillPanel() {
             }
             localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-            // 🔥 ADMIN SAVE LOGIC: Menu data ko permanent cloud data center me push karega
+            
+            // Cloud sync connection target
             async function uploadMenuToCloud() {
-                await supabase
-                    .from('hotel_config')
-                    .upsert({
-                        id: hotelGlobalScopeID,
-                        hotel_name: hotelGlobalScopeID,
-                        menu_data: menuCategories
-                    }, { onConflict: 'id' });
+                try {
+                    await supabaseClient
+                        .from('hotel_config')
+                        .upsert({
+                            id: hotelGlobalScopeID,
+                            hotel_name: hotelGlobalScopeID,
+                            menu_data: menuCategories
+                        }, { onConflict: 'id' });
+                } catch(e) { console.error(e); }
             }
             uploadMenuToCloud();
         }
