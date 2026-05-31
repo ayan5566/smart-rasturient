@@ -479,7 +479,11 @@
     </div>
 
     <script>    
-        // Cloud par table ka live data sync (Save/Update) karne ke liye
+        // 🔥 YEH VALI LINES FUNCTION SE PEHLE HONI CHAHIYE
+        const SUPABASE_URL = "https://your-project-url.supabase.co"; 
+        const SUPABASE_ANON_KEY = "your-actual-anon-key";      
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
 async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
     try {
         const { error } = await supabase
@@ -561,10 +565,78 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let fBird = {}, fPipes = [], flappyScoreTracker = 0;
         let cosmicBackgroundStars = [];
     
-        async function initApp() {
-            // 1. URL parameters se table reading ka logic
-            const urlParams = new URLSearchParams
-    }
+async function initApp() {
+            // 1. URL parameters se Table aur Hotel ID read karna (QR Target Fix)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlTable = urlParams.get('table');
+            const urlHotel = urlParams.get('hotel');
+            
+            if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
+            if (urlHotel) hotelGlobalScopeID = urlHotel;
+
+            // 2. 🔥 CLOUD MENU LOAD LOGIC (Supabase se permanent menu load karega)
+            try {
+                const { data, error } = await supabase
+                    .from('hotel_config')
+                    .select('menu_data')
+                    .eq('id', hotelGlobalScopeID)
+                    .single();
+
+                if (!error && data && data.menu_data) {
+                    menuCategories = data.menu_data; // Cloud menu fallback menu ko overwrite kar dega
+                    console.log("🚀 Real Menu Loaded from Cloud Database!");
+                }
+            } catch (err) {
+                console.log("Database fetch failed, playing on local menu fallback:", err);
+            }
+
+            // 3. Active table ka running live session database se load karna
+            try {
+                const { data: sessionData } = await supabase
+                    .from('table_sessions')
+                    .select('*')
+                    .eq('table_id', clientCurrentActiveTable)
+                    .single();
+
+                if (sessionData) {
+                    localLiveRunningBill = sessionData.live_bill || [];
+                    maximumClaimedDisc = sessionData.discount_claimed || 0;
+                    
+                    floorData.forEach(floor => {
+                        floor.tables.forEach(t => {
+                            if (t.id === clientCurrentActiveTable) {
+                                t.waiterBell = sessionData.waiter_bell || false;
+                                if (sessionData.payment_status === 'SUCCESS_PAID') {
+                                    localStorage.setItem('payment_status_map_' + t.id, 'SUCCESS_PAID');
+                                } else {
+                                    localStorage.removeItem('payment_status_map_' + t.id);
+                                    t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
+                    maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
+                }
+            } catch(e) {
+                console.log("Session recovery failed, shifting to local cache storage:", e);
+            }
+
+            // 4. Background Starfield Array Generator
+            cosmicBackgroundStars = [];
+            for(let s=0; s<45; s++) {
+                cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
+            }
+
+            // 5. Interface Layout Engine Nodes
+            renderCustomerMenu(); 
+            generateMathQuestion(); 
+            generateAdminTableGrid(); 
+            updateFrontEndClassificationLabels(); 
+            setupGlobalKeyboardBindings(); 
+            populateWaiterPanelDropdownList();
+        }
         function updateFrontEndClassificationLabels() {
             document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
             document.getElementById('displayHotelRegistryScopeLabel').innerText = "Hotel Stack Scope: " + hotelGlobalScopeID;
@@ -662,8 +734,6 @@ function executeSimulatedMobilePaymentSuccessSequence() {
 }
 
 function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
-    // Purane code ke bilkul aakhiri mein is line ko jod dein
-syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
     
@@ -689,7 +759,23 @@ syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, fa
     if(document.getElementById('adminDashboard').style.display === 'block') {
         auditSelectedTableBillInvoiceLive();
     }
+
+    if(document.getElementById('adminDashboard').style.display === 'block') {
+        auditSelectedTableBillInvoiceLive();
+    }
+
+    // 🔥 Pehla function yahan khatam hoga
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
 }
+
+// ✅ Beech ka area ekdum saaf!
+
+function executeCustomerOrderCommitLink(priceDomId, dishName) {
+    let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
+    
+}
+   
+
 function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
@@ -1467,6 +1553,17 @@ function injectExtraItemFromBillPanel() {
             }
             localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            // 🔥 ADMIN SAVE LOGIC: Menu data ko permanent cloud data center me push karega
+            async function uploadMenuToCloud() {
+                await supabase
+                    .from('hotel_config')
+                    .upsert({
+                        id: hotelGlobalScopeID,
+                        hotel_name: hotelGlobalScopeID,
+                        menu_data: menuCategories
+                    }, { onConflict: 'id' });
+            }
+            uploadMenuToCloud();
         }
 
         function logoutAdmin() { saveAdminConfig(); document.getElementById('adminDashboard').style.display = 'none'; document.getElementById('customerView').style.display = 'block'; document.getElementById('adminPassword').value = ''; renderCustomerMenu(); }
@@ -1501,5 +1598,3 @@ function injectExtraItemFromBillPanel() {
     </script>
 </body>
 </html>
-
-       
