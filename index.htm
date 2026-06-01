@@ -714,23 +714,32 @@ function executeSimulatedMobilePaymentSuccessSequence() {
     }, 5000); 
 }
 
-function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
+ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
-    
     let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
     
     if(matchingRecord) {
         matchingRecord.qty += 1; 
     } else { 
-        targetTableBill.push({ 
-            name: dishName, 
-            size: selectedSize.toUpperCase(), 
-            price: fixedUnitPrice, 
-            qty: 1 
-        }); 
+        targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
+    } // <- Yahan sirf else block band hoga, function nahi!
+    
+    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
+    
+    if(activeTableId === clientCurrentActiveTable) { 
+        localLiveRunningBill = targetTableBill; 
     }
-}
+    
+    if(document.getElementById('adminDashboard').style.display === 'block') { 
+        auditSelectedTableBillInvoiceLive(); 
+    }
+
+    // Cloud dynamic connection push code
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+} // <- Function ab yahan aakhir mein cleanly close hoga!
+
+        
     localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
     
     if(activeTableId === clientCurrentActiveTable) {
