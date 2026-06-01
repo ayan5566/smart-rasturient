@@ -533,7 +533,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
         } catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
 
-        let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
         let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
         let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
