@@ -723,7 +723,7 @@ function executeSimulatedMobilePaymentSuccessSequence() {
         matchingRecord.qty += 1; 
     } else { 
         targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
-    } // <- Yahan sirf else block band hoga, function nahi!
+    } 
     
     localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
     
@@ -737,21 +737,7 @@ function executeSimulatedMobilePaymentSuccessSequence() {
 
     // Cloud dynamic connection push code
     syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
-} // <- Function ab yahan aakhir mein cleanly close hoga!
-
-        
-    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
-    
-    if(activeTableId === clientCurrentActiveTable) {
-        localLiveRunningBill = targetTableBill;
-    }
-    
-    if(document.getElementById('adminDashboard').style.display === 'block') {
-        auditSelectedTableBillInvoiceLive();
-    }
-
-    // Cloud par session update bhej dena
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');    
+} 
 function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
