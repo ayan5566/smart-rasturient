@@ -332,6 +332,15 @@
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
             </div>
 
+            <div class="game-box">
+            <h3>🎮 Play & Claim Discounts Automatically</h3>
+            <div class="game-nav">
+                <button id="navMATH" class="active" onclick="switchGameMode('MATH')">📐 Math Quiz</button>
+                <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">🐦 Flappy Bird</button>
+                <button id="navSPACE" onclick="switchGameMode('SPACE')">🚀 Space Shoot</button>
+                <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
+            </div>
+
             <div id="gameWindow">
                 <div id="gameScreenStatusMsg"></div>
                 <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
@@ -351,6 +360,7 @@
                     <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
                     <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
                 </div>
+
                 <div class="snake-grid-pad" id="snakeControls">
                     <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
                     <div class="snake-row">
@@ -367,67 +377,11 @@
         </div>
 
         <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
-    </div>
-            <div id="gameWindow">
-                <div id="gameScreenStatusMsg"></div>
-                <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
-                
-                <div id="mathGameSection">  
-                    <h2 id="mathQuestion" style="background:#f4f1ea; padding:10px; border-radius:8px;"></h2>
-                    <input type="number" id="mathCustomerAnswer" placeholder="Type answer...">
-                    <button class="action-btn" onclick="verifyMathAnswer()" style="background: var(--dark-charcoal);">Submit Answer</button>
-                    <div id="mathStatus" style="font-weight:bold; margin-top:8px;"></div>
-                </div>
-
-                <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
-                <canvas id="spaceCanvas" width="320" height="400" style="background:#0c0d14;"></canvas>
-                <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
-
-                <div class="control-pad" id="spaceControls">
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
-                </div>
-                <div class="snake-grid-pad" id="snakeControls">
-                    <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
-                    <div class="snake-row">
-                        <button class="snk-btn" onclick="setSnakeDirection('LEFT')">◀</button>
-                        <button class="snk-btn" style="background:#7f8c8d; cursor:default;">•</button>
-                        <button class="snk-btn" onclick="setSnakeDirection('RIGHT')">▶</button>
-                    </div>
-                    <button class="snk-btn" onclick="setSnakeDirection('DOWN')">▼</button>
-                </div>
-
-                <button id="startBtn" class="action-btn" onclick="startSelectedGame()" style="display:none; margin-top:15px; background: var(--accent-gold); color:black;">Launch Engine Run</button>
-            </div>
-            <div id="couponDisplay" style="display:none; margin-top:12px; font-size:15px; color:green; font-weight:bold;"></div>
-        </div>
-
-                <div class="control-pad" id="spaceControls">
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
-                </div>
-                <div class="snake-grid-pad" id="snakeControls">
-                    <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
-                    <div class="snake-row">
-                        <button class="snk-btn" onclick="setSnakeDirection('LEFT')">◀</button>
-                        <button class="snk-btn" style="background:#7f8c8d; cursor:default;">•</button>
-                        <button class="snk-btn" onclick="setSnakeDirection('RIGHT')">▶</button>
-                    </div>
-                    <button class="snk-btn" onclick="setSnakeDirection('DOWN')">▼</button>
-                </div>
-
-                <button id="startBtn" class="action-btn" onclick="startSelectedGame()" style="display:none; margin-top:15px; background: var(--accent-gold); color:black;">Launch Engine Run</button>
-            </div>
-            <div id="couponDisplay" style="display:none; margin-top:12px; font-size:15px; color:green; font-weight:bold;"></div>
-        </div>
-
-        <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
-    </div>
-
    
 
     <div class="container admin-panel" id="adminDashboard">
         <h2>🛠️ Variable Control Master Dashboard</h2>
+
         <p style="text-align: center; font-size:12px; color:#27ae60; font-weight:bold; margin-top:-10px;">⚡ Auto-Save Core Engine Operational</p>
         
         <h3>🏢 Hotel Enterprise Classification Setup</h3>
@@ -774,7 +728,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             qty: 1 
         }); 
     }
-    
+}
     localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
     
     if(activeTableId === clientCurrentActiveTable) {
@@ -786,32 +740,21 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
     }
 
     // Cloud par session update bhej dena
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
-}
-
-// ✅ Beech ka area ekdum saaf!
-
-function executeCustomerOrderCommitLink(priceDomId, dishName) {
-    let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
-    
-}
-   
-
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');    
 function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
     let price = parseInt(selectorNode.getAttribute('data-selected-price'));
     
     if(!size) {
-        let cIdx = selectorNode.getAttribute('data-c'), iIdx = selectorNode.getAttribute('data-i'); 
+        let cIdx = selectorNode.getAttribute('data-c');
+        let iIdx = selectorNode.getAttribute('data-i'); 
         let bluePrint = menuCategories[cIdx].items[iIdx];
         size = bluePrint.mActive && bluePrint.m > 0 ? 'm' : (bluePrint.sActive && bluePrint.s > 0 ? 's' : 'l'); 
         price = bluePrint[size];
     }
     
-    appendDishToBillInvoice(dishName, size, price)
-    
-    // RESTORED VIA ON-SCREEN TOAST
+    appendDishToBillInvoice(dishName, size, price);
     showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
 }
 
@@ -939,28 +882,8 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
     // 🔥 LINE 938 PAR YEH LINE INSERT KAREIN (Closing bracket } se theek upar)
     syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
     }
-function executeCustomerOrderCommitLink(priceDomId, dishName) {
-    let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
-    let size = selectorNode.getAttribute('data-selected-size');
-    let price = parseInt(selectorNode.getAttribute('data-selected-price'));
-    
-    // FALLBACK ACCURACY: If user clicks add directly without toggling size buttons first
-    if(!size) {
-        let cIdx = selectorNode.getAttribute('data-c');
-        let iIdx = selectorNode.getAttribute('data-i');
-        let bluePrint = menuCategories[cIdx].items[iIdx];
-        
-        size = bluePrint.mActive && bluePrint.m > 0 ? 'm' : (bluePrint.sActive && bluePrint.s > 0 ? 's' : 'l'); 
-        price = bluePrint[size];
-    }
-    
-    // Run core database push sequence
-    appendDishToBillInvoice(dishName, size, price);
-    
-    // INSTANT USER VISUAL CONFIRMATION NOTIFICATION
-    showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
-}
-    // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER
+
+        // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER
     setTimeout(function() {
         let currentFloors = JSON.parse(localStorage.getItem('restaurantFloors')) || floorData;
         currentFloors.forEach(floor => {
@@ -1274,22 +1197,38 @@ function populateWaiterPanelDropdownList() {
     }
     syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
 }
-
 function injectExtraItemFromBillPanel() {
     let selectedTargetTable = document.getElementById('waiterTableSelect').value;
     let targetDishName = document.getElementById('waiterItemSelect').value;
     let targetSize = document.getElementById('waiterSizeSelect').value;
-    let bp = null; menuCategories.forEach(c => { let f = c.items.find(i => i.name === targetDishName); if(f) bp = f; });
+    let bp = null; 
+    
+    menuCategories.forEach(c => { 
+        let f = c.items.find(i => i.name === targetDishName); 
+        if(f) bp = f; 
+    });
+    
     if(bp && targetSize) {
-        appendDishToBillInvoice(targetDishName, targetSize, bp[targetSize], selectedTargetTable);
-        if (selectedTargetTable === clientCurrentActiveTable) {
-            localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-        }
-        auditSelectedTableBillInvoiceLive();
-        alert(`✅ Extra Item ${targetDishName} Pushed to Table ${selectedTargetTable} Successfully!`);
-    } else { alert("❌ Selected size configuration is unavailable!"); }
+    }
 }
-            syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
+function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
+    let activeTableId = targetTableOverride || clientCurrentActiveTable;
+    let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
+    let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
+    
+    if(matchingRecord) {
+        matchingRecord.qty += 1; 
+    } else { 
+        targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
+    }
+    
+    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
+    if(activeTableId === clientCurrentActiveTable) { localLiveRunningBill = targetTableBill; }
+    if(document.getElementById('adminDashboard').style.display === 'block') { auditSelectedTableBillInvoiceLive(); }
+
+    // ✅ FIX: Ab yeh cloud sync line admin condition se bahar hai, ab customer aur admin dono ke liye perfect sync chalega!
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+}
     
 
         function syncWaiterSizeDropdownOptions() {
@@ -1617,7 +1556,8 @@ function injectExtraItemFromBillPanel() {
             btnElement.classList.add('active');
         }
 
-        initApp();
+}
+    initApp();
     </script>
-</body>
-</html>
+    </body>
+    </html>
