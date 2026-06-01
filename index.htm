@@ -496,7 +496,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 }
     // ⚙️ GLOBAL RULES STATE (Ise upar shift karein)
-        let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+         rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
         
         let fallbackMenu = [
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
