@@ -828,6 +828,10 @@ function renderAnalyticsDashboard() {
 }
 
     
+  // ===================================================================
+// 💰 1. MOBILE PAYMENT SUCCESS SEQUENCE FUNCTION (PEHLA HISSA)
+// ===================================================================
+function executeSimulatedMobilePaymentSuccessSequence() {
     // 2. Instantly write payment verification status to storage mapping
     localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
     
@@ -840,10 +844,27 @@ function renderAnalyticsDashboard() {
     generateAdminTableGrid();
     
     alert(`💰 Success! Payment captured for Table ${clientCurrentActiveTable}. Marking as Booked (Grey) in 5 seconds.`);
-// ===================================================================
-// 🛒 100% COMPLETE LIVE ORDERING & BILL FEEDBACK ENGINE (FIXED)
-// ===================================================================
 
+    // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER (Jo neeche phasa hua tha)
+    setTimeout(function() {
+        let currentFloors = JSON.parse(localStorage.getItem('restaurantFloors')) || floorData;
+        currentFloors.forEach(floor => {
+            floor.tables.forEach(t => { 
+                if(t.id === clientCurrentActiveTable) t.state = 2; // Shift state parameter smoothly to Grey (Booked)
+            }); 
+        });
+        floorData = currentFloors;
+        
+        // Purge token override so layout engine reads native state color matrix
+        localStorage.removeItem('payment_status_map_' + clientCurrentActiveTable);
+        saveAdminConfig(); 
+        generateAdminTableGrid();
+    }, 5000); // 5000ms = Exactly 5 Seconds
+}
+
+// ===================================================================
+// 🛒 2. LIVE ORDERING & BILL FEEDBACK ENGINE (DOOSRA HISSA)
+// ===================================================================
 function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
@@ -869,30 +890,13 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         localLiveRunningBill = targetTableBill;
     }
     
-    
     if(document.getElementById('adminDashboard').style.display === 'block') {
         auditSelectedTableBillInvoiceLive();
-    // 🔥 LINE 938 PAR YEH LINE INSERT KAREIN (Closing bracket } se theek upar)
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
     }
 
-        // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER
-    setTimeout(function() {
-        let currentFloors = JSON.parse(localStorage.getItem('restaurantFloors')) || floorData;
-        currentFloors.forEach(floor => {
-            floor.tables.forEach(t => { 
-                if(t.id === clientCurrentActiveTable) t.state = 2; // Shift state parameter smoothly to Grey (Booked)
-            }); 
-        });
-        floorData = currentFloors;
-        
-        // Purge token override so layout engine reads native state color matrix
-        localStorage.removeItem('payment_status_map_' + clientCurrentActiveTable);
-        saveAdminConfig(); 
-        generateAdminTableGrid();
-    }, 5000); // 5000ms = Exactly 5 Seconds
-
-
+    // ✅ FIX: Cloud sync line ko condition se bahar nikaal kar function ke end mein cleanly set kar diya hai!
+    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+}
 
        async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
