@@ -464,7 +464,7 @@
         let loopTimerInstance = null;
         let customerActiveCategoryName = "";
                // 🔥 FIX: Variable ka naam badal kar supabaseClient rakhein taaki shadow error na aaye
-const SUPABASE_URL = "https://dintuoliaynpcxzwjxhf.supabase.co"; // Apni real URL daalein
+const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real URL daalein
 const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
@@ -974,7 +974,21 @@ function exitGameEngine() {
     document.getElementById('spaceCanvas').style.display = 'none';
     document.getElementById('snakeCanvas').style.display = 'none';
 }
-
+        // ✅ RE-ADDED: Yeh function ab math quiz ke sawal automatic banayega
+let evaluatedMathSolution = 0; 
+function generateMathQuestion() {
+    let num1 = Math.floor(Math.random() * 10) + 1;
+    let num2 = Math.floor(Math.random() * 10) + 1;
+    let operators = ['+', '-', '*'];
+    let op = operators[Math.floor(Math.random() * operators.length)];
+    
+    if (op === '+') evaluatedMathSolution = num1 + num2;
+    else if (op === '-') evaluatedMathSolution = num1 - num2;
+    else if (op === '*') evaluatedMathSolution = num1 * num2;
+    
+    let qElem = document.getElementById('mathQuestion');
+    if (qElem) qElem.innerText = `📐 Solve: ${num1} ${op} ${num2} = ?`;
+}
         function verifyMathAnswer() {
             let val = parseInt(document.getElementById('mathCustomerAnswer').value); let feedback = document.getElementById('mathStatus');
             if(val === evaluatedMathSolution) { feedback.innerText = "🎉 Success!"; feedback.style.color = "green"; triggerRewardCoupon(rules.math); } 
