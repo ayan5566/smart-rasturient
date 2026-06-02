@@ -817,23 +817,7 @@ function renderAnalyticsDashboard() {
                 </div>
             </div>`;
     });
-}
- // 🌟 Is bracket ko lagana mat bhulna, yeh function ko cleanly close karega!
-    itemKeysArray.forEach(dishName => {
-        let orderCount = activeOutletRecords[dishName];
-        outputGrid.innerHTML += `
-            <div style="margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 6px;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--dark-charcoal);">
-                    <span>🍔 ${dishName}</span> <span style="color:var(--tbl-orange);">Count: ${orderCount} times</span>
-                </div>
-                <div style="background:#eef2f7; width:100%; height:8px; border-radius:4px; margin-top:4px; overflow:hidden;">
-                    <div style="background:linear-gradient(90deg, #3498db, #2980b9); height:100%; width: ${Math.min(orderCount * 8, 100)}%;"></div>
-                </div>
-            </div>`;
-    });
-
-
-    
+}    
   // ===================================================================
 // 💰 1. MOBILE PAYMENT SUCCESS SEQUENCE FUNCTION (PEHLA HISSA)
 // ===================================================================
@@ -1467,7 +1451,12 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         updateCustomQRAdminPreview();
         renderAnalyticsDashboard(); 
         
-     
+        const formElement = document.getElementById('adminMenuForm'); 
+        if(!formElement) return; 
+        formElement.innerHTML = '';
+        
+        // ✅ RE-ADDED LOOP: Is loop ke andar ab 'cat' cleanly define ho jayega!
+        menuCategories.forEach((cat, cIdx) => {
             let catHTML = `<div class="admin-section-block"><div class="section-header"><input type="text" value="${cat.categoryName}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();"><button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button></div>`;
             cat.items.forEach((item, iIdx) => {
                 let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
@@ -1479,10 +1468,10 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             });
             catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName}</button></div>`; 
             formElement.innerHTML += catHTML;
-        };
+        });
         generateAdminTableGrid(); 
         populateWaiterPanelDropdownList();
-      // 🌟 FIX: Function ab poore code block ko sahi se wrap karke yahan end mein cleanly close hoga!
+    }
 
         function saveAdminConfig() {
             rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
