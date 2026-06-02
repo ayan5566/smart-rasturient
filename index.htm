@@ -333,14 +333,6 @@
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
             </div>
 
-            <div class="game-box">
-            <h3>🎮 Play & Claim Discounts Automatically</h3>
-            <div class="game-nav">
-                <button id="navMATH" class="active" onclick="switchGameMode('MATH')">📐 Math Quiz</button>
-                <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">🐦 Flappy Bird</button>
-                <button id="navSPACE" onclick="switchGameMode('SPACE')">🚀 Space Shoot</button>
-                <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
-            </div>
 
             <div id="gameWindow">
                 <div id="gameScreenStatusMsg"></div>
@@ -378,7 +370,7 @@
         </div>
 
         <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
-   
+    </div>
 
     <div class="container admin-panel" id="adminDashboard">
         <h2>🛠️ Variable Control Master Dashboard</h2>
@@ -985,20 +977,6 @@ function exitGameEngine() {
     document.getElementById('snakeCanvas').style.display = 'none';
 }
 
-    if(activeGameMode === 'FLAPPY') { 
-        document.getElementById('flappyCanvas').style.display = 'block'; 
-        initFlappyBirdGame(); 
-    }
-    else if(activeGameMode === 'SPACE') { 
-        document.getElementById('spaceCanvas').style.display = 'block'; 
-        initSpaceShooterGame(); 
-    }
-    else if(activeGameMode === 'SNAKE') { 
-        document.getElementById('snakeCanvas').style.display = 'block'; 
-        initSnakeGameLoop(); 
-    }
-
-
         function verifyMathAnswer() {
             let val = parseInt(document.getElementById('mathCustomerAnswer').value); let feedback = document.getElementById('mathStatus');
             if(val === evaluatedMathSolution) { feedback.innerText = "🎉 Success!"; feedback.style.color = "green"; triggerRewardCoupon(rules.math); } 
@@ -1465,7 +1443,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
             document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
             document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
-
+        }
             
             updateCustomQRAdminPreview();
     renderAnalyticsDashboard(); // <--- YAHAN IS LINE KO INJECT KAREIN
@@ -1553,7 +1531,6 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             btnElement.classList.add('active');
         }
 
-  }
     initApp();
     </script>
     </body>
