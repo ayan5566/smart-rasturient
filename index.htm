@@ -800,11 +800,34 @@ function renderAnalyticsDashboard() {
     let globalAnalyticsData = JSON.parse(localStorage.getItem('restaurant_order_analytics_map')) || {};
     let activeOutletRecords = globalAnalyticsData[hotelGlobalScopeID] || {};
     let itemKeysArray = Object.keys(activeOutletRecords);
+function renderAnalyticsDashboard() {
+    let outputGrid = document.getElementById('adminAnalyticsLiveOutputGrid');
+    if (!outputGrid) return;
+    
+    outputGrid.innerHTML = '';
+    let globalAnalyticsData = JSON.parse(localStorage.getItem('restaurant_order_analytics_map')) || {};
+    let activeOutletRecords = globalAnalyticsData[hotelGlobalScopeID] || {};
+    let itemKeysArray = Object.keys(activeOutletRecords);
 
+    // ✅ FIXED: Ab yeh return cleanly function ke andar hi band hai
     if (itemKeysArray.length === 0) {
         outputGrid.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">No sales metrics history tracked yet for outlet.</span>`;
-        return;
+        return; 
     }
+    
+    itemKeysArray.forEach(dishName => {
+        let orderCount = activeOutletRecords[dishName];
+        outputGrid.innerHTML += `
+            <div style="margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 6px;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--dark-charcoal);">
+                    <span>🍔 ${dishName}</span> <span style="color:var(--tbl-orange);">Count: ${orderCount} times</span>
+                </div>
+                <div style="background:#eef2f7; width:100%; height:8px; border-radius:4px; margin-top:4px; overflow:hidden;">
+                    <div style="background:linear-gradient(90deg, #3498db, #2980b9); height:100%; width: ${Math.min(orderCount * 8, 100)}%;"></div>
+                </div>
+            </div>`;
+    });
+} // 🌟 Is bracket ko lagana mat bhulna, yeh function ko cleanly close karega!
     itemKeysArray.forEach(dishName => {
         let orderCount = activeOutletRecords[dishName];
         outputGrid.innerHTML += `
