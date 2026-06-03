@@ -1503,25 +1503,33 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
             
             // Cloud sync connection target
-            async function uploadMenuToCloud() {
-                try {
-                    await supabaseClient
-                        .from('hotel_config')
-                        .upsert({
-                            id: hotelGlobalScopeID,
-                            hotel_name: hotelGlobalScopeID,
-                            menu_data: menuCategories
-                        }, { onConflict: 'id' });
-                } catch(e) { console.error(e); }
-            }
-            uploadMenuToCloud();
-        }
+            // Cloud sync connection target
+async function uploadMenuToCloud() {
+    try {
+        // ✅ Only sending 'id' and 'menu_data' to keep it 100% safe from bad request errors
+        const { error } = await supabaseClient
+            .from('hotel_config')
+            .upsert({
+                id: hotelGlobalScopeID,
+                menu_data: menuCategories
+            }, { onConflict: 'id' });
+            
+        if (error) console.error("Cloud Save Error:", error.message);
+        else console.log("🎉 Settings & Menu successfully synced to Supabase Cloud!");
+    } catch(e) { 
+        console.error("Cloud Save Exception:", e); 
+    }
+}
 
-        function logoutAdmin() { saveAdminConfig(); document.getElementById('adminDashboard').style.display = 'none'; document.getElementById('customerView').style.display = 'block'; document.getElementById('adminPassword').value = ''; renderCustomerMenu(); }
-        function initSpaceShooterGame() { currentLevelState = 1; spaceMoveDir = 0; spaceFrameTracker = 0; spaceTransitionCount = 0; pShipObj = { x: 140, y: 340, w: 40, h: 32, health: 5, maxHealth: 5 }; setupLevelParameters(); loopTimerInstance = setInterval(frameUpdateSpace, 20); }
-        function showOnScreenNotification(message, isError = false) {
-            let toast = document.getElementById('customToastNotification');
-            if(!toast) return;
+        function logoutAdmin() { 
+    saveAdminConfig(); 
+    document.getElementById('adminDashboard').style.display = 'none'; 
+    document.getElementById('customerView').style.display = 'block'; 
+    // ✅ Safe Check: Agar password field hoga tabhi khali karega, crash nahi hoga!
+    let pwdField = document.getElementById('adminPassword');
+    if(pwdField) pwdField.value = ''; 
+    renderCustomerMenu(); 
+}
             
             toast.innerText = message;
             toast.style.borderLeftColor = isError ? 'var(--danger-red)' : 'var(--neon-green)';
