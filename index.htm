@@ -1487,49 +1487,64 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         populateWaiterPanelDropdownList();
     }
 
-        function saveAdminConfig() {
-            rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
-            rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
-            rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
-            rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10; rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
-            
-            hotelGlobalScopeID = document.getElementById('cfgHotelIdentityScopeKey').value || "Default_HQ_Arena"; localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-            if(document.getElementById('cfgTaxCGSTActive')) {
-                taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
-                taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
-                taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
-            }
-            localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-            localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-            
-            // Cloud sync connection target
-            // Cloud sync connection target
-async function uploadMenuToCloud() {
-    try {
-        // ✅ Only sending 'id' and 'menu_data' to keep it 100% safe from bad request errors
-        const { error } = await supabaseClient
-            .from('hotel_config')
-            .upsert({
-                id: hotelGlobalScopeID,
-                menu_data: menuCategories
-            }, { onConflict: 'id' });
-            
-        if (error) console.error("Cloud Save Error:", error.message);
-        else console.log("🎉 Settings & Menu successfully synced to Supabase Cloud!");
-    } catch(e) { 
-        console.error("Cloud Save Exception:", e); 
-    }
-}
+       function saveAdminConfig() {
+        rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
+        rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
+        rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+        rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
+        rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+        rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10; 
+        rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+        
+        hotelGlobalScopeID = document.getElementById('cfgHotelIdentityScopeKey').value || "Default_HQ_Arena"; 
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+        
+        if(document.getElementById('cfgTaxCGSTActive')) {
+            taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
+            taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+            taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
+            taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+            taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
+            taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+        }
+        localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); 
+        localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+        localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
+        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+        
+        // ✅ Cloud sync ko yahan active trigger de diya hai
+        uploadMenuToCloud();
+    } // 🌟 saveAdminConfig cleanly yahan close ho gaya!
 
-        function logoutAdmin() { 
-    saveAdminConfig(); 
-    document.getElementById('adminDashboard').style.display = 'none'; 
-    document.getElementById('customerView').style.display = 'block'; 
-    // ✅ Safe Check: Agar password field hoga tabhi khali karega, crash nahi hoga!
-    let pwdField = document.getElementById('adminPassword');
-    if(pwdField) pwdField.value = ''; 
-    renderCustomerMenu(); 
-}
+    // ✅ uploadMenuToCloud ab azad hai aur perfectly call hoga
+    async function uploadMenuToCloud() {
+        try {
+            const { error } = await supabaseClient
+                .from('hotel_config')
+                .upsert({
+                    id: hotelGlobalScopeID,
+                    menu_data: menuCategories
+                }, { onConflict: 'id' });
+                
+            if (error) console.error("Cloud Save Error:", error.message);
+            else console.log("🎉 Settings & Menu successfully synced to Supabase Cloud!");
+        } catch(e) { 
+            console.error("Cloud Save Exception:", e); 
+        }
+    }
+
+    // ✅ logoutAdmin ab global function hai jo customer screen ko sahi se render karega
+    function logoutAdmin() { 
+        saveAdminConfig(); 
+        document.getElementById('adminDashboard').style.display = 'none'; 
+        document.getElementById('customerView').style.display = 'block'; 
+        
+        let pwdField = document.getElementById('adminPassword');
+        if(pwdField) pwdField.value = ''; 
+        
+        // ✅ Naye menu data ko screen par force display karne ke liye
+        renderCustomerMenu(); 
+    }
             
             toast.innerText = message;
             toast.style.borderLeftColor = isError ? 'var(--danger-red)' : 'var(--neon-green)';
