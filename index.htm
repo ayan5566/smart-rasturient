@@ -1517,17 +1517,33 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
     } // 🌟 saveAdminConfig cleanly yahan close ho gaya!
 
     // ✅ uploadMenuToCloud ab cleanly kaam karega
+   // ✅ NEW SMART CLOUD SYNC ENGINE: Ab bina kisi primary key error ke data save hoga!
     async function uploadMenuToCloud() {
         try {
-            const { error } = await supabaseClient
+            // Step 1: Pehle check karein ki kya is Hotel ID ka data cloud par pehle se hai
+            const { data, error: fetchError } = await supabaseClient
                 .from('hotel_config')
-                .upsert({
-                    id: hotelGlobalScopeID,
-                    menu_data: menuCategories
-                }, { onConflict: 'id' });
+                .select('id')
+                .eq('id', hotelGlobalScopeID);
+
+            if (data && data.length > 0) {
+                // Step 2: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
+                const { error: updateError } = await supabaseClient
+                    .from('hotel_config')
+                    .update({ menu_data: menuCategories })
+                    .eq('id', hotelGlobalScopeID);
                 
-            if (error) console.error("Cloud Save Error:", error.message);
-            else console.log("🎉 Settings & Menu successfully synced to Supabase Cloud!");
+                if (updateError) console.error("Cloud Update Error:", updateError.message);
+                else console.log("🎉 Existing Menu successfully updated on Supabase Cloud!");
+            } else {
+                // Step 3: Agar bilkul nayi hotel ID hai, toh naya row INSERT karein
+                const { error: insertError } = await supabaseClient
+                    .from('hotel_config')
+                    .insert({ id: hotelGlobalScopeID, menu_data: menuCategories });
+                
+                if (insertError) console.error("Cloud Insert Error:", insertError.message);
+                else console.log("🎉 New Hotel Menu successfully inserted into Supabase Cloud!");
+            }
         } catch(e) { 
             console.error("Cloud Save Exception:", e); 
         }
