@@ -1487,7 +1487,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         populateWaiterPanelDropdownList();
     }
 
-        function saveAdminConfig() {
+       function saveAdminConfig() {
         rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
         rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
         rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
@@ -1512,11 +1512,11 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
         localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
         
-        // ✅ Cloud sync ko safely trigger de diya hai
+        // ✅ Cloud sync active trigger
         uploadMenuToCloud();
-    } // 🌟 Fixed closing bracket! Ab saveAdminConfig safely close ho gaya.
+    } // 🌟 saveAdminConfig cleanly yahan close ho gaya!
 
-    // ✅ uploadMenuToCloud ab poori tarah global aur azad hai
+    // ✅ uploadMenuToCloud ab cleanly kaam karega
     async function uploadMenuToCloud() {
         try {
             const { error } = await supabaseClient
@@ -1533,7 +1533,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         }
     }
 
-    // ✅ logoutAdmin ab azad hai, HTML button ise easily dhoondh payenge
+    // ✅ logoutAdmin ab safely functional hai aur button par click karte hi chalega
     function logoutAdmin() { 
         saveAdminConfig(); 
         document.getElementById('adminDashboard').style.display = 'none'; 
@@ -1544,7 +1544,13 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         renderCustomerMenu(); 
     }
 
-    // ✅ REPAIRED: showOnScreenNotification ka toota hua sar-pair wapas jodd diya hai
+    function initSpaceShooterGame() { 
+        currentLevelState = 1; spaceMoveDir = 0; spaceFrameTracker = 0; spaceTransitionCount = 0; 
+        pShipObj = { x: 140, y: 340, w: 40, h: 32, health: 5, maxHealth: 5 }; 
+        setupLevelParameters(); loopTimerInstance = setInterval(frameUpdateSpace, 20); 
+    }
+
+    // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
     function showOnScreenNotification(message, isError = false) {
         let toast = document.getElementById('customToastNotification');
         if(!toast) return;
@@ -1553,25 +1559,23 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         toast.style.borderLeftColor = isError ? 'var(--danger-red)' : 'var(--neon-green)';
         toast.style.display = 'block';
         
-        // Auto fade-out after 4 seconds
         setTimeout(() => {
             toast.style.display = 'none';
         }, 4000);
     }
-        // ... upar ka baki sara code ...
 
-        // 🥤 S, M, L SIZE TOGGLE FUNCTION (YAHAN PASTE KIYA)
-        function changeSizeToggle(priceDomId, size, price, btnElement) {
-            document.getElementById(priceDomId).innerText = "₹" + price;
-            let parentNode = btnElement.parentElement;
-            parentNode.setAttribute('data-selected-size', size);
-            parentNode.setAttribute('data-selected-price', price);
-            let siblingButtons = parentNode.querySelectorAll('.size-btn');
-            siblingButtons.forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-        }
+    // 🥤 S, M, L SIZE TOGGLE FUNCTION
+    function changeSizeToggle(priceDomId, size, price, btnElement) {
+        document.getElementById(priceDomId).innerText = "₹" + price;
+        let parentNode = btnElement.parentElement;
+        parentNode.setAttribute('data-selected-size', size);
+        parentNode.setAttribute('data-selected-price', price);
+        let siblingButtons = parentNode.querySelectorAll('.size-btn');
+        siblingButtons.forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+    }
 
     initApp();
     </script>
-    </body>
-    </html>
+</body>
+</html>
