@@ -1529,8 +1529,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         uploadMenuToCloud();
     } // 🌟 saveAdminConfig cleanly yahan close ho gaya!
 
-    // ✅ uploadMenuToCloud ab cleanly kaam karega
-   // ✅ NEW SMART CLOUD SYNC ENGINE: Ab bina kisi primary key error ke data save hoga!
+ 
     async function uploadMenuToCloud() {
         try {
             // Step 1: Pehle check karein ki kya is Hotel ID ka data cloud par pehle se hai
@@ -1543,16 +1542,23 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
                 // Step 2: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
                 const { error: updateError } = await supabaseClient
                     .from('hotel_config')
-                    .update({ menu_data: menuCategories })
+                    .update({ 
+                        menu_data: menuCategories,
+                        hotel_name: hotelGlobalScopeID // Safety update payload
+                    })
                     .eq('id', hotelGlobalScopeID);
                 
                 if (updateError) console.error("Cloud Update Error:", updateError.message);
                 else console.log("🎉 Existing Menu successfully updated on Supabase Cloud!");
             } else {
-                // Step 3: Agar bilkul nayi hotel ID hai, toh naya row INSERT karein
+                // Step 3: Agar bilkul nayi category/hotel entry hai, toh INSERT karein (With hotel_name!)
                 const { error: insertError } = await supabaseClient
                     .from('hotel_config')
-                    .insert({ id: hotelGlobalScopeID, menu_data: menuCategories });
+                    .insert({ 
+                        id: hotelGlobalScopeID, 
+                        hotel_name: hotelGlobalScopeID, // 🌟 FIX: Yeh line not-null constraint violation error ko jadd se mita degi!
+                        menu_data: menuCategories 
+                    });
                 
                 if (insertError) console.error("Cloud Insert Error:", insertError.message);
                 else console.log("🎉 New Hotel Menu successfully inserted into Supabase Cloud!");
