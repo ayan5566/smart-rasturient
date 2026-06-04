@@ -481,23 +481,45 @@ const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real UR
 const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-       async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
+async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
     try {
-        // Yahan bhi supabaseClient likhein
-        const { error } = await supabaseClient
+        // Step 1: Pehle check karein ki kya is Table ID ka data cloud par pehle se hai
+        const { data, error: fetchError } = await supabaseClient
             .from('table_sessions')
-            .upsert({
-                table_id: tableId,
-                live_bill: bill,
-                discount_claimed: discount,
-                waiter_bell: bellStatus,
-                payment_status: payStatus
-            }, { onConflict: 'table_id' });
+            .select('table_id')
+            .eq('table_id', tableId);
 
-        if (error) console.error("Supabase Sync Error:", error.message);
-        else console.log(`🚀 Table ${tableId} data successfully synced to cloud.`);
+        if (data && data.length > 0) {
+            // Step 2: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
+            const { error: updateError } = await supabaseClient
+                .from('table_sessions')
+                .update({
+                    live_bill: bill,
+                    discount_claimed: discount,
+                    waiter_bell: bellStatus,
+                    payment_status: payStatus
+                })
+                .eq('table_id', tableId);
+
+            if (updateError) console.error("Supabase Sync Error (Update):", updateError.message);
+            else console.log(`🚀 Table ${tableId} data successfully updated on cloud.`);
+        } else {
+            // Step 3: Agar bilkul naye table session ki entry hai, toh INSERT karein
+            const { error: insertError } = await supabaseClient
+                .from('table_sessions')
+                .insert({
+                    table_id: tableId,
+                    live_bill: bill,
+                    discount_claimed: discount,
+                    waiter_bell: bellStatus,
+                    payment_status: payStatus
+                });
+
+            if (insertError) console.error("Supabase Sync Error (Insert):", insertError.message);
+            else console.log(`🚀 New Table ${tableId} session successfully inserted to cloud.`);
+        }
     } catch (err) {
-        console.error("System Error:", err);
+        console.error("System Error during table session sync:", err);
     }
 }
     // ⚙️ GLOBAL RULES STATE (Ise upar shift karein)
