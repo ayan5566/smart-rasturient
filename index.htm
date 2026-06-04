@@ -201,45 +201,58 @@
             touch-action: manipulation !important;  
         }/* =================================================================
        📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (NO FIXED PIXELS)
-       ================================================================= */
   /* =================================================================
-       📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (FIXED ERROR)
+       📱 100% FLUID & AUTO-ADJUSTABLE RESPONSIVE LAYOUT (NO ENGINE LEAK)
        ================================================================= */
+    
+    /* 💻 DESKTOP & LARGE SCREENS: Sab kuch centered aur safe rahega */
+    .container {
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto 20px auto;
+        box-sizing: border-box;
+    }
+
+    /* 📱 TABLETS & MOBILE SCREENS (Sizing shifts dynamically) */
     @media screen and (max-width: 767px) {
-        
-        /* 1. Main container screen ke hisab se 95% width le lega */
-        .game-box, .container {
-            width: 95% !important;
+        body {
+            padding: 10px !important; /* Tiny screens par side spacing maintain karne ke liye */
+        }
+
+        .container, .game-box {
+            width: 96% !important;
             max-width: 100% !important;
-            margin: 0 auto !important;
-            padding: 2% !important; 
+            margin: 10px auto !important;
+            padding: 15px !important; /* Elements andar squeeze na hon */
             box-sizing: border-box !important;
         }
 
-        /* 2. Canvas ab screen ke width ke sath khud ko adjust karega */
+        /* ✅ FIXED: Sizing responsive hai, par display state (hide/show) ab JS control karega */
         canvas {
             width: 100% !important;       
             max-width: 100% !important;   
             height: auto !important;      
-            max-height: 45vh !important;  
-            display: block !important;
+            max-height: 40vh !important;  
             margin: 0 auto !important;
         }
 
-        /* 3. Controls bhi screen ke sath flex (adjust) honge */
+        /* ✅ FIXED: Controls panel ka layout tabhi set hoga jab wo open honge */
         .control-pad, .snake-grid-pad {
             width: 100% !important;
-            display: flex !important;
-            justify-content: center !important;
-            flex-wrap: wrap !important; 
-            gap: 8px !important;
-            margin-top: 3% !important;
+            max-width: 320px;
+            margin: 10px auto 0 auto !important;
+            gap: 6px !important;
         }
 
-        /* 4. Buttons bhi fluid rahengi */
-        .try-again-btn, #restartButton, .ctrl-btn {
-            padding: 10px 20px !important;
-            font-size: 1rem !important; 
+        /* Input fields aur buttons mobile standard ke hisab se large aur fluid honge */
+        input[type="number"], input[type="text"], input[type="password"], select, button.action-btn, .order-btn {
+            padding: 12px !important;
+            font-size: 15px !important;
+        }
+
+        .category-tab-btn {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
         }
     }
     /* ================================================================= */
