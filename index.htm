@@ -481,6 +481,7 @@ const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real UR
 const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+// ✅ REPAIRED: Ab bina primary key ke bhi cloud data smoothly sync hoga!
 async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
     try {
         // Step 1: Pehle check karein ki kya is Table ID ka data cloud par pehle se hai
