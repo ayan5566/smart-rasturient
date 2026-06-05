@@ -469,7 +469,9 @@
         <div id="adminMenuForm"></div>
         <button class="action-btn" onclick="addNewCategory()" style="background:#2980b9; color:white; margin-bottom:15px;">➕ Create New Category Section</button>
         
-        <button class="action-btn" onclick="logoutAdmin()" style="margin-top:15px; background:var(--dark-charcoal); color:white;">🚪 Save Engine Variables</button>
+        <button class="action-btn" onclick="triggerJustSaveConfig()" style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: 💾 Save Menu & Settings</button>
+
+<button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
     </div>
 
     <script>    
@@ -585,6 +587,16 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let cosmicBackgroundStars = [];
     
 async function initApp() {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            hotelGlobalScopeID = session.user.id;
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+        }
+    } catch(sessionErr) {
+        console.log("No active session found, loading fallback:", sessionErr);
+    }
             const urlParams = new URLSearchParams(window.location.search);
             const urlTable = urlParams.get('table');
             const urlHotel = urlParams.get('hotel');
@@ -1676,7 +1688,33 @@ async function showAdminAuth() {
         siblingButtons.forEach(btn => btn.classList.remove('active'));
         btnElement.classList.add('active');
     }
+        // =================================================================
+// 💾 CONFIG SAVE & REAL TIME SESSION LOGOUT FUNCTIONS
+// =================================================================
 
+// Sirf cloud par data push karega, dashboard band nahi karega
+function triggerJustSaveConfig() {
+    saveAdminConfig();
+    showOnScreenNotification("⚡ Menu & Settings safely updated to cloud!");
+}
+
+// Supabase se session terminate karke owner ko customer screen par bhej dega
+async function logoutAdmin() { 
+    try {
+        // Cloud se token delete karein
+        await supabaseClient.auth.signOut(); 
+        
+        // UI screens swap karein
+        document.getElementById('adminDashboard').style.display = 'none'; 
+        document.getElementById('customerView').style.display = 'block'; 
+        
+        // Cache saaf karke refresh karein
+        renderCustomerMenu(); 
+        showOnScreenNotification("🚪 Logged out successfully!");
+    } catch(err) {
+        console.error("Logout Issue:", err);
+    }
+}
     initApp();
     </script>
 </body>
