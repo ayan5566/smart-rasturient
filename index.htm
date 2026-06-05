@@ -1474,7 +1474,51 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         function removeTable(fIdx, tIdx) { floorData[fIdx].tables.splice(tIdx, 1); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
         function addNewFloor() { floorData.push({ floorName: "New Floor Row", tables: [] }); saveAdminConfig(); generateAdminTableGrid(); }
         // ✅ Purana code hata kar ye daalein, ab bina crash kiye seedhe admin khulega!
-        function showAdminAuth() { document.getElementById('customerView').style.display = 'none'; document.getElementById('adminDashboard').style.display = 'block'; populateAdminForms();}
+// =================================================================
+// 🔐 STEP 2: REAL SUPABASE AUTH ENGINE (REAL EMAIL & PASSWORD)
+// =================================================================
+
+async function showAdminAuth() {
+    // Owner se real credentials maangne ke liye prompts trigger karein
+    let email = prompt("📧 Enter Registered Restaurant Owner Email:");
+    if (!email) return;
+    let password = prompt("🔒 Enter Secure Account Password:");
+    if (!password) return;
+
+    try {
+        // Real Supabase Secure JWT Authentication call trigger karein
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            alert("❌ Authentication Failed: " + error.message);
+            return;
+        }
+
+        showOnScreenNotification("🔑 Authentication successful! Loading your SaaS Workspace...");
+
+        // 🌟 MULTI-TENANT CORE CONTEXT: Hotel identity ko logged-in user ki UUID se map karein
+        hotelGlobalScopeID = data.user.id;
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+
+        // Client menu views ko chhupao aur owner dashboard ko screen par lao
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        
+        // Saari dynamic tables, menus aur settings ko refresh karein
+        updateFrontEndClassificationLabels();
+        populateAdminForms();
+
+    } catch (err) {
+        console.error("Auth System Exception Matrix:", err);
+        alert("Critical error encountered during authorization sequence pipelines.");
+    }
+}
+
+// Purane unsecure manual checking function ko cleanly khali (disable) kar dein
+
         function hideAdminAuth() { document.getElementById('authPanel').style.display='none'; document.getElementById('customerView').style.display='block'; }
 
         function checkAdminPassword() { 
