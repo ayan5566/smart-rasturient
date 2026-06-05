@@ -586,82 +586,97 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let fBird = {}, fPipes = [], flappyScoreTracker = 0;
         let cosmicBackgroundStars = [];
     
+// =================================================================
+// 🔄 INITIALIZATION ENGINE: 100% REPAIRED WITH ACCURATE BRACKETS
+// =================================================================
 async function initApp() {
-
-    
-const { data: { session } } = await supabaseClient.auth.getSession();
-if (session) {
-    // Refresh par bhi check karo ki subscription bacha hai ya nahi
-    let isPlanValid = await verifySubscriptionGatekeeper(session.user.id);
-    if (isPlanValid) {
-        hotelGlobalScopeID = session.user.id;
-        document.getElementById('customerView').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
-    }
-} catch(sessionErr) {
+    // 🌟 1. AUTO-LOGIN SUBSCRIPTION CHECK
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            // Check if plan is still valid upon refresh
+            let isPlanValid = await verifySubscriptionGatekeeper(session.user.id);
+            if (isPlanValid) {
+                hotelGlobalScopeID = session.user.id;
+                document.getElementById('customerView').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+            }
+        }
+    } catch(sessionErr) {
         console.log("No active session found, loading fallback:", sessionErr);
     }
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlTable = urlParams.get('table');
-            const urlHotel = urlParams.get('hotel');
-            
-            if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
-            if (urlHotel) hotelGlobalScopeID = urlHotel;
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('hotel_config')
-                    .select('menu_data')
-                    .eq('id', hotelGlobalScopeID)
-                    .single();
+    // 🔄 2. URL PARAMETERS ROUTING CONTEXT
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlTable = urlParams.get('table');
+    const urlHotel = urlParams.get('hotel');
+    
+    if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
+    if (urlHotel) hotelGlobalScopeID = urlHotel;
 
-                if (!error && data && data.menu_data) {
-                    menuCategories = data.menu_data;
-                    console.log("🚀 Real Menu Loaded from Cloud Database!");
-                }
-            } catch (err) {
-                console.log("Database fetch failed, playing on local menu fallback:", err);
-            }
+    // 🏢 3. FETCH MENU DATA FROM CLOUD
+    try {
+        const { data, error } = await supabaseClient
+            .from('hotel_config')
+            .select('menu_data')
+            .eq('id', hotelGlobalScopeID)
+            .single();
 
-            try {
-                const { data: sessionData } = await supabaseClient
-                    .from('table_sessions')
-                    .select('*')
-                    .eq('table_id', clientCurrentActiveTable)
-                    .single();
-
-                if (sessionData) {
-                    localLiveRunningBill = sessionData.live_bill || [];
-                    maximumClaimedDisc = sessionData.discount_claimed || 0;
-                    
-                    floorData.forEach(floor => {
-                        floor.tables.forEach(t => {
-                            if (t.id === clientCurrentActiveTable) {
-                                t.waiterBell = sessionData.waiter_bell || false;
-                                if (sessionData.payment_status === 'SUCCESS_PAID') {
-                                    localStorage.setItem('payment_status_map_' + t.id, 'SUCCESS_PAID');
-                                } else {
-                                    localStorage.removeItem('payment_status_map_' + t.id);
-                                    t.state = localLiveRunningBill.length > 0 ? 1 : 0;
-                                }
-                            }
-                        });
-                    });
-                } else {
-                    localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-                    maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
-                }
-            } catch(e) {
-                console.log("Session recovery failed:", e);
-            }
-
-            cosmicBackgroundStars = [];
-            for(let s=0; s<45; s++) {
-                cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
-            }
-
-            renderCustomerMenu(); generateMathQuestion(); generateAdminTableGrid(); updateFrontEndClassificationLabels(); setupGlobalKeyboardBindings(); populateWaiterPanelDropdownList();
+        if (!error && data && data.menu_data) {
+            menuCategories = data.menu_data;
+            console.log("🚀 Real Menu Loaded from Cloud Database!");
         }
+    } catch (err) {
+        console.log("Database fetch failed, playing on local menu fallback:", err);
+    }
+
+    // 📊 4. RESTORE RUNNING TABLE SESSIONS
+    try {
+        const { data: sessionData } = await supabaseClient
+            .from('table_sessions')
+            .select('*')
+            .eq('table_id', clientCurrentActiveTable)
+            .single();
+
+        if (sessionData) {
+            localLiveRunningBill = sessionData.live_bill || [];
+            maximumClaimedDisc = sessionData.discount_claimed || 0;
+            
+            floorData.forEach(floor => {
+                floor.tables.forEach(t => {
+                    if (t.id === clientCurrentActiveTable) {
+                        t.waiterBell = sessionData.waiter_bell || false;
+                        if (sessionData.payment_status === 'SUCCESS_PAID') {
+                            localStorage.setItem('payment_status_map_' + t.id, 'SUCCESS_PAID');
+                        } else {
+                            localStorage.removeItem('payment_status_map_' + t.id);
+                            t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                        }
+                    }
+                });
+            });
+        } else {
+            localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
+            maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
+        }
+    } catch(e) {
+        console.log("Session recovery failed:", e);
+    }
+
+    // 🌌 5. BACKGROUND SPACE MATRIX GENERATION
+    cosmicBackgroundStars = [];
+    for(let s=0; s<45; s++) {
+        cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
+    }
+
+    // ⚡ 6. FRONTEND INTERFACE GENERATION ENGINE RUN
+    renderCustomerMenu(); 
+    generateMathQuestion(); 
+    generateAdminTableGrid(); 
+    updateFrontEndClassificationLabels(); 
+    setupGlobalKeyboardBindings(); 
+    populateWaiterPanelDropdownList();
+}
         function updateFrontEndClassificationLabels() {
             document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
             document.getElementById('displayHotelRegistryScopeLabel').innerText = "Hotel Stack Scope: " + hotelGlobalScopeID;
