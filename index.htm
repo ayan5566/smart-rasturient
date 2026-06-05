@@ -1489,9 +1489,9 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         function addTableToFloor(fIdx) { let tNum = floorData[fIdx].tables.length + 1; floorData[fIdx].tables.push({ id: "T"+tNum, state: 0, waiterBell: false }); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
         function removeTable(fIdx, tIdx) { floorData[fIdx].tables.splice(tIdx, 1); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
         function addNewFloor() { floorData.push({ floorName: "New Floor Row", tables: [] }); saveAdminConfig(); generateAdminTableGrid(); }
-        // ✅ Purana code hata kar ye daalein, ab bina crash kiye seedhe admin khulega!
+
 // =================================================================
-// 🔐 STEP 2: REAL SUPABASE AUTH ENGINE (REAL EMAIL & PASSWORD)
+// 🔐 STEP 2 & 3: REPAIRED & COMPILED AUTH ENGINE (NO ENGINE LEAK)
 // =================================================================
 async function showAdminAuth() {
     let email = prompt("📧 Enter Registered Restaurant Owner Email:");
@@ -1500,48 +1500,44 @@ async function showAdminAuth() {
     if (!password) return;
 
     try {
+        // Real Supabase Secure JWT Authentication
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
 
         if (error) {
-            alert("❌ Authentication Failed: " + error.message);
+            if (error.message.includes("Invalid login credentials")) {
+                alert("❌ Galat Email ya Password! Kripya sahi details daalein.");
+            } else {
+                alert("❌ Login Failed: " + error.message);
+            }
             return;
         }
 
         // 🛡️ RUN GATEKEEPER SECURITY CHECK
         let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
-        if (!isAccessAllowed) return; // Agar subscription fail, toh aage nahi badhega
+        if (!isAccessAllowed) return; // Plan expired ya inactive hai toh yahi ruk jayega
 
-        showOnScreenNotification("🔑 Authentication successful! Loading Workspace...");
+        showOnScreenNotification("🔑 Authentication successful! Loading your SaaS Workspace...");
 
+        // 🌟 MULTI-TENANT CORE CONTEXT: LocalStorage aur state map karein
         hotelGlobalScopeID = data.user.id;
         localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
 
+        // Screens ko smoothly swap karein
         document.getElementById('customerView').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
         
+        // Data layers refresh karein
         updateFrontEndClassificationLabels();
         populateAdminForms();
 
     } catch (err) {
-        console.error("Auth System Exception:", err);
+        console.error("Auth System Exception Matrix:", err);
+        alert("Critical error encountered during authorization sequence pipelines.");
     }
-}
-        showOnScreenNotification("🔑 Authentication successful! Loading your SaaS Workspace...");
-
-        // 🌟 MULTI-TENANT CORE CONTEXT: Hotel identity ko logged-in user ki UUID se map karein
-        hotelGlobalScopeID = data.user.id;
-        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-
-        // Client menu views ko chhupao aur owner dashboard ko screen par lao
-        document.getElementById('customerView').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
-        
-        // Saari dynamic tables, menus aur settings ko refresh karein
-        updateFrontEndClassificationLabels();
-        populateAdminForms();
+} // 🌟 AB FUNCTON EK DUM PERFECTLY YAHAN CLOSE HUA HAI!
 
 
     function populateAdminForms() {
