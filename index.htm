@@ -587,14 +587,17 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let cosmicBackgroundStars = [];
     
 async function initApp() {
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            hotelGlobalScopeID = session.user.id;
-            document.getElementById('customerView').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'block';
-        }
-    } catch(sessionErr) {
+    // Apne initApp ke sabse upar wale block ko isse replace karein:
+const { data: { session } } = await supabaseClient.auth.getSession();
+if (session) {
+    // Refresh par bhi check karo ki subscription bacha hai ya nahi
+    let isPlanValid = await verifySubscriptionGatekeeper(session.user.id);
+    if (isPlanValid) {
+        hotelGlobalScopeID = session.user.id;
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+    }
+} catch(sessionErr) {
         console.log("No active session found, loading fallback:", sessionErr);
     }
             const urlParams = new URLSearchParams(window.location.search);
@@ -1489,29 +1492,41 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
 // =================================================================
 // 🔐 STEP 2: REAL SUPABASE AUTH ENGINE (REAL EMAIL & PASSWORD)
 // =================================================================
-
 async function showAdminAuth() {
-    // Owner se real credentials maangne ke liye prompts trigger karein
     let email = prompt("📧 Enter Registered Restaurant Owner Email:");
     if (!email) return;
     let password = prompt("🔒 Enter Secure Account Password:");
     if (!password) return;
 
     try {
-        // Real Supabase Secure JWT Authentication call trigger karein
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
 
         if (error) {
-    // Agar galat credentials hain toh friendly message dikhao
-    if (error.message.includes("Invalid login credentials")) {
-        alert("❌ Galat Email ya Password! Kripya sahi details daalein.");
-    } else {
-        alert("❌ Login Failed: " + error.message);
+            alert("❌ Authentication Failed: " + error.message);
+            return;
+        }
+
+        // 🛡️ RUN GATEKEEPER SECURITY CHECK
+        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
+        if (!isAccessAllowed) return; // Agar subscription fail, toh aage nahi badhega
+
+        showOnScreenNotification("🔑 Authentication successful! Loading Workspace...");
+
+        hotelGlobalScopeID = data.user.id;
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        
+        updateFrontEndClassificationLabels();
+        populateAdminForms();
+
+    } catch (err) {
+        console.error("Auth System Exception:", err);
     }
-    return;
 }
         showOnScreenNotification("🔑 Authentication successful! Loading your SaaS Workspace...");
 
@@ -1717,6 +1732,51 @@ async function logoutAdmin() {
         showOnScreenNotification("🚪 Logged out successfully!");
     } catch(err) {
         console.error("Logout Issue:", err);
+    }
+}
+        // =================================================================
+// 💳 STEP 3: STRICT SAAS SUBSCRIPTION GATEKEEPER (MANUAL CONTROL ONLY)
+// =================================================================
+
+async function verifySubscriptionGatekeeper(ownerId) {
+    try {
+        // Cloud database se is owner ka status aur expiry pakdo
+        const { data: subData, error } = await supabaseClient
+            .from('subscriptions')
+            .select('status, current_period_end')
+            .eq('user_id', ownerId)
+            .maybeSingle();
+
+        // 🚨 ACCESS LOCKED: Agar database mein record nahi hai, toh seedhe Access Denied!
+        if (!subData) {
+            alert("🚨 Access Denied!\nAapka koi Active Subscription nahi mila. Kripya Super Admin se apna account activate karwayein.");
+            
+            // Security clear: user ko login se baahar pheko
+            await supabaseClient.auth.signOut();
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+            return false;
+        }
+
+        // 🚨 CHECK EXPIRY: Agar record hai par plan khatam ho gaya hai
+        let today = new Date();
+        let expiryDate = new Date(subData.current_period_end);
+
+        if (subData.status !== 'active' || today > expiryDate) {
+            alert("🚨 Plan Expired! Access Denied.\nKripya subscription renew karwayein.");
+            
+            await supabaseClient.auth.signOut();
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+            return false;
+        }
+
+        // Agar aapne backend se active kiya hoga, sirf tabhi ye true hoga
+        return true;
+
+    } catch (err) {
+        console.error("Gatekeeper Exception:", err);
+        return false;
     }
 }
     initApp();
