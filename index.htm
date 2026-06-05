@@ -601,8 +601,8 @@ async function initApp() {
                 document.getElementById('customerView').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
             }
-        }
-    } catch(sessionErr) {
+        } // <-- YE BRACKET MISSING THA (if session ko band karne ke liye)
+    } catch(sessionErr) { // <-- AB YE TRY KE CATCH SE THEEK JUDA HUA HAI
         console.log("No active session found, loading fallback:", sessionErr);
     }
 
