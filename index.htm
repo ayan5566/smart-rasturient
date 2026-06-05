@@ -1491,8 +1491,9 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         function addNewFloor() { floorData.push({ floorName: "New Floor Row", tables: [] }); saveAdminConfig(); generateAdminTableGrid(); }
 
 // =================================================================
-// 🔐 STEP 2 & 3: REPAIRED & COMPILED AUTH ENGINE (NO ENGINE LEAK)
+// 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
 // =================================================================
+
 async function showAdminAuth() {
     let email = prompt("📧 Enter Registered Restaurant Owner Email:");
     if (!email) return;
@@ -1500,7 +1501,6 @@ async function showAdminAuth() {
     if (!password) return;
 
     try {
-        // Real Supabase Secure JWT Authentication
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
@@ -1515,21 +1515,17 @@ async function showAdminAuth() {
             return;
         }
 
-        // 🛡️ RUN GATEKEEPER SECURITY CHECK
         let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
-        if (!isAccessAllowed) return; // Plan expired ya inactive hai toh yahi ruk jayega
+        if (!isAccessAllowed) return; 
 
-        showOnScreenNotification("🔑 Authentication successful! Loading your SaaS Workspace...");
+        showOnScreenNotification("🔑 Authentication successful! Loading Workspace...");
 
-        // 🌟 MULTI-TENANT CORE CONTEXT: LocalStorage aur state map karein
         hotelGlobalScopeID = data.user.id;
         localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
 
-        // Screens ko smoothly swap karein
         document.getElementById('customerView').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
         
-        // Data layers refresh karein
         updateFrontEndClassificationLabels();
         populateAdminForms();
 
@@ -1537,9 +1533,66 @@ async function showAdminAuth() {
         console.error("Auth System Exception Matrix:", err);
         alert("Critical error encountered during authorization sequence pipelines.");
     }
-} // 🌟 AB FUNCTON EK DUM PERFECTLY YAHAN CLOSE HUA HAI!
+}
 
+async function verifySubscriptionGatekeeper(ownerId) {
+    try {
+        const { data: subData, error } = await supabaseClient
+            .from('subscriptions')
+            .select('status, current_period_end')
+            .eq('user_id', ownerId)
+            .maybeSingle();
 
+        if (!subData) {
+            alert("🚨 Access Denied!\nAapka koi Active Subscription nahi mila. Kripya Super Admin se apna account activate karwayein.");
+            await supabaseClient.auth.signOut();
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+            return false;
+        }
+
+        let today = new Date();
+        let expiryDate = new Date(subData.current_period_end);
+
+        if (subData.status !== 'active' || today > expiryDate) {
+            alert("🚨 Plan Expired! Access Denied.\nKripya subscription renew karwayein.");
+            await supabaseClient.auth.signOut();
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error("Gatekeeper Exception:", err);
+        return false;
+    }
+}
+
+function triggerJustSaveConfig() {
+    saveAdminConfig();
+    showOnScreenNotification("⚡ Menu & Settings safely updated to cloud!");
+}
+
+async function logoutAdmin() { 
+    try {
+        await supabaseClient.auth.signOut(); 
+        document.getElementById('adminDashboard').style.display = 'none'; 
+        document.getElementById('customerView').style.display = 'block'; 
+        renderCustomerMenu(); 
+        showOnScreenNotification("🚪 Logged out successfully!");
+    } catch(err) {
+        console.error("Logout Issue:", err);
+    }
+}
+
+function hideAdminAuth() { 
+    document.getElementById('customerView').style.display = 'block'; 
+}
+
+function checkAdminPassword() { 
+    // Deprecated gracefully for enterprise multi-tenant cloud operations
+}
     function populateAdminForms() {
         document.getElementById('cfgMathDisc').value = rules.math;
         document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
