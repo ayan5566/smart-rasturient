@@ -587,7 +587,8 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let cosmicBackgroundStars = [];
     
 async function initApp() {
-    // Apne initApp ke sabse upar wale block ko isse replace karein:
+
+    
 const { data: { session } } = await supabaseClient.auth.getSession();
 if (session) {
     // Refresh par bhi check karo ki subscription bacha hai ya nahi
@@ -1542,21 +1543,7 @@ async function showAdminAuth() {
         updateFrontEndClassificationLabels();
         populateAdminForms();
 
-    } catch (err) {
-        console.error("Auth System Exception Matrix:", err);
-        alert("Critical error encountered during authorization sequence pipelines.");
-    }
-}
 
-// Purane unsecure manual checking function ko cleanly khali (disable) kar dein
-
-        function hideAdminAuth() { document.getElementById('authPanel').style.display='none'; document.getElementById('customerView').style.display='block'; }
-
-        function checkAdminPassword() { 
-            if(document.getElementById('adminPassword').value === 'admin') { 
-                document.getElementById('authPanel').style.display = 'none'; document.getElementById('adminDashboard').style.display = 'block'; populateAdminForms(); 
-            } else { alert("Incorrect Configuration Key!"); } 
-        }
     function populateAdminForms() {
         document.getElementById('cfgMathDisc').value = rules.math;
         document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
