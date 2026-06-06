@@ -811,13 +811,21 @@ function executeSimulatedMobilePaymentSuccessSequence() {
 
     // Cloud dynamic connection push code
     syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
-     // Is context logic trigger ko appendDishToBillInvoice ke end mein fit kar dein
+// =================================================================
+// 🚀 UPGRADED CUSTOMER DISPATCHER: MULTI-TENANT SECURITY FIXED
+// =================================================================
 async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     try {
+        // 🔥 CRITICAL FIX: URL parameters se check karo, nahi toh local storage se real hotel ID pakdo
+        const urlParams = new URLSearchParams(window.location.search);
+        let activeHotelID = urlParams.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || hotelGlobalScopeID;
+
+        console.log("📡 Routing KDS ticket to Hotel ID:", activeHotelID);
+
         const { data: newOrder, error: orderErr } = await supabaseClient
             .from('active_orders')
             .insert({
-                hotel_id: hotelGlobalScopeID,
+                hotel_id: activeHotelID, // Ab ye humesha correct real owner ID hi bhejega
                 table_id: tableId,
                 status: 'PENDING'
             })
@@ -830,9 +838,13 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
                 size: itemSize.toUpperCase(),
                 qty: itemQty
             });
-            console.log("🔥 KDS Stream Node: Ticket dispatched to kitchen display console monitor.");
+            console.log("🔥 KDS Sync: Ticket successfully landed on kitchen grid nodes.");
+        } else if (orderErr) {
+            console.error("KDS Table Insert Error:", orderErr.message);
         }
-    } catch(err) { console.error("KDS Pipeline Exception Error:", err); }
+    } catch(err) { 
+        console.error("KDS Pipeline Exception Error:", err); 
+    }
 }
 
 // Is function pipeline ko use karne ke liye, appendDishToBillInvoice ke andar end par ye call jod dein:
