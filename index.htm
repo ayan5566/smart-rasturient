@@ -384,8 +384,23 @@
 
         <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
     </div>
+    <div class="container" id="kitchenDashboard" style="display: none; max-width: 1000px; background: #15171e; color: #ffffff; border-radius: 16px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #282c37; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="color: #ffffff; margin: 0; text-align: left;">👨‍🍳 Live Kitchen Monitor Queue</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="category-tab-btn active" id="kdsFilterBtn_PENDING" onclick="filterKdsView('PENDING')">Pending</button>
+            <button class="category-tab-btn" id="kdsFilterBtn_PREPARING" onclick="filterKdsView('PREPARING')">Preparing</button>
+            <button class="category-tab-btn" id="kdsFilterBtn_COMPLETED" onclick="filterKdsView('COMPLETED')">Dispatched</button>
+            <button class="action-btn" onclick="exitKdsConsole()" style="background: var(--danger-red); width: auto; padding: 8px 15px;">Exit KDS</button>
+        </div>
+    </div>
+    
+    <div id="kdsGridDisplayContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; width: 100%;">
+        </div>
+</div>
 
     <div class="container admin-panel" id="adminDashboard">
+        <button class="action-btn" onclick="launchKitchenDisplaySystemModule()" style="background:#e67e22; color:white; margin-bottom: 15px; font-weight:bold;">👨‍🍳 Open Live Kitchen Window</button>
         <h2>🛠️ Variable Control Master Dashboard</h2>
 
         <p style="text-align: center; font-size:12px; color:#27ae60; font-weight:bold; margin-top:-10px;">⚡ Auto-Save Core Engine Operational</p>
@@ -796,6 +811,32 @@ function executeSimulatedMobilePaymentSuccessSequence() {
 
     // Cloud dynamic connection push code
     syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+     // Is context logic trigger ko appendDishToBillInvoice ke end mein fit kar dein
+async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
+    try {
+        const { data: newOrder, error: orderErr } = await supabaseClient
+            .from('active_orders')
+            .insert({
+                hotel_id: hotelGlobalScopeID,
+                table_id: tableId,
+                status: 'PENDING'
+            })
+            .select().single();
+
+        if (!orderErr && newOrder) {
+            await supabaseClient.from('order_items').insert({
+                order_id: newOrder.id,
+                dish_name: dishName,
+                size: itemSize.toUpperCase(),
+                qty: itemQty
+            });
+            console.log("🔥 KDS Stream Node: Ticket dispatched to kitchen display console monitor.");
+        }
+    } catch(err) { console.error("KDS Pipeline Exception Error:", err); }
+}
+
+// Is function pipeline ko use karne ke liye, appendDishToBillInvoice ke andar end par ye call jod dein:
+dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, 1);
 } 
 function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
@@ -1829,6 +1870,153 @@ async function verifySubscriptionGatekeeper(ownerId) {
         console.error("Gatekeeper Exception:", err);
         return false;
     }
+}
+        // =================================================================
+// 👨‍🍳 STEP 4: KITCHEN DISPLAY SYSTEM (KDS) OPERATIONAL SYSTEM
+// =================================================================
+
+let currentKdsFilterState = 'PENDING';
+let activeKdsOrdersArray = [];
+let kdsRealtimeChannelInstance = null;
+let kdsClockIntervalTimerId = null;
+
+// Audio notification setup for incoming fresh orders
+function triggerAudioBeepAlert() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 587.33; // D5 Note
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.35);
+    } catch (e) { console.error("Audio engine context constraint:", e); }
+}
+
+// Open KDS Screen & Bind Supabase Realtime Stream Channels
+function launchKitchenDisplaySystemModule() {
+    document.getElementById('adminDashboard').style.display = 'none';
+    document.getElementById('kitchenDashboard').style.display = 'block';
+    
+    // Subscribe instantly to database inserts/updates
+    kdsRealtimeChannelInstance = supabaseClient
+        .channel('kds-live-stream-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'active_orders' }, () => {
+            fetchActiveKitchenOrdersQueue();
+        })
+        .subscribe();
+        
+    fetchActiveKitchenOrdersQueue();
+    
+    // Active the live ticking duration clocks
+    if (!kdsClockIntervalTimerId) {
+        kdsClockIntervalTimerId = setInterval(renderKdsInterfaceMatrix, 1000);
+    }
+}
+
+async function fetchActiveKitchenOrdersQueue() {
+    const { data: orders, error } = await supabaseClient
+        .from('active_orders')
+        .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`)
+        .order('created_at', { ascending: true }); // Oldest First (FIFO Queue rule)
+
+    if (!error && orders) {
+        if (orders.length > activeKdsOrdersArray.length) {
+            triggerAudioBeepAlert(); // Play bell ring signature instantly
+        }
+        activeKdsOrdersArray = orders;
+        renderKdsInterfaceMatrix();
+    }
+}
+
+function renderKdsInterfaceMatrix() {
+    const container = document.getElementById('kdsGridDisplayContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const filteredTickets = activeKdsOrdersArray.filter(t => t.status === currentKdsFilterState);
+    
+    if (filteredTickets.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #7f8c8d; padding: 40px; font-weight: 600; font-style: italic;">No orders in this section right now.</div>`;
+        return;
+    }
+
+    filteredTickets.forEach(order => {
+        const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
+        const displayMin = Math.floor(elapsedSecs / 60);
+        const displaySec = elapsedSecs % 60;
+        
+        let itemsHtml = '';
+        order.order_items.forEach(item => {
+            itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background:#202430; padding:8px; border-radius:6px; font-size:14px; border-left: 3px solid var(--tbl-orange);">
+                            <span><b>🍔 ${item.dish_name}</b> [${item.size}]</span>
+                            <b style="color:#2ecc71;">x${item.qty}</b>
+                         </div>`;
+        });
+
+        let actionButtonHtml = '';
+        if (order.status === 'PENDING') {
+            actionButtonHtml = `<button class="order-btn" onclick="updateKdsTicketState('${order.id}', 'PREPARING')" style="background:#e67e22; margin:0;">Accept & Cook</button>`;
+        } else if (order.status === 'PREPARING') {
+            actionButtonHtml = `<button class="order-btn" onclick="executeChefCompletionSequence('${order.id}', '${order.hotel_id}')" style="background:#2ecc71; margin:0;">Mark Complete</button>`;
+        }
+
+        container.innerHTML += `
+            <div style="background: #1f232d; border: 1px solid #2d323f; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px dashed #2d323f; padding-bottom:8px; font-size:12px;">
+                        <span style="color:#7f8c8d;">ID: ${order.id.substring(0,6).toUpperCase()}</span>
+                        <span style="color:#e74c3c; font-weight:bold;">⏱️ ${displayMin}m ${displaySec}s ago</span>
+                    </div>
+                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🚪 Table Number: ${order.table_id}</h3>
+                    <div>${itemsHtml}</div>
+                </div>
+                <div style="margin-top:15px;">${actionButtonHtml}</div>
+            </div>
+        `;
+    });
+}
+
+async function updateKdsTicketState(orderId, nextStatusState) {
+    await supabaseClient.from('active_orders').update({ status: nextStatusState }).eq('id', orderId);
+    fetchActiveKitchenOrdersQueue();
+}
+
+async function executeChefCompletionSequence(orderId, hotelId) {
+    const ticket = activeKdsOrdersArray.find(o => o.id === orderId);
+    if (!ticket) return;
+
+    // 1. Trigger the background analytics upsert increment counter function on cloud
+    for (const item of ticket.order_items) {
+        await supabaseClient.rpc('increment_analytics_counter', {
+            target_hotel_id: hotelId,
+            target_dish_name: item.dish_name,
+            qty_increment: item.qty
+        });
+    }
+
+    // 2. Erase volatile active kitchen record entirely to save DB space
+    await supabaseClient.from('active_orders').delete().eq('id', orderId);
+    
+    showOnScreenNotification("🍽️ Order Completed & Dispatched! Local records optimized.");
+    fetchActiveKitchenOrdersQueue();
+}
+
+function filterKdsView(targetFilterState) {
+    currentKdsFilterState = targetFilterState;
+    document.querySelectorAll('#kitchenDashboard .category-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`kdsFilterBtn_${targetFilterState}`).classList.add('active');
+    renderKdsInterfaceMatrix();
+}
+
+function exitKdsConsole() {
+    if (kdsRealtimeChannelInstance) kdsRealtimeChannelInstance.unsubscribe();
+    if (kdsClockIntervalTimerId) { clearInterval(kdsClockIntervalTimerId); kdsClockIntervalTimerId = null; }
+    document.getElementById('kitchenDashboard').style.display = 'none';
+    document.getElementById('adminDashboard').style.display = 'block';
 }
     initApp();
     </script>
