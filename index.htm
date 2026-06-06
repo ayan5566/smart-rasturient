@@ -383,6 +383,7 @@
         </div>
 
         <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
+        <button onclick="launchSuperAdminSecretModulePrompt()" style="background:none; border:none; color:#555; margin-top:10px; font-size:10px; width:100%; cursor:pointer; font-style:italic;">👑 SaaS Founder Security Clearance Access Pannel</button>
     </div>
     <div class="container" id="kitchenDashboard" style="display: none; max-width: 1000px; background: #15171e; color: #ffffff; border-radius: 16px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #282c37; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
@@ -488,6 +489,159 @@
 
 <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
     </div>
+    <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
+    <h2 style="color: #ffd700; margin-bottom: 5px;">👑 SaaS Founder Master Command Center</h2>
+    <p style="text-align: center; font-size: 11px; color: #8f9aa3; margin-top: 0; font-weight: bold; letter-spacing: 1px;">GLOBAL NETWORK SUBSCRIPTION VALIDATOR</p>
+    <hr style="border-color: #c5a059; margin-bottom: 20px;">
+
+    <h3>🏢 Registered Restaurant Network Accounts</h3>
+    <div id="superAdminClientsListWrapper" style="background: #1f2833; border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto; margin-bottom: 25px; text-align: left;">
+        </div>
+
+    <h3 style="color: #ffd700;">⚡ Force Inject Subscription Rights</h3>
+    <div style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #c5a059;">
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant User UUID String:</label>
+        <input type="text" id="saTargetUserUUID" placeholder="Paste Owner User ID here..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+        
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Extend Access Validity (Days):</label>
+        <select id="saPlanValidityDays" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+            <option value="30">Monthly Pack (30 Days)</option>
+            <option value="180">Half-Yearly Pack (180 Days)</option>
+            <option value="365">Yearly Enterprise Plan (365 Days)</option>
+            <option value="10000">Infinite Legend Mode (Lifetime)</option>
+        </select>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('active')" style="background: var(--neon-green); color: #fff; flex: 1;">⚡ Activate / Renew Plan</button>
+            <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('suspended')" style="background: var(--danger-red); color: #fff; flex: 1;">🚫 Immediate Block</button>
+        </div>
+    </div>
+
+    <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
+</div>
+    // =================================================================
+// 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
+// =================================================================
+
+const SECRET_FOUNDER_PASSPHRASE_KEY = "founder99"; // Master Password to protect the gateway
+
+function launchSuperAdminSecretModulePrompt() {
+    let keyInput = prompt("🔑 Enter SaaS Founder Identity Security Key Password:");
+    if (keyInput === SECRET_FOUNDER_PASSPHRASE_KEY) {
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'none';
+        document.getElementById('superAdminDashboard').style.display = 'block';
+        fetchGlobalSaaSAccountNetworkList();
+    } else if (keyInput) {
+        alert("❌ Identity Unverified! Security protocol triggered.");
+    }
+}
+
+async function fetchGlobalSaaSAccountNetworkList() {
+    const listWrapper = document.getElementById('superAdminClientsListWrapper');
+    if (!listWrapper) return;
+    listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Connecting global servers node...</span>`;
+
+    try {
+        // Fetch all current entries active inside the system database registry subscriptions mapping
+        const { data: subList, error } = await supabaseClient
+            .from('subscriptions')
+            .select('user_id, status, current_period_end')
+            .order('current_period_end', { ascending: false });
+
+        if (error) throw error;
+
+        if (!subList || subList.length === 0) {
+            listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
+            return;
+        }
+
+        listWrapper.innerHTML = '';
+        subList.forEach(sub => {
+            let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
+            let formattedExpiry = new Date(sub.current_period_end).toLocaleDateString();
+
+            listWrapper.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:8px 0; font-size:12px; color:#fff;">
+                    <div>
+                        <span style="font-weight:bold; color:#ffd700;">👤 Owner UUID:</span> <span style="font-family:monospace; color:#bdc3c7;">${sub.user_id.substring(0,8)}...</span><br>
+                        <span style="color:#7f8c8d;">Expires on: ${formattedExpiry}</span>
+                    </div>
+                    <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
+                </div>`;
+        });
+
+    } catch (err) {
+        console.error("Super Admin System Exception:", err);
+        listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link cloud pipeline stream registry logs.</span>`;
+    }
+}
+
+async function executeSuperAdminManualActivationSequence(targetStatusState) {
+    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    let validityDays = parseInt(document.getElementById('saPlanValidityDays').value);
+
+    if (!targetId || targetId.length < 10) {
+        alert("❌ Invalid user classification identifier code string pattern.");
+        return;
+    }
+
+    try {
+        let startTime = new Date();
+        let endTime = new Date();
+        endTime.setDate(startTime.getDate() + validityDays);
+
+        // Check if record exists inside tracking matrix array
+        const { data: existingRecord } = await supabaseClient
+            .from('subscriptions')
+            .select('user_id')
+            .eq('user_id', targetId)
+            .maybeSingle();
+
+        let syncOperationError = null;
+
+        if (existingRecord) {
+            // Update mapping properties configurations values fields logs
+            const { error } = await supabaseClient
+                .from('subscriptions')
+                .update({
+                    status: targetStatusState,
+                    current_period_start: startTime.toISOString(),
+                    current_period_end: endTime.toISOString()
+                })
+                .eq('user_id', targetId);
+            syncOperationError = error;
+        } else {
+            // Insert premium enterprise membership mapping parameters data logs payload
+            const { error } = await supabaseClient
+                .from('subscriptions')
+                .insert({
+                    user_id: targetId,
+                    plan_id: '4ca7ba8c-b02f-4b07-96ff-191cbbaea3a1', // Mapped plan database row fallback placeholder string registry
+                    status: targetStatusState,
+                    current_period_start: startTime.toISOString(),
+                    current_period_end: endTime.toISOString()
+                });
+            syncOperationError = error;
+        }
+
+        if (syncOperationError) {
+            alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
+        } else {
+            showOnScreenNotification(`👑 Subscription Matrix updated to state [${targetStatusState.toUpperCase()}] seamlessly!`);
+            document.getElementById('saTargetUserUUID').value = '';
+            fetchGlobalSaaSAccountNetworkList();
+        }
+
+    } catch(err) {
+        console.error("Super Admin Operation Exception:", err);
+    }
+}
+
+function exitSuperAdminDashboardConsole() {
+    document.getElementById('superAdminDashboard').style.display = 'none';
+    document.getElementById('customerView').style.display = 'block';
+}
 
     <script>    
     let activeGameMode = 'MATH';
