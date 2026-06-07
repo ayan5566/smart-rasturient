@@ -753,25 +753,25 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
         let fBird = {}, fPipes = [], flappyScoreTracker = 0;
         let cosmicBackgroundStars = [];
-    
 // =================================================================
-// 🔄 INITIALIZATION ENGINE: 100% REPAIRED WITH ACCURATE BRACKETS
+// 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (PERSISTENCE & BRANDING)
 // =================================================================
 async function initApp() {
-    // 🌟 1. AUTO-LOGIN SUBSCRIPTION CHECK
+    // 🌟 1. ONE-TIME LOGIN: SECURE SESSION RESTORATION (INSTAGRAM STYLE)
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
-            // Check if plan is still valid upon refresh
-            let isPlanValid = await verifySubscriptionGatekeeper(session.user.id);
-            if (isPlanValid) {
-                hotelGlobalScopeID = session.user.id;
-                document.getElementById('customerView').style.display = 'none';
-                document.getElementById('adminDashboard').style.display = 'block';
-            }
-        } // <-- YE BRACKET MISSING THA (if session ko band karne ke liye)
-    } catch(sessionErr) { // <-- AB YE TRY KE CATCH SE THEEK JUDA HUA HAI
-        console.log("No active session found, loading fallback:", sessionErr);
+            // Agar pehle se logged in hai, toh uski UUID ko active karo
+            hotelGlobalScopeID = session.user.id;
+            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+            
+            // Direct admin dashboard par le jao, baar-baar login prompt nahi mangega
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+            console.log("🔐 RestroFlow Security: Active session restored successfully!");
+        }
+    } catch(sessionErr) {
+        console.log("No active session found, loading default gateway:", sessionErr);
     }
 
     // 🔄 2. URL PARAMETERS ROUTING CONTEXT
@@ -782,17 +782,21 @@ async function initApp() {
     if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
     if (urlHotel) hotelGlobalScopeID = urlHotel;
 
-    // 🏢 3. FETCH MENU DATA FROM CLOUD
+    // 🏢 3. FETCH REAL MENU & HOTEL BRAND NAME FROM CLOUD DB
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data')
+            .select('menu_data, hotel_name') // 🌟 Mapped hotel_name field cleanly
             .eq('id', hotelGlobalScopeID)
             .single();
 
-        if (!error && data && data.menu_data) {
-            menuCategories = data.menu_data;
-            console.log("🚀 Real Menu Loaded from Cloud Database!");
+        if (!error && data) {
+            if (data.menu_data) menuCategories = data.menu_data;
+            // Agar cloud par custom naam set hai, toh variable mein store karein
+            if (data.hotel_name) {
+                localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
+            }
+            console.log("🚀 RestroFlow Cloud Sync: Real-time hotel config asset loaded!");
         }
     } catch (err) {
         console.log("Database fetch failed, playing on local menu fallback:", err);
@@ -846,12 +850,21 @@ async function initApp() {
     populateWaiterPanelDropdownList();
 }
         function updateFrontEndClassificationLabels() {
-            document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
-            document.getElementById('displayHotelRegistryScopeLabel').innerText = "Hotel Stack Scope: " + hotelGlobalScopeID;
-            document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
-            let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
-            if(identityInput) identityInput.value = hotelGlobalScopeID;
-        }
+    // Local storage se ya variable se check karo ki kya koi real name saved hai
+    let realBrandName = localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow Arena";
+    
+    document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
+    
+    // 🔥 FIXED BRANDING: Ab raw user identity ke bajaye top par hotel ka name flash hoga
+    document.getElementById('displayHotelRegistryScopeLabel').innerText = "📍 Restaurant: " + realBrandName;
+    document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
+    
+    let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+    if(identityInput) {
+        // Agar admin box khula hai toh usme text dikhao
+        identityInput.value = localStorage.getItem('restroflow_actual_brand_name') || hotelGlobalScopeID;
+    }
+}
 
         function setupGlobalKeyboardBindings() {
             window.addEventListener('keydown', (e) => {
