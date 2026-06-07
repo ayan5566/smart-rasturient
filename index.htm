@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+`<!DOCTYPE html>
 <html lang="en">
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -409,7 +409,7 @@
         <h3>🏢 Hotel Enterprise Classification Setup</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
-            <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. Hotel_Taj_01, Burger_King_Axis" oninput="saveAdminConfig(); updateFrontEndClassificationLabels();">
+            <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. Default_HQ_Arena" oninput="saveAdminConfig(); updateFrontEndClassificationLabels();">
         </div>
 
         <h3>💳 Business Payment QR Management</h3>
@@ -991,22 +991,27 @@ function injectExtraItemFromBillPanel() {
     let targetSize = document.getElementById('waiterSizeSelect').value;
     let bp = null; 
     
-    menuCategories.forEach(c => { let f = c.items.find(i => i.name === targetDishName); if(f) bp = f; });
+    // Find the dish template from master menu categories
+    menuCategories.forEach(c => { 
+        let f = c.items.find(i => i.name === targetDishName); 
+        if(f) bp = f; 
+    });
     
     if(bp && targetSize) {
-        appendDishToBillInvoice(targetDishName, targetSize, bp[targetSize], selectedTargetTable);
+        let fixedUnitPrice = bp[targetSize] || 0;
+        // Pushes cleanly into the target table storage array matrix
+        appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable);
+        
         if (selectedTargetTable === clientCurrentActiveTable) {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
         }
-        auditSelectedTableBillInvoiceLive();
         
-        // RESTORED VIA ON-SCREEN TOAST
-        showOnScreenNotification(`⚡ Pushed ${targetDishName} to Table ${selectedTargetTable}!`);
+        auditSelectedTableBillInvoiceLive();
+        showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} successfully pushed to Table ${selectedTargetTable}!`);
     } else { 
-        showOnScreenNotification("❌ Configuration size invalid!", true); 
+        showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
     }
 }
-
 function executeSimulatedMobilePaymentSuccessSequence() {
     updateDishOrderAnalytics();
     localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
