@@ -1549,25 +1549,63 @@ function renderCustomerMenu() {
 }
 
         function generateAdminTableGrid() {
-            const container = document.getElementById('adminTableLayoutGrid'); if(!container) return; container.innerHTML = '';
-            floorData.forEach((floor, fIdx) => {
-                let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
-                floor.tables.forEach((tbl, tIdx) => {
-                    let currentBgColor = 'var(--tbl-orange)'; let currentLabel = 'Khali';
-                    if(tbl.state === 1) { currentBgColor = 'var(--tbl-green)'; currentLabel = 'Bhra'; } else if(tbl.state === 2) { currentBgColor = 'var(--tbl-grey)'; currentLabel = 'Booked'; } else if(tbl.state === 3) { currentBgColor = 'var(--tbl-brown)'; currentLabel = 'Clean'; }
-                    if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { currentBgColor = '#2196f3'; currentLabel = '💰 Paid Mobile'; }
-                    let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+    const container = document.getElementById('adminTableLayoutGrid'); 
+    if(!container) return; 
+    container.innerHTML = '';
+    
+    floorData.forEach((floor, fIdx) => {
+        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+        
+        floor.tables.forEach((tbl, tIdx) => {
+            // 🎨 PRIORITY 1: User ka select kiya hua apna custom color padko, nahi toh default orange
+            let baseThemeColor = tbl.custom_color || 'var(--tbl-orange)';
+            let currentLabel = 'Khali';
+            
+            // State evaluation checks
+            if(tbl.state === 1) {
+                currentLabel = 'Bhra';
+            } else if(tbl.state === 2) {
+                currentLabel = 'Booked';
+            }
+            
+            // Cashier verification check override
+            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
+                baseThemeColor = '#2196f3'; // Paid status verification color
+                currentLabel = '💰 Paid UPI'; 
+            }
+            
+            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-                    floorHTML += `<div class="table-unit ${alertClass}" style="background: ${currentBgColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                        <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
-                        <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                        ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
-                    </div>`;
-                });
-                floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; container.innerHTML += floorHTML;
-            });
-        }
-
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
+                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+            </div>`;
+        });
+        
+        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
+        container.innerHTML += floorHTML;
+    });
+}
+        function commitCustomTableColorPreference() {
+    let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
+    
+    if(currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
+        // 1. Array ke andar naya color inject karo
+        floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
+        
+        // 2. Context overlay modal ko band karo
+        document.getElementById('tableColorPickerContextModal').style.display = 'none';
+        
+        // 3. Cloud aur local storage par sync save triggered karo
+        saveAdminConfig();
+        
+        // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
+        generateAdminTableGrid();
+        
+        showOnScreenNotification("🎨 Table theme design matrix updated live!");
+    }
+}
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
             flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
