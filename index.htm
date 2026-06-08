@@ -1543,6 +1543,36 @@ function renderCustomerMenu() {
             </div>`;
     });
 }
+        // ===================================================================
+// 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
+// ===================================================================
+function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
+    let tbl = floorData[floorIdx].tables[tableIdx];
+    
+    // 1. Agar us table par waiter bell baji hui hai, toh click karte hi use clear (OFF) karo
+    if (tbl.waiterBell) {
+        tbl.waiterBell = false;
+        showOnScreenNotification(`🔔 Waiter notification clear for Table ${tbl.id}`);
+    } else {
+        // 2. Agar bell nahi baji hai, toh click par state badlo: 0 (Khali) ➔ 1 (Bhra) ➔ 2 (Booked)
+        tbl.state = (tbl.state + 1) % 3;
+    }
+
+    // 3. Target tracking pointers set karo taaki color palette ko pata chale kaun si table badalni hai
+    currentActiveStylingTargetFloorIdx = floorIdx;
+    currentActiveStylingTargetTableIdx = tableIdx;
+
+    // 4. Rang badalne wala premium context menu overlay display open karo
+    const colorModal = document.getElementById('tableColorPickerContextModal');
+    if (colorModal) {
+        document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "var(--tbl-orange)";
+        colorModal.style.display = 'flex';
+    }
+
+    // 5. Configuration ko instantly save karo aur grid ko live redraw karo
+    saveAdminConfig();
+    generateAdminTableGrid();
+}
            function commitCustomTableColorPreference() {
     let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
     
