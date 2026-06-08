@@ -1499,7 +1499,7 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             }
         }
 
-        // ===================================================================
+     // ===================================================================
 // 📸 COMPLETED MENU RENDER WITH IMAGE CAPABILITIES & BALANCED SIZE TOGGLES
 // ===================================================================
 function renderCustomerMenu() {
@@ -1534,7 +1534,7 @@ function renderCustomerMenu() {
                     <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
                     <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
                 </div>
-                <div class="size-selector" data-c="${cIdx}" data-iIdx="${iIdx}">
+                <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
                     <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
                     <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
                     <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
@@ -1594,10 +1594,13 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
 }
         function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
-    renderCustomerMenu(); // Re-render menu content dynamically
+    (); // Re-render menu content dynamically
 }
 
-        function generateAdminTableGrid() {
+       // ===================================================================
+// 🏢 INTERACTIVE GRID MATRIX: RE-BUILT WITH EMPTY/FULL LABELS & THEME LOGIC
+// ===================================================================
+function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid'); 
     if(!container) return; 
     container.innerHTML = '';
@@ -1606,20 +1609,24 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
         
         floor.tables.forEach((tbl, tIdx) => {
-            // 🎨 PRIORITY 1: User ka select kiya hua apna custom color padko, nahi toh default orange
-            let baseThemeColor = tbl.custom_color || 'var(--tbl-orange)';
-            let currentLabel = 'Khali';
+            // 🎨 COLOR SEQUENCE MATRIX: Agar custom color nahi hai toh state wise default color uthao
+            let baseThemeColor = tbl.custom_color;
+            let currentLabel = 'Empty'; // Default fallback text state
             
-            // State evaluation checks
-            if(tbl.state === 1) {
-                currentLabel = 'Bhra';
+            if(tbl.state === 0) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                currentLabel = 'Empty'; // 🔄 Khali -> Empty Fixed
+            } else if(tbl.state === 1) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                currentLabel = 'Full'; // 🔄 Bhra -> Full Fixed
             } else if(tbl.state === 2) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
                 currentLabel = 'Booked';
             }
             
-            // Cashier verification check override
+            // Cashier dynamic pay verification check override
             if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
-                baseThemeColor = '#2196f3'; // Paid status verification color
+                baseThemeColor = '#2196f3'; 
                 currentLabel = '💰 Paid UPI'; 
             }
             
