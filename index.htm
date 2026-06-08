@@ -382,9 +382,59 @@
             <div id="couponDisplay" style="display:none; margin-top:12px; font-size:15px; color:green; font-weight:bold;"></div>
         </div>
 
-        <button onclick="showAdminAuth()" style="background:none; border:none; text-decoration:underline; color:#7f8c8d; margin-top:25px; font-size:13px; width:100%; cursor:pointer;">🔒 Hotel Configuration Dashboard</button>
+       <button onclick="launchSleekLoginUIConsoleOverlay()" style="background: var(--dark-charcoal); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; width: 100%; margin-top: 25px; cursor: pointer; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
+            🔒 Open RestroFlow Workspace Portal
+        </button>
         <button onclick="launchSuperAdminSecretModulePrompt()" style="background:none; border:none; color:#555; margin-top:10px; font-size:10px; width:100%; cursor:pointer; font-style:italic;">👑 SaaS Founder Security Clearance Access Pannel</button>
     </div>
+    <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
+    <div class="modal-content" style="max-width:380px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
+        
+        <div style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3);">⚡</div>
+        
+        <h2 style="color: var(--dark-charcoal); font-weight: 800; margin-bottom: 4px; font-size: 26px; letter-spacing: -0.5px;">RestroFlow</h2>
+        <p style="color: #7f8c8d; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">Workspace Gateway Terminal</p>
+        
+        <div style="text-align: left; margin-bottom: 12px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace Email Identity</label>
+            <input type="text" id="authEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+        </div>
+        
+        <div style="text-align: left; margin-bottom: 25px;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Secure Access Password</label>
+            <input type="password" id="authPasswordInput" placeholder="Enter workspace password..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+        </div>
+        
+        <button class="action-btn" onclick="executeRealCloudLoginSequence()" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 12px; transition: all 0.2s;">
+            🚀 Authenticate & Boot System
+        </button>
+        
+        <button onclick="closeLoginConsoleOverlay()" style="background: none; border: none; color: #7f8c8d; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;">
+            Cancel Request
+        </button>
+    </div>
+</div>
+    <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
+    <div class="modal-content" style="...">
+        <button onclick="closeLoginConsoleOverlay()" style="...">Cancel Request</button>
+    </div>
+</div> <div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;">
+    <div class="modal-content" style="max-width:320px; text-align:center; padding: 25px; background: #fff; border-radius: 20px;">
+        <h3>🎨 Table Theme Palette</h3>
+        <p style="font-size:12px; color:#666; margin-top:-5px;">Choose structural identity color mapping fields:</p>
+        <select id="ctxSelectedTableColorHexValue">
+            <option value="">🍊 Dynamic State (Default)</option>
+            <option value="#9b59b6">🔮 Deep Royal Purple</option>
+            <option value="#3498db">💎 Premium Sapphire Blue</option>
+            <option value="#1abc9c">🌲 Turquoise Teal</option>
+            <option value="#34495e">🖤 Dark Slate Velvet</option>
+        </select>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="action-btn" onclick="commitCustomTableColorPreference()" style="background:var(--neon-green); color: white;">Save Palette</button>
+            <button class="action-btn" onclick="document.getElementById('tableColorPickerContextModal').style.display='none'" style="background:#333; color: white;">Dismiss</button>
+        </div>
+    </div>
+</div>
     <div class="container" id="kitchenDashboard" style="display: none; max-width: 1000px; background: #15171e; color: #ffffff; border-radius: 16px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #282c37; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
         <h2 style="color: #ffffff; margin: 0; text-align: left;">👨‍🍳 Live Kitchen Monitor Queue</h2>
