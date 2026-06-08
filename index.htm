@@ -782,24 +782,23 @@ async function initApp() {
     if (urlHotel) hotelGlobalScopeID = urlHotel;
 
     // 🏢 3. FETCH REAL MENU & HOTEL BRAND NAME FROM CLOUD DB
-    try {
-        const { data, error } = await supabaseClient
-            .from('hotel_config')
-            .select('menu_data, hotel_name') // 🌟 Mapped hotel_name field cleanly
-            .eq('id', hotelGlobalScopeID)
-            .single();
+try {
+    const { data, error } = await supabaseClient
+        .from('hotel_config')
+        .select('menu_data, hotel_name') 
+        .eq('id', hotelGlobalScopeID)
+        .maybeSingle(); // 🌟 FIXED: .single() ko badal kar .maybeSingle() kiya
 
-        if (!error && data) {
-            if (data.menu_data) menuCategories = data.menu_data;
-            // Agar cloud par custom naam set hai, toh variable mein store karein
-            if (data.hotel_name) {
-                localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
-            }
-            console.log("🚀 RestroFlow Cloud Sync: Real-time hotel config asset loaded!");
-        }
-    } catch (err) {
-        console.log("Database fetch failed, playing on local menu fallback:", err);
+    if (!error && data) {
+        if (data.menu_data) menuCategories = data.menu_data;
+        if (data.hotel_name) localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
+        console.log("🚀 RestroFlow Cloud Sync: Data loaded successfully!");
+    } else {
+        console.log("⚠️ No custom hotel data found on cloud, using fallback data.");
     }
+} catch (err) {
+    console.log("Database fetch failed:", err);
+}
 
     // 📊 4. RESTORE RUNNING TABLE SESSIONS
     try {
