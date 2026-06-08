@@ -409,8 +409,7 @@
         <h3>🏢 Hotel Enterprise Classification Setup</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
-            <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. Default_HQ_Arena" oninput="saveAdminConfig(); updateFrontEndClassificationLabels();">
-        </div>
+            <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
         <h3>💳 Business Payment QR Management</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
@@ -618,7 +617,7 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
                 .from('subscriptions')
                 .insert({
                     user_id: targetId,
-                    plan_id: '4ca7ba8c-b02f-4b07-96ff-191cbbaea3a1', // Mapped plan database row fallback placeholder string registry
+                    plan_id: '1d6ca9b8-b472-4cf3-875b-df768f746ef7', // Mapped plan database row fallback placeholder string registry
                     status: targetStatusState,
                     current_period_start: startTime.toISOString(),
                     current_period_end: endTime.toISOString()
@@ -1501,39 +1500,50 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
             }
         }
 
-        function renderCustomerMenu() {
-            const tabsWrapper = document.getElementById('customerCategoryTabs'); const itemContainer = document.getElementById('menuContainer');
-            if(!tabsWrapper || !itemContainer) return; tabsWrapper.innerHTML = ''; itemContainer.innerHTML = ''; if(menuCategories.length === 0) return;
+        // ===================================================================
+// 📸 COMPLETED MENU RENDER WITH IMAGE CAPABILITIES & BALANCED SIZE TOGGLES
+// ===================================================================
+function renderCustomerMenu() {
+    const tabsWrapper = document.getElementById('customerCategoryTabs'); 
+    const itemContainer = document.getElementById('menuContainer'); 
+    
+    if(!tabsWrapper || !itemContainer) return; 
+    tabsWrapper.innerHTML = ''; 
+    itemContainer.innerHTML = ''; 
+    if(menuCategories.length === 0) return;
 
-            let currentSelectedCategoryObj = menuCategories.find(c => c.categoryName === customerActiveCategoryName) || menuCategories[0];
-            customerActiveCategoryName = currentSelectedCategoryObj.categoryName;
+    let currentSelectedCategoryObj = menuCategories.find(c => c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
+    customerActiveCategoryName = currentSelectedCategoryObj.categoryName;
 
-            menuCategories.forEach(cat => {
-                let isTabActive = cat.categoryName === customerActiveCategoryName;
-                tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive?'active':''}" onclick="filterCustomerViewCategoryTab('${cat.categoryName}')">${cat.categoryName}</button>`;
-            });
+    menuCategories.forEach(cat => { 
+        let isTabActive = cat.categoryName === customerActiveCategoryName; 
+        tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive?'active':''}" onclick="filterCustomerViewCategoryTab('${cat.categoryName}')">${cat.categoryName}</button>`; 
+    });
 
-            let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
-            currentSelectedCategoryObj.items.forEach((item, iIdx) => {
-                let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l');
-                let defaultPrice = item[defaultSize] || 0; let photoMarkup = item.image ? `<img src="${item.image}" class="dish-photo-frame">` : `<div class="dish-photo-frame">🍲</div>`;
-                let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+    let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
+    currentSelectedCategoryObj.items.forEach((item, iIdx) => {
+        let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
+        let defaultPrice = item[defaultSize] || 0; 
+        
+        // 📸 Dynamic Cloud Image Handler: Agar image URL hai toh photo dikhao, warna fallback emoji
+        let photoMarkup = item.image ? `<img src="${item.image}" class="dish-photo-frame">` : `<div class="dish-photo-frame">🍲</div>`; 
+        let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
 
-                itemContainer.innerHTML += `
-                    <div class="menu-item">
-                        <div class="dish-main-info">
-                            <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
-                            <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
-                        </div>
-                        <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
-                            <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
-                            <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
-                            <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
-                        </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
-                    </div>`;
-            });
-        }
+        itemContainer.innerHTML += `
+            <div class="menu-item">
+                <div class="dish-main-info">
+                    <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
+                    <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
+                </div>
+                <div class="size-selector" data-c="${cIdx}" data-iIdx="${iIdx}">
+                    <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
+                    <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
+                    <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
+                </div>
+                <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
+            </div>`;
+    });
+}
         function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
     renderCustomerMenu(); // Re-render menu content dynamically
