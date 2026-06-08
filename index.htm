@@ -1543,6 +1543,25 @@ function renderCustomerMenu() {
             </div>`;
     });
 }
+           function commitCustomTableColorPreference() {
+    let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
+    
+    if(currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
+        // 1. Array ke andar naya color inject karo
+        floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
+        
+        // 2. Context overlay modal ko band karo
+        document.getElementById('tableColorPickerContextModal').style.display = 'none';
+        
+        // 3. Cloud aur local storage par sync save triggered karo
+        saveAdminConfig();
+        
+        // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
+        generateAdminTableGrid();
+        
+        showOnScreenNotification("🎨 Table theme design matrix updated live!");
+    }
+}
         function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
     renderCustomerMenu(); // Re-render menu content dynamically
@@ -1586,25 +1605,6 @@ function renderCustomerMenu() {
         floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
         container.innerHTML += floorHTML;
     });
-}
-        function commitCustomTableColorPreference() {
-    let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
-    
-    if(currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
-        // 1. Array ke andar naya color inject karo
-        floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
-        
-        // 2. Context overlay modal ko band karo
-        document.getElementById('tableColorPickerContextModal').style.display = 'none';
-        
-        // 3. Cloud aur local storage par sync save triggered karo
-        saveAdminConfig();
-        
-        // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
-        generateAdminTableGrid();
-        
-        showOnScreenNotification("🎨 Table theme design matrix updated live!");
-    }
 }
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
