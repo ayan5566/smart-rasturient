@@ -199,7 +199,8 @@
             -ms-user-select: none !important;
             user-select: none !important;           
             touch-action: manipulation !important;  
-      
+        }/* =================================================================
+       📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (NO FIXED PIXELS)
   /* =================================================================
        📱 100% FLUID & AUTO-ADJUSTABLE RESPONSIVE LAYOUT (NO ENGINE LEAK)
        ================================================================= */
@@ -594,24 +595,6 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        // =================================================================
-// RESTROFLOW LOGIN MODAL VIEWPORT CONTROLLER
-// =================================================================
-function launchSleekLoginUIConsoleOverlay() {
-    const loginModal = document.getElementById('restroflowLoginModal');
-    if (loginModal) {
-        loginModal.style.display = 'flex';
-    } else {
-        console.error("RestroFlow Engine Error: restroflowLoginModal element wrapper missing from DOM tree.");
-    }
-}
-
-function closeLoginConsoleOverlay() {
-    const loginModal = document.getElementById('restroflowLoginModal');
-    if (loginModal) {
-        loginModal.style.display = 'none';
-    }
-}
          // =================================================================
 // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
 // =================================================================
@@ -2211,28 +2194,28 @@ function exitKdsConsole() {
     document.getElementById('kitchenDashboard').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'block';
 }
-        // =================================================================
+// =================================================================
 // FIXED WORKSPACE AUTHENTICATION ROUTER NODE
 // =================================================================
 async function executeRealCloudLoginSequence() {
-ा
+    // 1. Input fields से ईमेल और पासवर्ड निकालना
     const inputEmail = document.getElementById('authEmailInput').value.trim();
     const inputPassword = document.getElementById('authPasswordInput').value;
 
-
+    // 2. बेसिक वैलिडेशन चेक
     if (!inputEmail || !inputPassword) {
         showOnScreenNotification("❌ Please enter both your Email and Password.", true);
         return;
     }
 
     try {
-
+        // 3. Supabase Auth Node के जरिए लॉगिन रिक्वेस्ट भेजना
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: inputEmail,
             password: inputPassword
         });
 
-
+        // 4. अगर कोई लॉगिन एरर आए
         if (error) {
             if (error.message.includes("Invalid login credentials")) {
                 alert("❌ Incorrect Email or Password! Please verify your workspace credentials.");
@@ -2242,17 +2225,20 @@ async function executeRealCloudLoginSequence() {
             return;
         }
 
+        // 5. आपके मौजूदा सब्सक्रिप्शन गेटकीपर से एक्टिवेशन चेक करना
         let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
         if (!isAccessAllowed) return; 
 
+        // 6. वैलिड यूजर आईडी को लोकल स्टोरेज में सेव करना
         hotelGlobalScopeID = data.user.id;
         localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
 
-        
+        // 7. लॉगिन स्क्रीन छुपाना और एडमिन डैशबोर्ड शो करना
         document.getElementById('restroflowLoginModal').style.display = 'none';
         document.getElementById('customerView').style.display = 'none';
         document.getElementById('adminDashboard').style.display = 'block';
         
+        // 8. यूआई लेबल्स और फॉर्म्स को रिफ्रेश करना
         updateFrontEndClassificationLabels();
         populateAdminForms();
         
@@ -2263,7 +2249,7 @@ async function executeRealCloudLoginSequence() {
         alert("Critical exception encountered during cloud authorization pipelines.");
     }
 }
-        function launchSleekLoginUIConsoleOverlay() {
+function launchSleekLoginUIConsoleOverlay() {
     const loginModal = document.getElementById('restroflowLoginModal');
     if (loginModal) {
         loginModal.style.display = 'flex';
@@ -2276,6 +2262,7 @@ function closeLoginConsoleOverlay() {
         loginModal.style.display = 'none';
     }
 }
+
     initApp();
     </script>
 </body>
