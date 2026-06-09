@@ -1122,76 +1122,6 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
-  // ===================================================================
-// 💰 1. MOBILE PAYMENT SUCCESS SEQUENCE FUNCTION (PEHLA HISSA)
-// ===================================================================
-function executeSimulatedMobilePaymentSuccessSequence() {
-    // 2. Instantly write payment verification status to storage mapping
-    localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
-    
-    // 3. Instantly close overlays frameworks
-    document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
-    document.getElementById('invoiceBillModal').style.display = 'none';
-    
-    // 4. Force refresh to instantly show Blue (Paid Status) color
-    saveAdminConfig(); 
-    generateAdminTableGrid();
-    
-    alert(`💰 Success! Payment captured for Table ${clientCurrentActiveTable}. Marking as Booked (Grey) in 5 seconds.`);
-
-    // 5. AUTOMATIC 5-SECOND GREY OVERRIDE LOOP TIMER (Jo neeche phasa hua tha)
-    setTimeout(function() {
-        let currentFloors = JSON.parse(localStorage.getItem('restaurantFloors')) || floorData;
-        currentFloors.forEach(floor => {
-            floor.tables.forEach(t => { 
-                if(t.id === clientCurrentActiveTable) t.state = 2; // Shift state parameter smoothly to Grey (Booked)
-            }); 
-        });
-        floorData = currentFloors;
-        
-        // Purge token override so layout engine reads native state color matrix
-        localStorage.removeItem('payment_status_map_' + clientCurrentActiveTable);
-        saveAdminConfig(); 
-        generateAdminTableGrid();
-    }, 5000); // 5000ms = Exactly 5 Seconds
-}
-
-// ===================================================================
-// 🛒 2. LIVE ORDERING & BILL FEEDBACK ENGINE (DOOSRA HISSA)
-// ===================================================================
-function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
-    let activeTableId = targetTableOverride || clientCurrentActiveTable;
-    let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
-    
-    // Check if item with same size already exists in target table array maps
-    let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
-    
-    if(matchingRecord) {
-        matchingRecord.qty += 1; 
-    } else { 
-        targetTableBill.push({ 
-            name: dishName, 
-            size: selectedSize.toUpperCase(), 
-            price: fixedUnitPrice, 
-            qty: 1 
-        }); 
-    }
-    
-    // Commit to localStorage database registry instantly
-    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
-    
-    if(activeTableId === clientCurrentActiveTable) {
-        localLiveRunningBill = targetTableBill;
-    }
-    
-    if(document.getElementById('adminDashboard').style.display === 'block') {
-        auditSelectedTableBillInvoiceLive();
-    }
-
-    // ✅ FIX: Cloud sync line ko condition se bahar nikaal kar function ke end mein cleanly set kar diya hai!
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
-}
-
        async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
@@ -1488,40 +1418,6 @@ function populateWaiterPanelDropdownList() {
     }
     syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
 }
-function injectExtraItemFromBillPanel() {
-    let selectedTargetTable = document.getElementById('waiterTableSelect').value;
-    let targetDishName = document.getElementById('waiterItemSelect').value;
-    let targetSize = document.getElementById('waiterSizeSelect').value;
-    let bp = null; 
-    
-    menuCategories.forEach(c => { 
-        let f = c.items.find(i => i.name === targetDishName); 
-        if(f) bp = f; 
-    });
-    
-    if(bp && targetSize) {
-    }
-}
-function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
-    let activeTableId = targetTableOverride || clientCurrentActiveTable;
-    let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
-    let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
-    
-    if(matchingRecord) {
-        matchingRecord.qty += 1; 
-    } else { 
-        targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
-    }
-    
-    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
-    if(activeTableId === clientCurrentActiveTable) { localLiveRunningBill = targetTableBill; }
-    if(document.getElementById('adminDashboard').style.display === 'block') { auditSelectedTableBillInvoiceLive(); }
-
-    // ✅ FIX: Ab yeh cloud sync line admin condition se bahar hai, ab customer aur admin dono ke liye perfect sync chalega!
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
-}
-    
-
         function syncWaiterSizeDropdownOptions() {
             let selectedDishName = document.getElementById('waiterItemSelect').value;
             let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
@@ -1907,23 +1803,6 @@ async function verifySubscriptionGatekeeper(ownerId) {
     }
 }
 
-function triggerJustSaveConfig() {
-    saveAdminConfig();
-    showOnScreenNotification("⚡ Menu & Settings safely updated to cloud!");
-}
-
-async function logoutAdmin() { 
-    try {
-        await supabaseClient.auth.signOut(); 
-        document.getElementById('adminDashboard').style.display = 'none'; 
-        document.getElementById('customerView').style.display = 'block'; 
-        renderCustomerMenu(); 
-        showOnScreenNotification("🚪 Logged out successfully!");
-    } catch(err) {
-        console.error("Logout Issue:", err);
-    }
-}
-
 function hideAdminAuth() { 
     document.getElementById('customerView').style.display = 'block'; 
 }
@@ -2038,17 +1917,6 @@ function checkAdminPassword() {
         } catch(e) { 
             console.error("Cloud Save Exception:", e); 
         }
-    }
-
-    // ✅ logoutAdmin ab safely functional hai aur button par click karte hi chalega
-    function logoutAdmin() { 
-        saveAdminConfig(); 
-        document.getElementById('adminDashboard').style.display = 'none'; 
-        document.getElementById('customerView').style.display = 'block'; 
-        
-        let pwdField = document.getElementById('adminPassword');
-        if(pwdField) pwdField.value = ''; 
-        renderCustomerMenu(); 
     }
 
     function initSpaceShooterGame() { 
