@@ -595,6 +595,24 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // =================================================================
+// RESTROFLOW LOGIN MODAL VIEWPORT CONTROLLER
+// =================================================================
+function launchSleekLoginUIConsoleOverlay() {
+    const loginModal = document.getElementById('restroflowLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'flex';
+    } else {
+        console.error("RestroFlow Engine Error: restroflowLoginModal element wrapper missing from DOM tree.");
+    }
+}
+
+function closeLoginConsoleOverlay() {
+    const loginModal = document.getElementById('restroflowLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'none';
+    }
+}
          // =================================================================
 // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
 // =================================================================
