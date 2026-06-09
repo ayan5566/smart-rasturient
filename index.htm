@@ -1315,48 +1315,90 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-        function auditSelectedTableBillInvoiceLive() {
-            let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
-            let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-            let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-            let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
+       async function auditSelectedTableBillInvoiceLive() {
+    let selectElement = document.getElementById('adminBillingViewerTableSelect'); 
+    if(!selectElement) return;
+    
+    let selectedAdminTable = selectElement.value; 
+    let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); 
+    let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); 
+    if(!selectedAdminTable || !outputBox) return;
 
-            let targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
-            let targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
-            let paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+    try {
+        // फिक्स: डिवाइस लोकलस्टोरेज के बजाय सीधे क्लाउड डेटाबेस से रनिंग बिल उठाएं
+        const { data: sessionData, error } = await supabaseClient
+            .from('table_sessions')
+            .select('*')
+            .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+            .maybeSingle();
 
-            if(paymentStatusToken === 'SUCCESS_PAID') {
-                paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
-            } else {
-                paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
-            }
+        if (error) throw error;
 
-            outputBox.innerHTML = ''; let subtotal = 0;
-            targetBill.forEach(row => {
-                let rowCost = row.price * row.qty; subtotal += rowCost;
-                outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>• ${row.name} [${row.size}] x${row.qty}</span><b>₹${rowCost}</b></div>`;
-            });
+        let targetBill = [];
+        let targetDisc = 0;
+        let paymentStatusToken = 'PENDING';
 
-            if(targetBill.length === 0) { outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; }
-
-            let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
-            let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-            let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-            let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-            let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-
-            if(taxBox) {
-                taxBox.style.display = "block";
-                taxBox.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; color:#7f8c8d;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                    <div style="display:flex; justify-content:space-between; color:var(--danger-red);"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                    ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                    ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                    ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-                `;
-            }
-            grandTotalBox.innerText = "₹" + finalBillSum;
+        if (sessionData) {
+            targetBill = sessionData.live_bill || [];
+            targetDisc = parseInt(sessionData.discount_claimed) || 0;
+            paymentStatusToken = sessionData.payment_status || 'PENDING';
         }
+
+        // यूआई पेमेंट बैनर अपडेट करें
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; 
+            paymentBanner.style.background = "#eef9f5"; 
+            paymentBanner.style.color = "#27ae60"; 
+            paymentBanner.style.display = "block";
+        } else {
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; 
+            paymentBanner.style.background = "#fff3cd"; 
+            paymentBanner.style.color = "#856404"; 
+            paymentBanner.style.display = "block";
+        }
+
+        outputBox.innerHTML = ''; 
+        let subtotal = 0;
+        
+        targetBill.forEach(row => {
+            let rowCost = row.price * row.qty; 
+            subtotal += rowCost;
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>• ${row.name} [${row.size}] x${row.qty}</span><b>₹${rowCost}</b></div>`;
+        });
+
+        if(targetBill.length === 0) { 
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty on cloud.</span>`; 
+            paymentBanner.style.display = "none"; 
+            if(taxBox) taxBox.style.display = "none"; 
+            grandTotalBox.innerText = "₹0"; 
+            return; 
+        }
+
+        let discountValue = subtotal * (targetDisc / 100); 
+        let basicTaxableValue = subtotal - discountValue;
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red);"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + finalBillSum;
+
+    } catch (err) {
+        console.error("Cashier Tracking Cloud Sync Error:", err);
+    }
+}
 
         function renderLiveCalculatedBill() {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
@@ -2094,20 +2136,23 @@ function launchKitchenDisplaySystemModule() {
 }
 
 async function fetchActiveKitchenOrdersQueue() {
+    // फिक्स: सुनिश्चित करें कि आने वाले टिकट केवल वर्तमान एक्टिव रेस्टोरेंट UUID से ही मेल खाते हों
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
         .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`)
-        .order('created_at', { ascending: true }); // Oldest First (FIFO Queue rule)
+        .eq('hotel_id', hotelGlobalScopeID) // टेनेंट आइसोलेशन क्लॉज जोड़ें
+        .order('created_at', { ascending: true }); // FIFO नियम (पुराने ऑर्डर्स पहले)
 
     if (!error && orders) {
         if (orders.length > activeKdsOrdersArray.length) {
-            triggerAudioBeepAlert(); // Play bell ring signature instantly
+            triggerAudioBeepAlert(); // नया ऑर्डर आने पर घंटी बजाएं
         }
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
+    } else if (error) {
+        console.error("KDS Cloud Fetch Pipeline Failure:", error.message);
     }
 }
-
 function renderKdsInterfaceMatrix() {
     const container = document.getElementById('kdsGridDisplayContainer');
     if (!container) return;
