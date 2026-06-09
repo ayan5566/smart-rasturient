@@ -199,8 +199,7 @@
             -ms-user-select: none !important;
             user-select: none !important;           
             touch-action: manipulation !important;  
-        }/* =================================================================
-       📱 100% FLUID & ADJUSTABLE RESPONSIVE LAYOUT (NO FIXED PIXELS)
+      
   /* =================================================================
        📱 100% FLUID & AUTO-ADJUSTABLE RESPONSIVE LAYOUT (NO ENGINE LEAK)
        ================================================================= */
@@ -2211,6 +2210,71 @@ function exitKdsConsole() {
     if (kdsClockIntervalTimerId) { clearInterval(kdsClockIntervalTimerId); kdsClockIntervalTimerId = null; }
     document.getElementById('kitchenDashboard').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'block';
+}
+        // =================================================================
+// FIXED WORKSPACE AUTHENTICATION ROUTER NODE
+// =================================================================
+async function executeRealCloudLoginSequence() {
+ा
+    const inputEmail = document.getElementById('authEmailInput').value.trim();
+    const inputPassword = document.getElementById('authPasswordInput').value;
+
+
+    if (!inputEmail || !inputPassword) {
+        showOnScreenNotification("❌ Please enter both your Email and Password.", true);
+        return;
+    }
+
+    try {
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: inputEmail,
+            password: inputPassword
+        });
+
+
+        if (error) {
+            if (error.message.includes("Invalid login credentials")) {
+                alert("❌ Incorrect Email or Password! Please verify your workspace credentials.");
+            } else {
+                alert("❌ Authentication Pipeline Error: " + error.message);
+            }
+            return;
+        }
+
+        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
+        if (!isAccessAllowed) return; 
+
+        hotelGlobalScopeID = data.user.id;
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+
+        
+        document.getElementById('restroflowLoginModal').style.display = 'none';
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        
+        updateFrontEndClassificationLabels();
+        populateAdminForms();
+        
+        showOnScreenNotification("🔑 Authentication successful! Welcome back.");
+
+    } catch (err) {
+        console.error("Critical Login Session Exception Failure:", err);
+        alert("Critical exception encountered during cloud authorization pipelines.");
+    }
+}
+        function launchSleekLoginUIConsoleOverlay() {
+    const loginModal = document.getElementById('restroflowLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'flex';
+    }
+}
+
+function closeLoginConsoleOverlay() {
+    const loginModal = document.getElementById('restroflowLoginModal');
+    if (loginModal) {
+        loginModal.style.display = 'none';
+    }
 }
     initApp();
     </script>
