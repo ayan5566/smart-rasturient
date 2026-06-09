@@ -828,8 +828,8 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
         let fBird = {}, fPipes = [], flappyScoreTracker = 0;
         let cosmicBackgroundStars = [];
-// =================================================================
-// 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (PERSISTENCE & BRANDING)
+        // =================================================================
+// 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (REALTIME SYNC INTEGRATED)
 // =================================================================
 async function initApp() {
     // 🌟 1. ONE-TIME LOGIN: SECURE SESSION RESTORATION (INSTAGRAM STYLE)
@@ -840,10 +840,13 @@ async function initApp() {
             hotelGlobalScopeID = session.user.id;
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             
+            // ⚡ REALTIME HOOK ADDED: Admin authentication bahal hote hi billing sync activate karein
+            initializeAdminRealtimeBillingTracker();
+            
             // Direct admin dashboard par le jao, baar-baar login prompt nahi mangega
             document.getElementById('customerView').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
-            console.log("🔐 RestroFlow Security: Active session restored successfully!");
+            console.log("🔐 RestroFlow Security: Active session restored with Realtime Sync successfully!");
         }
     } catch(sessionErr) {
         console.log("No active session found, loading default gateway:", sessionErr);
@@ -858,23 +861,23 @@ async function initApp() {
     if (urlHotel) hotelGlobalScopeID = urlHotel;
 
     // 🏢 3. FETCH REAL MENU & HOTEL BRAND NAME FROM CLOUD DB
-try {
-    const { data, error } = await supabaseClient
-        .from('hotel_config')
-        .select('menu_data, hotel_name') 
-        .eq('id', hotelGlobalScopeID)
-        .maybeSingle(); // 🌟 FIXED: .single() ko badal kar .maybeSingle() kiya
+    try {
+        const { data, error } = await supabaseClient
+            .from('hotel_config')
+            .select('menu_data, hotel_name') 
+            .eq('id', hotelGlobalScopeID)
+            .maybeSingle(); 
 
-    if (!error && data) {
-        if (data.menu_data) menuCategories = data.menu_data;
-        if (data.hotel_name) localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
-        console.log("🚀 RestroFlow Cloud Sync: Data loaded successfully!");
-    } else {
-        console.log("⚠️ No custom hotel data found on cloud, using fallback data.");
+        if (!error && data) {
+            if (data.menu_data) menuCategories = data.menu_data;
+            if (data.hotel_name) localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
+            console.log("🚀 RestroFlow Cloud Sync: Data loaded successfully!");
+        } else {
+            console.log("⚠️ No custom hotel data found on cloud, using fallback data.");
+        }
+    } catch (err) {
+        console.log("Database fetch failed:", err);
     }
-} catch (err) {
-    console.log("Database fetch failed:", err);
-}
 
     // 📊 4. RESTORE RUNNING TABLE SESSIONS
     try {
@@ -923,19 +926,69 @@ try {
     setupGlobalKeyboardBindings(); 
     populateWaiterPanelDropdownList();
 }
-        function updateFrontEndClassificationLabels() {
-    // Local storage se ya variable se check karo ki kya koi real name saved hai
+
+// =================================================================
+// 🔑 FIXED WORKSPACE AUTHENTICATION ROUTER NODE
+// =================================================================
+async function executeRealCloudLoginSequence() {
+    const inputEmail = document.getElementById('authEmailInput').value.trim();
+    const inputPassword = document.getElementById('authPasswordInput').value;
+
+    if (!inputEmail || !inputPassword) {
+        showOnScreenNotification("❌ Please enter both your Email and Password.", true);
+        return;
+    }
+
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: inputEmail,
+            password: inputPassword
+        });
+
+        if (error) {
+            alert("❌ लॉगिन विफल: " + error.message);
+            return;
+        }
+
+        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
+        if (!isAccessAllowed) return; 
+
+        hotelGlobalScopeID = data.user.id;
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+
+        // ⚡ REALTIME HOOK ADDED: सफल मैनुअल लॉगिन के तुरंत बाद लिसनर चालू करें
+        initializeAdminRealtimeBillingTracker();
+
+        document.getElementById('restroflowLoginModal').style.display = 'none';
+        document.getElementById('customerView').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        
+        updateFrontEndClassificationLabels();
+        populateAdminForms();
+        
+        showOnScreenNotification("🔑 Authentication successful! Welcome back.");
+
+    } catch (err) {
+        console.error("Critical Login Session Exception:", err);
+        alert("Critical exception encountered during cloud authorization pipelines.");
+    }
+}
+
+// =================================================================
+// 🏢 UI LABEL UPDATER WITH DYNAMIC BRANDING
+// =================================================================
+function updateFrontEndClassificationLabels() {
+    // Local storage ya state se check karein ki koi customized brand name saved hai ya nahi
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow Arena";
     
     document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
     
-    // 🔥 FIXED BRANDING: Ab raw user identity ke bajaye top par hotel ka name flash hoga
+    // Fixed Branding: Raw User ID dikhane ke bajaye top par actual hotel ka name dikhega
     document.getElementById('displayHotelRegistryScopeLabel').innerText = "📍 Restaurant: " + realBrandName;
     document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
     
     let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
     if(identityInput) {
-        // Agar admin box khula hai toh usme text dikhao
         identityInput.value = localStorage.getItem('restroflow_actual_brand_name') || hotelGlobalScopeID;
     }
 }
@@ -1315,90 +1368,48 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-       async function auditSelectedTableBillInvoiceLive() {
-    let selectElement = document.getElementById('adminBillingViewerTableSelect'); 
-    if(!selectElement) return;
-    
-    let selectedAdminTable = selectElement.value; 
-    let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); 
-    let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); 
-    if(!selectedAdminTable || !outputBox) return;
+        function auditSelectedTableBillInvoiceLive() {
+            let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
+            let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+            let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+            let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
 
-    try {
-        // फिक्स: डिवाइस लोकलस्टोरेज के बजाय सीधे क्लाउड डेटाबेस से रनिंग बिल उठाएं
-        const { data: sessionData, error } = await supabaseClient
-            .from('table_sessions')
-            .select('*')
-            .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-            .maybeSingle();
+            let targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
+            let targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
+            let paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
 
-        if (error) throw error;
+            if(paymentStatusToken === 'SUCCESS_PAID') {
+                paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+            } else {
+                paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
+            }
 
-        let targetBill = [];
-        let targetDisc = 0;
-        let paymentStatusToken = 'PENDING';
+            outputBox.innerHTML = ''; let subtotal = 0;
+            targetBill.forEach(row => {
+                let rowCost = row.price * row.qty; subtotal += rowCost;
+                outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>• ${row.name} [${row.size}] x${row.qty}</span><b>₹${rowCost}</b></div>`;
+            });
 
-        if (sessionData) {
-            targetBill = sessionData.live_bill || [];
-            targetDisc = parseInt(sessionData.discount_claimed) || 0;
-            paymentStatusToken = sessionData.payment_status || 'PENDING';
+            if(targetBill.length === 0) { outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; }
+
+            let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
+            let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+            let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+            let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+            let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+            if(taxBox) {
+                taxBox.style.display = "block";
+                taxBox.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; color:#7f8c8d;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                    <div style="display:flex; justify-content:space-between; color:var(--danger-red);"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                    ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                    ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                    ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+                `;
+            }
+            grandTotalBox.innerText = "₹" + finalBillSum;
         }
-
-        // यूआई पेमेंट बैनर अपडेट करें
-        if(paymentStatusToken === 'SUCCESS_PAID') {
-            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; 
-            paymentBanner.style.background = "#eef9f5"; 
-            paymentBanner.style.color = "#27ae60"; 
-            paymentBanner.style.display = "block";
-        } else {
-            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; 
-            paymentBanner.style.background = "#fff3cd"; 
-            paymentBanner.style.color = "#856404"; 
-            paymentBanner.style.display = "block";
-        }
-
-        outputBox.innerHTML = ''; 
-        let subtotal = 0;
-        
-        targetBill.forEach(row => {
-            let rowCost = row.price * row.qty; 
-            subtotal += rowCost;
-            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>• ${row.name} [${row.size}] x${row.qty}</span><b>₹${rowCost}</b></div>`;
-        });
-
-        if(targetBill.length === 0) { 
-            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty on cloud.</span>`; 
-            paymentBanner.style.display = "none"; 
-            if(taxBox) taxBox.style.display = "none"; 
-            grandTotalBox.innerText = "₹0"; 
-            return; 
-        }
-
-        let discountValue = subtotal * (targetDisc / 100); 
-        let basicTaxableValue = subtotal - discountValue;
-        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-
-        if(taxBox) {
-            taxBox.style.display = "block";
-            taxBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; color:#7f8c8d;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                <div style="display:flex; justify-content:space-between; color:var(--danger-red);"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-            `;
-        }
-        grandTotalBox.innerText = "₹" + finalBillSum;
-
-    } catch (err) {
-        console.error("Cashier Tracking Cloud Sync Error:", err);
-    }
-}
 
         function renderLiveCalculatedBill() {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
@@ -2136,23 +2147,20 @@ function launchKitchenDisplaySystemModule() {
 }
 
 async function fetchActiveKitchenOrdersQueue() {
-    // फिक्स: सुनिश्चित करें कि आने वाले टिकट केवल वर्तमान एक्टिव रेस्टोरेंट UUID से ही मेल खाते हों
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
         .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`)
-        .eq('hotel_id', hotelGlobalScopeID) // टेनेंट आइसोलेशन क्लॉज जोड़ें
-        .order('created_at', { ascending: true }); // FIFO नियम (पुराने ऑर्डर्स पहले)
+        .order('created_at', { ascending: true }); // Oldest First (FIFO Queue rule)
 
     if (!error && orders) {
         if (orders.length > activeKdsOrdersArray.length) {
-            triggerAudioBeepAlert(); // नया ऑर्डर आने पर घंटी बजाएं
+            triggerAudioBeepAlert(); // Play bell ring signature instantly
         }
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
-    } else if (error) {
-        console.error("KDS Cloud Fetch Pipeline Failure:", error.message);
     }
 }
+
 function renderKdsInterfaceMatrix() {
     const container = document.getElementById('kdsGridDisplayContainer');
     if (!container) return;
@@ -2239,61 +2247,7 @@ function exitKdsConsole() {
     document.getElementById('kitchenDashboard').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'block';
 }
-// =================================================================
-// FIXED WORKSPACE AUTHENTICATION ROUTER NODE
-// =================================================================
-async function executeRealCloudLoginSequence() {
-    // 1. Input fields से ईमेल और पासवर्ड निकालना
-    const inputEmail = document.getElementById('authEmailInput').value.trim();
-    const inputPassword = document.getElementById('authPasswordInput').value;
 
-    // 2. बेसिक वैलिडेशन चेक
-    if (!inputEmail || !inputPassword) {
-        showOnScreenNotification("❌ Please enter both your Email and Password.", true);
-        return;
-    }
-
-    try {
-        // 3. Supabase Auth Node के जरिए लॉगिन रिक्वेस्ट भेजना
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: inputEmail,
-            password: inputPassword
-        });
-
-        // 4. अगर कोई लॉगिन एरर आए
-        if (error) {
-            if (error.message.includes("Invalid login credentials")) {
-                alert("❌ Incorrect Email or Password! Please verify your workspace credentials.");
-            } else {
-                alert("❌ Authentication Pipeline Error: " + error.message);
-            }
-            return;
-        }
-
-        // 5. आपके मौजूदा सब्सक्रिप्शन गेटकीपर से एक्टिवेशन चेक करना
-        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
-        if (!isAccessAllowed) return; 
-
-        // 6. वैलिड यूजर आईडी को लोकल स्टोरेज में सेव करना
-        hotelGlobalScopeID = data.user.id;
-        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-
-        // 7. लॉगिन स्क्रीन छुपाना और एडमिन डैशबोर्ड शो करना
-        document.getElementById('restroflowLoginModal').style.display = 'none';
-        document.getElementById('customerView').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
-        
-        // 8. यूआई लेबल्स और फॉर्म्स को रिफ्रेश करना
-        updateFrontEndClassificationLabels();
-        populateAdminForms();
-        
-        showOnScreenNotification("🔑 Authentication successful! Welcome back.");
-
-    } catch (err) {
-        console.error("Critical Login Session Exception Failure:", err);
-        alert("Critical exception encountered during cloud authorization pipelines.");
-    }
-}
 function launchSleekLoginUIConsoleOverlay() {
     const loginModal = document.getElementById('restroflowLoginModal');
     if (loginModal) {
