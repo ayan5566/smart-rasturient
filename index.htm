@@ -825,108 +825,112 @@ const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real UR
 const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-// ✅ REPAIRED: Ab bina primary key ke bhi cloud data smoothly sync hoga!
+// ✅ REPAIRED & UPDATED: Ab Composite Key ke sath cloud data securely sync hoga bina kisi calculation loss ke!
 async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
     try {
-        // Step 1: Pehle check karein ki kya is Table ID ka data cloud par pehle se hai
+        // Step 1: Ek jaisa unified Composite Key format banayein
+        const compositeTableKey = `${hotelGlobalScopeID}_${tableId}`;
+        
+        // Step 2: Pehle check karein ki kya is Composite Table ID ka data cloud par pehle se hai
         const { data, error: fetchError } = await supabaseClient
             .from('table_sessions')
             .select('table_id')
-            .eq('table_id', tableId);
+            .eq('table_id', compositeTableKey)
+            .maybeSingle();
 
-        if (data && data.length > 0) {
-            // Step 2: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
+        // Step 3: Multi-tenant tenant data safety ke liye payload taiyar karein
+        const sessionPayload = {
+            table_id: compositeTableKey,
+            hotel_id: hotelGlobalScopeID, // RLS security policy validation ke liye
+            live_bill: bill,              // Isme Dish Name, Qty, Size, aur Unit Price ka array hai
+            discount_claimed: discount,
+            waiter_bell: bellStatus,
+            payment_status: payStatus
+        };
+
+        if (data) {
+            // Step 4: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
             const { error: updateError } = await supabaseClient
                 .from('table_sessions')
-                .update({
-                    live_bill: bill,
-                    discount_claimed: discount,
-                    waiter_bell: bellStatus,
-                    payment_status: payStatus
-                })
-                .eq('table_id', tableId);
+                .update(sessionPayload)
+                .eq('table_id', compositeTableKey);
 
             if (updateError) console.error("Supabase Sync Error (Update):", updateError.message);
-            else console.log(`🚀 Table ${tableId} data successfully updated on cloud.`);
+            else console.log(`🚀 Composite Table ${compositeTableKey} data successfully updated on cloud.`);
         } else {
-            // Step 3: Agar bilkul naye table session ki entry hai, toh INSERT karein
+            // Step 5: Agar bilkul naye table session ki entry hai, toh INSERT karein
             const { error: insertError } = await supabaseClient
                 .from('table_sessions')
-                .insert({
-                    table_id: tableId,
-                    live_bill: bill,
-                    discount_claimed: discount,
-                    waiter_bell: bellStatus,
-                    payment_status: payStatus
-                });
+                .insert(sessionPayload);
 
             if (insertError) console.error("Supabase Sync Error (Insert):", insertError.message);
-            else console.log(`🚀 New Table ${tableId} session successfully inserted to cloud.`);
+            else console.log(`🚀 New Composite Table ${compositeTableKey} session successfully inserted to cloud.`);
         }
     } catch (err) {
         console.error("System Error during table session sync:", err);
     }
 }
-    // ⚙️ GLOBAL RULES STATE (Ise upar shift karein)
-         rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
-        
-        let fallbackMenu = [
-            { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
-            { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
-        ];
-        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
-        let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
-        // --- SCHEMAS STORAGE DATA INTEGRATION VALIDATORS ---
-        let menuCategories = fallbackMenu;
-        try {
-            let localMenuRawData = localStorage.getItem('restaurantMenuCat');
-            if(localMenuRawData) {
-                let parsedMenu = JSON.parse(localMenuRawData);
-                if(Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
-            }
-        } catch(e) { localStorage.setItem('restaurantMenuCat', JSON.stringify(fallbackMenu)); }
+// ⚙️ GLOBAL RULES STATE (Bilkul safe aur untouched)
+rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
 
-        let floorData = defaultFloors;
-        try {
-            let localTablesRawData = localStorage.getItem('restaurantFloors');
-            if(localTablesRawData) {
-                let parsedFloors = JSON.parse(localTablesRawData);
-                if(Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
-            }
-        } catch(e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
+let fallbackMenu = [
+    { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
+    { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+];
+let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
-        let taxConfig = defaultTaxes;
-        try {
-            let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
-            if(localTaxRawData) {
-                let parsedTax = JSON.parse(localTaxRawData);
-                if(parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
-            }
-        } catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+// --- SCHEMAS STORAGE DATA INTEGRATION VALIDATORS ---
+let menuCategories = fallbackMenu;
+try {
+    let localMenuRawData = localStorage.getItem('restaurantMenuCat');
+    if(localMenuRawData) {
+        let parsedMenu = JSON.parse(localMenuRawData);
+        if(Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
+    }
+} catch(e) { localStorage.setItem('restaurantMenuCat', JSON.stringify(fallbackMenu)); }
 
-        let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
+let floorData = defaultFloors;
+try {
+    let localTablesRawData = localStorage.getItem('restaurantFloors');
+    if(localTablesRawData) {
+        let parsedFloors = JSON.parse(localTablesRawData);
+        if(Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
+    }
+} catch(e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
 
-        let clientCurrentActiveTable = "T1";
-        let localLiveRunningBill = [];
-        let maximumClaimedDisc = 0;
-        let globalRunningInvoiceSumTotal = 0; 
+let taxConfig = defaultTaxes;
+try {
+    let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
+    if(localTaxRawData) {
+        let parsedTax = JSON.parse(localTaxRawData);
+        if(parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
+    }
+} catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
 
-        // Canvas context initialization pointers explicitly binded
-        let flappyCanvasElement = document.getElementById('flappyCanvas');
-        let flCtx = flappyCanvasElement.getContext('2d');
-        let spCanvasElement = document.getElementById('spaceCanvas');
-        let spCtx = spCanvasElement.getContext('2d');
-        let snakeCanvasElement = document.getElementById('snakeCanvas');
-        let snCtx = snakeCanvasElement.getContext('2d');
+let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
-        // Game Configuration Properties Scope Declarations Assemblies
-        let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
-        let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
-        let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
-        let fBird = {}, fPipes = [], flappyScoreTracker = 0;
-        let cosmicBackgroundStars = [];
+let clientCurrentActiveTable = "T1";
+let localLiveRunningBill = [];
+let maximumClaimedDisc = 0;
+let globalRunningInvoiceSumTotal = 0; 
+
+// Canvas context initialization pointers explicitly binded
+let flappyCanvasElement = document.getElementById('flappyCanvas');
+let flCtx = flappyCanvasElement.getContext('2d');
+let spCanvasElement = document.getElementById('spaceCanvas');
+let spCtx = spCanvasElement.getContext('2d');
+let snakeCanvasElement = document.getElementById('snakeCanvas');
+let snCtx = snakeCanvasElement.getContext('2d');
+
+// Game Configuration Properties Scope Declarations Assemblies
+let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
+let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
+let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
+let fBird = {}, fPipes = [], flappyScoreTracker = 0;
+let cosmicBackgroundStars = [];
         // =================================================================
 // 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (REALTIME SYNC INTEGRATED)
 // =================================================================
