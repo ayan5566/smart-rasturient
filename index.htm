@@ -1472,34 +1472,31 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-        async function auditSelectedTableBillInvoiceLive() {
-    // Tumhare original DOM Element references (Bilkul safe aur unchanged)
+       async function auditSelectedTableBillInvoiceLive() {
     let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
     let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
     let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
     let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
 
     try {
-        // 🚀 PIPELINE 1: Device localstorage ke bajaye seedhe Supabase Cloud se Table Session (Financials) uthao
-        const { data: sessionData, error: sessionErr } = await supabaseClient
+        // 🚀 PIPELINE 1: Fetch Stable Account Financials
+        const { data: sessionData } = await supabaseClient
             .from('table_sessions')
             .select('*')
             .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
             .maybeSingle();
 
-        // 🚀 PIPELINE 2: Usi table ka active kitchen lifecycle status data uthao (No data duplication)
-        const { data: kitchenOrders, error: kitchenErr } = await supabaseClient
+        // 🚀 PIPELINE 2: Fetch Live Kitchen Tickets
+        const { data: kitchenOrders } = await supabaseClient
             .from('active_orders')
             .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
             .eq('hotel_id', hotelGlobalScopeID)
             .eq('table_id', selectedAdminTable);
 
-        // Database responses se variables map karein (With fallback safety controls)
         let targetBill = sessionData ? (sessionData.live_bill || []) : [];
         let targetDisc = sessionData ? (parseInt(sessionData.discount_claimed) || 0) : 0;
         let paymentStatusToken = sessionData ? (sessionData.payment_status || 'PENDING') : 'PENDING';
 
-        // Tumhara original Payment Banner styling logis (Bilkul same hai)
         if(paymentStatusToken === 'SUCCESS_PAID') {
             paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
         } else {
@@ -1508,29 +1505,46 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         outputBox.innerHTML = ''; let subtotal = 0;
 
-        // 📋 PART A: Consolidated Table Running Bill items loop (Tumhara original HTML layout rendering)
-        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Table Consolidated Running Account:</div>`;
+        // 📋 PART A: Mapped Ledger Rendering
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach(row => {
             let rowCost = row.price * row.qty; subtotal += rowCost;
-            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size}] x${row.qty}</span><b>₹${rowCost}</b></div>`;
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
         });
 
-        // 👨‍🍳 PART B: Kitchen Processing Lifecycle items matrix (Naya Live tracking system feature)
+        // 👨‍🍳 PART B: Kitchen Live Streams with Dynamic Price Matching
         if (kitchenOrders && kitchenOrders.length > 0) {
-            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Active Kitchen Processing Lifecycle:</div>`;
+            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
                 const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
-                const displayMin = Math.floor(elapsedSecs / 60);
-                const displaySec = elapsedSecs % 60;
+                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
 
                 let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'PREPARING';
+                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
 
                 order.order_items.forEach(item => {
+                    // Master Menu array se live item ki price nikalne ka loop
+                    let calculatedLivePrice = 0;
+                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    
+                    menuCategories.forEach(cat => {
+                        let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedMenuDish) {
+                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
+                        }
+                    });
+
+                    let calculatedItemTotal = calculatedLivePrice * item.qty;
+                    
+                    // Live calculation ko subtotal mein add karna taaki ₹0 total fiks ho sake
+                    subtotal += calculatedItemTotal;
+
+                    // Updated HTML wrapper: Ab Dish Name, Qty, Unit Price aur Item Total sab ek sath render hoga
                     outputBox.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
                             <div>
-                                <span style="font-weight:600; font-size:12px;">${item.dish_name} [${item.size}] x${item.qty}</span><br>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
+                                <span style="font-size:11px; color:#27ae60; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (Total: ₹${calculatedItemTotal})</span><br>
                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
                             </div>
                             <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
@@ -1539,20 +1553,17 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
             });
         }
 
-        // Empty state validator (Dono bills khali hone par reset)
         if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
             outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
 
-        // 📊 PART C: Tumhari original tax aur discount calculations algorithms (100% Retained)
         let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
         let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
         let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
         let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
         let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
 
-        // Tumhara original taxBox HTML breakdown rendering
         if(taxBox) {
             taxBox.style.display = "block";
             taxBox.innerHTML = `
@@ -1564,10 +1575,7 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
             `;
         }
         grandTotalBox.innerText = "₹" + finalBillSum;
-
-    } catch (err) {
-        console.error("Master Operational Tracking Pipeline Exception Error:", err);
-    }
+    } catch (err) { console.error(err); }
 }
         function renderLiveCalculatedBill() {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
