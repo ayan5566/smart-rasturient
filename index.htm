@@ -1303,21 +1303,46 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
-       async function executeAdminManualBillWipeSettlement() {
+      async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
     if(confirm(`Wipe/Clear all archived items and payment tokens for Table ${activeOwnerAuditTable}?`)) {
         
-        // 1. Local storage saaf karein
+        // 1. Local storage ko saaf karein
         localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
         localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
         localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
         
-        // 2. 🔥 SUPABASE SE BHI DATA RESET KAREIN (Default state par bhej dein)
+        // 2. Supabase Cloud se Financial Table Session reset karein
         await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
 
-        // 3. UI refresh logic
-        floorData.forEach(floor => { floor.tables.forEach(t => { if(t.id === activeOwnerAuditTable) { t.state = 0; t.waiterBell = false; } }); });
+        // 🔥 FIX: Supabase ki active_orders (Kitchen Queue) se bhi is table ke pending orders delete karein
+        try {
+            const { error: orderDeleteErr } = await supabaseClient
+                .from('active_orders')
+                .delete()
+                .eq('hotel_id', hotelGlobalScopeID)
+                .eq('table_id', activeOwnerAuditTable);
+
+            if (orderDeleteErr) {
+                console.error("KDS Cloud Clear Error:", orderDeleteErr.message);
+            } else {
+                console.log(`🚀 Kitchen active queue cleared for Table ${activeOwnerAuditTable}`);
+            }
+        } catch (err) {
+            console.error("Kitchen clear pipeline exception:", err);
+        }
+
+        // 3. UI refresh aur state matrix logic (Dono grids instantly update honge)
+        floorData.forEach(floor => { 
+            floor.tables.forEach(t => { 
+                if(t.id === activeOwnerAuditTable) { 
+                    t.state = 0; 
+                    t.waiterBell = false; 
+                } 
+            }); 
+        });
+        
         saveAdminConfig(); 
         generateAdminTableGrid(); 
         auditSelectedTableBillInvoiceLive();
