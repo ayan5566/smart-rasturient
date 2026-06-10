@@ -839,10 +839,9 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
             .eq('table_id', compositeTableKey)
             .maybeSingle();
 
-        // Step 3: Multi-tenant tenant data safety ke liye payload taiyar karein
+        // 🔥 FIX: Payload se 'hotel_id' ko completely hata diya hai taaki database cache error na aaye
         const sessionPayload = {
             table_id: compositeTableKey,
-            hotel_id: hotelGlobalScopeID, // RLS security policy validation ke liye
             live_bill: bill,              // Isme Dish Name, Qty, Size, aur Unit Price ka array hai
             discount_claimed: discount,
             waiter_bell: bellStatus,
@@ -871,7 +870,6 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         console.error("System Error during table session sync:", err);
     }
 }
-
 // ⚙️ GLOBAL RULES STATE (Bilkul safe aur untouched)
 rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
 
