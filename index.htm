@@ -599,82 +599,88 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+// 🔥 ADD THIS AT THE TOP OF YOUR VARIABLES:
+let realtimeRenderTimeout = null;
+
+// 1️⃣ REPLACE THIS FUNCTION: Cleaned Realtime Subscriptions
 function initializeAdminRealtimeBillingTracker() {
     if (typeof adminMasterRealtimeChannel === 'undefined') {
         window.adminMasterRealtimeChannel = null;
     }
-
     if (adminMasterRealtimeChannel) {
         supabaseClient.removeChannel(adminMasterRealtimeChannel);
     }
 
-    console.log("📡 RestroFlow Engine: Booting Live Omni-Channel Realtime Subscriptions...");
+    console.log("📡 Booting Live Omni-Channel Realtime Subscriptions...");
 
     try {
-        // Mapped dynamic channel architecture exactly like KDS layout
         adminMasterRealtimeChannel = supabaseClient
             .channel('admin-master-sync-stream')
             
-            // 🔥 EVENT TRIGGER A: Listen to raw billing ledger shifts (Sessions table)
+            // Trigger A: Financial Ledger (table_sessions)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'table_sessions' 
             }, (payload) => {
-                console.log("💰 Realtime Financial Pipeline Triggered:", payload);
-                // Security verification node matching multi-tenant strings
                 let activeDataRow = payload.new || payload.old;
                 if (activeDataRow && activeDataRow.table_id && activeDataRow.table_id.startsWith(hotelGlobalScopeID + '_')) {
                     refreshActiveBillingUI(activeDataRow);
                 }
             })
             
-            // 🔥 EVENT TRIGGER B: Listen to live KDS lifecycle changes (Pending -> Preparing -> Completed)
+            // Trigger B: Kitchen Queue (active_orders)
+            // 🔥 EXACT FIX: Removed broken cloud filter. Using client-side validation logic.
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'active_orders',
-                filter: `hotel_id=eq.${hotelGlobalScopeID}`
+                table: 'active_orders'
             }, (payload) => {
-                console.log("👨‍🍳 Realtime KDS State Shift Triggered:", payload);
-                
-                // INSTANT TRIGGER: Dropdown ko select toggle kiye bina screen auto-update hogi
-                const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect').value;
-                if (currentSelectedTable) {
-                    auditSelectedTableBillInvoiceLive();
+                let activeDataRow = payload.new || payload.old;
+                if (activeDataRow && activeDataRow.hotel_id === hotelGlobalScopeID) {
+                    // Queue UI refresh instead of instantly firing
+                    queueDebouncedBillRender();
                 }
-                generateAdminTableGrid();
             })
             .subscribe();
             
         window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
-        
     } catch (realtimeErr) {
-        console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
+        console.error("🚨 Realtime Pipeline Broken:", realtimeErr.message);
     }
 }
+
+// 2️⃣ REPLACE THIS FUNCTION: Synchronized Local Storage Updates
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
     
-    // Composite key format mapping layers to pull real target IDs cleanly
     const rawTableId = liveSessionData.table_id;
     const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
 
-    // 1. Sync every local state storage properties instantly
     localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
     localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
     localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
 
-    // 2. Redraw grid matrices dynamically
     generateAdminTableGrid();
 
-    // 🔥 INSTANT RE-RENDER: Agar manager isi table ka tracker kholkar screen par baitha hai...
-    // Toh bina table exchange kiye running list, quantities aur totals ko instantly render karo!
     const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
     if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        console.log(`⚡ Instant UI Re-Render Activated for Table: ${cleanTableId}`);
-        auditSelectedTableBillInvoiceLive();
+        // 🔥 EXACT FIX: Replaced instant render with debounced render to kill the Race Condition
+        queueDebouncedBillRender();
     }
+}
+
+// 3️⃣ ADD THIS NEW FUNCTION: The Debounce Engine
+function queueDebouncedBillRender() {
+    clearTimeout(realtimeRenderTimeout);
+    realtimeRenderTimeout = setTimeout(() => {
+        const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
+        if (currentSelectedTable && currentSelectedTable.value) {
+            console.log("⚡ Auto-Refreshing Live Billing Dashboard...");
+            auditSelectedTableBillInvoiceLive();
+        }
+        generateAdminTableGrid();
+    }, 500); // 500ms delay ensures active_orders and order_items finish inserting!
 }
 function handleRealtimeTableSessionChange(payload) {
     const liveSessionData = payload.new;
