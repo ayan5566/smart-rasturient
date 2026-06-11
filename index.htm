@@ -845,39 +845,36 @@ const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real UR
 const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-// ✅ REPAIRED & UPDATED: Ab Composite Key ke sath cloud data securely sync hoga bina kisi calculation loss ke!
 async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
     try {
-        // Step 1: Ek jaisa unified Composite Key format banayein
         const compositeTableKey = `${hotelGlobalScopeID}_${tableId}`;
         
-        // Step 2: Pehle check karein ki kya is Composite Table ID ka data cloud par pehle se hai
+        // Safety Fallback: Ensure empty arrays are forced encoded as clean parameters
+        const cleanBillPayload = Array.isArray(bill) ? bill : [];
+
         const { data, error: fetchError } = await supabaseClient
             .from('table_sessions')
             .select('table_id')
             .eq('table_id', compositeTableKey)
             .maybeSingle();
 
-        // 🔥 FIX: Payload se 'hotel_id' ko completely hata diya hai taaki database cache error na aaye
         const sessionPayload = {
             table_id: compositeTableKey,
-            live_bill: bill,              // Isme Dish Name, Qty, Size, aur Unit Price ka array hai
-            discount_claimed: discount,
-            waiter_bell: bellStatus,
-            payment_status: payStatus
+            live_bill: cleanBillPayload, // Explicit array injection (forces database to overwrite stale values)
+            discount_claimed: parseInt(discount) || 0,
+            waiter_bell: bellStatus || false,
+            payment_status: payStatus || 'PENDING'
         };
 
         if (data) {
-            // Step 4: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
             const { error: updateError } = await supabaseClient
                 .from('table_sessions')
                 .update(sessionPayload)
                 .eq('table_id', compositeTableKey);
 
             if (updateError) console.error("Supabase Sync Error (Update):", updateError.message);
-            else console.log(`🚀 Composite Table ${compositeTableKey} data successfully updated on cloud.`);
+            else console.log(`🚀 Composite Table ${compositeTableKey} data successfully reset/updated on cloud.`);
         } else {
-            // Step 5: Agar bilkul naye table session ki entry hai, toh INSERT karein
             const { error: insertError } = await supabaseClient
                 .from('table_sessions')
                 .insert(sessionPayload);
@@ -889,8 +886,12 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
         console.error("System Error during table session sync:", err);
     }
 }
+// =================================================================
 // ⚙️ GLOBAL RULES STATE (Bilkul safe aur untouched)
-rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+// =================================================================
+window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null; // 🔥 REFERENCE ERROR PERMANENT FIX
+
+let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
 
 let fallbackMenu = [
     { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
@@ -930,18 +931,19 @@ try {
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
+// 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
 let clientCurrentActiveTable = "T1";
-let localLiveRunningBill = [];
+let localLiveRunningBill = []; 
 let maximumClaimedDisc = 0;
 let globalRunningInvoiceSumTotal = 0; 
 
 // Canvas context initialization pointers explicitly binded
 let flappyCanvasElement = document.getElementById('flappyCanvas');
-let flCtx = flappyCanvasElement.getContext('2d');
+let flCtx = flappyCanvasElement ? flappyCanvasElement.getContext('2d') : null;
 let spCanvasElement = document.getElementById('spaceCanvas');
-let spCtx = spCanvasElement.getContext('2d');
+let spCtx = spCanvasElement ? spCanvasElement.getContext('2d') : null;
 let snakeCanvasElement = document.getElementById('snakeCanvas');
-let snCtx = snakeCanvasElement.getContext('2d');
+let snCtx = snakeCanvasElement ? snakeCanvasElement.getContext('2d') : null;
 
 // Game Configuration Properties Scope Declarations Assemblies
 let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
@@ -1328,25 +1330,34 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
-   // 🛑 OLD CODE REFERENCE:
-// try { const { error: orderDeleteErr } = await supabaseClient.from('active_orders').delete()... }
-
-// ✅ NEW FIXED CODE:
-async function executeAdminManualBillWipeSettlement() {
+ async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
-    if(confirm(`Wipe/Clear all archived items and payment tokens for Table ${activeOwnerAuditTable}?`)) {
-        
-        // 1. Local storage ko saaf karein
-        localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
-        localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
-        localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
-        
-        // 2. Supabase Cloud se Financial Table Session reset karein
-        await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+    if(!activeOwnerAuditTable) {
+        alert("❌ No table selected for settlement audit.");
+        return;
+    }
 
-        // 🔥 FIXED: Yahan 'await' jodd diya hai taaki bina complete delete hue code aage na badhe
+    if(confirm(`⚠️ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
+        
         try {
+            // 🔥 STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY
+            localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
+            localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
+            localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
+            
+            // Hard reset global variables to block any ghost data merges
+            if(activeOwnerAuditTable === clientCurrentActiveTable) {
+                localLiveRunningBill = [];
+                maximumClaimedDisc = 0;
+                globalRunningInvoiceSumTotal = 0;
+            }
+
+            // 🔥 STEP 2: HARD WRITE EMPTY MATRIX DIRECTLY TO TABLE SESSIONS (CLOUD)
+            // Hamein 'await' ensure karna hoga taaki cloud execution state confirm ho sake
+            await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+
+            // 🔥 STEP 3: DELETE ALL VOLATILE KITCHEN QUEUE PENDING ORDERS FROM SUPABASE
             const { error: orderDeleteErr } = await supabaseClient
                 .from('active_orders')
                 .delete()
@@ -1354,29 +1365,36 @@ async function executeAdminManualBillWipeSettlement() {
                 .eq('table_id', activeOwnerAuditTable);
 
             if (orderDeleteErr) {
-                console.error("KDS Cloud Clear Error:", orderDeleteErr.message);
+                console.error("🚨 KDS Cloud Deletion Interrupted:", orderDeleteErr.message);
             } else {
-                console.log(`🚀 Kitchen active queue cleared for Table ${activeOwnerAuditTable}`);
+                console.log(`🚀 Kitchen pending queues securely wiped for Table ${activeOwnerAuditTable}`);
             }
-        } catch (err) {
-            console.error("Kitchen clear pipeline exception:", err);
-        }
 
-        // 3. UI refresh aur state matrix logic
-        floorData.forEach(floor => { 
-            floor.tables.forEach(t => { 
-                if(t.id === activeOwnerAuditTable) { 
-                    t.state = 0; 
-                    t.waiterBell = false; 
-                } 
-            }); 
-        });
-        
-        saveAdminConfig(); 
-        generateAdminTableGrid(); 
-        auditSelectedTableBillInvoiceLive();
-        
-        alert(`🧹 Table ${activeOwnerAuditTable} session records completely wiped clean from Cloud & Local storage.`);
+            // 🔥 STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX
+            floorData.forEach(floor => { 
+                floor.tables.forEach(t => { 
+                    if(t.id === activeOwnerAuditTable) { 
+                        t.state = 0; // Set back to clean, fresh "Empty" state
+                        t.waiterBell = false; 
+                        delete t.custom_color; // Default state tracking identity restored
+                    } 
+                }); 
+            });
+            
+            // 🔥 STEP 5: ATOMIC ENGINE RE-BALANCING
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            saveAdminConfig(); 
+            generateAdminTableGrid(); 
+            auditSelectedTableBillInvoiceLive();
+            
+            // Flash standard notification
+            showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been reset to a brand-new factory state!`, false);
+            alert(`🧹 Success! Table ${activeOwnerAuditTable} session records completely wiped from Cloud, LocalStorage, and Memory variables.`);
+
+        } catch (err) {
+            console.error("🚨 CRITICAL CORE WIPEOUT FAILURE:", err);
+            alert("An architectural error occurred during full database wipe sequences.");
+        }
     }
 }
         
