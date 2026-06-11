@@ -1204,40 +1204,58 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
         console.error("KDS Pipeline Exception Error:", err); 
     }
 }
-
-function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
+        // ✅ REPAIRED: Ab yeh function naye order se pehle cloud state se data khinch kar layega (Ghost Data permanent blocked)
+async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
-    let targetTableBill = JSON.parse(localStorage.getItem('bill_map_' + activeTableId)) || [];
-    let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
     
-    if(matchingRecord) {
-        matchingRecord.qty += 1; 
-    } else { 
-        targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
-    }
-    
-    localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
-    
-    if(activeTableId === clientCurrentActiveTable) {
-        localLiveRunningBill = targetTableBill;
-    }
-    
-    if(document.getElementById('adminDashboard').style.display === 'block') {
-        auditSelectedTableBillInvoiceLive();
-    }
+    try {
+        // 🔥 STEP 1: LOCAL TRUST KHATAM - DIRECT SUPABASE SE FRESH DATA FETCH KARO
+        const { data: cloudSession } = await supabaseClient
+            .from('table_sessions')
+            .select('live_bill')
+            .eq('table_id', `${hotelGlobalScopeID}_${activeTableId}`)
+            .maybeSingle();
 
-    // ⚡ 1. Table Session ko cloud session table par sync karo
-    syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+        // Agar database clear ho chuka hai (null ya empty), toh automatic clean zero-array use hogi
+        let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
 
-    // ⚡ 2. Directly Kitchen monitor tak live ticket real-time push karo
-    dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, 1);
+        // 🔥 STEP 2: ATOMIC QUANTITY INCREMENT OR PUSH MAPPING
+        let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
+        
+        if (matchingRecord) {
+            matchingRecord.qty += 1; 
+        } else { 
+            targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
+        }
+        
+        // 🔥 STEP 3: SYNC LOCAL STORAGE TO BE SAFE
+        localStorage.setItem('bill_map_' + activeTableId, JSON.stringify(targetTableBill));
+        
+        if (activeTableId === clientCurrentActiveTable) {
+            localLiveRunningBill = targetTableBill;
+        }
+        
+        if (document.getElementById('adminDashboard').style.display === 'block') {
+            auditSelectedTableBillInvoiceLive();
+        }
+
+        // 🔥 STEP 4: STRICT AWAIT FOR CLOUD UPDATES & KDS PIPELINES
+        await syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, 1);
+
+    } catch (err) {
+        console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
+        showOnScreenNotification("❌ Cloud transmission broken!", true);
+    }
 }
-   function executeCustomerOrderCommitLink(priceDomId, dishName) {
+
+// ✅ REPAIRED: Customer Click Router converted to Asynchronous
+async function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
     let price = parseInt(selectorNode.getAttribute('data-selected-price'));
     
-    if(!size) {
+    if (!size) {
         let cIdx = selectorNode.getAttribute('data-c');
         let iIdx = selectorNode.getAttribute('data-i'); 
         let bluePrint = menuCategories[cIdx].items[iIdx];
@@ -1245,30 +1263,31 @@ function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetT
         price = bluePrint[size];
     }
     
-    appendDishToBillInvoice(dishName, size, price);
+    // 🔥 Added await execution mapping loops safely
+    await appendDishToBillInvoice(dishName, size, price);
     showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
 }
 
-function injectExtraItemFromBillPanel() {
+// ✅ REPAIRED: Waiter Injection Logic tied onto cloud base arrays
+async function injectExtraItemFromBillPanel() {
     let selectedTargetTable = document.getElementById('waiterTableSelect').value;
     let targetDishName = document.getElementById('waiterItemSelect').value;
     let targetSize = document.getElementById('waiterSizeSelect').value;
     let bp = null; 
     
-    // Find the dish template from master menu categories
     menuCategories.forEach(c => { 
         let f = c.items.find(i => i.name === targetDishName); 
-        if(f) bp = f; 
+        if (f) bp = f; 
     });
     
-    if(bp && targetSize) {
+    if (bp && targetSize) {
         let fixedUnitPrice = bp[targetSize] || 0;
-        // Pushes cleanly into the target table storage array matrix
-        appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable);
         
-        if (selectedTargetTable === clientCurrentActiveTable) {
-            localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-        }
+        // 🔥 Push execution shifted to safe cloud dynamic arrays
+        await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable);
+        
+        // Storage lookup to securely re-load running variable instances
+        localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
         
         auditSelectedTableBillInvoiceLive();
         showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} successfully pushed to Table ${selectedTargetTable}!`);
@@ -1276,6 +1295,11 @@ function injectExtraItemFromBillPanel() {
         showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
     }
 }
+
+
+   
+
+
 function executeSimulatedMobilePaymentSuccessSequence() {
     updateDishOrderAnalytics();
     localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
