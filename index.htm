@@ -1649,6 +1649,30 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
                    });
                }
 
+        if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
+            paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
+        }
+
+        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + finalBillSum;
+    } catch (err) { console.error(err); }
+}
         function renderLiveCalculatedBill() {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
             maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
