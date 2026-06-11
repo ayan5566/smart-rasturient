@@ -260,7 +260,6 @@
     </style>
 </head>
 <body>
-    ```
 
 
 <div id="customToastNotification" style="position: fixed; top: 20px; max-width: 320px; width: 85%; background: #2c3e50; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 99999; display: none; font-weight: 600; font-size: 14px; border-left: 6px solid #2ecc71; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
@@ -599,76 +598,107 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        let realtimeRenderTimeout = null;
 function initializeAdminRealtimeBillingTracker() {
     if (typeof adminMasterRealtimeChannel === 'undefined') {
         window.adminMasterRealtimeChannel = null;
     }
-
     if (adminMasterRealtimeChannel) {
         supabaseClient.removeChannel(adminMasterRealtimeChannel);
     }
 
-    console.log("📡 Booting Billing Tracker using exact KDS clone architecture...");
+    console.log("📡 Booting Bulletproof Realtime Billing Tracker...");
 
     try {
         adminMasterRealtimeChannel = supabaseClient
             .channel('admin-master-sync-stream')
             
-            // 🔥 CLONED KDS ARCHITECTURE 1: active_orders (Kitchen changes)
-            // No Supabase filters, no payload parsing. Unconditional trigger.
+            // 🔥 LISTENER 1: Jab KDS mein order bane ya status badle
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'active_orders' 
             }, () => {
-                // Blindly fetch fresh data from cloud and render instantly
-                auditSelectedTableBillInvoiceLive();
-                generateAdminTableGrid();
+                queueDebouncedBillRender(); // Wait for items to insert before fetching!
             })
 
-            // 🔥 CLONED KDS ARCHITECTURE 2: table_sessions (Running Bill changes)
-            // No strict string matching on the render trigger.
+            // 🔥 LISTENER 2: Jab us order ke items database mein enter hon (CRITICAL FIX)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'order_items' 
+            }, () => {
+                queueDebouncedBillRender(); // Garantees items are visible!
+            })
+
+            // 🔥 LISTENER 3: Jab financial ledger update ho (Waiters/Cashiers ke liye)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'table_sessions' 
             }, (payload) => {
-                // 1. Blindly fetch fresh data from cloud and render instantly
-                auditSelectedTableBillInvoiceLive();
-                
-                // 2. Update local storage for floor grid colors 
-                if (payload && payload.new && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
+                queueDebouncedBillRender();
+                if (payload && payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
                     refreshActiveBillingUI(payload.new);
                 }
             })
             .subscribe();
             
         window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
-        
     } catch (realtimeErr) {
-        console.error("⚠️ Realtime Channel Node Verification Blocked:", realtimeErr.message);
+        console.error("⚠️ Realtime Channel Blocked:", realtimeErr.message);
     }
 }
-// 2️⃣ REPLACE THIS FUNCTION: Synchronized Local Storage Updates
-function refreshActiveBillingUI(liveSessionData) {
-    if (!liveSessionData) return;
-    
-    const rawTableId = liveSessionData.table_id;
-    const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
+function initializeAdminRealtimeBillingTracker() {
+    if (typeof adminMasterRealtimeChannel === 'undefined') {
+        window.adminMasterRealtimeChannel = null;
+    }
+    if (adminMasterRealtimeChannel) {
+        supabaseClient.removeChannel(adminMasterRealtimeChannel);
+    }
 
-    localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
-    localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
-    localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
+    console.log("📡 Booting Bulletproof Realtime Billing Tracker...");
 
-    generateAdminTableGrid();
+    try {
+        adminMasterRealtimeChannel = supabaseClient
+            .channel('admin-master-sync-stream')
+            
+            // 🔥 LISTENER 1: Jab KDS mein order bane ya status badle
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'active_orders' 
+            }, () => {
+                queueDebouncedBillRender(); // Wait for items to insert before fetching!
+            })
 
-    const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
-    if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        // 🔥 EXACT FIX: Replaced instant render with debounced render to kill the Race Condition
-        queueDebouncedBillRender();
+            // 🔥 LISTENER 2: Jab us order ke items database mein enter hon (CRITICAL FIX)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'order_items' 
+            }, () => {
+                queueDebouncedBillRender(); // Garantees items are visible!
+            })
+
+            // 🔥 LISTENER 3: Jab financial ledger update ho (Waiters/Cashiers ke liye)
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'table_sessions' 
+            }, (payload) => {
+                queueDebouncedBillRender();
+                if (payload && payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
+                    refreshActiveBillingUI(payload.new);
+                }
+            })
+            .subscribe();
+            
+        window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
+    } catch (realtimeErr) {
+        console.error("⚠️ Realtime Channel Blocked:", realtimeErr.message);
     }
 }
-
 // 3️⃣ ADD THIS NEW FUNCTION: The Debounce Engine
 function queueDebouncedBillRender() {
     clearTimeout(realtimeRenderTimeout);
