@@ -646,20 +646,26 @@ function initializeAdminRealtimeBillingTracker() {
         console.error("⚠️ Realtime Channel Node Verification Blocked:", realtimeErr.message);
     }
 }
+// ✅ NEW FIXED TRACKER ENGINE: Instantly forces screen redraw if active table changes live
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
     const rawTableId = liveSessionData.table_id;
     const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
 
+    // 1. Storage nodes ko real-time memory buffer se update karo
     localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
     localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
     localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
 
+    // 2. Pure floors and table states grid ko redrawing karo
     generateAdminTableGrid();
 
+    // 🔥 CRITICAL FIX: Agar cashier pehle se usi table ko screen par kholkar baitha hai...
+    // Toh use bina dropdown exchange kiye, instantly naya item live screen par display karwao!
     const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
     if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        auditSelectedTableBillInvoiceLive();
+        console.log(`⚡ RestroFlow Auto-Refresh: Instantly updating active receipt matrix for Table ${cleanTableId}`);
+        auditSelectedTableBillInvoiceLive(); // Screen view automatically redraws here!
     }
 }
 
