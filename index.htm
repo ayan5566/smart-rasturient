@@ -604,11 +604,10 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-// =================================================================
-// 📊 RESTROFLOW REALTIME MASTER OMNI-CHANNEL SYNC ENGINE
-// =================================================================
-let adminMasterRealtimeChannel = null;
+// 🛑 OLD CODE REFERENCE:
+// .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelGlobalScopeID}` } ...
 
+// ✅ NEW FIXED CODE:
 function initializeAdminRealtimeBillingTracker() {
     if (adminMasterRealtimeChannel) {
         supabaseClient.removeChannel(adminMasterRealtimeChannel);
@@ -616,28 +615,25 @@ function initializeAdminRealtimeBillingTracker() {
 
     console.log("📡 Initializing Omni-Channel Sync for Hotel Workspace Node:", hotelGlobalScopeID);
 
-    // Single pipeline subscription to handle both financials and kitchen workflows
     adminMasterRealtimeChannel = supabaseClient
         .channel('admin-master-sync-stream')
-        // Channel A: Listen to raw billing ledger shifts
+        // 🔥 FIXED: Broken filter hata kar validation ab JS callback ke andar safely hogi
         .on('postgres_changes', { 
             event: '*', 
             schema: 'public', 
-            table: 'table_sessions',
-            filter: `hotel_id=eq.${hotelGlobalScopeID}`
+            table: 'table_sessions'
         }, (payload) => {
             console.log("💰 Financial payload received:", payload);
-            refreshActiveBillingUI(payload.new);
+            // Multi-tenant security check via JavaScript string validation
+            if (payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
+                refreshActiveBillingUI(payload.new);
+            }
         })
-        // Channel B: Listen to live KDS lifecycle changes (PENDING -> PREPARING -> DELETED)
         .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'active_orders',
+            event: '*', schema: 'public', table: 'active_orders',
             filter: `hotel_id=eq.${hotelGlobalScopeID}`
         }, (payload) => {
             console.log("👨‍🍳 KDS Order state updated:", payload);
-            // Jaise hi kitchen se status badle, admin tracker ko instantly update karo
             const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect').value;
             if (currentSelectedTable) {
                 auditSelectedTableBillInvoiceLive();
@@ -989,13 +985,18 @@ async function initApp() {
         console.log("Database fetch failed:", err);
     }
 
+// 🛑 OLD CODE REFERENCE:
+// const { data: sessionData } = await supabaseClient.from('table_sessions').select('*').eq('table_id', clientCurrentActiveTable).single();
+
+// ✅ NEW FIXED CODE:
     // 📊 4. RESTORE RUNNING TABLE SESSIONS
     try {
+        // 🔥 FIXED: Query ko ab unified Composite Key format (`${hotelGlobalScopeID}_${tableId}`) par map kiya hai
         const { data: sessionData } = await supabaseClient
             .from('table_sessions')
             .select('*')
-            .eq('table_id', clientCurrentActiveTable)
-            .single();
+            .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
+            .maybeSingle();
 
         if (sessionData) {
             localLiveRunningBill = sessionData.live_bill || [];
@@ -1021,22 +1022,6 @@ async function initApp() {
     } catch(e) {
         console.log("Session recovery failed:", e);
     }
-
-    // 🌌 5. BACKGROUND SPACE MATRIX GENERATION
-    cosmicBackgroundStars = [];
-    for(let s=0; s<45; s++) {
-        cosmicBackgroundStars.push({ x: Math.random()*320, y: Math.random()*400, size: Math.random()*2, alpha: Math.random() });
-    }
-
-    // ⚡ 6. FRONTEND INTERFACE GENERATION ENGINE RUN
-    renderCustomerMenu(); 
-    generateMathQuestion(); 
-    generateAdminTableGrid(); 
-    updateFrontEndClassificationLabels(); 
-    setupGlobalKeyboardBindings(); 
-    populateWaiterPanelDropdownList();
-}
-
 // =================================================================
 // 🔑 FIXED WORKSPACE AUTHENTICATION ROUTER NODE
 // =================================================================
@@ -1311,7 +1296,11 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
-      async function executeAdminManualBillWipeSettlement() {
+   // 🛑 OLD CODE REFERENCE:
+// try { const { error: orderDeleteErr } = await supabaseClient.from('active_orders').delete()... }
+
+// ✅ NEW FIXED CODE:
+async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
     if(confirm(`Wipe/Clear all archived items and payment tokens for Table ${activeOwnerAuditTable}?`)) {
@@ -1324,7 +1313,7 @@ function renderAnalyticsDashboard() {
         // 2. Supabase Cloud se Financial Table Session reset karein
         await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
 
-        // 🔥 FIX: Supabase ki active_orders (Kitchen Queue) se bhi is table ke pending orders delete karein
+        // 🔥 FIXED: Yahan 'await' jodd diya hai taaki bina complete delete hue code aage na badhe
         try {
             const { error: orderDeleteErr } = await supabaseClient
                 .from('active_orders')
@@ -1341,7 +1330,7 @@ function renderAnalyticsDashboard() {
             console.error("Kitchen clear pipeline exception:", err);
         }
 
-        // 3. UI refresh aur state matrix logic (Dono grids instantly update honge)
+        // 3. UI refresh aur state matrix logic
         floorData.forEach(floor => { 
             floor.tables.forEach(t => { 
                 if(t.id === activeOwnerAuditTable) { 
