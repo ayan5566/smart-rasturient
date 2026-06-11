@@ -934,7 +934,7 @@ let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = []
 let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
 let fBird = {}, fPipes = [], flappyScoreTracker = 0;
 let cosmicBackgroundStars = [];
-        // =================================================================
+// =================================================================
 // 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (REALTIME SYNC INTEGRATED)
 // =================================================================
 async function initApp() {
@@ -985,10 +985,6 @@ async function initApp() {
         console.log("Database fetch failed:", err);
     }
 
-// 🛑 OLD CODE REFERENCE:
-// const { data: sessionData } = await supabaseClient.from('table_sessions').select('*').eq('table_id', clientCurrentActiveTable).single();
-
-// ✅ NEW FIXED CODE:
     // 📊 4. RESTORE RUNNING TABLE SESSIONS
     try {
         // 🔥 FIXED: Query ko ab unified Composite Key format (`${hotelGlobalScopeID}_${tableId}`) par map kiya hai
@@ -1022,6 +1018,27 @@ async function initApp() {
     } catch(e) {
         console.log("Session recovery failed:", e);
     }
+
+    // 🌌 5. BACKGROUND SPACE MATRIX GENERATION
+    cosmicBackgroundStars = [];
+    for(let s = 0; s < 45; s++) {
+        cosmicBackgroundStars.push({ 
+            x: Math.random() * 320, 
+            y: Math.random() * 400, 
+            size: Math.random() * 2, 
+            alpha: Math.random() 
+        });
+    }
+
+    // ⚡ 6. FRONTEND INTERFACE GENERATION ENGINE RUN
+    renderCustomerMenu(); 
+    generateMathQuestion(); 
+    generateAdminTableGrid(); 
+    updateFrontEndClassificationLabels(); 
+    setupGlobalKeyboardBindings(); 
+    populateWaiterPanelDropdownList();
+
+} // 👑 PERFECTLY CLOSED: Saari nesting, conditional flow aur syntax check ab structural standards par set hain!
 // =================================================================
 // 🔑 FIXED WORKSPACE AUTHENTICATION ROUTER NODE
 // =================================================================
