@@ -599,12 +599,7 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-// 🛑 OLD CODE REFERENCE:
-// .on('postgres_changes', { event: '*', schema: 'public', table: 'table_sessions', filter: `hotel_id=eq.${hotelGlobalScopeID}` } ...
-
-// ✅ NEW FIXED CODE:
 function initializeAdminRealtimeBillingTracker() {
-    // 🛡️ Safe Check: Agar channel initialized nahi hai, toh pehle global assign karo aur crash mat hone do
     if (typeof adminMasterRealtimeChannel === 'undefined') {
         window.adminMasterRealtimeChannel = null;
     }
@@ -616,7 +611,6 @@ function initializeAdminRealtimeBillingTracker() {
     console.log("📡 Initializing Omni-Channel Sync for Hotel Workspace Node:", hotelGlobalScopeID);
 
     try {
-        // Single pipeline subscription to handle both financials and kitchen workflows
         adminMasterRealtimeChannel = supabaseClient
             .channel('admin-master-sync-stream')
             .on('postgres_changes', { 
@@ -635,16 +629,17 @@ function initializeAdminRealtimeBillingTracker() {
                 table: 'active_orders',
                 filter: `hotel_id=eq.${hotelGlobalScopeID}`
             }, (payload) => {
-                console.log("👨‍🍳 KDS Order state updated:", payload);
+                console.log("👨‍🍳 KDS Order updated dynamically:", payload);
+                
+                // 🔥 FIXED: Bina page refresh kiye instantly data matrix update aur interface redraw hoga
                 const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect').value;
                 if (currentSelectedTable) {
                     auditSelectedTableBillInvoiceLive();
-                    generateAdminTableGrid();
                 }
+                generateAdminTableGrid();
             })
             .subscribe();
             
-        // Variable ko global scope mein synchronize rakhein
         window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
         
     } catch (realtimeErr) {
@@ -1561,21 +1556,21 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-       async function auditSelectedTableBillInvoiceLive() {
+     async function auditSelectedTableBillInvoiceLive() {
     let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
     let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
     let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
     let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
 
     try {
-        // 🚀 PIPELINE 1: Fetch Stable Account Financials
+        // Pipeline 1: Fetch Financials Ledger
         const { data: sessionData } = await supabaseClient
             .from('table_sessions')
             .select('*')
             .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
             .maybeSingle();
 
-        // 🚀 PIPELINE 2: Fetch Live Kitchen Tickets
+        // Pipeline 2: Fetch Volatile Kitchen Inbound Streams
         const { data: kitchenOrders } = await supabaseClient
             .from('active_orders')
             .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
@@ -1592,16 +1587,18 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
             paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
         }
 
-        outputBox.innerHTML = ''; let subtotal = 0;
+        outputBox.innerHTML = ''; 
+        let subtotal = 0; // 🔥 Master financial counter initialization
 
-        // 📋 PART A: Mapped Ledger Rendering
+        // 📋 PART A: Mapped Ledger Rendering (ONLY THIS ADDS TO THE BILL MATH)
         outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach(row => {
-            let rowCost = row.price * row.qty; subtotal += rowCost;
+            let rowCost = row.price * row.qty; 
+            subtotal += rowCost; // ✅ Verified financial items added cleanly
             outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
         });
 
-        // 👨‍🍳 PART B: Kitchen Live Streams with Dynamic Price Matching
+        // 👨‍🍳 PART B: Kitchen Live Streams (DISPLAY ONLY - NO WALLET OVERLAPPING)
         if (kitchenOrders && kitchenOrders.length > 0) {
             outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
@@ -1612,7 +1609,6 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
                 let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
 
                 order.order_items.forEach(item => {
-                    // Master Menu array se live item ki price nikalne ka loop
                     let calculatedLivePrice = 0;
                     let sizeKey = item.size ? item.size.toLowerCase() : 'm';
                     
@@ -1625,15 +1621,13 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
                     let calculatedItemTotal = calculatedLivePrice * item.qty;
                     
-                    // Live calculation ko subtotal mein add karna taaki ₹0 total fiks ho sake
-                    subtotal += calculatedItemTotal;
+                    // 🌟 FIXED: subtotal += calculatedItemTotal line ko yahan se hata diya hai taaki extra calculation error na aaye!
 
-                    // Updated HTML wrapper: Ab Dish Name, Qty, Unit Price aur Item Total sab ek sath render hoga
                     outputBox.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
                             <div>
                                 <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
-                                <span style="font-size:11px; color:#27ae60; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (Total: ₹${calculatedItemTotal})</span><br>
+                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
                             </div>
                             <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
