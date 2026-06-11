@@ -608,30 +608,37 @@ function initializeAdminRealtimeBillingTracker() {
         supabaseClient.removeChannel(adminMasterRealtimeChannel);
     }
 
-    console.log("📡 Initializing Omni-Channel Sync for Hotel Workspace Node:", hotelGlobalScopeID);
+    console.log("📡 RestroFlow Engine: Booting Live Omni-Channel Realtime Subscriptions...");
 
     try {
+        // Mapped dynamic channel architecture exactly like KDS layout
         adminMasterRealtimeChannel = supabaseClient
             .channel('admin-master-sync-stream')
+            
+            // 🔥 EVENT TRIGGER A: Listen to raw billing ledger shifts (Sessions table)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
-                table: 'table_sessions'
+                table: 'table_sessions' 
             }, (payload) => {
-                console.log("💰 Financial payload received:", payload);
-                if (payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
-                    refreshActiveBillingUI(payload.new);
+                console.log("💰 Realtime Financial Pipeline Triggered:", payload);
+                // Security verification node matching multi-tenant strings
+                let activeDataRow = payload.new || payload.old;
+                if (activeDataRow && activeDataRow.table_id && activeDataRow.table_id.startsWith(hotelGlobalScopeID + '_')) {
+                    refreshActiveBillingUI(activeDataRow);
                 }
             })
+            
+            // 🔥 EVENT TRIGGER B: Listen to live KDS lifecycle changes (Pending -> Preparing -> Completed)
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'active_orders',
                 filter: `hotel_id=eq.${hotelGlobalScopeID}`
             }, (payload) => {
-                console.log("👨‍🍳 KDS Order updated dynamically:", payload);
+                console.log("👨‍🍳 Realtime KDS State Shift Triggered:", payload);
                 
-                // 🔥 FIXED: Bina page refresh kiye instantly data matrix update aur interface redraw hoga
+                // INSTANT TRIGGER: Dropdown ko select toggle kiye bina screen auto-update hogi
                 const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect').value;
                 if (currentSelectedTable) {
                     auditSelectedTableBillInvoiceLive();
@@ -643,32 +650,32 @@ function initializeAdminRealtimeBillingTracker() {
         window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
         
     } catch (realtimeErr) {
-        console.error("⚠️ Realtime Channel Node Verification Blocked:", realtimeErr.message);
+        console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
     }
 }
-// ✅ NEW FIXED TRACKER ENGINE: Instantly forces screen redraw if active table changes live
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
+    
+    // Composite key format mapping layers to pull real target IDs cleanly
     const rawTableId = liveSessionData.table_id;
     const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
 
-    // 1. Storage nodes ko real-time memory buffer se update karo
+    // 1. Sync every local state storage properties instantly
     localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
     localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
     localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
 
-    // 2. Pure floors and table states grid ko redrawing karo
+    // 2. Redraw grid matrices dynamically
     generateAdminTableGrid();
 
-    // 🔥 CRITICAL FIX: Agar cashier pehle se usi table ko screen par kholkar baitha hai...
-    // Toh use bina dropdown exchange kiye, instantly naya item live screen par display karwao!
+    // 🔥 INSTANT RE-RENDER: Agar manager isi table ka tracker kholkar screen par baitha hai...
+    // Toh bina table exchange kiye running list, quantities aur totals ko instantly render karo!
     const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
     if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        console.log(`⚡ RestroFlow Auto-Refresh: Instantly updating active receipt matrix for Table ${cleanTableId}`);
-        auditSelectedTableBillInvoiceLive(); // Screen view automatically redraws here!
+        console.log(`⚡ Instant UI Re-Render Activated for Table: ${cleanTableId}`);
+        auditSelectedTableBillInvoiceLive();
     }
 }
-
 function handleRealtimeTableSessionChange(payload) {
     const liveSessionData = payload.new;
     if (!liveSessionData) return;
