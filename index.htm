@@ -681,45 +681,7 @@ function queueDebouncedBillRender() {
         generateAdminTableGrid();
     }, 500); // 500ms delay ensures active_orders and order_items finish inserting!
 }
-function handleRealtimeTableSessionChange(payload) {
-    const liveSessionData = payload.new;
-    if (!liveSessionData) return;
 
-    // Composite table_id (e.g., "hotelID_T1") se clean table ID (T1) nikalna
-    const rawTableId = liveSessionData.table_id;
-    const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
-
-    // 1. Cloud data ko admin ke local storage/state ke sath sync karein
-    localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
-    localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
-    localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
-
-    // 2. Active tables ki state matrix update karein
-    const hasActiveItems = (liveSessionData.live_bill && liveSessionData.live_bill.length > 0);
-    
-    floorData.forEach(floor => {
-        floor.tables.forEach(t => {
-            if (t.id === cleanTableId) {
-                t.waiterBell = liveSessionData.waiter_bell || false;
-                if (liveSessionData.payment_status === 'SUCCESS_PAID') {
-                    t.state = 2; // Paid/Booked
-                } else {
-                    t.state = hasActiveItems ? 1 : 0; // Full or Empty
-                }
-            }
-        });
-    });
-
-    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-
-    // 3. Grid aur Live Invoice Viewer ko instantly redrawing karein
-    generateAdminTableGrid();
-
-    const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
-    if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        auditSelectedTableBillInvoiceLive();
-    }
-}
          // =================================================================
 // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
 // =================================================================
@@ -1431,7 +1393,7 @@ function renderAnalyticsDashboard() {
 }
         
 
-        function addNewCategory() { menuCategories.push({ categoryName: "New Category Section", items: [] }); saveAdminConfig(); populateAdminForms(); }
+        
         
         function switchGameMode(selectedTargetMode) {
             activeGameMode = selectedTargetMode; clearInterval(loopTimerInstance);
@@ -2074,46 +2036,6 @@ function generateAdminTableGrid() {
 // 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
 // =================================================================
 
-async function showAdminAuth() {
-    let email = prompt("📧 Enter Registered Restaurant Owner Email:");
-    if (!email) return;
-    let password = prompt("🔒 Enter Secure Account Password:");
-    if (!password) return;
-
-    try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            if (error.message.includes("Invalid login credentials")) {
-                alert("❌ Galat Email ya Password! Kripya sahi details daalein.");
-            } else {
-                alert("❌ Login Failed: " + error.message);
-            }
-            return;
-        }
-
-        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
-        if (!isAccessAllowed) return; 
-
-        showOnScreenNotification("🔑 Authentication successful! Loading Workspace...");
-
-        hotelGlobalScopeID = data.user.id;
-        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-
-        document.getElementById('customerView').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
-        
-        updateFrontEndClassificationLabels();
-        populateAdminForms();
-
-    } catch (err) {
-        console.error("Auth System Exception Matrix:", err);
-        alert("Critical error encountered during authorization sequence pipelines.");
-    }
-}
 
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
@@ -2147,14 +2069,6 @@ async function verifySubscriptionGatekeeper(ownerId) {
         console.error("Gatekeeper Exception:", err);
         return false;
     }
-}
-
-function hideAdminAuth() { 
-    document.getElementById('customerView').style.display = 'block'; 
-}
-
-function checkAdminPassword() { 
-    // Deprecated gracefully for enterprise multi-tenant cloud operations
 }
     function populateAdminForms() {
         document.getElementById('cfgMathDisc').value = rules.math;
