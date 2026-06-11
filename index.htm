@@ -607,37 +607,38 @@ function initializeAdminRealtimeBillingTracker() {
         supabaseClient.removeChannel(adminMasterRealtimeChannel);
     }
 
-    console.log("📡 Booting Bulletproof Realtime Billing Tracker...");
+    console.log("📡 Booting Billing Tracker using exact KDS clone architecture...");
 
     try {
         adminMasterRealtimeChannel = supabaseClient
             .channel('admin-master-sync-stream')
             
-            // 🔥 LISTENER 1: Jab KDS mein order bane ya status badle
+            // 🔥 CLONED KDS ARCHITECTURE 1: active_orders (Kitchen changes)
+            // No Supabase filters, no payload parsing. Unconditional debounced trigger.
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'active_orders' 
             }, () => {
-                queueDebouncedBillRender(); // Wait for items to insert before fetching!
+                // Queue the render to wait for order_items to finish saving!
+                queueDebouncedBillRender();
             })
 
-            // 🔥 LISTENER 2: Jab us order ke items database mein enter hon (CRITICAL FIX)
+            // 🔥 CLONED KDS ARCHITECTURE 2: order_items (Kitchen item updates)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'order_items' 
             }, () => {
-                queueDebouncedBillRender(); // Garantees items are visible!
+                queueDebouncedBillRender();
             })
 
-            // 🔥 LISTENER 3: Jab financial ledger update ho (Waiters/Cashiers ke liye)
+            // 🔥 CLONED KDS ARCHITECTURE 3: table_sessions (Running Bill changes)
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'table_sessions' 
             }, (payload) => {
-                queueDebouncedBillRender();
                 if (payload && payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
                     refreshActiveBillingUI(payload.new);
                 }
@@ -649,67 +650,39 @@ function initializeAdminRealtimeBillingTracker() {
         console.error("⚠️ Realtime Channel Blocked:", realtimeErr.message);
     }
 }
-function initializeAdminRealtimeBillingTracker() {
-    if (typeof adminMasterRealtimeChannel === 'undefined') {
-        window.adminMasterRealtimeChannel = null;
-    }
-    if (adminMasterRealtimeChannel) {
-        supabaseClient.removeChannel(adminMasterRealtimeChannel);
-    }
+// Synchronized Local Storage Updates (Called by Table Sessions only)
+function refreshActiveBillingUI(liveSessionData) {
+    if (!liveSessionData) return;
+    
+    const rawTableId = liveSessionData.table_id;
+    const cleanTableId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
 
-    console.log("📡 Booting Bulletproof Realtime Billing Tracker...");
+    localStorage.setItem('bill_map_' + cleanTableId, JSON.stringify(liveSessionData.live_bill || []));
+    localStorage.setItem('discount_map_' + cleanTableId, liveSessionData.discount_claimed || 0);
+    localStorage.setItem('payment_status_map_' + cleanTableId, liveSessionData.payment_status || 'PENDING');
 
-    try {
-        adminMasterRealtimeChannel = supabaseClient
-            .channel('admin-master-sync-stream')
-            
-            // 🔥 LISTENER 1: Jab KDS mein order bane ya status badle
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'active_orders' 
-            }, () => {
-                queueDebouncedBillRender(); // Wait for items to insert before fetching!
-            })
+    generateAdminTableGrid();
 
-            // 🔥 LISTENER 2: Jab us order ke items database mein enter hon (CRITICAL FIX)
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'order_items' 
-            }, () => {
-                queueDebouncedBillRender(); // Garantees items are visible!
-            })
-
-            // 🔥 LISTENER 3: Jab financial ledger update ho (Waiters/Cashiers ke liye)
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'table_sessions' 
-            }, (payload) => {
-                queueDebouncedBillRender();
-                if (payload && payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
-                    refreshActiveBillingUI(payload.new);
-                }
-            })
-            .subscribe();
-            
-        window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
-    } catch (realtimeErr) {
-        console.error("⚠️ Realtime Channel Blocked:", realtimeErr.message);
+    const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
+    if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
+        // 🔥 Replaced instant render with debounced render to kill the Race Condition
+        queueDebouncedBillRender();
     }
 }
-// 3️⃣ ADD THIS NEW FUNCTION: The Debounce Engine
+
+// 🔥 NEW FUNCTION: The Debounce Engine
+// Yeh function insure karega ki ekdum back-to-back database inserts hone par UI crash na ho
 function queueDebouncedBillRender() {
     clearTimeout(realtimeRenderTimeout);
     realtimeRenderTimeout = setTimeout(() => {
         const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
         if (currentSelectedTable && currentSelectedTable.value) {
             console.log("⚡ Auto-Refreshing Live Billing Dashboard...");
-            auditSelectedTableBillInvoiceLive();
+            // Yeh function direct database se poora fresh data fetch karke render karega
+            auditSelectedTableBillInvoiceLive(); 
         }
         generateAdminTableGrid();
-    }, 500); // 500ms delay ensures active_orders and order_items finish inserting!
+    }, 400); // 400ms delay gives enough time for order_items to insert into Supabase before fetching
 }
 
          // =================================================================
