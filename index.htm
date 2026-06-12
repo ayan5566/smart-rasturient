@@ -598,59 +598,46 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        let realtimeRenderTimeout = null;
-function initializeAdminRealtimeBillingTracker() {
-    if (typeof adminMasterRealtimeChannel === 'undefined') {
-        window.adminMasterRealtimeChannel = null;
-    }
-    if (adminMasterRealtimeChannel) {
-        supabaseClient.removeChannel(adminMasterRealtimeChannel);
-    }
+        function initializeAdminRealtimeBillingTracker() {
+    // 1. Purane tute-foote global channel handles ko memory se clear karo
+    if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
+    if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
+    if (window.billingSessionsChannel) supabaseClient.removeChannel(window.billingSessionsChannel);
 
-    console.log("📡 Booting Billing Tracker using exact KDS clone architecture...");
+    console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
     try {
-        adminMasterRealtimeChannel = supabaseClient
-            .channel('admin-master-sync-stream')
-            
-            // 🔥 CLONED KDS ARCHITECTURE 1: active_orders (Kitchen changes)
-            // No Supabase filters, no payload parsing. Unconditional debounced trigger.
+        // 🔥 CHANNEL A: Exact replica of KDS success structure (Sirf Kitchen Order Sunega)
+        window.billingOrdersChannel = supabaseClient
+            .channel('billing-orders-stream')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'active_orders' 
             }, () => {
-                // Queue the render to wait for order_items to finish saving!
-                queueDebouncedBillRender();
+                console.log("🔔 Tracker Trigger: Active order state mutation captured!");
+                queueDebouncedBillRender(); // Fires KDS style trigger instantly
             })
+            .subscribe();
 
-            // 🔥 CLONED KDS ARCHITECTURE 2: order_items (Kitchen item updates)
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'order_items' 
-            }, () => {
-                queueDebouncedBillRender();
-            })
-
-            // 🔥 CLONED KDS ARCHITECTURE 3: table_sessions (Running Bill changes)
+        // 🔥 CHANNEL B: Isolated Listener for Session Ledger modifications
+        window.billingSessionsChannel = supabaseClient
+            .channel('billing-sessions-stream')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'table_sessions' 
-            }, (payload) => {
-                if (payload && payload.new && payload.new.table_id && payload.new.table_id.startsWith(hotelGlobalScopeID + '_')) {
-                    refreshActiveBillingUI(payload.new);
-                }
+            }, () => {
+                console.log("🔔 Tracker Trigger: Financial ledger modification captured!");
+                queueDebouncedBillRender();
             })
             .subscribe();
-            
-        window.adminMasterRealtimeChannel = adminMasterRealtimeChannel;
+
     } catch (realtimeErr) {
-        console.error("⚠️ Realtime Channel Blocked:", realtimeErr.message);
+        console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
     }
 }
-// Synchronized Local Storage Updates (Called by Table Sessions only)
+
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
     
@@ -665,25 +652,24 @@ function refreshActiveBillingUI(liveSessionData) {
 
     const currentActiveViewerSelect = document.getElementById('adminBillingViewerTableSelect');
     if (currentActiveViewerSelect && currentActiveViewerSelect.value === cleanTableId) {
-        // 🔥 Replaced instant render with debounced render to kill the Race Condition
-        queueDebouncedBillRender();
+        queueDebouncedBillRender(); // Redirect into safe timer window
     }
 }
 
-// 🔥 NEW FUNCTION: The Debounce Engine
-// Yeh function insure karega ki ekdum back-to-back database inserts hone par UI crash na ho
+// 🔥 CLONED BLIND TRIGGER: The Debounce Engine
 function queueDebouncedBillRender() {
     clearTimeout(realtimeRenderTimeout);
     realtimeRenderTimeout = setTimeout(() => {
         const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
         if (currentSelectedTable && currentSelectedTable.value) {
             console.log("⚡ Auto-Refreshing Live Billing Dashboard...");
-            // Yeh function direct database se poora fresh data fetch karke render karega
+            // Database se automatically bina user interaction ke naya data fetch karega
             auditSelectedTableBillInvoiceLive(); 
         }
         generateAdminTableGrid();
-    }, 400); // 400ms delay gives enough time for order_items to insert into Supabase before fetching
+    }, 400); // 400ms setup window to let relational rows settle securely
 }
+
 
          // =================================================================
 // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
@@ -809,6 +795,7 @@ function exitSuperAdminDashboardConsole() {
     document.getElementById('customerView').style.display = 'block';
 }
     let activeGameMode = 'MATH';
+        let realtimeRenderTimeout = null; 
         let loopTimerInstance = null;
         let customerActiveCategoryName = "";
         // 🔥 CRITICAL GLOBAL FIX: Poore script ke top par ise declare karo taaki ReferenceError kabhi na aaye
