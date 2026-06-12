@@ -1027,50 +1027,35 @@ async function initApp() {
     populateWaiterPanelDropdownList();
 
 } // 👑 PERFECTLY CLOSED: Saari nesting, conditional flow aur syntax check ab structural standards par set hain!
-// =================================================================
-// 🔑 FIXED WORKSPACE AUTHENTICATION ROUTER NODE
-// =================================================================
+// 🔒 ONLY LOGIN ENGINE: Explicitly authenticates existing users only
 async function executeRealCloudLoginSequence() {
-    const inputEmail = document.getElementById('authEmailInput').value.trim();
-    const inputPassword = document.getElementById('authPasswordInput').value;
+    const email = document.getElementById('authEmailInput').value.trim();
+    const password = document.getElementById('authPasswordInput').value;
 
-    if (!inputEmail || !inputPassword) {
-        showOnScreenNotification("❌ Please enter both your Email and Password.", true);
+    if (!email || !password) {
+        alert("⚠️ Please enter both Email and Password!");
         return;
     }
 
     try {
+        // Yeh method sirf existing account ko check karta hai
         const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: inputEmail,
-            password: inputPassword
+            email: email,
+            password: password
         });
 
         if (error) {
-            alert("❌ लॉगिन विफल: " + error.message);
+            // Agar account nahi hoga, toh yeh seedha mana kar dega
+            alert("❌ Login Denied: " + error.message);
             return;
         }
 
-        let isAccessAllowed = await verifySubscriptionGatekeeper(data.user.id);
-        if (!isAccessAllowed) return; 
-
-        hotelGlobalScopeID = data.user.id;
-        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-
-        // ⚡ REALTIME HOOK ADDED: सफल मैनुअल लॉगिन के तुरंत बाद लिसनर चालू करें
-        initializeAdminRealtimeBillingTracker();
-
-        document.getElementById('restroflowLoginModal').style.display = 'none';
-        document.getElementById('customerView').style.display = 'none';
-        document.getElementById('adminDashboard').style.display = 'block';
+        alert("🚀 Workspace Authenticated successfully!");
+        closeLoginConsoleOverlay();
+        location.reload(); // App boot setup
         
-        updateFrontEndClassificationLabels();
-        populateAdminForms();
-        
-        showOnScreenNotification("🔑 Authentication successful! Welcome back.");
-
     } catch (err) {
-        console.error("Critical Login Session Exception:", err);
-        alert("Critical exception encountered during cloud authorization pipelines.");
+        console.error("🚨 Login Route Crash:", err);
     }
 }
         // 🆕 VARIABLE TO TRACK PORTAL VIEW MODE STATE (LOGIN OR SIGNUP)
@@ -1105,22 +1090,22 @@ function toggleAuthPortalViewMode() {
     }
 }
 
-// 🌐 SUPABASE SIGN UP TRANSACTION: Registers a brand-new restaurant owner account onto the cloud
+// ✨ ONLY REGISTER ENGINE: Saves data to cloud, blocks automatic login session
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
 
     if (!email || !password) {
-        showOnScreenNotification("❌ Email and Password fields cannot be blank!", true);
+        alert("⚠️ Email and Password cannot be left blank!");
         return;
     }
     if (password.length < 6) {
-        alert("⚠️ Security Restriction: Password must be at least 6 characters long!");
+        alert("⚠️ Security Rule: Password must be at least 6 characters long!");
         return;
     }
 
     try {
-        // Supabase Auth Method call to insert user records directly into auth infrastructure database
+        // Step 1: Supabase ke andar naya account save karo
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password
@@ -1131,14 +1116,21 @@ async function executeRealCloudSignUpSequence() {
             return;
         }
 
-        alert("🎉 Success! Your account has been created inside Supabase Node. You can now login using these credentials.");
+        // 🔥 THE CRITICAL FIX: Forces a logout immediately after registration!
+        // Isse Supabase ka auto-login bypass ho jayega aur "Create account se login na ho" rule pakka ho jayega.
+        await supabaseClient.auth.signOut();
+
+        alert("🎉 Success! Your account has been registered in Supabase. Now you must manually log in from the login screen.");
         
-        // Return layout back to login mode dynamically
+        // Form ke dono dabbe khali karo taaki fresh entry ho sake
+        document.getElementById('authEmailInput').value = "";
+        document.getElementById('authPasswordInput').value = "";
+        
+        // Layout ko wapas Login view par bhej do
         toggleAuthPortalViewMode();
         
     } catch (err) {
-        console.error("🚨 Critical Sign Up Exception Blocked:", err);
-        alert("An architectural exception occurred during registration routing.");
+        console.error("🚨 Sign Up Route Crash:", err);
     }
 }
 
