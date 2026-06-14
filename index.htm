@@ -326,17 +326,9 @@
             <ul class="rules-list" id="rulesListDisplay"></ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
         </div>
-    </div>
-
-        
+    </div>       
     <div class="container" id="customerView">
-       
-        <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
-        
-        <h1>
-            <span>🍕 <span id="displayTableName">Table T1 (Default)</span></span>
-            <button class="qr-scan-btn" onclick="simulateQRScan()">📷 Scan Table QR</button>
-        </h1>
+    <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
         <p id="displayHotelRegistryScopeLabel" style="font-size:11px; font-weight:bold; margin-top:-8px; color:#7f8c8d; text-align:left;">Hotel Stack Scope: Default_HQ_Arena</p>
         
         <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
@@ -1115,7 +1107,8 @@ function updateFrontEndClassificationLabels() {
     // Local storage ya state se check karein ki koi customized brand name saved hai ya nahi
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow Arena";
     
-    document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
+    let tableNameElem = document.getElementById('displayTableName');
+if (tableNameElem) tableNameElem.innerText = "Table " + clientCurrentActiveTable;
     
     // Fixed Branding: Raw User ID dikhane ke bajaye top par actual hotel ka name dikhega
     document.getElementById('displayHotelRegistryScopeLabel').innerText = "📍 Restaurant: " + realBrandName;
