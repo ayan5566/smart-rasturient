@@ -580,6 +580,9 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // ⚡ YAHAN PASTE KARO (Script ke ekdum top par):
+    let currentActiveStylingTargetFloorIdx = null;
+    let currentActiveStylingTargetTableIdx = null;
         function initializeAdminRealtimeBillingTracker() {
     // 1. Purane tute-foote global channel handles ko memory se clear karo
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
