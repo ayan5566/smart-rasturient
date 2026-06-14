@@ -329,7 +329,13 @@
     </div>       
     <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
-        <p id="displayHotelRegistryScopeLabel" style="font-size:11px; font-weight:bold; margin-top:-8px; color:#7f8c8d; text-align:left;">Hotel Stack Scope: Default_HQ_Arena</p>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 20px; width: 100%;">
+    <img src="image_465a2a.png" alt="RestroFlow Logo" style="max-width: 100%; height: auto; width: 260px; margin-bottom: 10px;">
+    
+    <h2 id="displayHotelRegistryScopeLabel" style="font-size: 26px; font-weight: 800; color: var(--dark-charcoal); margin: 5px 0 2px 0;">RestroFlow Arena</h2>
+    
+    <h3 id="displayTableName" style="font-size: 16px; font-weight: bold; color: var(--tbl-orange); margin: 0;">Table T1</h3>
+</div>
         
         <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
         <div id="menuContainer"></div>
@@ -539,7 +545,11 @@
         
         <button class="action-btn" onclick="triggerJustSaveConfig()" style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: 💾 Save Menu & Settings</button>
 
-<button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
+        <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
+        
+        <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()" style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
+            👑 Open SaaS Founder Master Control
+        </button>
     </div>
     <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
     <h2 style="color: #ffd700; margin-bottom: 5px;">👑 SaaS Founder Master Command Center</h2>
@@ -1104,16 +1114,15 @@ async function executeRealCloudSignUpSequence() {
 // 🏢 UI LABEL UPDATER WITH DYNAMIC BRANDING
 // =================================================================
 function updateFrontEndClassificationLabels() {
-    // Local storage ya state se check karein ki koi customized brand name saved hai ya nahi
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow Arena";
     
     let tableNameElem = document.getElementById('displayTableName');
-if (tableNameElem) tableNameElem.innerText = "Table " + clientCurrentActiveTable;
+    if (tableNameElem) tableNameElem.innerText = "Table " + clientCurrentActiveTable;
     
-    // Fixed Branding: Raw User ID dikhane ke bajaye top par actual hotel ka name dikhega
-    document.getElementById('displayHotelRegistryScopeLabel').innerText = "📍 Restaurant: " + realBrandName;
+    let hotelLabelElem = document.getElementById('displayHotelRegistryScopeLabel');
+    if (hotelLabelElem) hotelLabelElem.innerText = realBrandName;
+    
     document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
-    
     let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
     if(identityInput) {
         identityInput.value = localStorage.getItem('restroflow_actual_brand_name') || hotelGlobalScopeID;
