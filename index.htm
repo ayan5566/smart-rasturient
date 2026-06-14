@@ -1878,9 +1878,10 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         showOnScreenNotification("🎨 Table theme design matrix updated live!");
     }
 }
-        function filterCustomerViewCategoryTab(targetCategoryName) {
+        // ⚡ FIXED: Completed the category filtration logic cleanly to block execution freezes
+function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
-
+    renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
        // ===================================================================
@@ -2489,8 +2490,9 @@ function closeLoginConsoleOverlay() {
         loginModal.style.display = 'none';
     }
 } 
-// 🚀 THE MASTER ROUTER ENGINE (Jo tumhare button ko dimaag dega)
+// 🚀 THE MASTER ROUTER ENGINE: Tied globally with HTML onclick="executeAuthPortalMasterRouter()"
 function executeAuthPortalMasterRouter() {
+    console.log("🔒 RestroFlow Master Router Engaged!");
     if (isAuthPortalInSignUpMode) {
         console.log("✨ Routing execution to: SIGN UP ENGINE");
         executeRealCloudSignUpSequence();
@@ -2500,7 +2502,7 @@ function executeAuthPortalMasterRouter() {
     }
 }
 
-    initApp();
-    </script>
+initApp();
+</script>
 </body>
 </html>
