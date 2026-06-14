@@ -2488,19 +2488,7 @@ function closeLoginConsoleOverlay() {
     if (loginModal) {
         loginModal.style.display = 'none';
     }
-}
-        // ⚡ FIX: DOM fully load hote hi buttons ko bind karne wala dynamic controller
-document.addEventListener('DOMContentLoaded', () => {
-    const primaryAuthBtn = document.getElementById('authPrimaryActionButton');
-    
-    if (primaryAuthBtn) {
-        primaryAuthBtn.addEventListener('click', () => {
-            console.log("⚡ Boot Button Triggered!");
-            executeAuthPortalMasterRouter();
-        });
-    }
-});
-
+} 
 // 🚀 THE MASTER ROUTER ENGINE (Jo tumhare button ko dimaag dega)
 function executeAuthPortalMasterRouter() {
     if (isAuthPortalInSignUpMode) {
