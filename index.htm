@@ -793,6 +793,7 @@ function exitSuperAdminDashboardConsole() {
         let realtimeRenderTimeout = null; 
         let loopTimerInstance = null;
         let customerActiveCategoryName = "";
+        let configSaveTimeout = null; // ⚡ FIXED: Debounce timer to prevent rapid typing crashes
         // 🔥 CRITICAL GLOBAL FIX: Poore script ke top par ise declare karo taaki ReferenceError kabhi na aaye
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
         // 🔥 FIX: Variable ka naam badal kar supabaseClient rakhein taaki shadow error na aaye
@@ -2184,73 +2185,62 @@ async function verifySubscriptionGatekeeper(ownerId) {
         populateWaiterPanelDropdownList();
     }
 
-       function saveAdminConfig() {
-        rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
-        rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
-        rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
-        rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
-        rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
-        rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10; 
-        rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
-        
-        hotelGlobalScopeID = document.getElementById('cfgHotelIdentityScopeKey').value || "Default_HQ_Arena"; 
-        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-        
-        if(document.getElementById('cfgTaxCGSTActive')) {
-            taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
-            taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
-            taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
-            taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
-            taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
-            taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
-        }
-        localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); 
-        localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-        localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
-        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-        
-        // ✅ Cloud sync active trigger
+      function saveAdminConfig() {
+    rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
+    rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
+    rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+    rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
+    rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+    rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10; 
+    rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+    
+    hotelGlobalScopeID = document.getElementById('cfgHotelIdentityScopeKey').value || "Default_HQ_Arena"; 
+    localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+    
+    if(document.getElementById('cfgTaxCGSTActive')) {
+        taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
+        taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+        taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
+        taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+        taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
+        taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+    }
+    localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); 
+    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
+    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+    
+    // ⚡ DEBOUNCE LOCK: User jab tak rukega nahi, cloud call fire nahi hoga
+    clearTimeout(configSaveTimeout);
+    configSaveTimeout = setTimeout(() => {
         uploadMenuToCloud();
-    } // 🌟 saveAdminConfig cleanly yahan close ho gaya!
+    }, 600); // 600ms typing window buffer
+}
 
  
-    async function uploadMenuToCloud() {
-        try {
-            // Step 1: Pehle check karein ki kya is Hotel ID ka data cloud par pehle se hai
-            const { data, error: fetchError } = await supabaseClient
-                .from('hotel_config')
-                .select('id')
-                .eq('id', hotelGlobalScopeID);
-
-            if (data && data.length > 0) {
-                // Step 2: Agar row pehle se bani hui hai, toh use UPDATE (Modify) karein
-                const { error: updateError } = await supabaseClient
-                    .from('hotel_config')
-                    .update({ 
-                        menu_data: menuCategories,
-                        hotel_name: hotelGlobalScopeID // Safety update payload
-                    })
-                    .eq('id', hotelGlobalScopeID);
-                
-                if (updateError) console.error("Cloud Update Error:", updateError.message);
-                else console.log("🎉 Existing Menu successfully updated on Supabase Cloud!");
-            } else {
-                // Step 3: Agar bilkul nayi category/hotel entry hai, toh INSERT karein (With hotel_name!)
-                const { error: insertError } = await supabaseClient
-                    .from('hotel_config')
-                    .insert({ 
-                        id: hotelGlobalScopeID, 
-                        hotel_name: hotelGlobalScopeID, // 🌟 FIX: Yeh line not-null constraint violation error ko jadd se mita degi!
-                        menu_data: menuCategories 
-                    });
-                
-                if (insertError) console.error("Cloud Insert Error:", insertError.message);
-                else console.log("🎉 New Hotel Menu successfully inserted into Supabase Cloud!");
-            }
-        } catch(e) { 
-            console.error("Cloud Save Exception:", e); 
+   async function uploadMenuToCloud() {
+    // ⚡ CRITICAL FIX: Lock the variable locally immediately to prevent async state mutation leaks
+    const currentActiveSaveId = hotelGlobalScopeID;
+    
+    try {
+        // 🌟 ATOMIC UPSERT: Single database transaction blocks duplication conflicts gracefully
+        const { error } = await supabaseClient
+            .from('hotel_config')
+            .upsert({ 
+                id: currentActiveSaveId, 
+                hotel_name: currentActiveSaveId,
+                menu_data: menuCategories 
+            }, { onConflict: 'id' });
+        
+        if (error) {
+            console.error("Supabase Dynamic Sync Conflict Error:", error.message);
+        } else {
+            console.log(`🎉 Configuration securely synced for ID [${currentActiveSaveId}] smoothly!`);
         }
+    } catch(e) { 
+        console.error("Cloud Save Pipeline Exception:", e); 
     }
+}
 
     function initSpaceShooterGame() { 
         currentLevelState = 1; spaceMoveDir = 0; spaceFrameTracker = 0; spaceTransitionCount = 0; 
