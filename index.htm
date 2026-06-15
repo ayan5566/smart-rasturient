@@ -2074,7 +2074,29 @@ function generateAdminTableGrid() {
         function addTableToFloor(fIdx) { let tNum = floorData[fIdx].tables.length + 1; floorData[fIdx].tables.push({ id: "T"+tNum, state: 0, waiterBell: false }); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
         function removeTable(fIdx, tIdx) { floorData[fIdx].tables.splice(tIdx, 1); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
         function addNewFloor() { floorData.push({ floorName: "New Floor Row", tables: [] }); saveAdminConfig(); generateAdminTableGrid(); }
-
+        // ➕ NEW: Creating the missing category section engine to fix ReferenceError
+function addNewCategory() {
+    let catName = prompt("➕ Enter New Category Section Name (e.g., Desserts, Soups):");
+    
+    if (catName && catName.trim() !== "") {
+        // Main menu array mein naye block ko push karo
+        menuCategories.push({ categoryName: catName.trim(), items: [] });
+        
+        // Settings ko cloud aur local storage par save karo
+        saveAdminConfig();
+        
+        // Agar refresh function module hai toh run karo, nahi toh menu redraw karo
+        if (typeof populateAdminForms === "function") {
+            populateAdminForms();
+        } else {
+            renderCustomerMenu();
+        }
+        
+        // Premium toast flash notification alert screen par show karo
+        showOnScreenNotification(`🎉 Section [${catName.trim()}] Created Successfully!`);
+    }
+}
+       
 // =================================================================
 // 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
 // =================================================================
