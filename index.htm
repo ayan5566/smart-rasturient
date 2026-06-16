@@ -2194,8 +2194,9 @@ async function verifySubscriptionGatekeeper(ownerId) {
     rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10; 
     rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
     
-    hotelGlobalScopeID = document.getElementById('cfgHotelIdentityScopeKey').value || "Default_HQ_Arena"; 
-    localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+    // ⚡ FIXED: Friendly brand name alag dabbe mein save hoga, original Database UUID safe rahegi!
+let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
+localStorage.setItem('restroflow_actual_brand_name', typedBrandName);
     
     if(document.getElementById('cfgTaxCGSTActive')) {
         taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
@@ -2219,23 +2220,25 @@ async function verifySubscriptionGatekeeper(ownerId) {
 
  
    async function uploadMenuToCloud() {
-    // ⚡ CRITICAL FIX: Lock the variable locally immediately to prevent async state mutation leaks
     const currentActiveSaveId = hotelGlobalScopeID;
+    const currentBrandName = localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow";
     
     try {
-        // 🌟 ATOMIC UPSERT: Single database transaction blocks duplication conflicts gracefully
+        // 🌟 FIXED: Removed explicit onConflict constraints parameters to let PostgREST auto-resolve native primary key indexes smoothly
         const { error } = await supabaseClient
             .from('hotel_config')
             .upsert({ 
                 id: currentActiveSaveId, 
-                hotel_name: currentActiveSaveId,
+                hotel_name: currentBrandName, // Actual textual name mapping synced here seamlessly
                 menu_data: menuCategories 
-            }, { onConflict: 'id' });
+            });
         
         if (error) {
-            console.error("Supabase Dynamic Sync Conflict Error:", error.message);
+            console.error("Supabase Sync Conflict Error:", error.message);
         } else {
             console.log(`🎉 Configuration securely synced for ID [${currentActiveSaveId}] smoothly!`);
+            // Dynamic labels instantly refresh
+            updateFrontEndClassificationLabels();
         }
     } catch(e) { 
         console.error("Cloud Save Pipeline Exception:", e); 
