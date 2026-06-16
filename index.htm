@@ -798,7 +798,7 @@ function exitSuperAdminDashboardConsole() {
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
         // 🔥 FIX: Variable ka naam badal kar supabaseClient rakhein taaki shadow error na aaye
 const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real URL daalein
-const SUPABASE_ANON_KEY = "sb_publishable_iTV8Qq8M2oPs8iU4QeaeLg_EZasdsKP";         // Apni real Key daalein
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
 async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
@@ -1098,7 +1098,7 @@ function toggleAuthPortalViewMode() {
     }
 }
 
-// ✨ FIXED: Creates Auth User, provisions database tables dynamically, and handles onboarding seamlessly
+// ✨ FIXED: Standardized destructuring with explicit validation error alerts to map users into Auth table
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
@@ -1114,58 +1114,62 @@ async function executeRealCloudSignUpSequence() {
 
     try {
         showOnScreenNotification("🚀 Registering workspace node...", false);
+        console.log("📡 Attempting signup for:", email);
         
-        // 1. Trigger Supabase Authentication Registration Node
-        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        // 1. Standard Supabase Auth SignUp Call (No complex aliases)
+        const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password
         });
 
-        if (authError) {
-            alert("❌ Supabase Auth Denied: " + authError.message);
+        if (error) {
+            console.error("Supabase Auth Object Rejection:", error);
+            alert("❌ Supabase Auth Denied: " + error.message);
             return;
         }
 
-        // Target generated User UUID string extract karo
-        const newUserUUID = authData?.user?.id;
+        // Response check karke User ID extract karo
+        const newUserUUID = data?.user?.id;
 
         if (newUserUUID) {
-            console.log("🔒 Identity Verified! Provisioning cloud assets for UUID:", newUserUUID);
+            console.log("🔒 Registration Success! Auth UUID Created:", newUserUUID);
 
-            // 2. Automagically create a default enterprise template row inside hotel_config table
-            await supabaseClient.from('hotel_config').insert({
+            // 2. Insert into hotel_config table
+            const { error: configError } = await supabaseClient.from('hotel_config').insert({
                 id: newUserUUID,
                 hotel_name: "My Premium Restaurant",
                 menu_data: fallbackMenu
             });
+            if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
 
-            // 3. Inject a standard 30-day Free Trial inside subscriptions table to unlock Gatekeeper
+            // 3. Insert 30-day trial pack into subscriptions table
             let startTime = new Date();
             let endTime = new Date();
-            endTime.setDate(startTime.getDate() + 30); // 30 Days Trial pack mapping logic
+            endTime.setDate(startTime.getDate() + 30);
 
-            await supabaseClient.from('subscriptions').insert({
+            const { error: subError } = await supabaseClient.from('subscriptions').insert({
                 user_id: newUserUUID,
                 plan_id: '1d6ca9b8-b472-4cf3-875b-df768f746ef7',
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString()
             });
+            if (subError) console.error("Database Writing Warning (subscriptions):", subError.message);
 
-            alert("🎉 Workspace Registered Successfully!\n\nYour 30-day free trial has been activated inside Supabase. Please manually log in now.");
+            // 📢 CRITICAL NOTIFICATION: Force alert window so the user gets clear visual confirmation
+            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\n\nAapka account Supabase Authentication mein register ho gaya hai. Ab aap same email se login kar sakte hain.`);
             
-            // UI Cleanup and setup toggle link routing
+            // Clean fields and toggle viewport back to login view screen
             document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
-            toggleAuthPortalViewMode(); // Instantly switch viewport back to login mode screen
+            toggleAuthPortalViewMode();
         } else {
-            // Agar email verification system active hai, toh user ko notify karo
-            alert("📩 Verification link sent! Please check your email inbox to confirm registration properties before logging in.");
+            alert("📩 Signup initiated, but email confirmation might be required. Please check your inbox or verify Supabase project settings.");
         }
         
     } catch (err) {
-        console.error("🚨 Sign Up Provisioning Pipeline Crashed:", err);
-        alert("An error occurred during multi-row relational database writing.");
+        console.error("🚨 Critical Auth Pipeline Crash:", err);
+        alert("System Exception: Registration process crashed. Check if your SUPABASE_ANON_KEY is valid!");
     }
 }
 // =================================================================
