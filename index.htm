@@ -885,6 +885,13 @@ try {
 } catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
 
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+
+// ⚡ MEMORY CLEANER: Agar local storage mein koi ganda ya invalid text bacha hai toh use instantly saaf karo
+if (hotelGlobalScopeID !== "Default_HQ_Arena" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID)) {
+    hotelGlobalScopeID = "Default_HQ_Arena";
+    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+}
+
 let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
 // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
