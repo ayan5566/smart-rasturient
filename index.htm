@@ -1082,7 +1082,7 @@ function toggleAuthPortalViewMode() {
     }
 }
 
-// ✨ ONLY REGISTER ENGINE: Saves data to cloud, blocks automatic login session
+// ✨ FIXED: Creates Auth User, provisions database tables dynamically, and handles onboarding seamlessly
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
@@ -1097,35 +1097,61 @@ async function executeRealCloudSignUpSequence() {
     }
 
     try {
-        // Step 1: Supabase ke andar naya account save karo
-        const { data, error } = await supabaseClient.auth.signUp({
+        showOnScreenNotification("🚀 Registering workspace node...", false);
+        
+        // 1. Trigger Supabase Authentication Registration Node
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
             email: email,
             password: password
         });
 
-        if (error) {
-            alert("❌ Registration Failed: " + error.message);
+        if (authError) {
+            alert("❌ Supabase Auth Denied: " + authError.message);
             return;
         }
 
-        // 🔥 THE CRITICAL FIX: Forces a logout immediately after registration!
-        // Isse Supabase ka auto-login bypass ho jayega aur "Create account se login na ho" rule pakka ho jayega.
-        await supabaseClient.auth.signOut();
+        // Target generated User UUID string extract karo
+        const newUserUUID = authData?.user?.id;
 
-        alert("🎉 Success! Your account has been registered in Supabase. Now you must manually log in from the login screen.");
-        
-        // Form ke dono dabbe khali karo taaki fresh entry ho sake
-        document.getElementById('authEmailInput').value = "";
-        document.getElementById('authPasswordInput').value = "";
-        
-        // Layout ko wapas Login view par bhej do
-        toggleAuthPortalViewMode();
+        if (newUserUUID) {
+            console.log("🔒 Identity Verified! Provisioning cloud assets for UUID:", newUserUUID);
+
+            // 2. Automagically create a default enterprise template row inside hotel_config table
+            await supabaseClient.from('hotel_config').insert({
+                id: newUserUUID,
+                hotel_name: "My Premium Restaurant",
+                menu_data: fallbackMenu
+            });
+
+            // 3. Inject a standard 30-day Free Trial inside subscriptions table to unlock Gatekeeper
+            let startTime = new Date();
+            let endTime = new Date();
+            endTime.setDate(startTime.getDate() + 30); // 30 Days Trial pack mapping logic
+
+            await supabaseClient.from('subscriptions').insert({
+                user_id: newUserUUID,
+                plan_id: '1d6ca9b8-b472-4cf3-875b-df768f746ef7',
+                status: 'active',
+                current_period_start: startTime.toISOString(),
+                current_period_end: endTime.toISOString()
+            });
+
+            alert("🎉 Workspace Registered Successfully!\n\nYour 30-day free trial has been activated inside Supabase. Please manually log in now.");
+            
+            // UI Cleanup and setup toggle link routing
+            document.getElementById('authEmailInput').value = "";
+            document.getElementById('authPasswordInput').value = "";
+            toggleAuthPortalViewMode(); // Instantly switch viewport back to login mode screen
+        } else {
+            // Agar email verification system active hai, toh user ko notify karo
+            alert("📩 Verification link sent! Please check your email inbox to confirm registration properties before logging in.");
+        }
         
     } catch (err) {
-        console.error("🚨 Sign Up Route Crash:", err);
+        console.error("🚨 Sign Up Provisioning Pipeline Crashed:", err);
+        alert("An error occurred during multi-row relational database writing.");
     }
 }
-
 // =================================================================
 // 🏢 UI LABEL UPDATER WITH DYNAMIC BRANDING
 // =================================================================
