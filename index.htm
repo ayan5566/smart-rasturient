@@ -856,15 +856,18 @@ let fallbackMenu = [
 let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
 let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
-// --- SCHEMAS STORAGE DATA INTEGRATION VALIDATORS ---
+// ⚡ SAAS CORE FIXED: Account-wise scoped initialization prevents empty screen flash before cloud sync
 let menuCategories = fallbackMenu;
 try {
-    let localMenuRawData = localStorage.getItem('restaurantMenuCat');
+    // Current logged-in user ke ID ke hisab se local storage se instantly data uthao
+    let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if(localMenuRawData) {
         let parsedMenu = JSON.parse(localMenuRawData);
         if(Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
     }
-} catch(e) { localStorage.setItem('restaurantMenuCat', JSON.stringify(fallbackMenu)); }
+} catch(e) { 
+    console.log("Local menu parsing fallback active:", e); 
+}
 
 let floorData = defaultFloors;
 try {
@@ -918,27 +921,7 @@ let cosmicBackgroundStars = [];
 // 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (REALTIME SYNC INTEGRATED)
 // =================================================================
 async function initApp() {
-    // 🌟 1. ONE-TIME LOGIN: SECURE SESSION RESTORATION (INSTAGRAM STYLE)
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            // Agar pehle se logged in hai, toh uski UUID ko active karo
-            hotelGlobalScopeID = session.user.id;
-            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-            
-            // ⚡ REALTIME HOOK ADDED: Admin authentication bahal hote hi billing sync activate karein
-            initializeAdminRealtimeBillingTracker();
-            
-            // Direct admin dashboard par le jao, baar-baar login prompt nahi mangega
-            document.getElementById('customerView').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'block';
-            console.log("🔐 RestroFlow Security: Active session restored with Realtime Sync successfully!");
-        }
-    } catch(sessionErr) {
-        console.log("No active session found, loading default gateway:", sessionErr);
-    }
-
-    // 🔄 2. URL PARAMETERS ROUTING CONTEXT
+    // 🔄 1. URL PARAMETERS ROUTING CONTEXT (Priority No. 1)
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
@@ -946,7 +929,39 @@ async function initApp() {
     if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
     if (urlHotel) hotelGlobalScopeID = urlHotel;
 
-    // 🏢 3. FETCH REAL MENU & HOTEL BRAND NAME FROM CLOUD DB
+    // 🌟 2. ONE-TIME LOGIN: SECURE SESSION RESTORATION
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && !urlHotel) {
+            // Agar owner logged in hai aur link mein koi aur hotel ID nahi hai, toh owner ki cloud ID use hogi
+            hotelGlobalScopeID = session.user.id;
+            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+            
+            initializeAdminRealtimeBillingTracker();
+            
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'block';
+            console.log("🔐 RestroFlow: Active Owner session verified!");
+        } else if (!urlHotel) {
+            // BASE INTERFACE RULE: Agar na login hai na link mein parameters hain, toh default hub set karo
+            hotelGlobalScopeID = "Default_HQ_Arena";
+            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+        }
+    } catch(sessionErr) {
+        console.log("No session pipeline active:", sessionErr);
+    }
+
+    // 🏢 3. ACCOUNT-SPECIFIC STORAGE ENGINE (Isolated Cache Mapping)
+    let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
+    if (localScopedMenu) {
+        menuCategories = JSON.parse(localScopedMenu);
+    } else {
+        menuCategories = fallbackMenu; // Clean slate entry point
+    }
+
+    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
@@ -955,19 +970,19 @@ async function initApp() {
             .maybeSingle(); 
 
         if (!error && data) {
-            if (data.menu_data) menuCategories = data.menu_data;
+            if (data.menu_data && data.menu_data.length > 0) {
+                menuCategories = data.menu_data;
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            }
             if (data.hotel_name) localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
-            console.log("🚀 RestroFlow Cloud Sync: Data loaded successfully!");
-        } else {
-            console.log("⚠️ No custom hotel data found on cloud, using fallback data.");
+            console.log("🚀 RestroFlow Cloud Sync: Fresh data loaded!");
         }
     } catch (err) {
-        console.log("Database fetch failed:", err);
+        console.log("Database fallback operational:", err);
     }
 
-    // 📊 4. RESTORE RUNNING TABLE SESSIONS
+    // 📊 5. RESTORE RUNNING TABLE SESSIONS
     try {
-        // 🔥 FIXED: Query ko ab unified Composite Key format (`${hotelGlobalScopeID}_${tableId}`) par map kiya hai
         const { data: sessionData } = await supabaseClient
             .from('table_sessions')
             .select('*')
@@ -996,27 +1011,28 @@ async function initApp() {
             maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
         }
     } catch(e) {
-        console.log("Session recovery failed:", e);
+        console.log("Session recovery ledger block:", e);
     }
 
-    // 🌌 5. BACKGROUND SPACE MATRIX GENERATION
+    // 🌌 6. BACKGROUND SPACE MATRIX GENERATION
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) {
-        cosmicBackgroundStars.push({ 
-            x: Math.random() * 320, 
-            y: Math.random() * 400, 
-            size: Math.random() * 2, 
-            alpha: Math.random() 
-        });
+        cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
-    // ⚡ 6. FRONTEND INTERFACE GENERATION ENGINE RUN
+    // ⚡ 7. FRONTEND INTERFACE GENERATION ENGINE RUN WITH ADMIN POPULATION FIXED
     renderCustomerMenu(); 
     generateMathQuestion(); 
     generateAdminTableGrid(); 
     updateFrontEndClassificationLabels(); 
     setupGlobalKeyboardBindings(); 
     populateWaiterPanelDropdownList();
+    
+    // 🔥 CRITICAL FIX: Owner login hone par admin forms ko instantly redraw karo taaki data blank na dikhe!
+    if (document.getElementById('adminDashboard').style.display === 'block') {
+        populateAdminForms();
+    }
+}
 
 } // 👑 PERFECTLY CLOSED: Saari nesting, conditional flow aur syntax check ab structural standards par set hain!
 // 🔒 ONLY LOGIN ENGINE: Explicitly authenticates existing users only
@@ -2239,7 +2255,8 @@ localStorage.setItem('restroflow_actual_brand_name', typedBrandName);
         taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
         taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
     }
-    localStorage.setItem('restaurantMenuCat', JSON.stringify(menuCategories)); 
+    // ⚡ FIXED: Data explicitly locked inside the active user account scope pointer name string
+    localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
     localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
     localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
     localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
