@@ -790,10 +790,11 @@ function exitSuperAdminDashboardConsole() {
     document.getElementById('customerView').style.display = 'block';
 }
     let activeGameMode = 'MATH';
-        let realtimeRenderTimeout = null; 
-        let loopTimerInstance = null;
-        let customerActiveCategoryName = "";
-        let configSaveTimeout = null; // ⚡ FIXED: Debounce timer to prevent rapid typing crashes
+    let realtimeRenderTimeout = null; 
+    let loopTimerInstance = null;
+    let customerActiveCategoryName = "";
+    let configSaveTimeout = null;// ⚡ FIXED: Debounce timer to prevent rapid typing crashes
+    let isAuthPortalInSignUpMode = false; // 🔒 FIXED ReferenceError: Top-level auth view flag mapping initialized
         // 🔥 CRITICAL GLOBAL FIX: Poore script ke top par ise declare karo taaki ReferenceError kabhi na aaye
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
         // 🔥 FIX: Variable ka naam badal kar supabaseClient rakhein taaki shadow error na aaye
