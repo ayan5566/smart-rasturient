@@ -1035,7 +1035,7 @@ async function initApp() {
     }
 }
 
-// ⚡ FIXED: Catches exact 400 verification states and explicitly alerts unconfirmed dashboard tokens
+// ⚡ FIXED: Catches exact 400 verification states vs bad credentials explicitly based on your reference blueprint
 async function executeRealCloudLoginSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
@@ -1056,10 +1056,18 @@ async function executeRealCloudLoginSequence() {
         if (error) {
             console.error("Supabase Login Error Payload:", error);
             
-            // Explicitly catches if the 400 bad request was due to email confirmation rules
-            if (error.message.toLowerCase().includes("confirm") || error.status === 400) {
+            const errMsg = error.message.toLowerCase();
+            
+            // ✉️ Condition A: Catch strict email confirmation lock checks cleanly
+            if (errMsg.includes("confirm") || errMsg.includes("verified")) {
                 alert(`❌ Login Denied: ${error.message}\n\n💡 Solution: Apne Supabase Dashboard -> Authentication -> Providers -> Email mein jaakar "Confirm email" ko OFF kar do, phir naya account banakar login karo!`);
-            } else {
+            } 
+            // ❌ Condition B: Catch wrong password or email credentials safely so it doesn't mismatch generic 400s
+            else if (errMsg.includes("credentials") || errMsg.includes("invalid")) {
+                alert("❌ Login Denied: Wrong Email or Password! Kripya check karke dubara sahi credentials dalein.");
+            } 
+            // ⚙️ Condition C: Any other runtime errors fallback
+            else {
                 alert("❌ Login Denied: " + error.message);
             }
             return;
