@@ -1034,8 +1034,7 @@ async function initApp() {
     }
 }
 
- // 👑 PERFECTLY CLOSED: Saari nesting, conditional flow aur syntax check ab structural standards par set hain!
-// 🔒 ONLY LOGIN ENGINE: Explicitly authenticates existing users only
+// ⚡ FIXED: Catches exact 400 verification states and explicitly alerts unconfirmed dashboard tokens
 async function executeRealCloudLoginSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
@@ -1046,28 +1045,34 @@ async function executeRealCloudLoginSequence() {
     }
 
     try {
-        // Yeh method sirf existing account ko check karta hai
+        showOnScreenNotification("🔒 Authenticating workspace credentials...", false);
+        
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
 
         if (error) {
-            // Agar account nahi hoga, toh yeh seedha mana kar dega
-            alert("❌ Login Denied: " + error.message);
+            console.error("Supabase Login Error Payload:", error);
+            
+            // Explicitly catches if the 400 bad request was due to email confirmation rules
+            if (error.message.toLowerCase().includes("confirm") || error.status === 400) {
+                alert(`❌ Login Denied: ${error.message}\n\n💡 Solution: Apne Supabase Dashboard -> Authentication -> Providers -> Email mein jaakar "Confirm email" ko OFF kar do, phir naya account banakar login karo!`);
+            } else {
+                alert("❌ Login Denied: " + error.message);
+            }
             return;
         }
 
         alert("🚀 Workspace Authenticated successfully!");
         closeLoginConsoleOverlay();
-        location.reload(); // App boot setup
+        location.reload(); // Hard boot standard app reload
         
     } catch (err) {
         console.error("🚨 Login Route Crash:", err);
+        alert("System Exception: Unable to complete authentication handshakes.");
     }
 }
-        // 🆕 VARIABLE TO TRACK PORTAL VIEW MODE STATE (LOGIN OR SIGNUP)
-let isAuthPortalInSignUpMode = false;
 
 // 🔄 SWITCH MODE FUNCTION: Toggles between Login screen layout and Create Account layout
 function toggleAuthPortalViewMode() {
