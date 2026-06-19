@@ -964,10 +964,6 @@ async function initApp() {
 
     // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (⚡ TARGETED SCOPE FIX)
     try {
-        // First load from scoped local storage instantly for immediate rendering zero-flash fallback
-        let initialLocalName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
-        if (initialLocalName) localStorage.setItem('restroflow_actual_brand_name', initialLocalName);
-
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
@@ -980,8 +976,7 @@ async function initApp() {
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
             if (data.hotel_name) {
-                localStorage.setItem('restroflow_actual_brand_name', data.hotel_name);
-                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, data.hotel_name); // Fixed cloud sync reload
+                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, data.hotel_name); // Account scoped only
             }
             console.log("🚀 RestroFlow Cloud Sync: Fresh data loaded!");
         }
@@ -1211,15 +1206,11 @@ async function executeRealCloudSignUpSequence() {
 // =================================================================
 // 🏢 UI LABEL UPDATER WITH DYNAMIC BRANDING
 // =================================================================
-// ⚡ FIXED: Dynamically scopes the brand name to the active hotel ID to prevent default value overrides on refresh
+// ⚡ FIXED: Strict account isolation locks the title view to prevent cross-account name leakage
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
-    if (!realBrandName) {
-        realBrandName = localStorage.getItem('restroflow_actual_brand_name');
-    }
-    
-    // ⚡ FIXED: Filters raw UUID patterns and forces human readable string fallback to block fcd78a... bug
+    // ⚡ DELETED DIRTY GLOBAL FALLBACK - No more global leaks
     if (!realBrandName || realBrandName === hotelGlobalScopeID || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realBrandName)) {
         realBrandName = "RestroFlow";
     }
@@ -2305,10 +2296,8 @@ function saveAdminConfig() {
     rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
     rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
     
-    // ⚡ FIXED: Friendly brand name alag dabbe mein save hoga, original Database UUID safe rahegi!
     let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
-    localStorage.setItem('restroflow_actual_brand_name', typedBrandName);
-    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); // Scoped Lock Account Wise
+    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); // Strict Scoped Lock Account Wise Only
     
     if(document.getElementById('cfgTaxCGSTActive')) {
         taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
@@ -2331,18 +2320,17 @@ function saveAdminConfig() {
     }, 600); // 600ms typing window buffer
 }
  
-   // ⚡ FIXED: Syncs scoped local cached restaurant names flawlessly to the cloud configuration table fields
+   // ⚡ FIXED: Upload mapping strictly isolated from shared tokens to guarantee individual brand names
 async function uploadMenuToCloud() {
     const currentActiveSaveId = hotelGlobalScopeID;
-    const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || localStorage.getItem('restroflow_actual_brand_name') || "RestroFlow";
+    const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
     
     try {
-        // 🌟 FIXED: Removed explicit onConflict constraints parameters to let PostgREST auto-resolve native primary key indexes smoothly
         const { error } = await supabaseClient
             .from('hotel_config')
             .upsert({ 
                 id: currentActiveSaveId, 
-                hotel_name: currentBrandName, // Actual textual name mapping synced here seamlessly
+                hotel_name: currentBrandName, 
                 menu_data: menuCategories 
             });
         
@@ -2350,7 +2338,6 @@ async function uploadMenuToCloud() {
             console.error("Supabase Sync Conflict Error:", error.message);
         } else {
             console.log(`🎉 Configuration securely synced for ID [${currentActiveSaveId}] smoothly!`);
-            // Dynamic labels instantly refresh
             updateFrontEndClassificationLabels();
         }
     } catch(e) { 
