@@ -1112,10 +1112,12 @@ function toggleAuthPortalViewMode() {
     }
 }
 
-// ✨ FIXED: Resolves 409 conflicts using .upsert() and dynamically resolves the parent plan Foreign Key Constraint crash cleanly
+// ✨ FIXED: Captures exact field tokens and handles length trace descriptors based on your base layout reference
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
+
+    console.log("📝 Field Check -> Email:", email, "| Password Length:", password.length);
 
     if (!email || !password) {
         alert("⚠️ Email and Password cannot be left blank!");
