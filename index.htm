@@ -1071,6 +1071,7 @@ let cosmicBackgroundStars = [];
 // =================================================================
 // 🔄 RESTROFLOW CORE INITIALIZATION ENGINE (REALTIME SYNC INTEGRATED)
 // =================================================================
+// ⚡ FIXED: Asynchronous layout rendering hooks refresh the customer UI layout instantly when database payloads land
 async function initApp() {
     // 🔄 1. URL PARAMETERS ROUTING CONTEXT (Priority No. 1)
     const urlParams = new URLSearchParams(window.location.search);
@@ -1078,13 +1079,16 @@ async function initApp() {
     const urlHotel = urlParams.get('hotel');
     
     if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
-    if (urlHotel) hotelGlobalScopeID = urlHotel;
+    if (urlHotel) {
+        hotelGlobalScopeID = urlHotel;
+        // 🔒 Strict isolation: Customer scope parameter locked instantly to avoid admin tab leakage overrides
+        localStorage.setItem('restaurantHotelClassificationID', urlHotel);
+    }
 
     // 🌟 2. ONE-TIME LOGIN: SECURE SESSION RESTORATION
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && !urlHotel) {
-            // Agar owner logged in hai aur link mein koi aur hotel ID nahi hai, toh owner ki cloud ID use hogi
             hotelGlobalScopeID = session.user.id;
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             
@@ -1094,7 +1098,6 @@ async function initApp() {
             document.getElementById('adminDashboard').style.display = 'block';
             console.log("🔐 RestroFlow: Active Owner session verified!");
         } else if (!urlHotel) {
-            // BASE INTERFACE RULE: Agar na login hai na link mein parameters hain, toh default hub set karo
             hotelGlobalScopeID = "Default_HQ_Arena";
             localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
             document.getElementById('adminDashboard').style.display = 'none';
@@ -1109,10 +1112,10 @@ async function initApp() {
     if (localScopedMenu) {
         menuCategories = JSON.parse(localScopedMenu);
     } else {
-        menuCategories = fallbackMenu; // Clean slate entry point
+        menuCategories = fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (⚡ TARGETED SCOPE FIX)
+    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
@@ -1126,9 +1129,13 @@ async function initApp() {
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
             if (data.hotel_name) {
-                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, data.hotel_name); // Account scoped only
+                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, data.hotel_name);
             }
-            console.log("🚀 RestroFlow Cloud Sync: Fresh data loaded!");
+            console.log("🚀 RestroFlow Cloud Sync: Fresh data loaded safely into runtime objects!");
+            
+            // 🔥 CRITICAL FORCED RERENDER: Cloud data aate hi instantly interface redraw karo!
+            renderCustomerMenu();
+            updateFrontEndClassificationLabels();
         }
     } catch (err) {
         console.log("Database fallback operational:", err);
@@ -1167,13 +1174,12 @@ async function initApp() {
         console.log("Session recovery ledger block:", e);
     }
 
-    // 🌌 6. BACKGROUND SPACE MATRIX GENERATION
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) {
         cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
-    // ⚡ 7. FRONTEND INTERFACE GENERATION ENGINE RUN WITH ADMIN POPULATION FIXED
+    // ⚡ Final interface generation pipeline population
     renderCustomerMenu(); 
     generateMathQuestion(); 
     generateAdminTableGrid(); 
@@ -1181,12 +1187,10 @@ async function initApp() {
     setupGlobalKeyboardBindings(); 
     populateWaiterPanelDropdownList();
     
-    // 🔥 CRITICAL FIX: Owner login hone par admin forms ko instantly redraw karo taaki data blank na dikhe!
     if (document.getElementById('adminDashboard').style.display === 'block') {
         populateAdminForms();
     }
 }
-
 // ⚡ FIXED: Catches exact 400 verification states vs bad credentials explicitly based on your reference blueprint
 async function executeRealCloudLoginSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
@@ -1353,11 +1357,11 @@ async function executeRealCloudSignUpSequence() {
         alert("System Exception: Multi-row relational database writing crashed.");
     }
 }
-// ⚡ FIXED: Corrects the broken 5-segment UUID regex expression model to enable persistent human readable custom brand titles
+// ⚡ FIXED: Account scoped parameters force structural branding updates dynamically across view render states
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
-    // ⚡ FIXED REGEX: Standard 5-segment pattern matching layout allows brand validation checks without crashing
+    // Strict alphanumeric isolation filter logic
     if (!realBrandName || realBrandName === hotelGlobalScopeID || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realBrandName)) {
         realBrandName = "RestroFlow";
     }
