@@ -633,20 +633,27 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        // ===================================================================
-// 🖨️ FLUID PRINT SLIP ROUTER ENGINE
+  // ===================================================================
+// 🖨️ FLUID PRINT SLIP ROUTER ENGINE (⚡ WITH LIVE LOGS DEBUGGING)
 // ===================================================================
 async function executeLiveBillingThermalPrint() {
+    console.log("🚀 RestroFlow Spooler: Print button successfully clicked!");
+
     const selectedTable = document.getElementById('adminBillingViewerTableSelect').value;
+    console.log("🔍 Selected Table Captured:", selectedTable);
+
     if (!selectedTable) {
         alert("❌ Verification Error: Please select a valid table first!");
         return;
     }
     
-    // Pull active cached matrix pointers to compute data structures cleanly
+    // Pull active cached matrix pointers
     let targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedTable)) || [];
     let targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedTable)) || 0;
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
+
+    console.log("📋 Target Bill Rows Extracted:", targetBill);
+    console.log("🎁 Active Discount Code Coin:", targetDisc, "%");
 
     if (targetBill.length === 0) {
         alert("❌ Slip Generation Blocked: Selected table ledger accounts are completely empty!");
@@ -656,7 +663,6 @@ async function executeLiveBillingThermalPrint() {
     let subtotal = 0;
     let itemsRowsHTML = "";
     
-    // Populate row listings matching tabular formats dynamically
     targetBill.forEach(row => {
         let rowCost = row.price * row.qty;
         subtotal += rowCost;
@@ -675,7 +681,13 @@ async function executeLiveBillingThermalPrint() {
     let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
 
     let receiptContainer = document.getElementById('thermalReceiptInvoice');
-    if (!receiptContainer) return;
+    if (!receiptContainer) {
+        console.error("🚨 Critical Error: HTML container div with id 'thermalReceiptInvoice' was not found in DOM structure!");
+        alert("❌ System Error: Hidden Print Div Node is missing from body section!");
+        return;
+    }
+
+    console.log("✨ Fluid Framework: Compiling clean thermal layout nodes...");
 
     // Fluid receipt frame template generation layout
     receiptContainer.innerHTML = `
@@ -712,6 +724,8 @@ async function executeLiveBillingThermalPrint() {
         </div>
     `;
 
+    console.log("📡 OS Spooler Connection: Firing window.print() handshakes...");
+    
     // Trigger explicit print engines
     receiptContainer.style.display = 'block';
     window.print();
