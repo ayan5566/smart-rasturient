@@ -743,11 +743,8 @@ async function executeLiveBillingThermalPrint() {
     receiptContainer.style.display = 'none';
     showOnScreenNotification("🖨️ Receipt Strip Printed From Cloud!");
 }
-        // ⚡ YAHAN PASTE KARO (Script ke ekdum top par):
-    let currentActiveStylingTargetFloorIdx = null;
-    let currentActiveStylingTargetTableIdx = null;
-        function initializeAdminRealtimeBillingTracker() {
-    // 1. Purane tute-foote global channel handles ko memory se clear karo
+     // ⚡ FIXED: Isolates cashier telemetry streams from adjacent tenant profiles via database filter hooks
+function initializeAdminRealtimeBillingTracker() {
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
     if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
     if (window.billingSessionsChannel) supabaseClient.removeChannel(window.billingSessionsChannel);
@@ -755,20 +752,20 @@ async function executeLiveBillingThermalPrint() {
     console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
     try {
-        // 🔥 CHANNEL A: Exact replica of KDS success structure (Sirf Kitchen Order Sunega)
+        // 🔥 CHANNEL A: Isolated listener mapping active transactions
         window.billingOrdersChannel = supabaseClient
             .channel('billing-orders-stream')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
-                table: 'active_orders' 
+                table: 'active_orders',
+                filter: 'hotel_id=eq.' + hotelGlobalScopeID // <-- STRICT TENANT BROADCAST KEY
             }, () => {
                 console.log("🔔 Tracker Trigger: Active order state mutation captured!");
-                queueDebouncedBillRender(); // Fires KDS style trigger instantly
+                queueDebouncedBillRender(); 
             })
             .subscribe();
 
-        // 🔥 CHANNEL B: Isolated Listener for Session Ledger modifications
         window.billingSessionsChannel = supabaseClient
             .channel('billing-sessions-stream')
             .on('postgres_changes', { 
@@ -1356,15 +1353,12 @@ async function executeRealCloudSignUpSequence() {
         alert("System Exception: Multi-row relational database writing crashed.");
     }
 }
-// =================================================================
-// 🏢 UI LABEL UPDATER WITH DYNAMIC BRANDING
-// =================================================================
-// ⚡ FIXED: Strict account isolation locks the title view to prevent cross-account name leakage
+// ⚡ FIXED: Corrects the broken 5-segment UUID regex expression model to enable persistent human readable custom brand titles
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
-    // ⚡ DELETED DIRTY GLOBAL FALLBACK - No more global leaks
-    if (!realBrandName || realBrandName === hotelGlobalScopeID || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realBrandName)) {
+    // ⚡ FIXED REGEX: Standard 5-segment pattern matching layout allows brand validation checks without crashing
+    if (!realBrandName || realBrandName === hotelGlobalScopeID || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realBrandName)) {
         realBrandName = "RestroFlow";
     }
     
@@ -2442,8 +2436,14 @@ async function verifySubscriptionGatekeeper(ownerId) {
         populateWaiterPanelDropdownList();
     }
 
-      // ⚡ FIXED: Account-scoped storage caching preserves the custom restaurant name from being lost during form state saves
+     // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
 function saveAdminConfig() {
+    // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
+    if (document.getElementById('adminDashboard').style.display !== 'block') {
+        console.log("🛡️ Shield Active: Prevented customer profile from overwriting global database row config variables.");
+        return;
+    }
+
     rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
     rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
     rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
@@ -2453,7 +2453,7 @@ function saveAdminConfig() {
     rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
     
     let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
-    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); // Strict Scoped Lock Account Wise Only
+    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); 
     
     if(document.getElementById('cfgTaxCGSTActive')) {
         taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
@@ -2463,17 +2463,15 @@ function saveAdminConfig() {
         taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
         taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
     }
-    // ⚡ FIXED: Data explicitly locked inside the active user account scope pointer name string
     localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
     localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
     localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
     localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
     
-    // ⚡ DEBOUNCE LOCK: User jab tak rukega nahi, cloud call fire nahi hoga
     clearTimeout(configSaveTimeout);
     configSaveTimeout = setTimeout(() => {
         uploadMenuToCloud();
-    }, 600); // 600ms typing window buffer
+    }, 600);
 }
  
    // ⚡ FIXED: Upload mapping strictly isolated from shared tokens to guarantee individual brand names
@@ -2585,35 +2583,43 @@ function triggerAudioBeepAlert() {
 }
 
 // Open KDS Screen & Bind Supabase Realtime Stream Channels
+// ⚡ FIXED: Implements strict multi-tenant filtering on real-time database listener broadcast pipelines
 function launchKitchenDisplaySystemModule() {
     document.getElementById('adminDashboard').style.display = 'none';
     document.getElementById('kitchenDashboard').style.display = 'block';
     
-    // Subscribe instantly to database inserts/updates
+    // 🔒 CHANNEL SECURE ISOLATION: Registering real-time channel filters on table row state changes
     kdsRealtimeChannelInstance = supabaseClient
         .channel('kds-live-stream-channel')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'active_orders' }, () => {
+        .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'active_orders',
+            filter: 'hotel_id=eq.' + hotelGlobalScopeID // <-- SEPARATES BROADCAST PIPES INSTANTLY
+        }, () => {
             fetchActiveKitchenOrdersQueue();
         })
         .subscribe();
         
     fetchActiveKitchenOrdersQueue();
     
-    // Active the live ticking duration clocks
     if (!kdsClockIntervalTimerId) {
         kdsClockIntervalTimerId = setInterval(renderKdsInterfaceMatrix, 1000);
     }
 }
 
+// ⚡ FIXED: Tenant data virtualization limits fetched tickets exclusively to the scanned shop endpoint context
 async function fetchActiveKitchenOrdersQueue() {
+    // 🔒 MULTI-TENANCY FILTER: Force-injecting tenant filter condition
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
         .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`)
-        .order('created_at', { ascending: true }); // Oldest First (FIFO Queue rule)
+        .eq('hotel_id', hotelGlobalScopeID) // <-- FIXED DATA LEAKAGE EXTRACTION
+        .order('created_at', { ascending: true });
 
     if (!error && orders) {
         if (orders.length > activeKdsOrdersArray.length) {
-            triggerAudioBeepAlert(); // Play bell ring signature instantly
+            triggerAudioBeepAlert(); 
         }
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
