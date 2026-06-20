@@ -13,6 +13,47 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
+        /* ================================================================= */
+/* 🖨️ FLUID THERMAL PRINT ENGINE: Automatic paper sizing adjustments for 58mm, 80mm, or A4 formats */
+@media print {
+    /* Pure viewport browser components ko hide karo */
+    body * { 
+        display: none !important; 
+    }
+    
+    /* Sirf isolated print block container div wrapper ko force-active karo */
+    #thermalReceiptInvoice, #thermalReceiptInvoice * { 
+        display: block !important; 
+    }
+    
+    #thermalReceiptInvoice {
+        position: absolute !important;
+        left: 0 !important; 
+        top: 0 !important;
+        width: 100% !important; /* Forces layout fluid allocation based on actual physical paper paper edge width boundaries */
+        max-width: 100% !important;
+        margin: 0 !important; 
+        padding: 4mm !important;
+        box-sizing: border-box !important;
+        background: #fff !important; 
+        color: #000 !important;
+        font-family: 'Courier New', Courier, monospace !important; /* Uniform monospace font allocation matrix */
+        font-size: 12px !important; 
+        line-height: 1.4 !important;
+    }
+
+    #thermalReceiptInvoice table { 
+        width: 100% !important; 
+        border-collapse: collapse !important; 
+    }
+    
+    #thermalReceiptInvoice hr { 
+        border: 0 !important; 
+        border-top: 1px dashed #000 !important; 
+        margin: 6px 0 !important; 
+    }
+}
+/* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
             --card-bg: #dddcd1;
@@ -513,7 +554,9 @@
             <div style="font-size:14px; font-weight:bold; color:var(--dark-charcoal); display:flex; justify-content:space-between;">
                 <span>Net Payable (With Taxes & Disc):</span>
                 <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">₹0</span>
+                
             </div>
+            <button class="order-btn" style="background:var(--neon-green); color:white; font-size:12px; padding:6px; margin-top:8px; display: block;" onclick="executeLiveBillingThermalPrint()">🖨️ Print Bill </button>
             <button class="order-btn" style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;" onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
         </div>
         <h3>📊 Real-time Popularity & Dish Analytics</h3>
@@ -590,6 +633,91 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // ===================================================================
+// 🖨️ FLUID PRINT SLIP ROUTER ENGINE
+// ===================================================================
+async function executeLiveBillingThermalPrint() {
+    const selectedTable = document.getElementById('adminBillingViewerTableSelect').value;
+    if (!selectedTable) {
+        alert("❌ Verification Error: Please select a valid table first!");
+        return;
+    }
+    
+    // Pull active cached matrix pointers to compute data structures cleanly
+    let targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedTable)) || [];
+    let targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedTable)) || 0;
+    let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
+
+    if (targetBill.length === 0) {
+        alert("❌ Slip Generation Blocked: Selected table ledger accounts are completely empty!");
+        return;
+    }
+
+    let subtotal = 0;
+    let itemsRowsHTML = "";
+    
+    // Populate row listings matching tabular formats dynamically
+    targetBill.forEach(row => {
+        let rowCost = row.price * row.qty;
+        subtotal += rowCost;
+        itemsRowsHTML += `
+            <tr>
+                <td style="padding: 4px 0; font-size:12px;">${row.name}<br><small style="color:#555;">[${row.size.toUpperCase()}] x${row.qty} @₹${row.price}</small></td>
+                <td style="text-align: right; vertical-align: top; padding: 4px 0; font-size:12px;">₹${rowCost}</td>
+            </tr>`;
+    });
+
+    let discountValue = subtotal * (targetDisc / 100);
+    let basicTaxableValue = subtotal - discountValue;
+    let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+    let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+    let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+    let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+    let receiptContainer = document.getElementById('thermalReceiptInvoice');
+    if (!receiptContainer) return;
+
+    // Fluid receipt frame template generation layout
+    receiptContainer.innerHTML = `
+        <div style="width: 100%; text-align: center;">
+            <h3 style="margin: 0 0 4px 0; font-size: 15px; font-weight: bold;">${realBrandName}</h3>
+            <p style="margin: 0 0 10px 0; font-size: 11px; letter-spacing:1px;">TAX INVOICE / SLIP</p>
+            <div style="text-align: left; font-size: 11px; line-height: 1.3;">
+                <div><b>Table Matrix:</b> Sector ${selectedTable}</div>
+                <div><b>Timestamp:</b> ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+            <hr>
+            <table style="width: 100%; font-size: 11px;">
+                <thead>
+                    <tr style="font-weight: bold;">
+                        <th style="text-align: left; padding-bottom: 4px;">Item Description</th>
+                        <th style="text-align: right; padding-bottom: 4px;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsRowsHTML}
+                </tbody>
+            </table>
+            <hr>
+            <table style="width: 100%; font-size: 11px; line-height: 1.4;">
+                <tr><td>Gross Items Total:</td><td style="text-align: right;">₹${subtotal}</td></tr>
+                ${targetDisc > 0 ? `<tr style="color: red;"><td>Game Discount (${targetDisc}%):</td><td style="text-align: right;">-₹${discountValue.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.cgstActive ? `<tr><td>CGST (${taxConfig.cgstRate}%):</td><td style="text-align: right;">₹${cgstAmount.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.sgstActive ? `<tr><td>SGST (${taxConfig.sgstRate}%):</td><td style="text-align: right;">₹${sgstAmount.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.serviceActive ? `<tr><td>Service Charge (${taxConfig.serviceRate}%):</td><td style="text-align: right;">₹${serviceAmount.toFixed(1)}</td></tr>` : ''}
+                <tr style="font-size: 13px; font-weight: bold;"><td style="padding-top: 6px;">NET AMOUNT DUE:</td><td style="text-align: right; padding-top: 6px;">₹${finalBillSum}</td></tr>
+            </table>
+            <hr>
+            <p style="margin: 8px 0 0 0; font-size: 10px; font-style: italic;">~ Thank You! Visit Again ~</p>
+        </div>
+    `;
+
+    // Trigger explicit print engines
+    receiptContainer.style.display = 'block';
+    window.print();
+    receiptContainer.style.display = 'none';
+    showOnScreenNotification("🖨️ Fluid Receipt Spooler Dispatched!");
+}
         // ⚡ YAHAN PASTE KARO (Script ke ekdum top par):
     let currentActiveStylingTargetFloorIdx = null;
     let currentActiveStylingTargetTableIdx = null;
