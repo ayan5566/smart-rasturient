@@ -292,7 +292,6 @@
             padding: 12px !important;
             font-size: 15px !important;
         }
-
         .category-tab-btn {
             padding: 6px 12px !important;
             font-size: 12px !important;
@@ -634,7 +633,7 @@
 </div>
     <script>
   // ===================================================================
-// 🖨️ FLUID PRINT SLIP ROUTER ENGINE (⚡ WITH LIVE LOGS DEBUGGING)
+// 🖨️ FLUID PRINT SLIP ROUTER ENGINE (⚡ AUTOMATED DOM FALLBACK GENERATOR)
 // ===================================================================
 async function executeLiveBillingThermalPrint() {
     console.log("🚀 RestroFlow Spooler: Print button successfully clicked!");
@@ -651,9 +650,6 @@ async function executeLiveBillingThermalPrint() {
     let targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedTable)) || [];
     let targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedTable)) || 0;
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
-
-    console.log("📋 Target Bill Rows Extracted:", targetBill);
-    console.log("🎁 Active Discount Code Coin:", targetDisc, "%");
 
     if (targetBill.length === 0) {
         alert("❌ Slip Generation Blocked: Selected table ledger accounts are completely empty!");
@@ -680,11 +676,14 @@ async function executeLiveBillingThermalPrint() {
     let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
     let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
 
+    // ⚡ FIXED: Automatically checks for existence; if div is missing, creates it dynamically on-the-fly!
     let receiptContainer = document.getElementById('thermalReceiptInvoice');
     if (!receiptContainer) {
-        console.error("🚨 Critical Error: HTML container div with id 'thermalReceiptInvoice' was not found in DOM structure!");
-        alert("❌ System Error: Hidden Print Div Node is missing from body section!");
-        return;
+        console.warn("⚠️ DOM Notice: 'thermalReceiptInvoice' container was missing. Appending dynamic node template...");
+        receiptContainer = document.createElement('div');
+        receiptContainer.id = 'thermalReceiptInvoice';
+        receiptContainer.style.display = 'none';
+        document.body.appendChild(receiptContainer);
     }
 
     console.log("✨ Fluid Framework: Compiling clean thermal layout nodes...");
@@ -726,7 +725,7 @@ async function executeLiveBillingThermalPrint() {
 
     console.log("📡 OS Spooler Connection: Firing window.print() handshakes...");
     
-    // Trigger explicit print engines
+    // Trigger explicit print engines safely
     receiptContainer.style.display = 'block';
     window.print();
     receiptContainer.style.display = 'none';
