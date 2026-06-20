@@ -1431,16 +1431,13 @@ function updateFrontEndClassificationLabels() {
             }
             document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
         }
-        // ===================================================================
-// 🛒 UNIFIED ORDERING & KDS LIVE DISPATCH ENGINE (NO DUPLICATES)
-// ===================================================================
-
+        // ⚡ FIXED: Isolates database insertion routines strictly to the scoped routing handle to eliminate multi-tenant account leaks
 async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     try {
-        const urlParams = new URLSearchParams(window.location.search);
-        let activeHotelID = urlParams.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || hotelGlobalScopeID;
+        // 🔒 ZERO LEAKAGE LAW: Forces order packet arrays to strictly route to the isolated scanner hotel context payload
+        let activeHotelID = hotelGlobalScopeID;
 
-        console.log("📡 Routing KDS ticket to Hotel ID:", activeHotelID);
+        console.log("📡 Airtight SaaS Routing: Deploying order ticket payload inside isolated node ID:", activeHotelID);
 
         // 1. Insert order inside main active_orders table
         const { data: newOrder, error: orderErr } = await supabaseClient
@@ -1467,8 +1464,7 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     } catch(err) { 
         console.error("KDS Pipeline Exception Error:", err); 
     }
-}
-        // ✅ REPAIRED: Ab yeh function naye order se pehle cloud state se data khinch kar layega (Ghost Data permanent blocked)
+}      // ✅ REPAIRED: Ab yeh function naye order se pehle cloud state se data khinch kar layega (Ghost Data permanent blocked)
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     
@@ -1777,15 +1773,22 @@ function generateMathQuestion() {
 
         function generateSnakeFoodLocation() { snakeFoodUnit = { x: Math.floor(Math.random()*15)*20, y: Math.floor(Math.random()*14+1)*20 }; }
 
-        // --- FIXED: RESTORED UNIQUE QR ENGINE PRINT WINDOW GENERATION TOOL ---
         function executeTriggerNativeQRGenCardWindow(tableUnitID) {
             let qrCanvasFrame = document.getElementById('qrcodeCanvasOutputFrame'); if(!qrCanvasFrame) return; qrCanvasFrame.innerHTML = ''; 
+    
+             // Fetch active restaurant brand name linked strictly to this owner's workspace ID context
+            let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
+    
+            // Airtight Token Binding: Deep linking URL query strings containing both unique hotel token and current table sector code
             let routingRawLinkURL = window.location.origin + window.location.pathname + `?hotel=${encodeURIComponent(hotelGlobalScopeID)}&table=${encodeURIComponent(tableUnitID)}`;
-            document.getElementById('qrPrintMetaSubText').innerText = `Target Link: ${routingRawLinkURL}`;
-            document.getElementById('qrPrintTitle').innerText = `🖨️ Table QR: Sector [${tableUnitID}]`;
+    
+            // Automatic text label population mapping
+            document.getElementById('qrPrintTitle').innerText = `${realBrandName} - Table ${tableUnitID}`;
+            document.getElementById('qrPrintMetaSubText').innerText = `Linked Account Node: ${hotelGlobalScopeID.substring(0, 8)}... | Sharp High-Res Matrix`;
+    
             new QRCode(qrCanvasFrame, { text: routingRawLinkURL, width: 150, height: 150, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
             document.getElementById('qrPrintPreviewModal').style.display = 'flex';
-        }
+}
 
         function executeNativeBrowserPrintTrigger() { window.print(); }
 
