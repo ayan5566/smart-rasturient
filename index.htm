@@ -2032,7 +2032,7 @@ async function initApp() {
         menuCategories = fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (⚡ WITH SAFEST ARRAY ELEMENT LIMIT EXTRACTION)
+   // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (⚡ WITH SAFEST ARRAY ELEMENT LIMIT EXTRACTION)
     try {
         // ⚡ FIXED: .limit(1) guarantees a stable return array wrapper even if duplicates exist in backend database
         const { data, error } = await supabaseClient
@@ -2051,15 +2051,29 @@ async function initApp() {
 
         if (!error && activeConfigRow) {
             console.log("📦 Fresh Cloud Row Package Discovered via Array Mapping:", activeConfigRow);
-            if (activeConfigRow.menu_data && activeConfigRow.menu_data.length > 0) {
-                menuCategories = activeConfigRow.menu_data;
+            
+            // 🛡️ SAFE DECODING ENGINE: Automatically detects if data is a raw string or a native parsed object node
+            let cloudMenu = activeConfigRow.menu_data;
+            if (typeof cloudMenu === 'string') {
+                try { 
+                    cloudMenu = JSON.parse(cloudMenu); 
+                } catch(jsonErr) { 
+                    console.error("🚨 RestroFlow Parser Warning: Unable to parse menu_data string context!", jsonErr); 
+                }
+            }
+            
+            // Airtight array tracing makes sure dataset conforms perfectly to categories loop standards
+            if (cloudMenu && (Array.isArray(cloudMenu) ? cloudMenu.length > 0 : Object.keys(cloudMenu).length > 0)) {
+                menuCategories = cloudMenu; // Overwrites runtime memory layers safely
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
+            
             if (activeConfigRow.hotel_name) {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
+            
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
-            renderCustomerMenu();
+            renderCustomerMenu(); // Instantly paints the customer menu using the fresh decoupled cloud array
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
             console.warn("⚠️ Warning: No configuration row registry discovered on cloud for ID:", hotelGlobalScopeID);
@@ -2067,6 +2081,7 @@ async function initApp() {
     } catch (err) {
         console.error("Database connection exception operational:", err);
     }
+       
 
     try {
         const { data: sessionData } = await supabaseClient
