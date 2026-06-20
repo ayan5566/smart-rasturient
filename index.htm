@@ -1993,6 +1993,7 @@ function renderCustomerMenu() {
 // ===================================================================
 // 📡 MISSING PILLAR B: CORE RestroFlow INITIALIZATION ENGINE 
 // ===================================================================
+// ⚡ FIXED: Replaced .maybeSingle() with .limit(1) array extraction to handle multiple duplicate row edge cases gracefully
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2031,31 +2032,36 @@ async function initApp() {
         menuCategories = fallbackMenu; 
     }
 
+    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (⚡ WITH SAFEST ARRAY ELEMENT LIMIT EXTRACTION)
     try {
+        // ⚡ FIXED: .limit(1) guarantees a stable return array wrapper even if duplicates exist in backend database
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
             .eq('id', hotelGlobalScopeID)
-            .maybeSingle(); 
+            .limit(1); 
 
         if (error) {
             console.error("🚨 Supabase Database Refusal Exception:", error.message, "| Code:", error.code);
             showOnScreenNotification("⚠️ Cloud Sync Interrupted!", true);
         }
 
-        if (!error && data) {
-            console.log("📦 Fresh Cloud Row Package Discovered:", data);
-            if (data.menu_data && data.menu_data.length > 0) {
-                menuCategories = data.menu_data;
+        // Extract the first structural config object block manually out of the database response array cleanly
+        const activeConfigRow = data?.[0];
+
+        if (!error && activeConfigRow) {
+            console.log("📦 Fresh Cloud Row Package Discovered via Array Mapping:", activeConfigRow);
+            if (activeConfigRow.menu_data && activeConfigRow.menu_data.length > 0) {
+                menuCategories = activeConfigRow.menu_data;
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
-            if (data.hotel_name) {
-                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, data.hotel_name);
+            if (activeConfigRow.hotel_name) {
+                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
             renderCustomerMenu();
             updateFrontEndClassificationLabels();
-        } else if (!data && !error) {
+        } else if (!activeConfigRow && !error) {
             console.warn("⚠️ Warning: No configuration row registry discovered on cloud for ID:", hotelGlobalScopeID);
         }
     } catch (err) {
@@ -2109,12 +2115,8 @@ async function initApp() {
     if (document.getElementById('adminDashboard').style.display === 'block') {
         populateAdminForms();
     }
-}
-        
-        
-
-  
-        // ===================================================================
+}  
+ // ===================================================================
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
 function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
