@@ -1307,14 +1307,13 @@ function updateFrontEndClassificationLabels() {
             document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
         }
         // ⚡ FIXED: Isolates database insertion routines strictly to the scoped routing handle to eliminate multi-tenant account leaks
+// ⚡ FIXED: Changed .single() to .maybeSingle() to prevent PGRST116 crash and explicitly catch RLS policy violations
 async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     try {
-        // 🔒 ZERO LEAKAGE LAW: Forces order packet arrays to strictly route to the isolated scanner hotel context payload
         let activeHotelID = hotelGlobalScopeID;
+        console.log("📡 Airtight SaaS Routing: Deploying order ticket payload...");
 
-        console.log("📡 Airtight SaaS Routing: Deploying order ticket payload inside isolated node ID:", activeHotelID);
-
-        // 1. Insert order inside main active_orders table
+        // ⚡ CHANGED: .single() converted to .maybeSingle() to safely handle 0 rows returned on RLS blocks
         const { data: newOrder, error: orderErr } = await supabaseClient
             .from('active_orders')
             .insert({
@@ -1322,24 +1321,38 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
                 table_id: tableId,
                 status: 'PENDING'
             })
-            .select().single();
+            .select()
+            .maybeSingle(); 
 
-        if (!orderErr && newOrder) {
+        if (orderErr) {
+            console.error("🚨 KDS Table Insert Error:", orderErr.message, "| Code:", orderErr.code);
+            showOnScreenNotification("❌ Order failed: Database policy restriction!", true);
+            return;
+        }
+
+        if (newOrder) {
             // 2. Insert mapped item details inside order_items table
-            await supabaseClient.from('order_items').insert({
+            const { error: itemErr } = await supabaseClient.from('order_items').insert({
                 order_id: newOrder.id,
                 dish_name: dishName,
                 size: itemSize.toUpperCase(),
                 qty: itemQty
             });
-            console.log("🔥 KDS Sync: Ticket successfully landed on kitchen grid nodes.");
-        } else if (orderErr) {
-            console.error("KDS Table Insert Error:", orderErr.message);
+            
+            if (itemErr) {
+                console.error("🚨 KDS Item Insert Error:", itemErr.message);
+            } else {
+                console.log("🔥 KDS Sync: Ticket successfully landed on kitchen grid nodes.");
+            }
+        } else {
+            // If newOrder is null and no error, it strictly means RLS blocked the insert (0 rows returned)
+            console.error("🚨 RLS Security Block: Insert returned 0 rows. Anonymous public users are not allowed to insert!");
+            alert("❌ Order Blocked by Server!\n\nReason: Supabase Row Level Security (RLS) is blocking anonymous customer orders. Please enable public insert policy on 'active_orders' and 'order_items' tables.");
         }
     } catch(err) { 
         console.error("KDS Pipeline Exception Error:", err); 
     }
-} 
+}
         
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
