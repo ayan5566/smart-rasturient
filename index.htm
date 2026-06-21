@@ -1235,6 +1235,9 @@ async function executeRealCloudSignUpSequence() {
     }
 }
 // ⚡ FIXED: Implements an input focus guard to guarantee the Hotel Setup field remains fully dynamic and editable without loop locks
+// ===================================================================
+// 🏷️ FIXED: Implements focus safety locks to ensure the input field remains 100% editable
+// ===================================================================
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
@@ -1250,7 +1253,7 @@ function updateFrontEndClassificationLabels() {
     
     document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
     
-    // 🛡️ EDITABLE SELECTION GUARD: Only overwrite input value if the user is NOT actively typing inside it
+    // 🛡️ FOCUS GUARD: Only overwrite input box value if the user is NOT actively typing inside it
     let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
     if (identityInput && document.activeElement !== identityInput) {
         identityInput.value = realBrandName;
@@ -1990,7 +1993,9 @@ function renderCustomerMenu() {
     });
 }
 
-// ⚡ FIXED: Strictly seals tenant configuration mapping rules to ensure scanned QR codes strictly load target database rows with 0% leakages
+// ===================================================================
+// 📡 FIXED: Strict multi-tenant mapping ensures customer scans ONLY render their respective saved cloud menu
+// ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2026,11 +2031,11 @@ async function initApp() {
     if (localScopedMenu) {
         menuCategories = JSON.parse(localScopedMenu);
     } else {
-        // 🛡️ CACHE LEAK LOCK: Scanned public customers start with clean array slots instead of inheriting default fallback templates
+        // 🛡️ ANTI-LEAK RULE: Scanned QR customers start with empty slots instead of inheriting default fallback pizzas
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS 
+    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
@@ -2057,20 +2062,13 @@ async function initApp() {
                 }
             }
             
-            // DISH VALIDATION ELEMENT RULES: Scans dataset arrays to find nested dishes structure logs
-            let hasDishes = false;
-            if (Array.isArray(cloudMenu) && cloudMenu.length > 0) {
-                hasDishes = cloudMenu.some(cat => cat.items && Array.isArray(cat.items) && cat.items.length > 0);
-            }
-            
-            if (hasDishes) {
+            // 🛡️ AIRTIGHT ISOLATION: Bind exactly what the user saved on their email. If empty, force clean empty arrays
+            if (cloudMenu) {
                 menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             } else {
-                // Absolute Lock Rule: Target account exists but has zero rows inserted -> show nothing
-                menuCategories = [];
-                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
-                console.warn("⚠️ Menu Engine: Target email registration possesses 0 dishes.");
+                menuCategories = urlHotel ? [] : fallbackMenu;
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
             
             if (activeConfigRow.hotel_name) {
@@ -2078,10 +2076,10 @@ async function initApp() {
             }
             
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
-            renderCustomerMenu(); 
+            renderCustomerMenu(); // Instantly paints either the verified menu or absolute nothing
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Absolute Lock Rule: Target row registry completely missing on server -> load pure empty canvas
+            // Absolute Lock: Row registry completely missing on server -> load clean empty matrix for QR codes
             menuCategories = urlHotel ? [] : fallbackMenu;
             localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             renderCustomerMenu();
