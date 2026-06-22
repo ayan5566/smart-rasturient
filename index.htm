@@ -2603,10 +2603,14 @@ async function triggerJustSaveConfig() {
     
     showOnScreenNotification("⏳ Syncing parameters securely to cloud...", false);
     // Explicit await guarantees network package landing before interface unlocks
+   
     await uploadMenuToCloud();
+
+    // 🔥 HIGH-PRIORITY FIX: Save hote hi header ke naam ko abhi ke abhi force-update karo
+    updateFrontEndClassificationLabels(); 
+
     showOnScreenNotification("💾 Menu & Settings safely updated to cloud!");
 }
-
 // ===================================================================
 // 🚪 FIXED TASK 2: PERSISTENCE SESSION GUARD PREVENTS TOKEN TRUNCATION BEFORE SIGNOUT
 // ===================================================================
