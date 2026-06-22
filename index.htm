@@ -2565,31 +2565,82 @@ async function uploadMenuToCloud() {
         siblingButtons.forEach(btn => btn.classList.remove('active'));
         btnElement.classList.add('active');
     }
-        // =================================================================
-// 💾 CONFIG SAVE & REAL TIME SESSION LOGOUT FUNCTIONS
-// =================================================================
+      // ===================================================================
+// 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
+// ===================================================================
+async function triggerJustSaveConfig() {
+    // 🛡️ FORCE IMMEDIATE LOCAL STORAGE persistent WRITE
+    let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+    if (identityInput) {
+        let typedBrandName = identityInput.value || "RestroFlow";
+        localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
+    }
+    
+    // Inline state capture updates all relational global state boundaries instantly
+    rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
+    rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
+    rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+    rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
+    rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+    rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
+    rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+    
+    if(document.getElementById('cfgTaxCGSTActive')) {
+        taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
+        taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+        taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
+        taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+        taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
+        taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+    }
+    localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
+    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
 
-// Sirf cloud par data push karega, dashboard band nahi karega
-function triggerJustSaveConfig() {
-    saveAdminConfig();
-    showOnScreenNotification("⚡ Menu & Settings safely updated to cloud!");
+    // Clear any loose pending background macro tasks to avoid collision
+    clearTimeout(configSaveTimeout);
+    
+    showOnScreenNotification("⏳ Syncing parameters securely to cloud...", false);
+    // Explicit await guarantees network package landing before interface unlocks
+    await uploadMenuToCloud();
+    showOnScreenNotification("💾 Menu & Settings safely updated to cloud!");
 }
 
-// Supabase se session terminate karke owner ko customer screen par bhej dega
+// ===================================================================
+// 🚪 FIXED TASK 2: PERSISTENCE SESSION GUARD PREVENTS TOKEN TRUNCATION BEFORE SIGNOUT
+// ===================================================================
 async function logoutAdmin() { 
     try {
-        // Cloud se token delete karein
+        // Kill background delayed loops instantly
+        clearTimeout(configSaveTimeout);
+        
+        let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+        if (identityInput) {
+            let typedBrandName = identityInput.value || "RestroFlow";
+            localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
+            
+            // 🛡️ SESSION PERSISTENCE GUARD: Await synchronous write while auth session token is valid
+            await supabaseClient
+                .from('hotel_config')
+                .upsert({ 
+                    id: hotelGlobalScopeID, 
+                    hotel_name: typedBrandName, 
+                    menu_data: menuCategories 
+                });
+            console.log("💾 Guard Active: Scoped database rows persistent updates deployed before session exit.");
+        }
+        
+        // Terminate security token handles securely once database pipeline returns success
         await supabaseClient.auth.signOut(); 
         
-        // UI screens swap karein
         document.getElementById('adminDashboard').style.display = 'none'; 
         document.getElementById('customerView').style.display = 'block'; 
         
-        // Cache saaf karke refresh karein
         renderCustomerMenu(); 
         showOnScreenNotification("🚪 Logged out successfully!");
     } catch(err) {
-        console.error("Logout Issue:", err);
+        console.error("🚨 Sign-out runtime exception logged:", err);
     }
 }
         
