@@ -2510,37 +2510,48 @@ function saveAdminConfig() {
     }, 600);
 }
  
-   // ===================================================================
-// 📡 FIXED: Added explicit response validation selector hooks to trace silent RLS blocks
+ // ===================================================================
+// 📡 FIXED: Deletes all previous hotel configurations before inserting the fresh current state
 // ===================================================================
 async function uploadMenuToCloud() {
     const currentActiveSaveId = hotelGlobalScopeID;
     const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
     
     try {
-        // 🛡️ Added .select() pointer to pull back the exact mutated cloud elements row array standard
-        const { data, error } = await supabaseClient
+        console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
+
+        // 🔥 STEP 1: Is hotelGlobalScopeID ke jitne bhi purane tute-foote/ghost records hain, unhe permanent DELETE karo
+        const { error: deleteError } = await supabaseClient
             .from('hotel_config')
-            .upsert({ 
+            .delete()
+            .eq('id', currentActiveSaveId);
+
+        if (deleteError) {
+            console.error("🚨 Supabase Delete Phase Interrupted:", deleteError.message);
+        } else {
+            console.log("🗑️ Success: Old cloud rows cleared cleanly.");
+        }
+
+        // 🔥 STEP 2: Purana data saaf hone ke baad, ab ekdum current fresh data brand new row bankar INSERT hoga
+        const { data, error: insertError } = await supabaseClient
+            .from('hotel_config')
+            .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
                 menu_data: menuCategories 
             })
             .select(); 
 
-        if (error) {
-            console.error("Supabase Sync Conflict Error:", error.message);
-            showOnScreenNotification("❌ Database write rejected by cloud!", true);
-        } else if (!data || data.length === 0) {
-            // 🚨 GOLDEN TRAP: If status is 200 but returned data row array is empty, RLS is strictly blocking the write action!
-            console.warn("🚨 RLS Security Alert: 200 OK received but 0 rows were updated. Missing UPDATE policy!");
-            alert("⚠️ Server Access Restricted!\n\nYour code is working fine, but Supabase Row Level Security (RLS) is blocking this update. Please enable the 'UPDATE' policy for users on the 'hotel_config' table in your dashboard.");
+        if (insertError) {
+            console.error("🚨 Supabase Insert Phase Interrupted:", insertError.message);
+            showOnScreenNotification("❌ Cloud save failed!", true);
         } else {
-            console.log(`🎉 Configuration securely synced for ID [${currentActiveSaveId}] smoothly!`, data);
+            console.log(`🎉 Fresh configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
+            // Header elements ko instantly update karo
             updateFrontEndClassificationLabels();
         }
     } catch(e) { 
-        console.error("Cloud Save Pipeline Exception:", e); 
+        console.error("Critical Cloud Save Exception:", e); 
     }
 }
     function initSpaceShooterGame() { 
