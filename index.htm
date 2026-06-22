@@ -1040,7 +1040,7 @@ try {
 
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 
-// ⚡ MEMORY CLEANER: Agar local storage mein koi ganda ya invalid text bacha hai toh use instantly saaf karo
+// ✅ FIXED REGEX: Standard 5-segment pattern verification prevents owner UUID state contamination on page reload
 if (hotelGlobalScopeID !== "Default_HQ_Arena" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID)) {
     hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
@@ -2061,13 +2061,10 @@ async function initApp() {
                 }
             }
             
-            // 🛡️ STRICT TENANT EXTRACTION: If data exists, overwrite memory layers, if it's a scanned user and database is blank, do NOT show demo data
-            if (cloudMenu && (Array.isArray(cloudMenu) ? cloudMenu.length > 0 : Object.keys(cloudMenu).length > 0)) {
-                menuCategories = cloudMenu; 
+            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty []) to block data poisoning loops
+            if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
+                menuCategories = cloudMenu; // Securely binds the real state (empty array or customized menu)
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-            } else if (urlHotel) {
-                menuCategories = [];
-                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
             }
             
             if (activeConfigRow.hotel_name) {
