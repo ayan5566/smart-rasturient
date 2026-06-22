@@ -1185,7 +1185,7 @@ async function executeRealCloudSignUpSequence() {
             // 2. ⚡ FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: newUserUUID,
-                hotel_name: "My Premium Restaurant",
+                hotel_name: "Restaurant",
                 menu_data: menuCategories || fallbackMenu
             });
             if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
