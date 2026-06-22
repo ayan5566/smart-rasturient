@@ -1234,15 +1234,16 @@ async function executeRealCloudSignUpSequence() {
         alert("System Exception: Multi-row relational database writing crashed.");
     }
 }
-// ⚡ FIXED: Implements an input focus guard to guarantee the Hotel Setup field remains fully dynamic and editable without loop locks
-// ===================================================================
-// 🏷️ FIXED: Implements focus safety locks to ensure the input field remains 100% editable
-// ===================================================================
+// ⚡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
-    if (!realBrandName || realBrandName === hotelGlobalScopeID || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(realBrandName)) {
-        realBrandName = "RestroFlow";
+    // 🛡️ UUID IDENTITY MASK: Strict validation blocks raw UUID strings or internal database keys from leaking to headers
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!realBrandName || realBrandName === hotelGlobalScopeID || uuidPattern.test(realBrandName)) {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Scanned QR view customer ke liye ek clean fallback title use hoga, aur website visitor ke liye RestroFlow
+        realBrandName = urlParams.get('hotel') ? "Welcome to Our Restaurant" : "RestroFlow";
     }
     
     let tableNameElem = document.getElementById('displayTableName');
@@ -1253,13 +1254,12 @@ function updateFrontEndClassificationLabels() {
     
     document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
     
-    // 🛡️ FOCUS GUARD: Only overwrite input box value if the user is NOT actively typing inside it
+    // 🛡️ INPUT FOCUS GUARD: Master configuration field becomes 100% responsive and fully editable without resetting cursors
     let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
     if (identityInput && document.activeElement !== identityInput) {
         identityInput.value = realBrandName;
     }
-}
-        function setupGlobalKeyboardBindings() {
+}        function setupGlobalKeyboardBindings() {
             window.addEventListener('keydown', (e) => {
                 if (activeGameMode === 'SPACE') {
                     if (e.key === 'ArrowLeft') spaceMoveDir = -6;
@@ -1993,9 +1993,7 @@ function renderCustomerMenu() {
     });
 }
 
-// ===================================================================
-// 📡 FIXED: Strict multi-tenant mapping ensures customer scans ONLY render their respective saved cloud menu
-// ===================================================================
+// ⚡ FIXED: Multi-tenant routing handshakes strictly bind active data objects to scanned codes to eliminate fallbacks
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2027,11 +2025,12 @@ async function initApp() {
         console.log("No session pipeline active:", sessionErr);
     }
 
+    // Cache Layer Verification Matrix
     let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if (localScopedMenu) {
         menuCategories = JSON.parse(localScopedMenu);
     } else {
-        // 🛡️ ANTI-LEAK RULE: Scanned QR customers start with empty slots instead of inheriting default fallback pizzas
+        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects instead of inheriting fallback pizza elements
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
@@ -2062,13 +2061,13 @@ async function initApp() {
                 }
             }
             
-            // 🛡️ AIRTIGHT ISOLATION: Bind exactly what the user saved on their email. If empty, force clean empty arrays
-            if (cloudMenu) {
+            // 🛡️ STRICT TENANT EXTRACTION: If data exists, overwrite memory layers, if it's a scanned user and database is blank, do NOT show demo data
+            if (cloudMenu && (Array.isArray(cloudMenu) ? cloudMenu.length > 0 : Object.keys(cloudMenu).length > 0)) {
                 menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-            } else {
-                menuCategories = urlHotel ? [] : fallbackMenu;
-                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            } else if (urlHotel) {
+                menuCategories = [];
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
             }
             
             if (activeConfigRow.hotel_name) {
@@ -2076,12 +2075,14 @@ async function initApp() {
             }
             
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
-            renderCustomerMenu(); // Instantly paints either the verified menu or absolute nothing
+            renderCustomerMenu(); 
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Absolute Lock: Row registry completely missing on server -> load clean empty matrix for QR codes
-            menuCategories = urlHotel ? [] : fallbackMenu;
-            localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            // Target restaurant record doesn't exist on server -> force clean blank canvas for scanned public profiles
+            if (urlHotel) {
+                menuCategories = [];
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
+            }
             renderCustomerMenu();
             updateFrontEndClassificationLabels();
         }
@@ -2136,8 +2137,8 @@ async function initApp() {
     if (document.getElementById('adminDashboard').style.display === 'block') {
         populateAdminForms();
     }
-}
-        // ===================================================================
+}        
+// ===================================================================
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
 function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
