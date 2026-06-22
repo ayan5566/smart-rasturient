@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
-   /* ================================================================= */
+/* ================================================================= */
 /* 🖨️ METRIC PRINT ISOLATION LAYER: Dynamically separates Receipt Roll from QR Label */
 /* ================================================================= */
 @media print {
@@ -21,7 +21,7 @@
         display: none !important; 
     }
     
-    /* 🛡️ SEPARATION ENGINE: Allows either the Thermal Bill OR the targeted QR Card to print individually */
+    /* 🛡️ SEPARATION ENGINE: Allows either the Thermal Bill OR the targeted QR elements to display */
     #thermalReceiptInvoice, #thermalReceiptInvoice *,
     .print-active-target, .print-active-target * { 
         display: block !important; 
@@ -43,18 +43,28 @@
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
 
-    /* 🏷️ QR CODE LABEL STYLING: Perfectly fits a single high-res clean card layout */
+    /* 🏷️ QR CODE LABEL PRINT STYLING: Forces the canvas container to render crisp and large */
     .qr-print-layout {
         position: absolute !important;
-        left: 50% !important; top: 30% !important;
-        transform: translate(-50%, -30%) !important;
-        width: 80mm !important;
-        background: #ffffff !important;
-        color: #000000 !important;
-        padding: 20px !important;
-        border-radius: 0px !important;
-        box-shadow: none !important;
+        left: 50% !important; top: 20% !important;
+        transform: translate(-50%, -20%) !important;
+        width: 100% !important;
         text-align: center !important;
+        background: #ffffff !important;
+        padding: 30px !important;
+    }
+    
+    /* Force QR Image canvas and text headers inside the modal content to stay fully visible */
+    #qrcodeCanvasOutputFrame, #qrcodeCanvasOutputFrame *, #qrPrintTitle, #qrPrintMetaSubText {
+        display: block !important;
+        margin: 0 auto 10px auto !important;
+        text-align: center !important;
+    }
+    
+    #qrcodeCanvasOutputFrame img, #qrcodeCanvasOutputFrame canvas {
+        display: inline-block !important;
+        width: 180px !important;
+        height: 180px !important;
     }
 }
 /* ================================================================= */
@@ -1687,29 +1697,29 @@ function generateMathQuestion() {
             document.getElementById('qrPrintPreviewModal').style.display = 'flex';
 }
 
-       // ===================================================================
-// 🖨️ FIXED: Binds isolated printing states to prevent thermal invoice layout overlaps
+    // ===================================================================
+// 🖨️ FIXED: Forces the actual generated QR Code canvas matrix to shift onto the browser print page
 // ===================================================================
 function executeNativeBrowserPrintTrigger() {
-    console.log("🚀 RestroFlow Print Engine: Isolating Table QR Code element stream...");
+    console.log("🚀 RestroFlow Print Engine: Shifting target QR canvas stream...");
     
+    // Target the modal content container which holds the title, subtext, and QR canvas
     const qrModalContent = document.querySelector('#qrPrintPreviewModal .modal-content');
     if (!qrModalContent) {
         alert("❌ Error: QR preview data stream target could not be parsed.");
         return;
     }
     
-    // 🛡️ RUNTIME HOOK: Inject active target printing states onto the QR content container strictly
+    // 🛡️ RUNTIME HOOK: Inject active display layout classes to make this container print-visible
     qrModalContent.classList.add('print-active-target', 'qr-print-layout');
     
-    // Fire isolated OS level printing window dialog smoothly
+    // Trigger OS level printing window dialog smoothly
     window.print();
     
-    // 🧹 GARBAGE CLEANER: Instantly strip off the printing hooks to avoid dashboard interface corruption
+    // 🧹 GARBAGE CLEANER: Strip hooks after printing completes to return back to normal dashboard view
     qrModalContent.classList.remove('print-active-target', 'qr-print-layout');
     console.log("🧹 Success: QR print element properties cleaned seamlessly.");
 }
-
         function removeCustomPaymentQR() {
             if(confirm("Are you sure you want to remove the custom QR code image?")) {
                 customPaymentQRData = ""; localStorage.removeItem('restaurantCustomPaymentQR'); updateCustomQRAdminPreview();
