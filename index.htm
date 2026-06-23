@@ -14,18 +14,18 @@
     
     <style>
 /* ================================================================= */
-/* 🖨️ MASTER PRINT ISOLATION LAYER (CLONED LOGIC / NO MIXING)       */
+/* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PIXELS)  */
 /* ================================================================= */
 @media print {
-    /* Step 1: Default state mein poori screen ko complete blanket-hide karo */
+    /* Step 1: Default state mein poori screen ke baaki saare elements ko hide karo */
     body * {
         display: none !important;
     }
 
     /* ------------------------------------------------------------- */
-    /* 🏷️ ROUTE B: QR CODE SINGLE-CARD SYSTEM (CLONED ENGINE ROUTE)   */
+    /* 🏷️ ROUTE B: QR CODE SINGLE-CARD SYSTEM (FORCE PIXELS LOAD)     */
     /* ------------------------------------------------------------- */
-    /* Jab function class inject karega, tabhi strictly sirf QR modal open hoga */
+    /* Jab QR print hoga, toh modal, content card aur uske text elements ko visible rakho */
     #qrPrintPreviewModal.print-active-target,
     #qrPrintPreviewModal.print-active-target .modal-content,
     #qrPrintPreviewModal.print-active-target .modal-content *,
@@ -34,9 +34,11 @@
     #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
         display: block !important;
         visibility: visible !important;
+        -webkit-print-color-adjust: exact !important; /* 🔥 Browser engine ko pixel render karne par force karta hai */
+        color-adjust: exact !important;
     }
 
-    /* Screenshot waale pure card box ko paper sheet par center design alignment do */
+    /* Screenshot waale pure card box ko paper sheet par center alignment aur clean background do */
     #qrPrintPreviewModal.print-active-target .modal-content {
         position: absolute !important;
         left: 50% !important; top: 10% !important;
@@ -52,19 +54,14 @@
         box-sizing: border-box !important;
     }
 
-    /* Control buttons ko paper ke queue frame se permanent strip/hide karo */
+    /* Paper print sheet par se "Print Label Card" aur "Dismiss" waale control buttons ko chupao */
     #qrPrintPreviewModal.print-active-target button, 
     #qrPrintPreviewModal.print-active-target .action-btn {
         display: none !important;
     }
 
-    /* Duplicate rendering double images ko crash karne ke liye canvas ko block karo */
+    /* 🔥 CRITICAL PIXEL FIX: Display the raw CANVAS where qrcode.js draws the actual high-res pixels */
     #qrcodeCanvasOutputFrame canvas {
-        display: none !important;
-    }
-    
-    /* Strictly sirf screenshot waali sharp crisp high-res image page par land karegi */
-    #qrcodeCanvasOutputFrame img {
         display: inline-block !important;
         visibility: visible !important;
         width: 200px !important;
@@ -73,7 +70,13 @@
         margin: 15px auto !important;
         border: none !important;
     }
+    
+    /* Mirror image tag ko hide rakho taaki double printing na ho aur blank output bypass ho sake */
+    #qrcodeCanvasOutputFrame img {
+        display: none !important;
+    }
 
+    /* Font configurations matching your professional dashboard screenshot card */
     #qrPrintTitle {
         font-family: 'Segoe UI', sans-serif !important;
         font-size: 24px !important;
@@ -83,7 +86,7 @@
         margin-bottom: 6px !important;
     }
 
-    #qrPrintMetaSubText {
+    #qrPrintMetaSubText, #qrPrintPreviewModal p {
         font-family: 'Segoe UI', sans-serif !important;
         font-size: 13px !important;
         color: #666666 !important;
@@ -113,8 +116,7 @@
     }
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
-}    
-        
+}        
         /* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
