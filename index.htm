@@ -14,36 +14,30 @@
     
     <style>
 /* ================================================================= */
-/* 🖨️ METRIC PRINT ISOLATION LAYER: Dynamically separates Receipt Roll from QR Label */
+/* 🖨️ METRIC PRINT ISOLATION LAYER: Completely separates Receipt Roll from QR Label */
 /* ================================================================= */
 @media print {
-    /* 🛡️ FIXED HIERARCHY: Hide main dashboard views, but DO NOT blanket-hide the body components */
-    #adminDashboard, #customerView, .floating-action-container, #customToastNotification {
+    /* 🛡️ STEP 1: Sabse pehle poori sheet ko blank (clear) karo */
+    body * {
         display: none !important;
     }
-    
-    /* Strict display toggles for active elements */
-    #thermalReceiptInvoice.print-active-bill {
+
+    /* 🛡️ STEP 2: Agar BILL active hai, toh hidayat hai ki SIRF bill ka section print ho */
+    #thermalReceiptInvoice.print-active-bill, 
+    #thermalReceiptInvoice.print-active-bill * {
         display: block !important;
     }
-    
-    #qrPrintPreviewModal {
-        display: flex !important;
-        position: absolute !important;
-        left: 0 !important; top: 0 !important;
-        width: 100% !important; height: 100% !important;
-        background: #ffffff !important;
-    }
 
-    #qrPrintPreviewModal .modal-content {
+    /* 🛡️ STEP 3: Agar QR active hai, toh hidayat hai ki SIRF QR modal ka main content print ho */
+    #qrPrintPreviewModal.print-active-target,
+    #qrPrintPreviewModal.print-active-target .modal-content,
+    #qrPrintPreviewModal.print-active-target #qrPrintTitle,
+    #qrPrintPreviewModal.print-active-target #qrPrintMetaSubText,
+    #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
         display: block !important;
-        width: 100% !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
     }
 
-    /* Bill Invoice Strict 58mm Formatter */
+    /* 📄 THERMAL BILL FORMATTING (Strict Narrow Roll Layout) */
     #thermalReceiptInvoice {
         position: absolute !important;
         left: 0 !important; top: 0 !important;
@@ -59,26 +53,35 @@
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
 
-    /* Hide un-necessary print buttons from modal on paper sheet */
+    /* 🏷️ QR CODE CARD FORMATTING (Crisp Vector Center Layout) */
+    .qr-print-layout {
+        position: absolute !important;
+        left: 50% !important; top: 15% !important;
+        transform: translate(-50%, -15%) !important;
+        width: 100% !important;
+        text-align: center !important;
+        background: #ffffff !important;
+        padding: 30px !important;
+    }
+
+    /* Print sheet par se "Print Label Card" aur "Dismiss" waale buttons ko chupa do */
     #qrPrintPreviewModal button, #qrPrintPreviewModal .action-btn {
         display: none !important;
     }
 
-    /* 🛡️ FORCE QR CODE CANVAS VISIBILITY */
-    #qrcodeCanvasOutputFrame, #qrcodeCanvasOutputFrame *, #qrPrintTitle, #qrPrintMetaSubText {
-        display: block !important;
-        visibility: visible !important;
-        margin: 0 auto 10px auto !important;
-        text-align: center !important;
-        color: #000000 !important;
+    /* 🛡️ DUP-KILLER TRAP: Duplication ttodne ke liye dynamic raw canvas ko hide karo */
+    #qrcodeCanvasOutputFrame canvas {
+        display: none !important;
     }
     
-    #qrcodeCanvasOutputFrame img, #qrcodeCanvasOutputFrame canvas {
+    /* SIRF sabsre clean dynamic rendering waali unique Image ko baahr nikaalo */
+    #qrcodeCanvasOutputFrame img {
         display: inline-block !important;
         visibility: visible !important;
         width: 190px !important;
         height: 190px !important;
         background: #ffffff !important;
+        margin: 10px auto !important;
     }
 }
         /* ================================================================= */
