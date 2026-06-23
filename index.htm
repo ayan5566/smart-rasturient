@@ -14,57 +14,86 @@
     
     <style>
 /* ================================================================= */
-/* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING)                      */
+/* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE SCREEN)  */
 /* ================================================================= */
 @media print {
-    /* Step 1: Default state mein poori screen ko automatic hide karo */
+    /* Step 1: Default state mein poori screen ke baaki saare elements ko hide karo */
     body * {
         display: none !important;
     }
 
     /* ------------------------------------------------------------- */
-    /* 🏷️ QR CODE CARD LAYOUT INTERFACE                              */
+    /* 🏷️ ROUTE B: QR CODE SINGLE-CARD SYSTEM (SCREENSHOT EXACT MATCH) */
     /* ------------------------------------------------------------- */
+    /* Jab QR print hoga, toh modal, content card aur uske text elements ko force-visible rakho */
     #qrPrintPreviewModal.print-active-target,
     #qrPrintPreviewModal.print-active-target .modal-content,
+    #qrPrintPreviewModal.print-active-target .modal-content *,
     #qrPrintPreviewModal.print-active-target #qrPrintTitle,
     #qrPrintPreviewModal.print-active-target #qrPrintMetaSubText,
     #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
         display: block !important;
+        visibility: visible !important;
     }
 
-    .qr-print-layout {
+    /* Screenshot waale pure card box ko paper sheet par center alignment aur clean background do */
+    #qrPrintPreviewModal.print-active-target .modal-content {
         position: absolute !important;
-        left: 50% !important; top: 15% !important;
-        transform: translate(-50%, -15%) !important;
-        width: 100% !important;
-        text-align: center !important;
+        left: 50% !important; top: 10% !important;
+        transform: translate(-50%, -10%) !important;
+        width: 90% !important;
+        max-width: 400px !important;
         background: #ffffff !important;
-        padding: 30px !important;
+        padding: 35px 25px !important;
+        border-radius: 24px !important;
+        text-align: center !important;
+        box-shadow: none !important;
+        color: #000000 !important;
+        box-sizing: border-box !important;
     }
 
-    /* Print sheet par se modal ke control buttons chupao */
-    #qrPrintPreviewModal button, #qrPrintPreviewModal .action-btn {
+    /* Paper print sheet par se "Print Label Card" aur "Dismiss" waale control buttons ko chupao */
+    #qrPrintPreviewModal.print-active-target button, 
+    #qrPrintPreviewModal.print-active-target .action-btn {
         display: none !important;
     }
 
-    /* Library ke duplicate canvas elements ko permanent block karo */
+    /* Library ke duplicate double rendering canvas block ko permanent mitao */
     #qrcodeCanvasOutputFrame canvas {
         display: none !important;
     }
     
-    /* Strictly sirf clean dynamic <img> tag render hoga */
+    /* Strictly sirf screenshot waali high-res sharp dynamic QR image render hogi */
     #qrcodeCanvasOutputFrame img {
         display: inline-block !important;
         visibility: visible !important;
-        width: 190px !important;
-        height: 190px !important;
+        width: 200px !important;
+        height: 200px !important;
         background: #ffffff !important;
-        margin: 10px auto !important;
+        margin: 15px auto !important;
+        border: none !important;
+    }
+
+    /* Font configurations matching your professional dashboard screenshot card */
+    #qrPrintTitle {
+        font-family: 'Segoe UI', sans-serif !important;
+        font-size: 24px !important;
+        font-weight: bold !important;
+        color: #2c3e50 !important;
+        margin-top: 0 !important;
+        margin-bottom: 6px !important;
+    }
+
+    #qrPrintMetaSubText, #qrPrintPreviewModal p {
+        font-family: 'Segoe UI', sans-serif !important;
+        font-size: 13px !important;
+        color: #666666 !important;
+        margin-bottom: 15px !important;
+        line-height: 1.4 !important;
     }
 
     /* ------------------------------------------------------------- */
-    /* 🧾 THERMAL RECEIPT ROLLOUT LAYOUT                             */
+    /* 🧾 ROUTE A: THERMAL RECEIPT ROLLOUT LAYOUT (UNTOUCHED & SAFE)  */
     /* ------------------------------------------------------------- */
     #thermalReceiptInvoice.print-active-bill, 
     #thermalReceiptInvoice.print-active-bill * {
@@ -85,8 +114,7 @@
     }
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
-}
-        
+}        
         /* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
