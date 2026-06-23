@@ -14,69 +14,67 @@
     
     <style>
 /* ================================================================= */
-/* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PIXELS)  */
+/* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PREVIEW) */
 /* ================================================================= */
 @media print {
-    /* Step 1: Default state mein poori screen ke baaki saare elements ko hide karo */
-    body * {
+    /* Step 1: Bill aur QR ke alawa body ke saare direct elements ko hide karo */
+    body > *:not(#qrPrintPreviewModal):not(#thermalReceiptInvoice) {
         display: none !important;
     }
 
     /* ------------------------------------------------------------- */
-    /* 🏷️ ROUTE B: QR CODE SINGLE-CARD SYSTEM (FORCE PIXELS LOAD)     */
+    /* 🏷️ ROUTE B: QR CODE SINGLE-CARD INTERFACE LAYOUT             */
     /* ------------------------------------------------------------- */
-    /* Jab QR print hoga, toh modal, content card aur uske text elements ko visible rakho */
-    #qrPrintPreviewModal.print-active-target,
-    #qrPrintPreviewModal.print-active-target .modal-content,
-    #qrPrintPreviewModal.print-active-target .modal-content *,
-    #qrPrintPreviewModal.print-active-target #qrPrintTitle,
-    #qrPrintPreviewModal.print-active-target #qrPrintMetaSubText,
-    #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
-        display: block !important;
-        visibility: visible !important;
-        -webkit-print-color-adjust: exact !important; /* 🔥 Browser engine ko pixel render karne par force karta hai */
-        color-adjust: exact !important;
+    /* Active class aate hi main modal background window overlay ko full-screen white karo */
+    #qrPrintPreviewModal.print-active-target {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        position: absolute !important;
+        left: 0 !important; top: 0 !important;
+        width: 100% !important; height: 100% !important;
+        background: #ffffff !important;
+        backdrop-filter: none !important;
     }
 
-    /* Screenshot waale pure card box ko paper sheet par center alignment aur clean background do */
+    /* Screenshot waale pure dynamic card layout container ko un-hide aur format karo */
     #qrPrintPreviewModal.print-active-target .modal-content {
-        position: absolute !important;
-        left: 50% !important; top: 10% !important;
-        transform: translate(-50%, -10%) !important;
-        width: 90% !important;
-        max-width: 400px !important;
+        display: block !important;
         background: #ffffff !important;
         padding: 35px 25px !important;
         border-radius: 24px !important;
         text-align: center !important;
         box-shadow: none !important;
         color: #000000 !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        margin: 40px auto !important;
         box-sizing: border-box !important;
     }
 
-    /* Paper print sheet par se "Print Label Card" aur "Dismiss" waale control buttons ko chupao */
+    /* Control buttons ko paper surface sheet layout se permanent strip/hide karo */
     #qrPrintPreviewModal.print-active-target button, 
     #qrPrintPreviewModal.print-active-target .action-btn {
         display: none !important;
     }
 
-    /* 🔥 CRITICAL PIXEL FIX: Display the raw CANVAS where qrcode.js draws the actual high-res pixels */
+    /* 🛑 DUP-KILLER TRAP: Duplication todne ke liye dynamic raw canvas hidden rakho */
     #qrcodeCanvasOutputFrame canvas {
+        display: none !important;
+    }
+    
+    /* Strictly sirf real high-res single dynamic image vector tag render hokar sheet par dikhega */
+    #qrcodeCanvasOutputFrame img {
         display: inline-block !important;
         visibility: visible !important;
-        width: 200px !important;
-        height: 200px !important;
+        width: 220px !important;
+        height: 220px !important;
         background: #ffffff !important;
         margin: 15px auto !important;
         border: none !important;
     }
-    
-    /* Mirror image tag ko hide rakho taaki double printing na ho aur blank output bypass ho sake */
-    #qrcodeCanvasOutputFrame img {
-        display: none !important;
-    }
 
-    /* Font configurations matching your professional dashboard screenshot card */
+    /* Font configurations matching your professional dashboard screenshot card data keys */
     #qrPrintTitle {
         font-family: 'Segoe UI', sans-serif !important;
         font-size: 24px !important;
@@ -116,7 +114,7 @@
     }
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
-}        
+}
         /* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
@@ -698,27 +696,30 @@
     <script>
 
 // ===================================================================
-// 🏷️ FIXED QR PRINT CONTROLLER: Cloned from Thermal Bill Engine logic
+// 🏷️ ANTI-WHITE-SCREEN ISOLATED QR PRINT ENGINE (NATIVE LIFECYCLE GUARD)
 // ===================================================================
 function executeNativeBrowserPrintTrigger() {
-    console.log("🚀 RestroFlow Spooler: Starting Isolated QR Print Sequence...");
+    console.log("🚀 RestroFlow Print Engine: Triggering Force-Visible QR Sequence...");
     
-    // Target the main wrapper modal element
     const qrModal = document.getElementById('qrPrintPreviewModal');
     if (!qrModal) {
-        alert("❌ Verification Error: QR modal target could not be parsed.");
+        alert("❌ Error: QR Modal layout content missing inside document!");
         return;
     }
     
-    // 🛡️ RUNTIME HOOK: Inject active display layout classes (Just like print-active-bill)
-    qrModal.classList.add('print-active-target');
+    // 1. Add printing classes instantly to isolate the modal element
+    qrModal.classList.add('print-active-target', 'qr-print-layout');
     
-    // Trigger OS level print layout window dialog smoothly
+    // 2. 🛡️ CHROMIUM LIFECYCLE GUARD: 
+    // Yeh listener class ko tabhi remove karega jab user print dialog ko fully close/dismiss kar dega
+    window.onafterprint = function() {
+        qrModal.classList.remove('print-active-target', 'qr-print-layout');
+        console.log("外部 🧹 Success: QR print target hooks cleaned up seamlessly after preview dismissal.");
+        window.onafterprint = null; // Unbind listener to save memory leaks
+    };
+    
+    // 3. Trigger native browser print engine preview layout window dialog
     window.print();
-    
-    // 🧹 GARBAGE CLEANER: Strip hooks after printing completes to return back to normal dashboard
-    qrModal.classList.remove('print-active-target');
-    console.log("🧹 Success: QR print target hooks cleaned up seamlessly.");
 }
 // ===================================================================
 // MODULE 2: 🧾 THERMAL RECEIPT BILL ENGINE (100% INDEPENDENT)
