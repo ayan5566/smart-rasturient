@@ -54,16 +54,22 @@
         padding: 30px !important;
     }
     
+    /* 🛡️ HIGH-CONTRAST CANVAS FORCE RE-RENDER LAYER */
     #qrcodeCanvasOutputFrame, #qrcodeCanvasOutputFrame *, #qrPrintTitle, #qrPrintMetaSubText {
         display: block !important;
+        visibility: visible !important;
         margin: 0 auto 10px auto !important;
         text-align: center !important;
     }
     
+    /* Dynamic Image selection enforces layout parameters explicitly to override blank pages */
     #qrcodeCanvasOutputFrame img, #qrcodeCanvasOutputFrame canvas {
         display: inline-block !important;
-        width: 180px !important;
-        height: 180px !important;
+        visibility: visible !important;
+        width: 190px !important;
+        height: 190px !important;
+        background: #ffffff !important;
+        border: none !important;
     }
 }
         /* ================================================================= */
