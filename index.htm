@@ -17,16 +17,32 @@
 /* 🖨️ METRIC PRINT ISOLATION LAYER: Dynamically separates Receipt Roll from QR Label */
 /* ================================================================= */
 @media print {
-    body * { 
-        display: none !important; 
+    /* 🛡️ FIXED HIERARCHY: Hide main dashboard views, but DO NOT blanket-hide the body components */
+    #adminDashboard, #customerView, .floating-action-container, #customToastNotification {
+        display: none !important;
     }
     
-    /* 🛡️ SEPARATION ENGINE: Allows either the Thermal Bill OR the targeted QR elements to display dynamically */
-    #thermalReceiptInvoice.print-active-bill, #thermalReceiptInvoice.print-active-bill *,
-    .print-active-target, .print-active-target * { 
-        display: block !important; 
+    /* Strict display toggles for active elements */
+    #thermalReceiptInvoice.print-active-bill {
+        display: block !important;
     }
     
+    #qrPrintPreviewModal {
+        display: flex !important;
+        position: absolute !important;
+        left: 0 !important; top: 0 !important;
+        width: 100% !important; height: 100% !important;
+        background: #ffffff !important;
+    }
+
+    #qrPrintPreviewModal .modal-content {
+        display: block !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     /* Bill Invoice Strict 58mm Formatter */
     #thermalReceiptInvoice {
         position: absolute !important;
@@ -43,33 +59,26 @@
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
 
-    /* 🏷️ QR CODE LABEL STYLING: Forces the canvas container to render crisp and large */
-    .qr-print-layout {
-        position: absolute !important;
-        left: 50% !important; top: 20% !important;
-        transform: translate(-50%, -20%) !important;
-        width: 100% !important;
-        text-align: center !important;
-        background: #ffffff !important;
-        padding: 30px !important;
+    /* Hide un-necessary print buttons from modal on paper sheet */
+    #qrPrintPreviewModal button, #qrPrintPreviewModal .action-btn {
+        display: none !important;
     }
-    
-    /* 🛡️ HIGH-CONTRAST CANVAS FORCE RE-RENDER LAYER */
+
+    /* 🛡️ FORCE QR CODE CANVAS VISIBILITY */
     #qrcodeCanvasOutputFrame, #qrcodeCanvasOutputFrame *, #qrPrintTitle, #qrPrintMetaSubText {
         display: block !important;
         visibility: visible !important;
         margin: 0 auto 10px auto !important;
         text-align: center !important;
+        color: #000000 !important;
     }
     
-    /* Dynamic Image selection enforces layout parameters explicitly to override blank pages */
     #qrcodeCanvasOutputFrame img, #qrcodeCanvasOutputFrame canvas {
         display: inline-block !important;
         visibility: visible !important;
         width: 190px !important;
         height: 190px !important;
         background: #ffffff !important;
-        border: none !important;
     }
 }
         /* ================================================================= */
