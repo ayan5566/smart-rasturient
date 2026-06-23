@@ -17,27 +17,20 @@
 /* 🖨️ METRIC PRINT ISOLATION LAYER: Completely separates Receipt Roll from QR Label */
 /* ================================================================= */
 @media print {
-    /* 🛡️ STEP 1: Sabse pehle poori sheet ko blank (clear) karo */
+    /* 🛡️ STATE 1: Default state mein poori screen ko absolute blank (clear) rakho */
     body * {
         display: none !important;
     }
 
-    /* 🛡️ STEP 2: Agar BILL active hai, toh hidayat hai ki SIRF bill ka section print ho */
+    /* ========================================== */
+    /* 🧾 ROUTE A: BILL PRINTING PIPELINE        */
+    /* ========================================== */
+    /* Jab 'executeLiveBillingThermalPrint' chalega, toh yeh block strictly sirf bill ko layout dega */
     #thermalReceiptInvoice.print-active-bill, 
     #thermalReceiptInvoice.print-active-bill * {
         display: block !important;
     }
 
-    /* 🛡️ STEP 3: Agar QR active hai, toh hidayat hai ki SIRF QR modal ka main content print ho */
-    #qrPrintPreviewModal.print-active-target,
-    #qrPrintPreviewModal.print-active-target .modal-content,
-    #qrPrintPreviewModal.print-active-target #qrPrintTitle,
-    #qrPrintPreviewModal.print-active-target #qrPrintMetaSubText,
-    #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
-        display: block !important;
-    }
-
-    /* 📄 THERMAL BILL FORMATTING (Strict Narrow Roll Layout) */
     #thermalReceiptInvoice {
         position: absolute !important;
         left: 0 !important; top: 0 !important;
@@ -53,7 +46,19 @@
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
 
-    /* 🏷️ QR CODE CARD FORMATTING (Crisp Vector Center Layout) */
+
+    /* ========================================== */
+    /* 🏷️ ROUTE B: QR CODE PRINTING PIPELINE      */
+    /* ========================================== */
+    /* Jab 'executeNativeBrowserPrintTrigger' chalega, toh yeh block strictly sirf QR code ko layout dega */
+    #qrPrintPreviewModal.print-active-target,
+    #qrPrintPreviewModal.print-active-target .modal-content,
+    #qrPrintPreviewModal.print-active-target #qrPrintTitle,
+    #qrPrintPreviewModal.print-active-target #qrPrintMetaSubText,
+    #qrPrintPreviewModal.print-active-target #qrcodeCanvasOutputFrame {
+        display: block !important;
+    }
+
     .qr-print-layout {
         position: absolute !important;
         left: 50% !important; top: 15% !important;
@@ -64,17 +69,17 @@
         padding: 30px !important;
     }
 
-    /* Print sheet par se "Print Label Card" aur "Dismiss" waale buttons ko chupa do */
+    /* Print sheet ke andar se "Print Label Card" aur "Dismiss" buttons ko chupao */
     #qrPrintPreviewModal button, #qrPrintPreviewModal .action-btn {
         display: none !important;
     }
 
-    /* 🛡️ DUP-KILLER TRAP: Duplication ttodne ke liye dynamic raw canvas ko hide karo */
+    /* 🛑 DUP-KILLER TRAP: Library ke banaye duplicate raw canvas element ko permanent block karo */
     #qrcodeCanvasOutputFrame canvas {
         display: none !important;
     }
     
-    /* SIRF sabsre clean dynamic rendering waali unique Image ko baahr nikaalo */
+    /* Strictly sirf sabsre clean, high-res dynamic <img> tag ko sheet par render karo */
     #qrcodeCanvasOutputFrame img {
         display: inline-block !important;
         visibility: visible !important;
@@ -83,8 +88,7 @@
         background: #ffffff !important;
         margin: 10px auto !important;
     }
-}
-        /* ================================================================= */
+}        /* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
             --card-bg: #dddcd1;
