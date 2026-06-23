@@ -668,30 +668,35 @@
     <script>
 
 // ===================================================================
-// MODULE 1: 🏷️ QR CODE PRINT ENGINE (100% INDEPENDENT)
+// 🏷️ ANTI-WHITE-SCREEN ISOLATED QR PRINT ENGINE
 // ===================================================================
 function executeNativeBrowserPrintTrigger() {
-    console.log("🚀 RestroFlow Print Engine: Starting Isolated QR Print Sequence...");
+    console.log("🚀 RestroFlow Print Engine: Triggering Force-Visible QR Sequence...");
     
+    // 1. Check karo ki QR preview modal container screen par maujood hai ya nahi
     const qrModal = document.getElementById('qrPrintPreviewModal');
     if (!qrModal) {
-        alert("❌ Error: QR preview modal container missing!");
+        alert("❌ Error: QR Modal layout content missing inside document!");
         return;
     }
     
-    // Runtime par target states lagao taaki sirf QR route trigger ho
+    // 2. 🛡️ RUNTIME HOOKS: Dynamic classes inject karo taaki CSS media filters ko layout mil sake
     qrModal.classList.add('print-active-target', 'qr-print-layout');
     
-    // Buffer delay taaki canvas ke pixels image engine mein smooth load ho sakein
+    // 3. ⏱️ 150ms BUFFER TIMEOUT: Browser ko canvas ke pixels dynamic image mein render karne ka time do
     setTimeout(function() {
-        window.print();
-        
-        // Cleanup loop instantly triggered
-        qrModal.classList.remove('print-active-target', 'qr-print-layout');
-        console.log("🧹 Success: QR print properties cleaned smoothly.");
+        try {
+            // Native print screen invoke karo (Ab sheet white nahi aayegi)
+            window.print();
+        } catch (printError) {
+            console.error("🚨 Browser Native Print Exception:", printError);
+        } finally {
+            // 4. 🧹 GARBAGE CLEANER: Print dialog band hote hi hooks ko turant hatao taaki screen normal ho jaye
+            qrModal.classList.remove('print-active-target', 'qr-print-layout');
+            console.log("🧹 Success: QR print target hooks cleaned up seamlessly.");
+        }
     }, 150);
 }
-
 
 // ===================================================================
 // MODULE 2: 🧾 THERMAL RECEIPT BILL ENGINE (100% INDEPENDENT)
