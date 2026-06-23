@@ -21,8 +21,8 @@
         display: none !important; 
     }
     
-    /* 🛡️ SEPARATION ENGINE: Allows either the Thermal Bill OR the targeted QR elements to display */
-    #thermalReceiptInvoice, #thermalReceiptInvoice *,
+    /* 🛡️ SEPARATION ENGINE: Allows either the Thermal Bill OR the targeted QR elements to display dynamically */
+    #thermalReceiptInvoice.print-active-bill, #thermalReceiptInvoice.print-active-bill *,
     .print-active-target, .print-active-target * { 
         display: block !important; 
     }
@@ -43,7 +43,7 @@
     #thermalReceiptInvoice table { width: 100% !important; border-collapse: collapse !important; }
     #thermalReceiptInvoice hr { border: 0 !important; border-top: 1px dashed #000 !important; margin: 5px 0 !important; }
 
-    /* 🏷️ QR CODE LABEL PRINT STYLING: Forces the canvas container to render crisp and large */
+    /* 🏷️ QR CODE LABEL STYLING: Forces the canvas container to render crisp and large */
     .qr-print-layout {
         position: absolute !important;
         left: 50% !important; top: 20% !important;
@@ -54,7 +54,6 @@
         padding: 30px !important;
     }
     
-    /* Force QR Image canvas and text headers inside the modal content to stay fully visible */
     #qrcodeCanvasOutputFrame, #qrcodeCanvasOutputFrame *, #qrPrintTitle, #qrPrintMetaSubText {
         display: block !important;
         margin: 0 auto 10px auto !important;
@@ -67,7 +66,7 @@
         height: 180px !important;
     }
 }
-/* ================================================================= */
+        /* ================================================================= */
         :root { 
             --primary-bg: #f9f5d7;
             --card-bg: #dddcd1;
@@ -646,8 +645,8 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
- // ===================================================================
-// 🖨️ FLUID PRINT SLIP ROUTER ENGINE (⚡ CLOUD SYNC LIVE ORDER MATRIX)
+// ===================================================================
+// 🖨️ BILL ROUTER: Injects print-active-bill class to isolate invoice roll from QR modal
 // ===================================================================
 async function executeLiveBillingThermalPrint() {
     console.log("🚀 RestroFlow Spooler: Print button successfully clicked!");
@@ -662,11 +661,9 @@ async function executeLiveBillingThermalPrint() {
     let targetDisc = 0;
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
 
-    // Check mapping parameter profiles
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
     if (isUUID) {
-        // 🔥 CLOUD REALTIME SYNC: Pull order directly from Supabase so other mobile device entries are captured!
         try {
             showOnScreenNotification("⏳ Fetching live bill ledger from cloud...", false);
             const { data: sessionData, error } = await supabaseClient
@@ -683,7 +680,6 @@ async function executeLiveBillingThermalPrint() {
             console.error("🚨 Cloud Fetch Print Exception:", err);
         }
     } else {
-        // No Login / Offline Fallback mode
         targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedTable)) || [];
         targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedTable)) || 0;
     }
@@ -721,7 +717,6 @@ async function executeLiveBillingThermalPrint() {
         document.body.appendChild(receiptContainer);
     }
 
-    // Strict compact rollout invoice mapping layout
     receiptContainer.innerHTML = `
         <div style="width: 100%; text-align: center;">
             <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">${realBrandName}</h3>
@@ -756,11 +751,34 @@ async function executeLiveBillingThermalPrint() {
         </div>
     `;
 
-    // Trigger OS print handshakes smoothly
-    receiptContainer.style.display = 'block';
+    // 🛡️ ISOLATION HOOK: Active target activation forces print selection to target ONLY the invoice container
+    receiptContainer.classList.add('print-active-bill');
     window.print();
-    receiptContainer.style.display = 'none';
+    receiptContainer.classList.remove('print-active-bill');
+    
     showOnScreenNotification("🖨️ Receipt Strip Printed From Cloud!");
+}
+
+// ===================================================================
+// 🖨️ QR ROUTER: Shifts canvas content to dynamic print layers natively
+// ===================================================================
+function executeNativeBrowserPrintTrigger() {
+    console.log("🚀 RestroFlow Print Engine: Shifting target QR canvas stream...");
+    
+    const qrModalContent = document.querySelector('#qrPrintPreviewModal .modal-content');
+    if (!qrModalContent) {
+        alert("❌ Error: QR preview data stream target could not be parsed.");
+        return;
+    }
+    
+    // 🛡️ RUNTIME HOOK: Inject active display classes to render the QR matrix cleanly on sheet
+    qrModalContent.classList.add('print-active-target', 'qr-print-layout');
+    
+    window.print();
+    
+    // 🧹 GARBAGE CLEANER: Tear down styles loop instantly to preserve admin view states
+    qrModalContent.classList.remove('print-active-target', 'qr-print-layout');
+    console.log("🧹 Success: QR print element properties cleaned seamlessly.");
 }
      // ⚡ FIXED: Isolates cashier telemetry streams from adjacent tenant profiles via database filter hooks
 function initializeAdminRealtimeBillingTracker() {
