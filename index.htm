@@ -1008,6 +1008,9 @@ function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
     showOnScreenNotification("📋 Loaded: " + hotelName);
 }
 
+// ===================================================================
+// 👑 FIXED: ACCUMULATIVE SUBSCRIPTION DAY EXTENSION ENGINE
+// ===================================================================
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
     let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
@@ -1027,11 +1030,10 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
     try {
         let startTime = new Date();
         let endTime = new Date();
-        endTime.setDate(startTime.getDate() + validityDays);
 
         showOnScreenNotification("⚡ Processing security write override data...", false);
 
-        // 🟢 FEATURE 2: Update Hotel Name directly on cloud configuration nodes inside 'hotel_config'
+        // Hotel Name sync router logic
         if (updatedHotelName) {
             const { data: configCheck } = await supabaseClient
                 .from('hotel_config')
@@ -1051,16 +1053,30 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
             }
         }
 
-        // Check if record exists inside tracking matrix array
+        // 🛡️ STEP 1: Fetch existing active subscription record to check current expiry date
         const { data: existingRecord } = await supabaseClient
             .from('subscriptions')
-            .select('user_id')
+            .select('user_id, current_period_end')
             .eq('user_id', targetId)
             .maybeSingle();
 
+        // 🛡️ STEP 2: MATHEMATICAL ACCUMULATION ENGINE
+        if (existingRecord && existingRecord.current_period_end && targetStatusState === 'active') {
+            let currentExpiry = new Date(existingRecord.current_period_end);
+            
+            // CONDITION: Agar hotel ka plan abhi zinda hai (future mein hai), toh usi date ke aage days add honge.
+            // Agar plan already expire ho chuka hai, toh naya pack AAJ ki date se shuru hoga.
+            let baseDate = currentExpiry > startTime ? currentExpiry : startTime;
+            
+            endTime = new Date(baseDate.getTime());
+            endTime.setDate(baseDate.getDate() + validityDays);
+        } else {
+            // Agar bilkul fresh account hai, toh aaj se days jodo
+            endTime.setDate(startTime.getDate() + validityDays);
+        }
+
         let syncOperationError = null;
 
-        // 🟢 FEATURE 3: Binding distinct custom individual price arrays payload into row variables
         let subscriptionPayload = {
             status: targetStatusState,
             current_period_start: startTime.toISOString(),
@@ -1077,7 +1093,7 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
             syncOperationError = error;
         } else {
             subscriptionPayload.user_id = targetId;
-            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; // Fallback seed placeholder token
+            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; 
             const { error } = await supabaseClient
                 .from('subscriptions')
                 .insert(subscriptionPayload);
@@ -1089,7 +1105,7 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         } else {
             showOnScreenNotification(`👑 Subscription Scoped Parameters updated to [${targetStatusState.toUpperCase()}] successfully!`);
             
-            // Clean input boxes values parameters mapping loops after success action
+            // Clear inputs after successful save
             document.getElementById('saTargetUserUUID').value = '';
             document.getElementById('saTargetHotelName').value = '';
             document.getElementById('saPlanValidityDays').value = '';
@@ -1103,7 +1119,6 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         console.error("Super Admin Operation Exception:", err);
     }
 }
-
 function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
