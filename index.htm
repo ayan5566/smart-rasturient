@@ -2213,7 +2213,6 @@ function renderCustomerMenu() {
     });
 }
 
-// ⚡ FIXED: Multi-tenant routing handshakes strictly bind active data objects to scanned codes to eliminate fallbacks
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2232,6 +2231,13 @@ async function initApp() {
             hotelGlobalScopeID = session.user.id;
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
+            
+            // 🔥 CRITICAL FIX: Page refresh hote hi pehle subscription aur custom prices load karo
+            const isPlanValid = await verifySubscriptionGatekeeper(hotelGlobalScopeID);
+            if (!isPlanValid) {
+                return; // Yahin par execution block ho jayegi aur paywall real price ke sath dikhega
+            }
+
             document.getElementById('customerView').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
             console.log("🔐 RestroFlow: Active Owner session verified!");
@@ -2614,42 +2620,61 @@ function addNewCategory() {
 }
        
 // ===================================================================
-// 🛡️ SUBSECTION A: SUBSCRIPTION GATEKEEPER (WITH LIVE MULTI-TENANT PRICING)
+// 🏢 UUID-BASED SUBSCRIPTION & PRICING FETCH ENGINE
 // ===================================================================
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
-        // 🟢 Cloud se status aur expiry ke sath-sath custom monthly/yearly rates fetch ho rahe hain
+        console.log("🔍 Fetching subscription rates for UUID:", ownerId);
+        
+        // Strictly target columns via owner UUID identity mapping
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
             .select('status, current_period_end, monthly_price, yearly_price')
             .eq('user_id', ownerId)
             .maybeSingle();
 
-        if (!subData) {
-            alert("🚨 Access Denied!\nAapka koi Active Subscription nahi mila. Kripya Super Admin se apna account activate karwayein.");
-            await supabaseClient.auth.signOut();
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+        if (error) {
+            console.error("🚨 Supabase Fetch Error:", error.message);
             return false;
+        }
+
+        if (!subData) {
+            console.warn("⚠️ No subscription record found for this UUID.");
+            return true; // Fresh account signups fallback safety
         }
 
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
-        // Check validation boundaries
+        // 🛑 CONDITION: Agar plan expire ho chuka hai
         if (subData.status !== 'active' || today > expiryDate) {
-            // 🛑 PLAN EXPIRED: Live dynamic prices sidha paywall modal container ko pass honge
-            displaySubscriptionExpiredPaywallModal(subData.monthly_price || 0, subData.yearly_price || 0);
+            
+            // Live fields ko mazaal hai jo ₹0 dikhaye, direct variables se data inject hoga
+            const mPrice = subData.monthly_price || 0;
+            const yPrice = subData.yearly_price || 0;
+            
+            // Inject values directly into Paywall elements
+            if(document.getElementById('paywallMonthlyPriceDisplay')) {
+                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
+            }
+            if(document.getElementById('paywallYearlyPriceDisplay')) {
+                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
+            }
+
+            // Interface settings mask toggle
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+            
             return false;
         }
 
         return true;
     } catch (err) {
-        console.error("Gatekeeper Exception:", err);
+        console.error("🚨 Gatekeeper Architectural Crash:", err);
         return false;
     }
 }
-
 // ===================================================================
 // 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING
 // ===================================================================
