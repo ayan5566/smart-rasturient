@@ -669,23 +669,33 @@
     <hr style="border-color: #c5a059; margin-bottom: 20px;">
 
     <h3>🏢 Registered Restaurant Network Accounts</h3>
-    <div id="superAdminClientsListWrapper" style="background: #1f2833; border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto; margin-bottom: 25px; text-align: left;">
-        </div>
+    <p style="font-size:10px; color:#bdc3c7; margin-top:-10px; font-style:italic;">💡 Tip: Click any row below to instantly load its details into the controller form.</p>
+    <div id="superAdminClientsListWrapper" style="background: #1f2833; border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto; margin-bottom: 25px; text-align: left;"></div>
 
     <h3 style="color: #ffd700;">⚡ Force Inject Subscription Rights</h3>
     <div style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #c5a059;">
+        
         <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant User UUID String:</label>
         <input type="text" id="saTargetUserUUID" placeholder="Paste Owner User ID here..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
         
-        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Extend Access Validity (Days):</label>
-        <select id="saPlanValidityDays" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
-            <option value="30">Monthly Pack (30 Days)</option>
-            <option value="180">Half-Yearly Pack (180 Days)</option>
-            <option value="365">Yearly Enterprise Plan (365 Days)</option>
-            <option value="10000">Infinite Legend Mode (Lifetime)</option>
-        </select>
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Edit / Update Hotel Brand Name:</label>
+        <input type="text" id="saTargetHotelName" placeholder="Enter or update hotel name..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
 
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Extend Access Validity (Enter Custom Days Exactly):</label>
+        <input type="number" id="saPlanValidityDays" placeholder="Type exact number of days (e.g., 30, 45, 90, 365)..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Monthly Price (₹):</label>
+                <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 999" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Yearly Price (₹):</label>
+                <input type="number" id="saCustomYearlyRate" placeholder="e.g. 9999" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('active')" style="background: var(--neon-green); color: #fff; flex: 1;">⚡ Activate / Renew Plan</button>
             <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('suspended')" style="background: var(--danger-red); color: #fff; flex: 1;">🚫 Immediate Block</button>
         </div>
@@ -927,19 +937,28 @@ function launchSuperAdminSecretModulePrompt() {
     }
 }
 
+// ===================================================================
+// 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
+// ===================================================================
+
 async function fetchGlobalSaaSAccountNetworkList() {
     const listWrapper = document.getElementById('superAdminClientsListWrapper');
     if (!listWrapper) return;
     listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Connecting global servers node...</span>`;
 
     try {
-        // Fetch all current entries active inside the system database registry subscriptions mapping
+        // Fetch subscriptions data logs
         const { data: subList, error } = await supabaseClient
             .from('subscriptions')
-            .select('user_id, status, current_period_end')
+            .select('user_id, status, current_period_end, monthly_price, yearly_price')
             .order('current_period_end', { ascending: false });
 
         if (error) throw error;
+
+        // 🟢 FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
+        const { data: configList } = await supabaseClient
+            .from('hotel_config')
+            .select('id, hotel_name');
 
         if (!subList || subList.length === 0) {
             listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
@@ -950,12 +969,25 @@ async function fetchGlobalSaaSAccountNetworkList() {
         subList.forEach(sub => {
             let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
             let formattedExpiry = new Date(sub.current_period_end).toLocaleDateString();
+            
+            // Cross-reference owner UUID to check corresponding brand name field
+            let matchingConfig = configList ? configList.find(c => c.id === sub.user_id) : null;
+            let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
+            
+            let currentMonthlyPrice = sub.monthly_price || 0;
+            let currentYearlyPrice = sub.yearly_price || 0;
+
+            // Safe dynamic string escaping to block runtime crash loops inside quotes
+            let sanitizedHotelName = hotelDisplayName.replace(/'/g, "\\'");
 
             listWrapper.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:8px 0; font-size:12px; color:#fff;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
+                     onclick="populateSuperAdminFormFields('${sub.user_id}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
                     <div>
-                        <span style="font-weight:bold; color:#ffd700;">👤 Owner UUID:</span> <span style="font-family:monospace; color:#bdc3c7;">${sub.user_id.substring(0,8)}...</span><br>
-                        <span style="color:#7f8c8d;">Expires on: ${formattedExpiry}</span>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName}</span><br>
+                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">UUID: ${sub.user_id.substring(0,18)}...</span><br>
+                        <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
+                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
                     </div>
                     <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
                 </div>`;
@@ -967,12 +999,28 @@ async function fetchGlobalSaaSAccountNetworkList() {
     }
 }
 
+// Helper function to auto-fill inputs instantly when a hotel row is clicked
+function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
+    document.getElementById('saTargetUserUUID').value = userId;
+    document.getElementById('saTargetHotelName').value = hotelName;
+    document.getElementById('saCustomMonthlyRate').value = mRate;
+    document.getElementById('saCustomYearlyRate').value = yRate;
+    showOnScreenNotification("📋 Loaded: " + hotelName);
+}
+
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
-    let validityDays = parseInt(document.getElementById('saPlanValidityDays').value);
+    let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
+    let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
+    let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
+    let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
     if (!targetId || targetId.length < 10) {
         alert("❌ Invalid user classification identifier code string pattern.");
+        return;
+    }
+    if (validityDays <= 0 && targetStatusState === 'active') {
+        alert("⚠️ Please enter a valid custom number of days for activation parameters.");
         return;
     }
 
@@ -980,6 +1028,28 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         let startTime = new Date();
         let endTime = new Date();
         endTime.setDate(startTime.getDate() + validityDays);
+
+        showOnScreenNotification("⚡ Processing security write override data...", false);
+
+        // 🟢 FEATURE 2: Update Hotel Name directly on cloud configuration nodes inside 'hotel_config'
+        if (updatedHotelName) {
+            const { data: configCheck } = await supabaseClient
+                .from('hotel_config')
+                .select('id')
+                .eq('id', targetId)
+                .maybeSingle();
+
+            if (configCheck) {
+                await supabaseClient
+                    .from('hotel_config')
+                    .update({ hotel_name: updatedHotelName })
+                    .eq('id', targetId);
+            } else {
+                await supabaseClient
+                    .from('hotel_config')
+                    .insert({ id: targetId, hotel_name: updatedHotelName, menu_data: [] });
+            }
+        }
 
         // Check if record exists inside tracking matrix array
         const { data: existingRecord } = await supabaseClient
@@ -990,36 +1060,42 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
 
         let syncOperationError = null;
 
+        // 🟢 FEATURE 3: Binding distinct custom individual price arrays payload into row variables
+        let subscriptionPayload = {
+            status: targetStatusState,
+            current_period_start: startTime.toISOString(),
+            current_period_end: endTime.toISOString(),
+            monthly_price: allocatedMonthlyPrice,
+            yearly_price: allocatedYearlyPrice
+        };
+
         if (existingRecord) {
-            // Update mapping properties configurations values fields logs
             const { error } = await supabaseClient
                 .from('subscriptions')
-                .update({
-                    status: targetStatusState,
-                    current_period_start: startTime.toISOString(),
-                    current_period_end: endTime.toISOString()
-                })
+                .update(subscriptionPayload)
                 .eq('user_id', targetId);
             syncOperationError = error;
         } else {
-            // Insert premium enterprise membership mapping parameters data logs payload
+            subscriptionPayload.user_id = targetId;
+            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; // Fallback seed placeholder token
             const { error } = await supabaseClient
                 .from('subscriptions')
-                .insert({
-                    user_id: targetId,
-                    plan_id: '1d6ca9b8-b472-4cf3-875b-df768f746ef7', // Mapped plan database row fallback placeholder string registry
-                    status: targetStatusState,
-                    current_period_start: startTime.toISOString(),
-                    current_period_end: endTime.toISOString()
-                });
+                .insert(subscriptionPayload);
             syncOperationError = error;
         }
 
         if (syncOperationError) {
             alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
         } else {
-            showOnScreenNotification(`👑 Subscription Matrix updated to state [${targetStatusState.toUpperCase()}] seamlessly!`);
+            showOnScreenNotification(`👑 Subscription Scoped Parameters updated to [${targetStatusState.toUpperCase()}] successfully!`);
+            
+            // Clean input boxes values parameters mapping loops after success action
             document.getElementById('saTargetUserUUID').value = '';
+            document.getElementById('saTargetHotelName').value = '';
+            document.getElementById('saPlanValidityDays').value = '';
+            document.getElementById('saCustomMonthlyRate').value = '';
+            document.getElementById('saCustomYearlyRate').value = '';
+            
             fetchGlobalSaaSAccountNetworkList();
         }
 
