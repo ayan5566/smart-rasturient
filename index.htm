@@ -429,7 +429,40 @@
             <ul class="rules-list" id="rulesListDisplay"></ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
         </div>
-    </div>       
+    </div>
+    <div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
+    <div class="modal-content" style="max-width:390px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 25px 60px rgba(0,0,0,0.25); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
+        
+        <div style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">⚠️</div>
+        
+        <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRE</h2>
+        <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">Aapka RestroFlow workspace subscription pack samapt ho chuka hai.</p>
+        
+        <button class="action-btn" id="activatePlanTriggerBtn" onclick="revealSaaSPricingTiersMatrix()" style="background: var(--neon-green); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 6px 15px rgba(46,204,113,0.3); margin-bottom: 0px; transition: all 0.2s;">
+            ⚡ ACTIVE YOUR PLAN
+        </button>
+
+        <div id="saasPricingTiersContainer" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 16px; margin-top: 15px; text-align: left; box-sizing: border-box;">
+            <h4 style="margin: 0 0 12px 0; color: var(--dark-charcoal); font-weight: 800; text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px; font-size: 14px;">Scoped Enterprise Rates Selected</h4>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 13px; color: #475569;">📅 <b>Monthly Pack:</b></span>
+                <span style="color: var(--neon-green); font-weight: 800; font-size: 16px;" id="paywallMonthlyPriceDisplay">₹0</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 13px; color: #475569;">👑 <b>Yearly Enterprise:</b></span>
+                <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;" id="paywallYearlyPriceDisplay">₹0</span>
+            </div>
+            
+            <p style="font-size: 10px; color: #94a3b8; text-align: center; margin: 12px 0 0 0; font-weight: bold; letter-spacing: 0.3px;">💬 Contact system admin to push activation days.</p>
+        </div>
+        
+        <button onclick="closePaywallAndExitToHub()" style="background: none; border: none; color: #7f8c8d; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 20px; display: block; width: 100%;">
+            Exit & Return to Hub
+        </button>
+    </div>
+</div>
     <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
        <!-- 🍕 FIXED: High-Resolution Professional Branding Header -->
@@ -2588,13 +2621,12 @@ function addNewCategory() {
 // =================================================================
 // 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
 // =================================================================
-
-
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
+        // 🟢 Fetch status, end date along with your newly configured monthly and yearly rates array mapping
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
-            .select('status, current_period_end')
+            .select('status, current_period_end, monthly_price, yearly_price')
             .eq('user_id', ownerId)
             .maybeSingle();
 
@@ -2609,11 +2641,10 @@ async function verifySubscriptionGatekeeper(ownerId) {
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // Check validation boundaries
         if (subData.status !== 'active' || today > expiryDate) {
-            alert("🚨 Plan Expired! Access Denied.\nKripya subscription renew karwayein.");
-            await supabaseClient.auth.signOut();
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+            // 🛑 PLAN EXPIRED TRIGGER ENGINE: Opens the premium interactive paywall screen framework
+            displaySubscriptionExpiredPaywallModal(subData.monthly_price || 0, subData.yearly_price || 0);
             return false;
         }
 
@@ -3052,6 +3083,39 @@ function executeAuthPortalMasterRouter() {
         console.log("🚀 Routing execution to: LOGIN ENGINE");
         executeRealCloudLoginSequence();
     }
+}
+        // ===================================================================
+// 👑 INTERACTIVE PAYWALL LIFE-CYCLE CONTROLLERS
+// ===================================================================
+function displaySubscriptionExpiredPaywallModal(monthlyRate, yearlyRate) {
+    // Inject pricing text nodes inside targets fields flawlessly
+    document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + monthlyRate;
+    document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yearlyRate;
+    
+    // Hide primary layout environments to seal data views boundaries
+    document.getElementById('adminDashboard').style.display = 'none';
+    document.getElementById('customerView').style.display = 'none';
+    
+    // Open the premium modal screen view
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+}
+
+function revealSaaSPricingTiersMatrix() {
+    // Reveal the hidden pricing container node smoothly
+    document.getElementById('saasPricingTiersContainer').style.display = 'block';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+    showOnScreenNotification("ℹ️ YOUR PLAN IS EXPIRE! Please contact administrator node.");
+}
+
+async function closePaywallAndExitToHub() {
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+    document.getElementById('saasPricingTiersContainer').style.display = 'none';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
+    
+    // Sign out to clear session credentials tokens securely
+    await supabaseClient.auth.signOut();
+    document.getElementById('customerView').style.display = 'block';
+    renderCustomerMenu();
 }
 
 initApp();
