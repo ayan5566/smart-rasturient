@@ -2613,12 +2613,12 @@ function addNewCategory() {
     }
 }
        
-// =================================================================
-// 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
-// =================================================================
+// ===================================================================
+// 🛡️ SUBSECTION A: SUBSCRIPTION GATEKEEPER (WITH LIVE MULTI-TENANT PRICING)
+// ===================================================================
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
-        // 🟢 Fetch status, end date along with your newly configured monthly and yearly rates array mapping
+        // 🟢 Cloud se status aur expiry ke sath-sath custom monthly/yearly rates fetch ho rahe hain
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
             .select('status, current_period_end, monthly_price, yearly_price')
@@ -2638,7 +2638,7 @@ async function verifySubscriptionGatekeeper(ownerId) {
 
         // Check validation boundaries
         if (subData.status !== 'active' || today > expiryDate) {
-            // 🛑 PLAN EXPIRED TRIGGER ENGINE: Opens the premium interactive paywall screen framework
+            // 🛑 PLAN EXPIRED: Live dynamic prices sidha paywall modal container ko pass honge
             displaySubscriptionExpiredPaywallModal(subData.monthly_price || 0, subData.yearly_price || 0);
             return false;
         }
@@ -2649,46 +2649,82 @@ async function verifySubscriptionGatekeeper(ownerId) {
         return false;
     }
 }
-    function populateAdminForms() {
-        document.getElementById('cfgMathDisc').value = rules.math;
-        document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
-        document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
-        document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
-        document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
-        document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
-        document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
-        
-        document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
-        document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
-        document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; 
-        document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
-        document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
-        document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
+
+// ===================================================================
+// 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING
+// ===================================================================
+function populateAdminForms() {
+    // Game target scores aur variables sync properties
+    document.getElementById('cfgMathDisc').value = rules.math;
+    document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
+    document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
+    document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
+    document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
+    document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
+    document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
     
-        updateCustomQRAdminPreview();
-        renderAnalyticsDashboard(); 
-        
-        const formElement = document.getElementById('adminMenuForm'); 
-        if(!formElement) return; 
-        formElement.innerHTML = '';
-        
-        // ✅ RE-ADDED LOOP: Is loop ke andar ab 'cat' cleanly define ho jayega!
-        menuCategories.forEach((cat, cIdx) => {
-            let catHTML = `<div class="admin-section-block"><div class="section-header"><input type="text" value="${cat.categoryName}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();"><button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button></div>`;
-            cat.items.forEach((item, iIdx) => {
-                let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
-                catHTML += `<div class="admin-row"><div class="image-upload-container">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>Name: <input type="text" value="${item.name}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button></div>`;
-            });
-            catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName}</button></div>`; 
-            formElement.innerHTML += catHTML;
+    // Financial tax structure controls checkboxes mappings
+    document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
+    document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
+    document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; 
+    document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
+    document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
+    document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
+
+    // Refresh display layout subsystems
+    updateCustomQRAdminPreview();
+    renderAnalyticsDashboard(); 
+    
+    const formElement = document.getElementById('adminMenuForm'); 
+    if (!formElement) return; 
+    formElement.innerHTML = '';
+    
+    // ✅ RE-ADDED ENGINE LOOP: Binds 'cat' and item arrays securely to prevent runtime reference crash
+    menuCategories.forEach((cat, cIdx) => {
+        let catHTML = `
+            <div class="admin-section-block">
+                <div class="section-header">
+                    <input type="text" value="${cat.categoryName}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
+                    <button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button>
+                </div>`;
+                
+        cat.items.forEach((item, iIdx) => {
+            let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
+            
+            catHTML += `
+                <div class="admin-row">
+                    <div class="image-upload-container">
+                        ${miniPreview}
+                        <input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;">
+                    </div>
+                    Name: <input type="text" value="${item.name}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>
+                        ₹: <input type="number" value="${item.s}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>
+                        ₹: <input type="number" value="${item.m}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>
+                        ₹: <input type="number" value="${item.l}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
+                </div>`;
         });
-        generateAdminTableGrid(); 
-        populateWaiterPanelDropdownList();
-    }
+        
+        catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName}</button></div>`; 
+        formElement.innerHTML += catHTML;
+    });
+    
+    generateAdminTableGrid(); 
+    populateWaiterPanelDropdownList();
+}
 
      // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
 function saveAdminConfig() {
