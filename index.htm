@@ -536,17 +536,17 @@
         </button>
     </div>
         </div>
-    </div> <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
+   <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
     <div class="modal-content" style="max-width:380px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
         
-        <div onclick="launchSuperAdminSecretModulePrompt()" style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;" title="Founder Secret Entry">⚡</div>
+        <div style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;" onclick="launchSuperAdminSecretModulePrompt()" title="Founder Secret Entry">⚡</div>
         
         <h2 id="authPortalTitle" style="color: var(--dark-charcoal); font-weight: 800; margin-bottom: 4px; font-size: 26px; letter-spacing: -0.5px;">RestroFlow Portal</h2>
         <p id="authPortalSubTitle" style="color: #7f8c8d; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">Workspace Gateway Terminal</p>
         
         <div style="text-align: left; margin-bottom: 12px;">
-            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace Email Identity</label>
-            <input type="text" id="authEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Owner Mobile Number (Unique Business ID)</label>
+            <input type="text" id="authPhoneInput" placeholder="Enter 10-digit mobile number..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
         </div>
         
         <div style="text-align: left; margin-bottom: 25px;">
@@ -555,8 +555,8 @@
         </div>
         
         <button class="action-btn" id="authPrimaryActionButton" onclick="executeAuthPortalMasterRouter()" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
-    🚀 Authenticate & Boot System
-</button>
+            🚀 Authenticate & Boot System
+        </button>
 
         <div style="margin-bottom: 20px; background: #f1f2f6; padding: 10px; border-radius: 10px; font-size: 13px; color: #555;">
             <span id="authToggleStateLabelText">New to RestroFlow?</span> 
@@ -693,10 +693,10 @@
         <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
         
         <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()" style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
-            👑 Open SaaS Founder Master Control
+            👑 Founder's Master Control
         </button>
     </div>
-    <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
+   <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
     <h2 style="color: #ffd700; margin-bottom: 5px;">👑 SaaS Founder Master Command Center</h2>
     <p style="text-align: center; font-size: 11px; color: #8f9aa3; margin-top: 0; font-weight: bold; letter-spacing: 1px;">GLOBAL NETWORK SUBSCRIPTION VALIDATOR</p>
     <hr style="border-color: #c5a059; margin-bottom: 20px;">
@@ -708,19 +708,19 @@
     <h3 style="color: #ffd700;">⚡ Force Inject Subscription Rights</h3>
     <div style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #c5a059;">
         
-        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant User UUID String:</label>
-        <input type="text" id="saTargetUserUUID" placeholder="Paste Owner User ID here..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant Owner Phone Number:</label>
+        <input type="text" id="saTargetUserPhone" placeholder="Enter 10-digit registered number..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
         
         <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Edit / Update Hotel Brand Name:</label>
         <input type="text" id="saTargetHotelName" placeholder="Enter or update hotel name..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
 
         <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Extend Access Validity (Enter Custom Days Exactly):</label>
-        <input type="number" id="saPlanValidityDays" placeholder="Type exact number of days (e.g., 30, 45, 90, 365)..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
+        <input type="number" id="saPlanValidityDays" placeholder="Type exact number of days (e.g., 30, 45, 90)..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
                 <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Monthly Price (₹):</label>
-                <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 999" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+                <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 4000" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
             </div>
             <div style="flex: 1;">
                 <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Yearly Price (₹):</label>
@@ -971,7 +971,7 @@ function launchSuperAdminSecretModulePrompt() {
 }
 
 // ===================================================================
-// 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
+// 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM (PURE PHONE CORE)
 // ===================================================================
 
 async function fetchGlobalSaaSAccountNetworkList() {
@@ -980,15 +980,15 @@ async function fetchGlobalSaaSAccountNetworkList() {
     listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Connecting global servers node...</span>`;
 
     try {
-        // Fetch subscriptions data logs
+        // Fetch subscriptions data logs along with user_phone field identity tracking
         const { data: subList, error } = await supabaseClient
             .from('subscriptions')
-            .select('user_id, status, current_period_end, monthly_price, yearly_price')
+            .select('user_id, user_phone, status, current_period_end, monthly_price, yearly_price')
             .order('current_period_end', { ascending: false });
 
         if (error) throw error;
 
-        // 🟢 FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
+        // FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
         const { data: configList } = await supabaseClient
             .from('hotel_config')
             .select('id, hotel_name');
@@ -1009,15 +1009,19 @@ async function fetchGlobalSaaSAccountNetworkList() {
             
             let currentMonthlyPrice = sub.monthly_price || 0;
             let currentYearlyPrice = sub.yearly_price || 0;
+            
+            // 🟢 FEATURE 2 & 3: Extract unique user mobile number registered token string fields
+            let displayPhone = sub.user_phone || "No Number Logged";
 
             // Safe dynamic string escaping to block runtime crash loops inside quotes
             let sanitizedHotelName = hotelDisplayName.replace(/'/g, "\\'");
 
+            // UI UPGRADE: Rendered directly as Hotel Name (Mobile Number) for dynamic lookups
             listWrapper.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="populateSuperAdminFormFields('${sub.user_id}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
+                     onclick="populateSuperAdminFormFields('${displayPhone}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName}</span><br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName} (${displayPhone})</span><br>
                         <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">UUID: ${sub.user_id.substring(0,18)}...</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
                         <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
@@ -1032,27 +1036,28 @@ async function fetchGlobalSaaSAccountNetworkList() {
     }
 }
 
-// Helper function to auto-fill inputs instantly when a hotel row is clicked
-function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
-    document.getElementById('saTargetUserUUID').value = userId;
+// Helper function to auto-fill inputs instantly when a hotel row is clicked (Shshifted to Phone ID)
+function populateSuperAdminFormFields(phone, hotelName, mRate, yRate) {
+    document.getElementById('saTargetUserPhone').value = phone;
     document.getElementById('saTargetHotelName').value = hotelName;
     document.getElementById('saCustomMonthlyRate').value = mRate;
     document.getElementById('saCustomYearlyRate').value = yRate;
-    showOnScreenNotification("📋 Loaded: " + hotelName);
+    showOnScreenNotification("📋 Loaded mobile account: " + phone);
 }
 
 // ===================================================================
-// 👑 FIXED: ACCUMULATIVE SUBSCRIPTION DAY EXTENSION ENGINE
+// 👑 FIXED: ACCUMULATIVE SUBSCRIPTION EXTENSION BY MOBILE PHONE IDENTITY
 // ===================================================================
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
-    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    // 🟢 UI ROUTING SHIFT: Target values read strictly via phone identifier input code
+    let targetPhone = document.getElementById('saTargetUserPhone').value.trim();
     let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
     let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
     let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
     let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-    if (!targetId || targetId.length < 10) {
-        alert("❌ Invalid user classification identifier code string pattern.");
+    if (!targetPhone || targetPhone.length < 9) {
+        alert("❌ Invalid target mobile phone number identifier code string pattern.");
         return;
     }
     if (validityDays <= 0 && targetStatusState === 'active') {
@@ -1061,85 +1066,66 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
     }
 
     try {
+        showOnScreenNotification("⚡ Processing cloud validation hooks by Number...", false);
+
+        // 🛡️ STEP 1: Search and verify relational tracking dataset row strictly by user_phone text token boundaries
+        const { data: existingRecord, error: fetchErr } = await supabaseClient
+            .from('subscriptions')
+            .select('*')
+            .eq('user_phone', targetPhone)
+            .maybeSingle();
+
+        if (fetchErr || !existingRecord) {
+            alert("❌ Sync Error: Is mobile number ka koi registered tenant cloud database mein nahi mila!");
+            return;
+        }
+
+        // Extract the hidden actual authentic UUID string token cleanly to match master relational constraints
+        let targetId = existingRecord.user_id;
         let startTime = new Date();
         let endTime = new Date();
 
-        showOnScreenNotification("⚡ Processing security write override data...", false);
-
-        // Hotel Name sync router logic
+        // Hotel Name sync router logic updates matching config schema mapping rows parameters
         if (updatedHotelName) {
-            const { data: configCheck } = await supabaseClient
+            await supabaseClient
                 .from('hotel_config')
-                .select('id')
-                .eq('id', targetId)
-                .maybeSingle();
-
-            if (configCheck) {
-                await supabaseClient
-                    .from('hotel_config')
-                    .update({ hotel_name: updatedHotelName })
-                    .eq('id', targetId);
-            } else {
-                await supabaseClient
-                    .from('hotel_config')
-                    .insert({ id: targetId, hotel_name: updatedHotelName, menu_data: [] });
-            }
+                .update({ hotel_name: updatedHotelName })
+                .eq('id', targetId);
         }
 
-        // 🛡️ STEP 1: Fetch existing active subscription record to check current expiry date
-        const { data: existingRecord } = await supabaseClient
-            .from('subscriptions')
-            .select('user_id, current_period_end')
-            .eq('user_id', targetId)
-            .maybeSingle();
-
         // 🛡️ STEP 2: MATHEMATICAL ACCUMULATION ENGINE
-        if (existingRecord && existingRecord.current_period_end && targetStatusState === 'active') {
+        if (existingRecord.current_period_end && targetStatusState === 'active') {
             let currentExpiry = new Date(existingRecord.current_period_end);
             
             // CONDITION: Agar hotel ka plan abhi zinda hai (future mein hai), toh usi date ke aage days add honge.
-            // Agar plan already expire ho chuka hai, toh naya pack AAJ ki date se shuru hoga.
             let baseDate = currentExpiry > startTime ? currentExpiry : startTime;
             
             endTime = new Date(baseDate.getTime());
             endTime.setDate(baseDate.getDate() + validityDays);
         } else {
-            // Agar bilkul fresh account hai, toh aaj se days jodo
+            // Agar plan already expire ho chuka hai, toh naya pack aaj se jodo
             endTime.setDate(startTime.getDate() + validityDays);
         }
 
-        let syncOperationError = null;
+        // 🟢 STEP 3: DATABASE TRANSMISSION PUSH BY PHONE IDENTITY SCOPE
+        const { error: updateErr } = await supabaseClient
+            .from('subscriptions')
+            .update({
+                status: targetStatusState,
+                current_period_start: startTime.toISOString(),
+                current_period_end: endTime.toISOString(),
+                monthly_price: allocatedMonthlyPrice,
+                yearly_price: allocatedYearlyPrice
+            })
+            .eq('user_phone', targetPhone);
 
-        let subscriptionPayload = {
-            status: targetStatusState,
-            current_period_start: startTime.toISOString(),
-            current_period_end: endTime.toISOString(),
-            monthly_price: allocatedMonthlyPrice,
-            yearly_price: allocatedYearlyPrice
-        };
-
-        if (existingRecord) {
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .update(subscriptionPayload)
-                .eq('user_id', targetId);
-            syncOperationError = error;
-        } else {
-            subscriptionPayload.user_id = targetId;
-            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; 
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .insert(subscriptionPayload);
-            syncOperationError = error;
-        }
-
-        if (syncOperationError) {
-            alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
+        if (updateErr) {
+            alert("❌ Cloud Write Violation Execution Blocked: " + updateErr.message);
         } else {
             showOnScreenNotification(`👑 Subscription Scoped Parameters updated to [${targetStatusState.toUpperCase()}] successfully!`);
             
-            // Clear inputs after successful save
-            document.getElementById('saTargetUserUUID').value = '';
+            // Clear inputs after successful save operations completion links
+            document.getElementById('saTargetUserPhone').value = '';
             document.getElementById('saTargetHotelName').value = '';
             document.getElementById('saPlanValidityDays').value = '';
             document.getElementById('saCustomMonthlyRate').value = '';
@@ -1152,6 +1138,7 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         console.error("Super Admin Operation Exception:", err);
     }
 }
+        
 function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
@@ -1328,58 +1315,67 @@ async function executeRealCloudLoginSequence() {
         alert("System Exception: Unable to complete authentication handshakes.");
     }
 }
-// 🔄 SWITCH MODE FUNCTION: Toggles between Login screen layout and Create Account layout
+        
 function toggleAuthPortalViewMode() {
     const title = document.getElementById('authPortalTitle');
     const subTitle = document.getElementById('authPortalSubTitle');
     const mainBtn = document.getElementById('authPrimaryActionButton');
     const toggleLabel = document.getElementById('authToggleStateLabelText');
     const toggleLink = document.getElementById('authActionToggleLink');
+    const phoneField = document.getElementById('authPhoneFieldContainer');
 
     if (!isAuthPortalInSignUpMode) {
-        // Shift layout to Create Account view properties
         title.innerText = "Create Account";
         subTitle.innerText = "Register New Workspace Node";
         mainBtn.innerText = "✨ Register & Create Workspace";
         mainBtn.setAttribute("onclick", "executeRealCloudSignUpSequence()");
         toggleLabel.innerText = "Already registered?";
         toggleLink.innerText = "Login Instead";
+        if(phoneField) phoneField.style.display = "block"; // SignUp mein number field dikhao
         isAuthPortalInSignUpMode = true;
     } else {
-        // Shift layout back to traditional Login interface
         title.innerText = "RestroFlow";
         subTitle.innerText = "Workspace Gateway Terminal";
         mainBtn.innerText = "🚀 Authenticate & Boot System";
         mainBtn.setAttribute("onclick", "executeRealCloudLoginSequence()");
         toggleLabel.innerText = "New to RestroFlow?";
         toggleLink.innerText = "Create Account";
+        if(phoneField) phoneField.style.display = "none"; // Login mein number field chupao
         isAuthPortalInSignUpMode = false;
     }
 }
 
-// ✨ FIXED: Captures exact field tokens and handles length trace descriptors based on your base layout reference
+// ===================================================================
+// 🔐 UPGRADED SIGNUP ENGINE: PURE MOBILE IDENTITY (ZERO EMAIL CHAFF)
+// ===================================================================
 async function executeRealCloudSignUpSequence() {
-    const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
+    // 🟢 EXTRACT MOBILE TOKEN: strictly pulls the unique 10-digit mobile number input
+    const phone = document.getElementById('authPhoneInput').value.trim();
 
-    console.log("📝 Field Check -> Email:", email, "| Password Length:", password.length);
+    console.log("📝 Field Check -> Phone Number:", phone, "| Password Length:", password.length);
 
-    if (!email || !password) {
-        alert("⚠️ Email and Password cannot be left blank!");
+    // Strict validation mapping loops for Phone and Password only
+    if (!password || !phone) {
+        alert("⚠️ Mobile Number and Password cannot be left blank!");
         return;
     }
     if (password.length < 6) {
         alert("⚠️ Security Rule: Password must be at least 6 characters long!");
         return;
     }
+    if (phone.length < 10) {
+        alert("⚠️ Security Rule: Phone number must be a valid 10-digit business ID!");
+        return;
+    }
 
     try {
-        showOnScreenNotification("🚀 Registering workspace node...", false);
-        console.log("📡 Attempting signup for:", email);
+        showOnScreenNotification("🚀 Registering workspace node via Phone...", false);
+        console.log("📡 Attempting signup for Mobile ID:", phone);
         
-        // 1. Trigger Supabase Authentication Registration Node
+        // 1. 🛡️ SUPABASE PHONE AUTH PIPELINE: Trigger Auth Sign-Up using phone instead of email
         const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
+            phone: phone,
             password: password
         });
 
@@ -1394,7 +1390,7 @@ async function executeRealCloudSignUpSequence() {
         if (newUserUUID) {
             console.log("🔒 Registration Success! Auth UUID Created:", newUserUUID);
 
-            // 2. ⚡ FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
+            // 2. FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: newUserUUID,
                 hotel_name: "Restaurant",
@@ -1402,7 +1398,7 @@ async function executeRealCloudSignUpSequence() {
             });
             if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
 
-            // 3. ⚡ FIXED FOREIGN KEY: Dynamically fetch any valid available Plan ID directly from parent 'plans' table
+            // 3. FIXED FOREIGN KEY: Dynamically fetch any valid available Plan ID directly from parent 'plans' table
             const { data: planData, error: planFetchError } = await supabaseClient
                 .from('plans')
                 .select('id')
@@ -1418,9 +1414,11 @@ async function executeRealCloudSignUpSequence() {
             let endTime = new Date();
             endTime.setDate(startTime.getDate() + 30);
 
+            // 🔥 EMAIL-FREE CRITICAL WRITE: 'user_email' column cleared out completely. Strictly number-locked.
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
                 user_id: newUserUUID,
-                plan_id: activePlanId, // Pure atomic foreign key mapped here flawlessly
+                user_phone: phone,        // 🟢 Saves unique user phone text string as primary identifier
+                plan_id: activePlanId, 
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString()
@@ -1432,13 +1430,16 @@ async function executeRealCloudSignUpSequence() {
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\n\nAapka account Supabase Authentication mein register ho gaya hai. Ab aap same email se login kar sakte hain.`);
+            alert(`🎉 Account Created Successfully!\n\nMobile ID: ${phone}\n\nAapka workspace strictly mobile number routing system par activate ho gaya hai.`);
             
-            document.getElementById('authEmailInput').value = "";
+            // Clear input fields tokens after registration loops finish safely
             document.getElementById('authPasswordInput').value = "";
+            if(document.getElementById('authPhoneInput')) {
+                document.getElementById('authPhoneInput').value = "";
+            }
             toggleAuthPortalViewMode();
         } else {
-            alert("📩 Signup initialized! Please check your inbox for configuration codes context.");
+            alert("📩 Signup initialized! Verification codes dispatched to terminal tokens.");
         }
         
     } catch (err) {
@@ -1446,6 +1447,7 @@ async function executeRealCloudSignUpSequence() {
         alert("System Exception: Multi-row relational database writing crashed.");
     }
 }
+        
 // ⚡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
