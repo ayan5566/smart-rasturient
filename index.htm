@@ -429,7 +429,40 @@
             <ul class="rules-list" id="rulesListDisplay"></ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
         </div>
-    </div>       
+    </div>
+    <div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
+    <div class="modal-content" style="max-width:390px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 25px 60px rgba(0,0,0,0.25); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
+        
+        <div style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">⚠️</div>
+        
+        <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRE</h2>
+        <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">Aapka RestroFlow workspace subscription pack samapt ho chuka hai.</p>
+        
+        <button class="action-btn" id="activatePlanTriggerBtn" onclick="revealSaaSPricingTiersMatrix()" style="background: var(--neon-green); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 6px 15px rgba(46,204,113,0.3); margin-bottom: 0px; transition: all 0.2s;">
+            ⚡ ACTIVE YOUR PLAN
+        </button>
+
+        <div id="saasPricingTiersContainer" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 16px; margin-top: 15px; text-align: left; box-sizing: border-box;">
+            <h4 style="margin: 0 0 12px 0; color: var(--dark-charcoal); font-weight: 800; text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px; font-size: 14px;">Scoped Enterprise Rates Selected</h4>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 13px; color: #475569;">📅 <b>Monthly Pack:</b></span>
+                <span style="color: var(--neon-green); font-weight: 800; font-size: 16px;" id="paywallMonthlyPriceDisplay">₹0</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 13px; color: #475569;">👑 <b>Yearly Enterprise:</b></span>
+                <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;" id="paywallYearlyPriceDisplay">₹0</span>
+            </div>
+            
+            <p style="font-size: 10px; color: #94a3b8; text-align: center; margin: 12px 0 0 0; font-weight: bold; letter-spacing: 0.3px;">💬 Contact system admin to push activation days.</p>
+        </div>
+        
+        <button onclick="closePaywallAndExitToHub()" style="background: none; border: none; color: #7f8c8d; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 20px; display: block; width: 100%;">
+            Exit & Return to Hub
+        </button>
+    </div>
+</div>
     <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
        <!-- 🍕 FIXED: High-Resolution Professional Branding Header -->
@@ -503,17 +536,17 @@
         </button>
     </div>
         </div>
-    </div> <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
+   <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
     <div class="modal-content" style="max-width:380px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
         
-        <div onclick="launchSuperAdminSecretModulePrompt()" style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;" title="Founder Secret Entry">⚡</div>
+        <div style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;" onclick="launchSuperAdminSecretModulePrompt()" title="Founder Secret Entry">⚡</div>
         
         <h2 id="authPortalTitle" style="color: var(--dark-charcoal); font-weight: 800; margin-bottom: 4px; font-size: 26px; letter-spacing: -0.5px;">RestroFlow Portal</h2>
         <p id="authPortalSubTitle" style="color: #7f8c8d; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">Workspace Gateway Terminal</p>
         
         <div style="text-align: left; margin-bottom: 12px;">
-            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace Email Identity</label>
-            <input type="text" id="authEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Owner Mobile Number (Unique Business ID)</label>
+            <input type="text" id="authPhoneInput" placeholder="Enter 10-digit mobile number..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
         </div>
         
         <div style="text-align: left; margin-bottom: 25px;">
@@ -522,8 +555,8 @@
         </div>
         
         <button class="action-btn" id="authPrimaryActionButton" onclick="executeAuthPortalMasterRouter()" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
-    🚀 Authenticate & Boot System
-</button>
+            🚀 Authenticate & Boot System
+        </button>
 
         <div style="margin-bottom: 20px; background: #f1f2f6; padding: 10px; border-radius: 10px; font-size: 13px; color: #555;">
             <span id="authToggleStateLabelText">New to RestroFlow?</span> 
@@ -660,10 +693,10 @@
         <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
         
         <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()" style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
-            👑 Open SaaS Founder Master Control
+            👑 Founder's Master Control
         </button>
     </div>
-    <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
+   <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
     <h2 style="color: #ffd700; margin-bottom: 5px;">👑 SaaS Founder Master Command Center</h2>
     <p style="text-align: center; font-size: 11px; color: #8f9aa3; margin-top: 0; font-weight: bold; letter-spacing: 1px;">GLOBAL NETWORK SUBSCRIPTION VALIDATOR</p>
     <hr style="border-color: #c5a059; margin-bottom: 20px;">
@@ -675,19 +708,19 @@
     <h3 style="color: #ffd700;">⚡ Force Inject Subscription Rights</h3>
     <div style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #c5a059;">
         
-        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant User UUID String:</label>
-        <input type="text" id="saTargetUserUUID" placeholder="Paste Owner User ID here..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+        <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Target Restaurant Owner Phone Number:</label>
+        <input type="text" id="saTargetUserPhone" placeholder="Enter 10-digit registered number..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
         
         <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Edit / Update Hotel Brand Name:</label>
         <input type="text" id="saTargetHotelName" placeholder="Enter or update hotel name..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
 
         <label style="font-size: 12px; font-weight: bold; color: #c5a059;">Extend Access Validity (Enter Custom Days Exactly):</label>
-        <input type="number" id="saPlanValidityDays" placeholder="Type exact number of days (e.g., 30, 45, 90, 365)..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
+        <input type="number" id="saPlanValidityDays" placeholder="Type exact number of days (e.g., 30, 45, 90)..." style="background: #0b0c10; color: #fff; border: 1px solid #c5a059; margin-bottom: 12px;">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
                 <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Monthly Price (₹):</label>
-                <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 999" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
+                <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 4000" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
             </div>
             <div style="flex: 1;">
                 <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Yearly Price (₹):</label>
@@ -938,7 +971,7 @@ function launchSuperAdminSecretModulePrompt() {
 }
 
 // ===================================================================
-// 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
+// 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM (PURE PHONE CORE)
 // ===================================================================
 
 async function fetchGlobalSaaSAccountNetworkList() {
@@ -947,15 +980,15 @@ async function fetchGlobalSaaSAccountNetworkList() {
     listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Connecting global servers node...</span>`;
 
     try {
-        // Fetch subscriptions data logs
+        // Fetch subscriptions data logs along with user_phone field identity tracking
         const { data: subList, error } = await supabaseClient
             .from('subscriptions')
-            .select('user_id, status, current_period_end, monthly_price, yearly_price')
+            .select('user_id, user_phone, status, current_period_end, monthly_price, yearly_price')
             .order('current_period_end', { ascending: false });
 
         if (error) throw error;
 
-        // 🟢 FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
+        // FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
         const { data: configList } = await supabaseClient
             .from('hotel_config')
             .select('id, hotel_name');
@@ -976,15 +1009,19 @@ async function fetchGlobalSaaSAccountNetworkList() {
             
             let currentMonthlyPrice = sub.monthly_price || 0;
             let currentYearlyPrice = sub.yearly_price || 0;
+            
+            // 🟢 FEATURE 2 & 3: Extract unique user mobile number registered token string fields
+            let displayPhone = sub.user_phone || "No Number Logged";
 
             // Safe dynamic string escaping to block runtime crash loops inside quotes
             let sanitizedHotelName = hotelDisplayName.replace(/'/g, "\\'");
 
+            // UI UPGRADE: Rendered directly as Hotel Name (Mobile Number) for dynamic lookups
             listWrapper.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="populateSuperAdminFormFields('${sub.user_id}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
+                     onclick="populateSuperAdminFormFields('${displayPhone}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName}</span><br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName} (${displayPhone})</span><br>
                         <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">UUID: ${sub.user_id.substring(0,18)}...</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
                         <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
@@ -999,24 +1036,28 @@ async function fetchGlobalSaaSAccountNetworkList() {
     }
 }
 
-// Helper function to auto-fill inputs instantly when a hotel row is clicked
-function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
-    document.getElementById('saTargetUserUUID').value = userId;
+// Helper function to auto-fill inputs instantly when a hotel row is clicked (Shshifted to Phone ID)
+function populateSuperAdminFormFields(phone, hotelName, mRate, yRate) {
+    document.getElementById('saTargetUserPhone').value = phone;
     document.getElementById('saTargetHotelName').value = hotelName;
     document.getElementById('saCustomMonthlyRate').value = mRate;
     document.getElementById('saCustomYearlyRate').value = yRate;
-    showOnScreenNotification("📋 Loaded: " + hotelName);
+    showOnScreenNotification("📋 Loaded mobile account: " + phone);
 }
 
+// ===================================================================
+// 👑 FIXED: ACCUMULATIVE SUBSCRIPTION EXTENSION BY MOBILE PHONE IDENTITY
+// ===================================================================
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
-    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    // 🟢 UI ROUTING SHIFT: Target values read strictly via phone identifier input code
+    let targetPhone = document.getElementById('saTargetUserPhone').value.trim();
     let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
     let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
     let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
     let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-    if (!targetId || targetId.length < 10) {
-        alert("❌ Invalid user classification identifier code string pattern.");
+    if (!targetPhone || targetPhone.length < 9) {
+        alert("❌ Invalid target mobile phone number identifier code string pattern.");
         return;
     }
     if (validityDays <= 0 && targetStatusState === 'active') {
@@ -1025,72 +1066,66 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
     }
 
     try {
-        let startTime = new Date();
-        let endTime = new Date();
-        endTime.setDate(startTime.getDate() + validityDays);
+        showOnScreenNotification("⚡ Processing cloud validation hooks by Number...", false);
 
-        showOnScreenNotification("⚡ Processing security write override data...", false);
-
-        // 🟢 FEATURE 2: Update Hotel Name directly on cloud configuration nodes inside 'hotel_config'
-        if (updatedHotelName) {
-            const { data: configCheck } = await supabaseClient
-                .from('hotel_config')
-                .select('id')
-                .eq('id', targetId)
-                .maybeSingle();
-
-            if (configCheck) {
-                await supabaseClient
-                    .from('hotel_config')
-                    .update({ hotel_name: updatedHotelName })
-                    .eq('id', targetId);
-            } else {
-                await supabaseClient
-                    .from('hotel_config')
-                    .insert({ id: targetId, hotel_name: updatedHotelName, menu_data: [] });
-            }
-        }
-
-        // Check if record exists inside tracking matrix array
-        const { data: existingRecord } = await supabaseClient
+        // 🛡️ STEP 1: Search and verify relational tracking dataset row strictly by user_phone text token boundaries
+        const { data: existingRecord, error: fetchErr } = await supabaseClient
             .from('subscriptions')
-            .select('user_id')
-            .eq('user_id', targetId)
+            .select('*')
+            .eq('user_phone', targetPhone)
             .maybeSingle();
 
-        let syncOperationError = null;
-
-        // 🟢 FEATURE 3: Binding distinct custom individual price arrays payload into row variables
-        let subscriptionPayload = {
-            status: targetStatusState,
-            current_period_start: startTime.toISOString(),
-            current_period_end: endTime.toISOString(),
-            monthly_price: allocatedMonthlyPrice,
-            yearly_price: allocatedYearlyPrice
-        };
-
-        if (existingRecord) {
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .update(subscriptionPayload)
-                .eq('user_id', targetId);
-            syncOperationError = error;
-        } else {
-            subscriptionPayload.user_id = targetId;
-            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; // Fallback seed placeholder token
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .insert(subscriptionPayload);
-            syncOperationError = error;
+        if (fetchErr || !existingRecord) {
+            alert("❌ Sync Error: Is mobile number ka koi registered tenant cloud database mein nahi mila!");
+            return;
         }
 
-        if (syncOperationError) {
-            alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
+        // Extract the hidden actual authentic UUID string token cleanly to match master relational constraints
+        let targetId = existingRecord.user_id;
+        let startTime = new Date();
+        let endTime = new Date();
+
+        // Hotel Name sync router logic updates matching config schema mapping rows parameters
+        if (updatedHotelName) {
+            await supabaseClient
+                .from('hotel_config')
+                .update({ hotel_name: updatedHotelName })
+                .eq('id', targetId);
+        }
+
+        // 🛡️ STEP 2: MATHEMATICAL ACCUMULATION ENGINE
+        if (existingRecord.current_period_end && targetStatusState === 'active') {
+            let currentExpiry = new Date(existingRecord.current_period_end);
+            
+            // CONDITION: Agar hotel ka plan abhi zinda hai (future mein hai), toh usi date ke aage days add honge.
+            let baseDate = currentExpiry > startTime ? currentExpiry : startTime;
+            
+            endTime = new Date(baseDate.getTime());
+            endTime.setDate(baseDate.getDate() + validityDays);
+        } else {
+            // Agar plan already expire ho chuka hai, toh naya pack aaj se jodo
+            endTime.setDate(startTime.getDate() + validityDays);
+        }
+
+        // 🟢 STEP 3: DATABASE TRANSMISSION PUSH BY PHONE IDENTITY SCOPE
+        const { error: updateErr } = await supabaseClient
+            .from('subscriptions')
+            .update({
+                status: targetStatusState,
+                current_period_start: startTime.toISOString(),
+                current_period_end: endTime.toISOString(),
+                monthly_price: allocatedMonthlyPrice,
+                yearly_price: allocatedYearlyPrice
+            })
+            .eq('user_phone', targetPhone);
+
+        if (updateErr) {
+            alert("❌ Cloud Write Violation Execution Blocked: " + updateErr.message);
         } else {
             showOnScreenNotification(`👑 Subscription Scoped Parameters updated to [${targetStatusState.toUpperCase()}] successfully!`);
             
-            // Clean input boxes values parameters mapping loops after success action
-            document.getElementById('saTargetUserUUID').value = '';
+            // Clear inputs after successful save operations completion links
+            document.getElementById('saTargetUserPhone').value = '';
             document.getElementById('saTargetHotelName').value = '';
             document.getElementById('saPlanValidityDays').value = '';
             document.getElementById('saCustomMonthlyRate').value = '';
@@ -1103,7 +1138,7 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         console.error("Super Admin Operation Exception:", err);
     }
 }
-
+        
 function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
@@ -1237,106 +1272,112 @@ let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = []
 let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
 let fBird = {}, fPipes = [], flappyScoreTracker = 0;
 let cosmicBackgroundStars = [];
-// ⚡ FIXED: Catches exact 400 verification states vs bad credentials explicitly based on your reference blueprint
+// ===================================================================
+// 🔐 UPGRADED LOGIN ENGINE: PHONE-MATCHING AUTHENTICATOR
+// ===================================================================
 async function executeRealCloudLoginSequence() {
-    const email = document.getElementById('authEmailInput').value.trim();
+    const phone = document.getElementById('authPhoneInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
 
-    if (!email || !password) {
-        alert("⚠️ Please enter both Email and Password!");
+    if (!phone || !password) {
+        alert("⚠️ Please enter both Mobile Number and Password!");
         return;
     }
 
     try {
         showOnScreenNotification("🔒 Authenticating workspace credentials...", false);
         
+        // 👑 THE FOUNDER HACK: Create the exact matching token representation
+        const dummyEmail = phone + "@restroflow.com";
+        
         const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
+            email: dummyEmail,
             password: password
         });
 
         if (error) {
-            console.error("Supabase Login Error Payload:", error);
-            
-            const errMsg = error.message.toLowerCase();
-            
-            // ✉️ Condition A: Catch strict email confirmation lock checks cleanly
-            if (errMsg.includes("confirm") || errMsg.includes("verified")) {
-                alert(`❌ Login Denied: ${error.message}\n\n💡 Solution: Apne Supabase Dashboard -> Authentication -> Providers -> Email mein jaakar "Confirm email" ko OFF kar do, phir naya account banakar login karo!`);
-            } 
-            // ❌ Condition B: Catch wrong password or email credentials safely so it doesn't mismatch generic 400s
-            else if (errMsg.includes("credentials") || errMsg.includes("invalid")) {
-                alert("❌ Login Denied: Wrong Email or Password! Kripya check karke dubara sahi credentials dalein.");
-            } 
-            // ⚙️ Condition C: Any other runtime errors fallback
-            else {
-                alert("❌ Login Denied: " + error.message);
-            }
+            alert("❌ Login Denied: Wrong Mobile Number or Password!");
             return;
+        }
+
+        // 🛡️ SECURITY GATEKEEPER CHECK
+        const userId = data.user.id;
+        const isPlanActive = await verifySubscriptionGatekeeper(userId);
+
+        if (!isPlanActive) {
+            console.log("🛑 Access Blocked: Subscription expired.");
+            return; // Yahin se block ho kar Paywall modal dikhega
         }
 
         alert("🚀 Workspace Authenticated successfully!");
         closeLoginConsoleOverlay();
-        location.reload(); // Hard boot standard app reload
+        location.reload(); 
         
     } catch (err) {
         console.error("🚨 Login Route Crash:", err);
         alert("System Exception: Unable to complete authentication handshakes.");
     }
 }
-
-// 🔄 SWITCH MODE FUNCTION: Toggles between Login screen layout and Create Account layout
+        
 function toggleAuthPortalViewMode() {
     const title = document.getElementById('authPortalTitle');
     const subTitle = document.getElementById('authPortalSubTitle');
     const mainBtn = document.getElementById('authPrimaryActionButton');
     const toggleLabel = document.getElementById('authToggleStateLabelText');
     const toggleLink = document.getElementById('authActionToggleLink');
+    const phoneField = document.getElementById('authPhoneFieldContainer');
 
     if (!isAuthPortalInSignUpMode) {
-        // Shift layout to Create Account view properties
         title.innerText = "Create Account";
         subTitle.innerText = "Register New Workspace Node";
         mainBtn.innerText = "✨ Register & Create Workspace";
         mainBtn.setAttribute("onclick", "executeRealCloudSignUpSequence()");
         toggleLabel.innerText = "Already registered?";
         toggleLink.innerText = "Login Instead";
+        if(phoneField) phoneField.style.display = "block"; // SignUp mein number field dikhao
         isAuthPortalInSignUpMode = true;
     } else {
-        // Shift layout back to traditional Login interface
         title.innerText = "RestroFlow";
         subTitle.innerText = "Workspace Gateway Terminal";
         mainBtn.innerText = "🚀 Authenticate & Boot System";
         mainBtn.setAttribute("onclick", "executeRealCloudLoginSequence()");
         toggleLabel.innerText = "New to RestroFlow?";
         toggleLink.innerText = "Create Account";
+        if(phoneField) phoneField.style.display = "none"; // Login mein number field chupao
         isAuthPortalInSignUpMode = false;
     }
 }
 
-// ✨ FIXED: Captures exact field tokens and handles length trace descriptors based on your base layout reference
+// ===================================================================
+// 🔐 UPGRADED SIGNUP ENGINE: PURE MOBILE IDENTITY LOGIC (ZERO COST)
+// ===================================================================
 async function executeRealCloudSignUpSequence() {
-    const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
+    const phone = document.getElementById('authPhoneInput').value.trim();
 
-    console.log("📝 Field Check -> Email:", email, "| Password Length:", password.length);
+    console.log("📝 Field Check -> Phone Number:", phone, "| Password Length:", password.length);
 
-    if (!email || !password) {
-        alert("⚠️ Email and Password cannot be left blank!");
+    if (!password || !phone) {
+        alert("⚠️ Mobile Number and Password cannot be left blank!");
         return;
     }
     if (password.length < 6) {
         alert("⚠️ Security Rule: Password must be at least 6 characters long!");
         return;
     }
+    if (phone.length < 10) {
+        alert("⚠️ Security Rule: Phone number must be a valid 10-digit business ID!");
+        return;
+    }
 
     try {
-        showOnScreenNotification("🚀 Registering workspace node...", false);
-        console.log("📡 Attempting signup for:", email);
+        showOnScreenNotification("🚀 Registering workspace node via Phone...", false);
         
-        // 1. Trigger Supabase Authentication Registration Node
+        // 👑 THE FOUNDER HACK: Convert number to free background auth string instantly
+        const dummyEmail = phone + "@restroflow.com";
+        
         const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
+            email: dummyEmail,
             password: password
         });
 
@@ -1351,7 +1392,7 @@ async function executeRealCloudSignUpSequence() {
         if (newUserUUID) {
             console.log("🔒 Registration Success! Auth UUID Created:", newUserUUID);
 
-            // 2. ⚡ FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
+            // 2. FIXED 409: Upsert config
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: newUserUUID,
                 hotel_name: "Restaurant",
@@ -1359,50 +1400,49 @@ async function executeRealCloudSignUpSequence() {
             });
             if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
 
-            // 3. ⚡ FIXED FOREIGN KEY: Dynamically fetch any valid available Plan ID directly from parent 'plans' table
-            const { data: planData, error: planFetchError } = await supabaseClient
+            // 3. Fetch Plan
+            const { data: planData } = await supabaseClient
                 .from('plans')
                 .select('id')
                 .limit(1)
                 .maybeSingle();
 
-            // Cloud plan table se real ID pakdo, agar table empty ho tabhi hardcoded seed backup use hoga
             let activePlanId = planData?.id || '1d6ca9b8-b472-4cf3-875b-df768f746ef7';
-            if (planFetchError) console.warn("Plans lookup error context logs:", planFetchError.message);
 
-            // 4. Provision standard 30-day Free Trial inside subscriptions matrix safely using upsert
             let startTime = new Date();
             let endTime = new Date();
-            endTime.setDate(startTime.getDate() + 30);
+            endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial
 
+            // 4. Save clean phone number for Master Control view mapping
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
                 user_id: newUserUUID,
-                plan_id: activePlanId, // Pure atomic foreign key mapped here flawlessly
+                user_phone: phone, // Saved as clean 10-digit number for calling feature
+                plan_id: activePlanId, 
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString()
             });
 
             if (subError) {
-                console.error("🚨 Critical Sub Provisioning Error:", subError.message);
-                alert("❌ Account authentication created, but subscription ledger syncing failed: " + subError.message);
+                alert("❌ Relational database writing crashed: " + subError.message);
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\n\nAapka account Supabase Authentication mein register ho gaya hai. Ab aap same email se login kar sakte hain.`);
+            alert(`🎉 Account Created Successfully!\n\nMobile ID: ${phone}\n\nAapka workspace successfully register ho gaya hai.`);
             
-            document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
+            if(document.getElementById('authPhoneInput')) {
+                document.getElementById('authPhoneInput').value = "";
+            }
             toggleAuthPortalViewMode();
-        } else {
-            alert("📩 Signup initialized! Please check your inbox for configuration codes context.");
         }
         
     } catch (err) {
         console.error("🚨 Critical Onboarding Core Exception:", err);
-        alert("System Exception: Multi-row relational database writing crashed.");
+        alert("System Exception: Unable to complete registration.");
     }
 }
+        
 // ⚡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
@@ -1592,31 +1632,25 @@ async function injectExtraItemFromBillPanel() {
     let targetSize = document.getElementById('waiterSizeSelect').value;
     let bp = null; 
     
-    menuCategories.forEach(c => { 
-        let f = c.items.find(i => i.name === targetDishName); 
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    safeCategories.forEach(c => { 
+        if(!c) return;
+        const safeItems = Array.isArray(c.items) ? c.items : [];
+        let f = safeItems.find(i => i && i.name === targetDishName); 
         if (f) bp = f; 
     });
     
     if (bp && targetSize) {
         let fixedUnitPrice = bp[targetSize] || 0;
-        
-        // 🔥 Push execution shifted to safe cloud dynamic arrays
         await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable);
-        
-        // Storage lookup to securely re-load running variable instances
         localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-        
         auditSelectedTableBillInvoiceLive();
         showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} successfully pushed to Table ${selectedTargetTable}!`);
     } else { 
         showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
     }
 }
-
-
-   
-
-
+        
 function executeSimulatedMobilePaymentSuccessSequence() {
     updateDishOrderAnalytics();
     localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
@@ -1893,125 +1927,123 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-     async function auditSelectedTableBillInvoiceLive() {
-           let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
-           let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-           let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-           let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
-       
-           try {
-               let sessionData = null;
-               let kitchenOrders = [];
-               let targetBill = [];
-               let targetDisc = 0;
-               let paymentStatusToken = 'PENDING';
+async function auditSelectedTableBillInvoiceLive() {
+    let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
+    let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
 
-               // ⚡ FIXED: Check if hotelGlobalScopeID is a valid UUID to completely block startup 400 errors
-               const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
-           
-               if (isUUID) {
-                   // User login hai, safe hokar cloud parameters query run karo
-                   const { data: sData } = await supabaseClient
-                       .from('table_sessions')
-                       .select('*')
-                       .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                       .maybeSingle();
-                   sessionData = sData;
-       
-                   const { data: kOrders } = await supabaseClient
-                       .from('active_orders')
-                       .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
-                       .eq('hotel_id', hotelGlobalScopeID)
-                       .eq('table_id', selectedAdminTable);
-                   if (kOrders) kitchenOrders = kOrders;
+    try {
+        let sessionData = null;
+        let kitchenOrders = [];
+        let targetBill = [];
+        let targetDisc = 0;
+        let paymentStatusToken = 'PENDING';
 
-                   if (sessionData) {
-                       targetBill = sessionData.live_bill || [];
-                       targetDisc = parseInt(sessionData.discount_claimed) || 0;
-                       paymentStatusToken = sessionData.payment_status || 'PENDING';
-                   }
-               } else {
-                   // No Login Fallback: Data dynamically LocalStorage cache se pull hoga bina cloud crash ke
-                   targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
-                   targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
-                   paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
-               }
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
+    
+        if (isUUID) {
+            const { data: sData } = await supabaseClient
+                .from('table_sessions')
+                .select('*')
+                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                .maybeSingle();
+            sessionData = sData;
 
-               // 📋 RESTORED: Tumhaara billing math aur interface rendering logic jo cut gaya tha
-               if(paymentStatusToken === 'SUCCESS_PAID') {
-                   paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
-               } else {
-                   paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
-               }
-       
-               outputBox.innerHTML = ''; 
-               let subtotal = 0; // 🔥 Master financial counter initialization
-       
-               // 📋 PART A: Mapped Ledger Rendering (ONLY THIS ADDS TO THE BILL MATH)
-               outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-               targetBill.forEach(row => {
-                   let rowCost = row.price * row.qty; 
-                   subtotal += rowCost; // ✅ Verified financial items added cleanly
-                   outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
-               });
-       
-               // 👨‍🍳 PART B: Kitchen Live Streams (DISPLAY ONLY - NO WALLET OVERLAPPING)
-               if (kitchenOrders && kitchenOrders.length > 0) {
-                   outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
-                   kitchenOrders.forEach(order => {
-                       const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
-                       const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
-       
-                       let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                       let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
-       
-                       order.order_items.forEach(item => {
-                           let calculatedLivePrice = 0;
-                           let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                           
-                           menuCategories.forEach(cat => {
-                               let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                               if (matchedMenuDish) {
-                                   calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
-                               }
-                           });
-       
-                           outputBox.innerHTML += `
-                               <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
-                                   <div>
-                                       <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
-                                       <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
-                                        <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
-                                   </div>
-                                   <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
-                               </div>`;
-                       });
-                   });
-               }
-       
-               if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
-                   outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
-                   paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
-               }
-       
-               let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
-               let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-               let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-               let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-               let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-       
-               if(taxBox) {
-                   taxBox.style.display = "block";
-                   taxBox.innerHTML = `
-                       <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                       <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                       ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                       ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                       ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-                   `;
-               }
-               grandTotalBox.innerText = "₹" + finalBillSum;
-           } catch (err) { console.error(err); }
+            const { data: kOrders } = await supabaseClient
+                .from('active_orders')
+                .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
+                .eq('hotel_id', hotelGlobalScopeID)
+                .eq('table_id', selectedAdminTable);
+            if (kOrders) kitchenOrders = kOrders;
+
+            if (sessionData) {
+                targetBill = sessionData.live_bill || [];
+                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                paymentStatusToken = sessionData.payment_status || 'PENDING';
+            }
+        } else {
+            targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
+            targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+        }
+
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+        } else {
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
+        }
+
+        outputBox.innerHTML = ''; 
+        let subtotal = 0; 
+
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
+        targetBill.forEach(row => {
+            let rowCost = row.price * row.qty; 
+            subtotal += rowCost; 
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
+        });
+
+        if (kitchenOrders && kitchenOrders.length > 0) {
+            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
+            kitchenOrders.forEach(order => {
+                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
+                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
+
+                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
+                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
+
+                order.order_items.forEach(item => {
+                    let calculatedLivePrice = 0;
+                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    
+                    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+                    safeCategories.forEach(cat => {
+                        if (!cat) return;
+                        // 🛡️ CRITICAL ASYNC SHIELD: Blocks crash inside find methods
+                        const safeItems = Array.isArray(cat.items) ? cat.items : [];
+                        let matchedMenuDish = safeItems.find(d => d && d.name && d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedMenuDish) {
+                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
+                        }
+                    });
+
+                    outputBox.innerHTML += `
+                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
+                            <div>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
+                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
+                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
+                            </div>
+                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
+                        </div>`;
+                });
+            });
+        }
+
+        if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
+            paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
+        }
+
+        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + finalBillSum;
+    } catch (err) { console.error(err); }
 }
         // ⚡ FIXED: Pulls active data strictly matching the isolated tenant string layout maps
 function renderLiveCalculatedBill() {
@@ -2079,38 +2111,26 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earned
             displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
             displayBox.style.display = "block";
         }
-function populateWaiterPanelDropdownList() {
-    let selector = document.getElementById('waiterItemSelect'); if(!selector) return; selector.innerHTML = '';
-    menuCategories.forEach(cat => { cat.items.forEach(dish => { selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; }); });
-    
-    let tableSelector = document.getElementById('waiterTableSelect'); let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
-    if(tableSelector && adminViewerSelector) {
-        let savedWaiterTableSelection = tableSelector.value;
-        let savedAdminTableSelection = adminViewerSelector.value;
 
-        tableSelector.innerHTML = ''; adminViewerSelector.innerHTML = '';
-        floorData.forEach(floor => {
-            floor.tables.forEach(t => { 
-                let markupOption = `<option value="${t.id}">${floor.floorName} - Table ${t.id}</option>`;
-                tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
-            });
-        });
-        if(savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
-        if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
-    }
-    syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
-}
         function syncWaiterSizeDropdownOptions() {
-            let selectedDishName = document.getElementById('waiterItemSelect').value;
-            let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
-            let obj = null; menuCategories.forEach(c => { let f = c.items.find(i => i.name === selectedDishName); if(f) obj = f; });
-            if(obj) {
-                if(obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (₹${obj.s})</option>`;
-                if(obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (₹${obj.m})</option>`;
-                if(obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (₹${obj.l})</option>`;
-            }
-        }
-
+    let selectedDishName = document.getElementById('waiterItemSelect').value;
+    let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
+    let obj = null; 
+    
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    safeCategories.forEach(c => { 
+        if(!c) return;
+        const safeItems = Array.isArray(c.items) ? c.items : [];
+        let f = safeItems.find(i => i && i.name === selectedDishName); 
+        if(f) obj = f; 
+    });
+    
+    if(obj) {
+        if(obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (₹${obj.s})</option>`;
+        if(obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (₹${obj.m})</option>`;
+        if(obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (₹${obj.l})</option>`;
+    }
+}
 
         function simulateQRScan() {
             let scannedID = prompt("Simulation Scan: Enter Table ID code (e.g. T1, T2):");
@@ -2129,48 +2149,85 @@ function populateWaiterPanelDropdownList() {
         // ===================================================================
 // 🍕 MISSING PILLAR A: CUSTOMER MENU PAINTER ENGINE
 // ===================================================================
+// ===================================================================
+// 🍕 UPGRADED CUSTOMER MENU PAINTER ENGINE (ANTI-WHITE SCREEN SECURITY)
+// ===================================================================
 function renderCustomerMenu() {
     const tabsWrapper = document.getElementById('customerCategoryTabs'); 
     const itemContainer = document.getElementById('menuContainer'); 
     
-    if(!tabsWrapper || !itemContainer) return; 
+    if (!tabsWrapper || !itemContainer) return; 
     tabsWrapper.innerHTML = ''; 
     itemContainer.innerHTML = ''; 
-    if(menuCategories.length === 0) return;
+    
+    // 🛡️ CRITICAL SAFEGUARD: Agar menu database mein bilkul khali (empty array []) hai, toh crash hone ke bajaye safe user placeholder dikhao
+    if (!menuCategories || menuCategories.length === 0) {
+        itemContainer.innerHTML = `
+            <div style="background: white; padding: 35px 20px; border-radius: 20px; text-align: center; border: 2px dashed #b9ae9f; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%;">
+                <span style="font-size: 45px;">📋</span>
+                <h4 style="margin: 12px 0 6px 0; color: var(--dark-charcoal); font-weight: 800; font-size: 16px;">Your Digital Menu is Empty</h4>
+                <p style="margin: 0; font-size: 12px; color: #7f8c8d; font-weight: 600; line-height: 1.4;">Kripya Admin Dashboard (Master Control) mein jaakar apni pasand ke hisab se sections aur dishes add karein!</p>
+            </div>`;
+        return;
+    }
 
-    let currentSelectedCategoryObj = menuCategories.find(c => c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
-    customerActiveCategoryName = currentSelectedCategoryObj.categoryName;
+    // 🛡️ UNDEFINED SHIELD: Falls back automatically to slice indices if target object matching pointers fail
+    let currentSelectedCategoryObj = menuCategories.find(c => c && c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
+    if (!currentSelectedCategoryObj) return;
+    
+    customerActiveCategoryName = currentSelectedCategoryObj.categoryName || "Menu";
 
+    // Dynamic rendering hooks loop for filtration categories buttons
     menuCategories.forEach(cat => { 
+        if (!cat || !cat.categoryName) return;
         let isTabActive = cat.categoryName === customerActiveCategoryName; 
-        tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive?'active':''}" onclick="filterCustomerViewCategoryTab('${cat.categoryName}')">${cat.categoryName}</button>`; 
+        let escapedCatName = cat.categoryName.replace(/'/g, "\\'");
+        tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive ? 'active' : ''}" onclick="filterCustomerViewCategoryTab('${escapedCatName}')">${cat.categoryName}</button>`; 
     });
 
     let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
-    currentSelectedCategoryObj.items.forEach((item, iIdx) => {
+    
+    // Ensure the inner items property behaves strictly as an iterable array pattern
+    const safeItems = Array.isArray(currentSelectedCategoryObj.items) ? currentSelectedCategoryObj.items : [];
+    
+    if (safeItems.length === 0) {
+        itemContainer.innerHTML = `<p style="text-align:center; font-size:12px; color:#7f8c8d; font-style:italic; margin-top:25px; font-weight:600;">Is section mein abhi tak koi dish jodi nahi gayi hai.</p>`;
+        return;
+    }
+
+    safeItems.forEach((item, iIdx) => {
+        if (!item) return;
+        
+        // Sizing toggles baseline metrics verification arrays mapping
         let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
         let defaultPrice = item[defaultSize] || 0; 
         
         let photoMarkup = item.image ? `<img src="${item.image}" class="dish-photo-frame">` : `<div class="dish-photo-frame">🍲</div>`; 
         let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+        let escapedDishName = (item.name || 'Recipe Dish').replace(/'/g, "\\'");
 
         itemContainer.innerHTML += `
             <div class="menu-item">
                 <div class="dish-main-info">
-                    <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
+                    <div class="dish-details">
+                        ${photoMarkup}
+                        <div class="dish-header-text"><strong>${item.name || 'Unnamed Dish'}</strong></div>
+                    </div>
                     <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
                 </div>
                 <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
-                    <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
-                    <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
-                    <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
-                        </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
-                    </div>`;
+                    <button class="size-btn ${item.sActive && item.s > 0 ? 'visible' : ''} ${defaultSize === 's' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s || 0}, this)">S</button>
+                    <button class="size-btn ${item.mActive && item.m > 0 ? 'visible' : ''} ${defaultSize === 'm' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m || 0}, this)">M</button>
+                    <button class="size-btn ${item.lActive && item.l > 0 ? 'visible' : ''} ${defaultSize === 'l' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l || 0}, this)">L</button>
+                </div>
+                <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${escapedDishName}')">Add to Live Bill</button>
+            </div>`;
     });
 }
 
-// ⚡ FIXED: Multi-tenant routing handshakes strictly bind active data objects to scanned codes to eliminate fallbacks
+// ===================================================================
+// 🚀 UPGRADED APP BOOT INITIALIZER (100% PURE MOBILE ID IDENTITY MATRIX)
+// ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2186,9 +2243,38 @@ async function initApp() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && !urlHotel) {
-            hotelGlobalScopeID = session.user.id;
+            let userUUID = session.user.id; // Mapped unique Auth identification token
+            
+            // 🟢 IDENTITY PIPELINE: Subscriptions table se logged-in user ka clean phone number dhoondho
+            // 🔥 FIXED TYPO: Changed 'uuid' to 'userUUID' here to completely stop the white screen crash!
+            const { data: subData, error: phoneFetchErr } = await supabaseClient
+                .from('subscriptions')
+                .select('user_phone')
+                .eq('user_id', userUUID) 
+                .maybeSingle();
+
+            if (phoneFetchErr) {
+                console.error("🚨 Identity Hook Extraction Error:", phoneFetchErr.message);
+            }
+                
+            // 👑 THE PARADIGM SHIFT: Number ko global base custom ID banao tracking ke liye
+            if (subData && subData.user_phone) {
+                hotelGlobalScopeID = subData.user_phone;
+                console.log("🎯 Identity Verified! Scoped Primary Key locked onto Mobile:", hotelGlobalScopeID);
+            } else {
+                hotelGlobalScopeID = userUUID; 
+                console.warn("⚠️ Warning: Falls back onto UUID due to missing row index.");
+            }
+            
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
+            
+            // 🔥 Page refresh hote hi pehle subscription validation check karo
+            const isPlanValid = await verifySubscriptionGatekeeper(userUUID);
+            if (!isPlanValid) {
+                return; // Yahin par execution block ho jayegi aur paywall khul jayega
+            }
+
             document.getElementById('customerView').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
             console.log("🔐 RestroFlow: Active Owner session verified!");
@@ -2205,23 +2291,25 @@ async function initApp() {
     // Cache Layer Verification Matrix
     let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if (localScopedMenu) {
-        menuCategories = JSON.parse(localScopedMenu);
+        try {
+            menuCategories = JSON.parse(localScopedMenu);
+        } catch(e) {
+            menuCategories = urlHotel ? [] : fallbackMenu;
+        }
     } else {
-        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects instead of inheriting fallback pizza elements
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
+    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY PHONE LOOKUP)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
-            .eq('id', hotelGlobalScopeID)
+            .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
         if (error) {
             console.error("🚨 Supabase Database Refusal Exception:", error.message, "| Code:", error.code);
-            showOnScreenNotification("⚠️ Cloud Sync Interrupted!", true);
         }
 
         const activeConfigRow = data?.[0];
@@ -2238,9 +2326,8 @@ async function initApp() {
                 }
             }
             
-            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty []) to block data poisoning loops
             if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                menuCategories = cloudMenu; // Securely binds the real state (empty array or customized menu)
+                menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
             
@@ -2249,16 +2336,11 @@ async function initApp() {
             }
             
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
-            renderCustomerMenu(); 
-            updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Target restaurant record doesn't exist on server -> force clean blank canvas for scanned public profiles
             if (urlHotel) {
                 menuCategories = [];
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
             }
-            renderCustomerMenu();
-            updateFrontEndClassificationLabels();
         }
     } catch (err) {
         console.error("Database connection exception operational:", err);
@@ -2276,17 +2358,19 @@ async function initApp() {
             maximumClaimedDisc = sessionData.discount_claimed || 0;
             
             floorData.forEach(floor => {
-                floor.tables.forEach(t => {
-                    if (t.id === clientCurrentActiveTable) {
-                        t.waiterBell = sessionData.waiter_bell || false;
-                        if (sessionData.payment_status === 'SUCCESS_PAID') {
-                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
-                        } else {
-                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
-                            t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => {
+                        if (t && t.id === clientCurrentActiveTable) {
+                            t.waiterBell = sessionData.waiter_bell || false;
+                            if (sessionData.payment_status === 'SUCCESS_PAID') {
+                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
+                            } else {
+                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
+                                t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
         } else {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
@@ -2301,17 +2385,22 @@ async function initApp() {
         cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
-    renderCustomerMenu(); 
-    generateMathQuestion(); 
-    generateAdminTableGrid(); 
-    updateFrontEndClassificationLabels(); 
-    setupGlobalKeyboardBindings(); 
-    populateWaiterPanelDropdownList();
-    
-    if (document.getElementById('adminDashboard').style.display === 'block') {
-        populateAdminForms();
+    // 🛡️ CRITICAL UI LOADING PROTECTION: Prevents layout paint failures from killing execution threads
+    try {
+        renderCustomerMenu(); 
+        generateMathQuestion(); 
+        generateAdminTableGrid(); 
+        updateFrontEndClassificationLabels(); 
+        setupGlobalKeyboardBindings(); 
+        populateWaiterPanelDropdownList();
+        
+        if (document.getElementById('adminDashboard').style.display === 'block') {
+            populateAdminForms();
+        }
+    } catch(renderError) {
+        console.error("🚨 Rendering Loop Intercepted Successfully:", renderError.message);
     }
-}        
+}
 // ===================================================================
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
@@ -2367,52 +2456,7 @@ function filterCustomerViewCategoryTab(targetCategoryName) {
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
-       // ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: RE-BUILT WITH EMPTY/FULL LABELS & THEME LOGIC
-// ===================================================================
-function generateAdminTableGrid() {
-    const container = document.getElementById('adminTableLayoutGrid'); 
-    if(!container) return; 
-    container.innerHTML = '';
-    
-    floorData.forEach((floor, fIdx) => {
-        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
-        
-        floor.tables.forEach((tbl, tIdx) => {
-            // 🎨 COLOR SEQUENCE MATRIX: Agar custom color nahi hai toh state wise default color uthao
-            let baseThemeColor = tbl.custom_color;
-            let currentLabel = 'Empty'; // Default fallback text state
-            
-            if(tbl.state === 0) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                currentLabel = 'Empty'; // 🔄 Khali -> Empty Fixed
-            } else if(tbl.state === 1) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                currentLabel = 'Full'; // 🔄 Bhra -> Full Fixed
-            } else if(tbl.state === 2) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
-                currentLabel = 'Booked';
-            }
-            
-            // Cashier dynamic pay verification check override
-            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
-                baseThemeColor = '#2196f3'; 
-                currentLabel = '💰 Paid UPI'; 
-            }
-            
-            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
-                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
-            </div>`;
-        });
-        
-        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
-        container.innerHTML += floorHTML;
-    });
-}
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
             flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
@@ -2570,85 +2614,248 @@ function addNewCategory() {
     }
 }
        
-// =================================================================
-// 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
-// =================================================================
-
-
+// ===================================================================
+// 🛡️ ANTI-CRASH SUBSCRIPTION GATEKEEPER ENGINE (NULL SAFETY SHIELD)
+// ===================================================================
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
+        console.log("🔍 Gatekeeper: Checking subscription parameters for UUID:", ownerId);
+        
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
-            .select('status, current_period_end')
+            .select('status, current_period_end, monthly_price, yearly_price')
             .eq('user_id', ownerId)
             .maybeSingle();
 
-        if (!subData) {
-            alert("🚨 Access Denied!\nAapka koi Active Subscription nahi mila. Kripya Super Admin se apna account activate karwayein.");
-            await supabaseClient.auth.signOut();
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+        if (error) {
+            console.error("🚨 Supabase Database Refusal Exception:", error.message);
             return false;
         }
 
+        // 🛡️ CRITICAL SAFEGUARD: Agar subData null hai, toh crash hone ke bajaye yahin handle karo
+        if (!subData) {
+            console.warn("⚠️ Alert: No subscription record existing inside cloud database for UUID:", ownerId);
+            
+            // Set fallback displays to avoid empty placeholder glitches
+            if (document.getElementById('paywallMonthlyPriceDisplay')) {
+                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
+            }
+            if (document.getElementById('paywallYearlyPriceDisplay')) {
+                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
+            }
+
+            // Redirect smoothly to paywall window without freezing the script thread
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+            return false; 
+        }
+
+        // 📝 SAFE ZONE: Ab subData guaranteed exist karta hai, toh variables padhne mein crash nahi hoga
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
         if (subData.status !== 'active' || today > expiryDate) {
-            alert("🚨 Plan Expired! Access Denied.\nKripya subscription renew karwayein.");
-            await supabaseClient.auth.signOut();
+            const mPrice = subData.monthly_price || 0;
+            const yPrice = subData.yearly_price || 0;
+            
+            if (document.getElementById('paywallMonthlyPriceDisplay')) {
+                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
+            }
+            if (document.getElementById('paywallYearlyPriceDisplay')) {
+                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
+            }
+
             document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+            document.getElementById('customerView').style.display = 'none';
+            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+            
             return false;
         }
 
-        return true;
+        return true; // Plan active hai, dashboard access granted!
     } catch (err) {
-        console.error("Gatekeeper Exception:", err);
+        console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
         return false;
     }
 }
-    function populateAdminForms() {
-        document.getElementById('cfgMathDisc').value = rules.math;
-        document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
-        document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
-        document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
-        document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
-        document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
-        document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
-        
-        document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
-        document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
-        document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; 
-        document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
-        document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
-        document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
+// ===================================================================
+// 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING (SAFE)
+// ===================================================================
+function populateAdminForms() {
+    // Game target scores aur variables sync properties
+    document.getElementById('cfgMathDisc').value = rules.math;
+    document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
+    document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
+    document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
+    document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
+    document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
+    document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
     
-        updateCustomQRAdminPreview();
-        renderAnalyticsDashboard(); 
-        
-        const formElement = document.getElementById('adminMenuForm'); 
-        if(!formElement) return; 
-        formElement.innerHTML = '';
-        
-        // ✅ RE-ADDED LOOP: Is loop ke andar ab 'cat' cleanly define ho jayega!
-        menuCategories.forEach((cat, cIdx) => {
-            let catHTML = `<div class="admin-section-block"><div class="section-header"><input type="text" value="${cat.categoryName}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();"><button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button></div>`;
-            cat.items.forEach((item, iIdx) => {
-                let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
-                catHTML += `<div class="admin-row"><div class="image-upload-container">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>Name: <input type="text" value="${item.name}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button></div>`;
-            });
-            catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName}</button></div>`; 
-            formElement.innerHTML += catHTML;
-        });
-        generateAdminTableGrid(); 
-        populateWaiterPanelDropdownList();
-    }
+    // Financial tax structure controls checkboxes mappings
+    document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
+    document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
+    document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; 
+    document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
+    document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
+    document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
 
+    // Refresh display layout subsystems
+    updateCustomQRAdminPreview();
+    renderAnalyticsDashboard(); 
+    
+    const formElement = document.getElementById('adminMenuForm'); 
+    if (!formElement) return; 
+    formElement.innerHTML = '';
+    
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    
+    safeCategories.forEach((cat, cIdx) => {
+        if (!cat) return;
+        let catHTML = `
+            <div class="admin-section-block">
+                <div class="section-header">
+                    <input type="text" value="${cat.categoryName || ''}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
+                    <button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button>
+                </div>`;
+                
+        // 🛡️ SHIELD: Agar items null ya missing ho toh khali array jodo, crash mat karo
+        const safeItems = Array.isArray(cat.items) ? cat.items : [];
+        
+        safeItems.forEach((item, iIdx) => {
+            if (!item) return;
+            let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
+            
+            catHTML += `
+                <div class="admin-row">
+                    <div class="image-upload-container">
+                        ${miniPreview}
+                        <input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;">
+                    </div>
+                    Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>
+                        ₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>
+                        ₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <div class="admin-size-inline">
+                        <label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>
+                        ₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()">
+                    </div>
+                    
+                    <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
+                </div>`;
+        });
+        
+        catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName || ''}</button></div>`; 
+        formElement.innerHTML += catHTML;
+    });
+    
+    generateAdminTableGrid(); 
+    populateWaiterPanelDropdownList();
+}
+// ===================================================================
+// 🛠️ WAITER DROPDOWN LIST ENGINE (ANTI-CRASH RE-BUILT)
+// ===================================================================
+function populateWaiterPanelDropdownList() {
+    let selector = document.getElementById('waiterItemSelect'); 
+    if(!selector) return; 
+    selector.innerHTML = '';
+    
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    
+    safeCategories.forEach(cat => { 
+        if (!cat) return;
+        // 🛡️ SHIELD: Inner items safety check
+        const safeItems = Array.isArray(cat.items) ? cat.items : [];
+        safeItems.forEach(dish => { 
+            if (dish && dish.name) {
+                selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
+            }
+        }); 
+    });
+    
+    let tableSelector = document.getElementById('waiterTableSelect'); 
+    let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
+    if(tableSelector && adminViewerSelector) {
+        let savedWaiterTableSelection = tableSelector.value;
+        let savedAdminTableSelection = adminViewerSelector.value;
+
+        tableSelector.innerHTML = ''; 
+        adminViewerSelector.innerHTML = '';
+        
+        const safeFloors = Array.isArray(floorData) ? floorData : [];
+        safeFloors.forEach(floor => {
+            if (!floor) return;
+            const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
+            safeTables.forEach(t => { 
+                if (!t) return;
+                let markupOption = `<option value="${t.id}">${floor.floorName || 'Floor'} - Table ${t.id}</option>`;
+                tableSelector.innerHTML += markupOption; 
+                adminViewerSelector.innerHTML += markupOption;
+            });
+        });
+        if(savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
+        if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
+    }
+    syncWaiterSizeDropdownOptions(); 
+    auditSelectedTableBillInvoiceLive(); 
+}
+// ===================================================================
+// 🛠️ FIX 3: RE-BUILT INTERACTIVE FLOOR MATRIX GHOST BLOCK SAVER
+// ===================================================================
+function generateAdminTableGrid() {
+    const container = document.getElementById('adminTableLayoutGrid'); 
+    if(!container) return; 
+    container.innerHTML = '';
+    
+    const safeFloors = Array.isArray(floorData) ? floorData : [];
+    
+    safeFloors.forEach((floor, fIdx) => {
+        if(!floor) return;
+        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName || ''}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+        
+        const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
+        safeTables.forEach((tbl, tIdx) => {
+            if(!tbl) return;
+            let baseThemeColor = tbl.custom_color;
+            let currentLabel = 'Empty'; 
+            
+            if(tbl.state === 0) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                currentLabel = 'Empty'; 
+            } else if(tbl.state === 1) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                currentLabel = 'Full'; 
+            } else if(tbl.state === 2) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                currentLabel = 'Booked';
+            }
+            
+            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
+                baseThemeColor = '#2196f3'; 
+                currentLabel = '💰 Paid UPI'; 
+            }
+            
+            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
+                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+            </div>`;
+        });
+        
+        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
+        container.innerHTML += floorHTML;
+    });
+}
      // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
 function saveAdminConfig() {
     // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
@@ -3037,6 +3244,39 @@ function executeAuthPortalMasterRouter() {
         console.log("🚀 Routing execution to: LOGIN ENGINE");
         executeRealCloudLoginSequence();
     }
+}
+        // ===================================================================
+// 👑 INTERACTIVE PAYWALL LIFE-CYCLE CONTROLLERS
+// ===================================================================
+function displaySubscriptionExpiredPaywallModal(monthlyRate, yearlyRate) {
+    // Inject pricing text nodes inside targets fields flawlessly
+    document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + monthlyRate;
+    document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yearlyRate;
+    
+    // Hide primary layout environments to seal data views boundaries
+    document.getElementById('adminDashboard').style.display = 'none';
+    document.getElementById('customerView').style.display = 'none';
+    
+    // Open the premium modal screen view
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+}
+
+function revealSaaSPricingTiersMatrix() {
+    // Reveal the hidden pricing container node smoothly
+    document.getElementById('saasPricingTiersContainer').style.display = 'block';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+    showOnScreenNotification("ℹ️ YOUR PLAN IS EXPIRE! Please contact administrator node.");
+}
+
+async function closePaywallAndExitToHub() {
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+    document.getElementById('saasPricingTiersContainer').style.display = 'none';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
+    
+    // Sign out to clear session credentials tokens securely
+    await supabaseClient.auth.signOut();
+    document.getElementById('customerView').style.display = 'block';
+    renderCustomerMenu();
 }
 
 initApp();
