@@ -1975,15 +1975,18 @@ async function auditSelectedTableBillInvoiceLive() {
         let subtotal = 0; 
 
         outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-        targetBill.forEach(row => {
-            let rowCost = row.price * row.qty; 
+        const safeTargetBill = Array.isArray(targetBill) ? targetBill : [];
+        safeTargetBill.forEach(row => {
+            if (!row) return;
+            let rowCost = (row.price || 0) * (row.qty || 0); 
             subtotal += rowCost; 
-            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name || 'Item'} [${(row.size || '').toUpperCase()}] x${row.qty || 0} <span style="color:#7f8c8d;">(@₹${row.price || 0})</span></span><b>₹${rowCost}</b></div>`;
         });
 
         if (kitchenOrders && kitchenOrders.length > 0) {
             outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
+                if (!order || !order.order_items) return;
                 const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
                 const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
 
@@ -1991,15 +1994,14 @@ async function auditSelectedTableBillInvoiceLive() {
                 let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
 
                 order.order_items.forEach(item => {
+                    if (!item) return;
                     let calculatedLivePrice = 0;
                     let sizeKey = item.size ? item.size.toLowerCase() : 'm';
                     
                     const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
                     safeCategories.forEach(cat => {
-                        if (!cat) return;
-                        // 🛡️ CRITICAL ASYNC SHIELD: Blocks crash inside find methods
-                        const safeItems = Array.isArray(cat.items) ? cat.items : [];
-                        let matchedMenuDish = safeItems.find(d => d && d.name && d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (!cat || !Array.isArray(cat.items)) return; // 🛡️ CRITICAL DEEP SAFEGUARD
+                        let matchedMenuDish = cat.items.find(d => d && d.name && d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
                         if (matchedMenuDish) {
                             calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
                         }
@@ -2008,7 +2010,7 @@ async function auditSelectedTableBillInvoiceLive() {
                     outputBox.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
                             <div>
-                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name || 'Dish'} [${(item.size || '').toUpperCase()}] x${item.qty || 0}</span>
                                 <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
                                  <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
                             </div>
@@ -2769,48 +2771,38 @@ function populateAdminForms() {
 // 🛠️ WAITER DROPDOWN LIST ENGINE (ANTI-CRASH RE-BUILT)
 // ===================================================================
 function populateWaiterPanelDropdownList() {
-    let selector = document.getElementById('waiterItemSelect'); 
-    if(!selector) return; 
-    selector.innerHTML = '';
+    let selector = document.getElementById('waiterItemSelect'); if(!selector) return; selector.innerHTML = '';
     
+    // 🛡️ SHIELD: Ensure category and items are safe before running inner loops
     const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
-    
     safeCategories.forEach(cat => { 
         if (!cat) return;
-        // 🛡️ SHIELD: Inner items safety check
         const safeItems = Array.isArray(cat.items) ? cat.items : [];
         safeItems.forEach(dish => { 
-            if (dish && dish.name) {
-                selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
-            }
+            if(dish && dish.name) selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
         }); 
     });
     
-    let tableSelector = document.getElementById('waiterTableSelect'); 
-    let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
+    let tableSelector = document.getElementById('waiterTableSelect'); let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
     if(tableSelector && adminViewerSelector) {
         let savedWaiterTableSelection = tableSelector.value;
         let savedAdminTableSelection = adminViewerSelector.value;
 
-        tableSelector.innerHTML = ''; 
-        adminViewerSelector.innerHTML = '';
+        tableSelector.innerHTML = ''; adminViewerSelector.innerHTML = '';
         
         const safeFloors = Array.isArray(floorData) ? floorData : [];
         safeFloors.forEach(floor => {
-            if (!floor) return;
-            const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
-            safeTables.forEach(t => { 
-                if (!t) return;
+            if(!floor || !Array.isArray(floor.tables)) return;
+            floor.tables.forEach(t => { 
+                if(!t) return;
                 let markupOption = `<option value="${t.id}">${floor.floorName || 'Floor'} - Table ${t.id}</option>`;
-                tableSelector.innerHTML += markupOption; 
-                adminViewerSelector.innerHTML += markupOption;
+                tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
             });
         });
         if(savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
         if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
     }
-    syncWaiterSizeDropdownOptions(); 
-    auditSelectedTableBillInvoiceLive(); 
+    syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
 }
 // ===================================================================
 // 🛠️ FIX 3: RE-BUILT INTERACTIVE FLOOR MATRIX GHOST BLOCK SAVER
