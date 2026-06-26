@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\\\\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2119,27 +2119,7 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earned
             displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
             displayBox.style.display = "block";
         }
-function populateWaiterPanelDropdownList() {
-    let selector = document.getElementById('waiterItemSelect'); if(!selector) return; selector.innerHTML = '';
-    menuCategories.forEach(cat => { cat.items.forEach(dish => { selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; }); });
-    
-    let tableSelector = document.getElementById('waiterTableSelect'); let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
-    if(tableSelector && adminViewerSelector) {
-        let savedWaiterTableSelection = tableSelector.value;
-        let savedAdminTableSelection = adminViewerSelector.value;
 
-        tableSelector.innerHTML = ''; adminViewerSelector.innerHTML = '';
-        floorData.forEach(floor => {
-            floor.tables.forEach(t => { 
-                let markupOption = `<option value="${t.id}">${floor.floorName} - Table ${t.id}</option>`;
-                tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
-            });
-        });
-        if(savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
-        if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
-    }
-    syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
-}
         function syncWaiterSizeDropdownOptions() {
             let selectedDishName = document.getElementById('waiterItemSelect').value;
             let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
@@ -2413,52 +2393,7 @@ function filterCustomerViewCategoryTab(targetCategoryName) {
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
-       // ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: RE-BUILT WITH EMPTY/FULL LABELS & THEME LOGIC
-// ===================================================================
-function generateAdminTableGrid() {
-    const container = document.getElementById('adminTableLayoutGrid'); 
-    if(!container) return; 
-    container.innerHTML = '';
-    
-    floorData.forEach((floor, fIdx) => {
-        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
-        
-        floor.tables.forEach((tbl, tIdx) => {
-            // 🎨 COLOR SEQUENCE MATRIX: Agar custom color nahi hai toh state wise default color uthao
-            let baseThemeColor = tbl.custom_color;
-            let currentLabel = 'Empty'; // Default fallback text state
-            
-            if(tbl.state === 0) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                currentLabel = 'Empty'; // 🔄 Khali -> Empty Fixed
-            } else if(tbl.state === 1) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                currentLabel = 'Full'; // 🔄 Bhra -> Full Fixed
-            } else if(tbl.state === 2) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
-                currentLabel = 'Booked';
-            }
-            
-            // Cashier dynamic pay verification check override
-            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
-                baseThemeColor = '#2196f3'; 
-                currentLabel = '💰 Paid UPI'; 
-            }
-            
-            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
-                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
-            </div>`;
-        });
-        
-        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
-        container.innerHTML += floorHTML;
-    });
-}
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
             flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
@@ -2684,6 +2619,9 @@ async function verifySubscriptionGatekeeper(ownerId) {
 // ===================================================================
 // 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING
 // ===================================================================
+// ===================================================================
+// 🛠️ FIX 1: POPULATE ADMIN FORMS WITH CORES NULL SAFETY SHIELD
+// ===================================================================
 function populateAdminForms() {
     // Game target scores aur variables sync properties
     document.getElementById('cfgMathDisc').value = rules.math;
@@ -2710,16 +2648,23 @@ function populateAdminForms() {
     if (!formElement) return; 
     formElement.innerHTML = '';
     
-    // ✅ RE-ADDED ENGINE LOOP: Binds 'cat' and item arrays securely to prevent runtime reference crash
-    menuCategories.forEach((cat, cIdx) => {
+    // 🛡️ SAFE GUARD LAYER: Ensures menuCategories behaves as a valid iterable array
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    
+    safeCategories.forEach((cat, cIdx) => {
+        if (!cat) return;
         let catHTML = `
             <div class="admin-section-block">
                 <div class="section-header">
-                    <input type="text" value="${cat.categoryName}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
+                    <input type="text" value="${cat.categoryName || 'Unnamed Section'}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
                     <button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button>
                 </div>`;
                 
-        cat.items.forEach((item, iIdx) => {
+        // 🛡️ CRITICAL FIXED FALLBACK: Forces broken or missing items array to fall back onto empty blocks instead of crashing
+        const safeItems = Array.isArray(cat.items) ? cat.items : [];
+        
+        safeItems.forEach((item, iIdx) => {
+            if (!item) return;
             let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
             
             catHTML += `
@@ -2728,28 +2673,28 @@ function populateAdminForms() {
                         ${miniPreview}
                         <input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;">
                     </div>
-                    Name: <input type="text" value="${item.name}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
+                    Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
                     
                     <div class="admin-size-inline">
                         <label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>
-                        ₹: <input type="number" value="${item.s}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()">
+                        ₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()">
                     </div>
                     
                     <div class="admin-size-inline">
                         <label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>
-                        ₹: <input type="number" value="${item.m}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()">
+                        ₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()">
                     </div>
                     
                     <div class="admin-size-inline">
                         <label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>
-                        ₹: <input type="number" value="${item.l}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()">
+                        ₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()">
                     </div>
                     
                     <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
                 </div>`;
         });
         
-        catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName}</button></div>`; 
+        catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName || ''}</button></div>`; 
         formElement.innerHTML += catHTML;
     });
     
@@ -2757,6 +2702,104 @@ function populateAdminForms() {
     populateWaiterPanelDropdownList();
 }
 
+// ===================================================================
+// 🛠️ FIX 2: DROPDOWN MANAGER WITH DEEP STRUCTURAL VALIDATION HOOKS
+// ===================================================================
+function populateWaiterPanelDropdownList() {
+    let selector = document.getElementById('waiterItemSelect'); 
+    if(!selector) return; 
+    selector.innerHTML = '';
+    
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    
+    safeCategories.forEach(cat => { 
+        if (!cat) return;
+        // 🛡️ ANTI-CRASH TRAVERSAL LAYER
+        const safeItems = Array.isArray(cat.items) ? cat.items : [];
+        safeItems.forEach(dish => { 
+            if(dish && dish.name) {
+                selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
+            }
+        }); 
+    });
+    
+    let tableSelector = document.getElementById('waiterTableSelect'); 
+    let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
+    
+    if(tableSelector && adminViewerSelector) {
+        let savedWaiterTableSelection = tableSelector.value;
+        let savedAdminTableSelection = adminViewerSelector.value;
+
+        tableSelector.innerHTML = ''; 
+        adminViewerSelector.innerHTML = '';
+        
+        const safeFloors = Array.isArray(floorData) ? floorData : [];
+        safeFloors.forEach(floor => {
+            if(!floor) return;
+            const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
+            safeTables.forEach(t => { 
+                if(!t) return;
+                let markupOption = `<option value="${t.id}">${floor.floorName || 'Floor'} - Table ${t.id}</option>`;
+                tableSelector.innerHTML += markupOption; 
+                adminViewerSelector.innerHTML += markupOption;
+            });
+        });
+        if(savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
+        if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
+    }
+    syncWaiterSizeDropdownOptions(); 
+    auditSelectedTableBillInvoiceLive(); 
+}
+
+// ===================================================================
+// 🛠️ FIX 3: RE-BUILT INTERACTIVE FLOOR MATRIX GHOST BLOCK SAVER
+// ===================================================================
+function generateAdminTableGrid() {
+    const container = document.getElementById('adminTableLayoutGrid'); 
+    if(!container) return; 
+    container.innerHTML = '';
+    
+    const safeFloors = Array.isArray(floorData) ? floorData : [];
+    
+    safeFloors.forEach((floor, fIdx) => {
+        if(!floor) return;
+        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName || ''}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+        
+        const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
+        safeTables.forEach((tbl, tIdx) => {
+            if(!tbl) return;
+            let baseThemeColor = tbl.custom_color;
+            let currentLabel = 'Empty'; 
+            
+            if(tbl.state === 0) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                currentLabel = 'Empty'; 
+            } else if(tbl.state === 1) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                currentLabel = 'Full'; 
+            } else if(tbl.state === 2) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                currentLabel = 'Booked';
+            }
+            
+            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
+                baseThemeColor = '#2196f3'; 
+                currentLabel = '💰 Paid UPI'; 
+            }
+            
+            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
+                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+            </div>`;
+        });
+        
+        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
+        container.innerHTML += floorHTML;
+    });
+}
      // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
 function saveAdminConfig() {
     // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
