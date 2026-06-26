@@ -1272,40 +1272,43 @@ let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = []
 let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
 let fBird = {}, fPipes = [], flappyScoreTracker = 0;
 let cosmicBackgroundStars = [];
-// ⚡ FIXED: Catches exact 400 verification states vs bad credentials explicitly based on your reference blueprint
+// ===================================================================
+// 🔐 UPGRADED LOGIN ENGINE: PHONE-MATCHING AUTHENTICATOR
+// ===================================================================
 async function executeRealCloudLoginSequence() {
-    const email = document.getElementById('authEmailInput').value.trim();
+    const phone = document.getElementById('authPhoneInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
 
-    if (!email || !password) {
-        alert("⚠️ Please enter both Email and Password!");
+    if (!phone || !password) {
+        alert("⚠️ Please enter both Mobile Number and Password!");
         return;
     }
 
     try {
         showOnScreenNotification("🔒 Authenticating workspace credentials...", false);
         
+        // 👑 THE FOUNDER HACK: Create the exact matching token representation
+        const dummyEmail = phone + "@restroflow.com";
+        
         const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: email,
+            email: dummyEmail,
             password: password
         });
 
         if (error) {
-            alert("❌ Login Denied: " + error.message);
+            alert("❌ Login Denied: Wrong Mobile Number or Password!");
             return;
         }
 
-        // 🛡️ SECURITY PATCH: Login check hote hi instantly subscription status check karo
+        // 🛡️ SECURITY GATEKEEPER CHECK
         const userId = data.user.id;
         const isPlanActive = await verifySubscriptionGatekeeper(userId);
 
         if (!isPlanActive) {
-            // Agar plan expire ho chuka hai, toh yahin se block ho jayega aur paywall khul jayega
             console.log("🛑 Access Blocked: Subscription expired.");
-            return; 
+            return; // Yahin se block ho kar Paywall modal dikhega
         }
 
-        // Agar plan active hai tabhi dashboard andar login karne do
         alert("🚀 Workspace Authenticated successfully!");
         closeLoginConsoleOverlay();
         location.reload(); 
@@ -1346,16 +1349,14 @@ function toggleAuthPortalViewMode() {
 }
 
 // ===================================================================
-// 🔐 UPGRADED SIGNUP ENGINE: PURE MOBILE IDENTITY (ZERO EMAIL CHAFF)
+// 🔐 UPGRADED SIGNUP ENGINE: PURE MOBILE IDENTITY LOGIC (ZERO COST)
 // ===================================================================
 async function executeRealCloudSignUpSequence() {
     const password = document.getElementById('authPasswordInput').value;
-    // 🟢 EXTRACT MOBILE TOKEN: strictly pulls the unique 10-digit mobile number input
     const phone = document.getElementById('authPhoneInput').value.trim();
 
     console.log("📝 Field Check -> Phone Number:", phone, "| Password Length:", password.length);
 
-    // Strict validation mapping loops for Phone and Password only
     if (!password || !phone) {
         alert("⚠️ Mobile Number and Password cannot be left blank!");
         return;
@@ -1371,11 +1372,12 @@ async function executeRealCloudSignUpSequence() {
 
     try {
         showOnScreenNotification("🚀 Registering workspace node via Phone...", false);
-        console.log("📡 Attempting signup for Mobile ID:", phone);
         
-        // 1. 🛡️ SUPABASE PHONE AUTH PIPELINE: Trigger Auth Sign-Up using phone instead of email
+        // 👑 THE FOUNDER HACK: Convert number to free background auth string instantly
+        const dummyEmail = phone + "@restroflow.com";
+        
         const { data, error } = await supabaseClient.auth.signUp({
-            phone: phone,
+            email: dummyEmail,
             password: password
         });
 
@@ -1390,7 +1392,7 @@ async function executeRealCloudSignUpSequence() {
         if (newUserUUID) {
             console.log("🔒 Registration Success! Auth UUID Created:", newUserUUID);
 
-            // 2. FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
+            // 2. FIXED 409: Upsert config
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: newUserUUID,
                 hotel_name: "Restaurant",
@@ -1398,26 +1400,23 @@ async function executeRealCloudSignUpSequence() {
             });
             if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
 
-            // 3. FIXED FOREIGN KEY: Dynamically fetch any valid available Plan ID directly from parent 'plans' table
-            const { data: planData, error: planFetchError } = await supabaseClient
+            // 3. Fetch Plan
+            const { data: planData } = await supabaseClient
                 .from('plans')
                 .select('id')
                 .limit(1)
                 .maybeSingle();
 
-            // Cloud plan table se real ID pakdo, agar table empty ho tabhi hardcoded seed backup use hoga
             let activePlanId = planData?.id || '1d6ca9b8-b472-4cf3-875b-df768f746ef7';
-            if (planFetchError) console.warn("Plans lookup error context logs:", planFetchError.message);
 
-            // 4. Provision standard 30-day Free Trial inside subscriptions matrix safely using upsert
             let startTime = new Date();
             let endTime = new Date();
-            endTime.setDate(startTime.getDate() + 30);
+            endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial
 
-            // 🔥 EMAIL-FREE CRITICAL WRITE: 'user_email' column cleared out completely. Strictly number-locked.
+            // 4. Save clean phone number for Master Control view mapping
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
                 user_id: newUserUUID,
-                user_phone: phone,        // 🟢 Saves unique user phone text string as primary identifier
+                user_phone: phone, // Saved as clean 10-digit number for calling feature
                 plan_id: activePlanId, 
                 status: 'active',
                 current_period_start: startTime.toISOString(),
@@ -1425,26 +1424,22 @@ async function executeRealCloudSignUpSequence() {
             });
 
             if (subError) {
-                console.error("🚨 Critical Sub Provisioning Error:", subError.message);
-                alert("❌ Account authentication created, but subscription ledger syncing failed: " + subError.message);
+                alert("❌ Relational database writing crashed: " + subError.message);
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nMobile ID: ${phone}\n\nAapka workspace strictly mobile number routing system par activate ho gaya hai.`);
+            alert(`🎉 Account Created Successfully!\n\nMobile ID: ${phone}\n\nAapka workspace successfully register ho gaya hai.`);
             
-            // Clear input fields tokens after registration loops finish safely
             document.getElementById('authPasswordInput').value = "";
             if(document.getElementById('authPhoneInput')) {
                 document.getElementById('authPhoneInput').value = "";
             }
             toggleAuthPortalViewMode();
-        } else {
-            alert("📩 Signup initialized! Verification codes dispatched to terminal tokens.");
         }
         
     } catch (err) {
         console.error("🚨 Critical Onboarding Core Exception:", err);
-        alert("System Exception: Multi-row relational database writing crashed.");
+        alert("System Exception: Unable to complete registration.");
     }
 }
         
