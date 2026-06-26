@@ -2677,10 +2677,7 @@ async function verifySubscriptionGatekeeper(ownerId) {
     }
 }
 // ===================================================================
-// 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING
-// ===================================================================
-// ===================================================================
-// 🛠️ FIX 1: POPULATE ADMIN FORMS WITH CORES NULL SAFETY SHIELD
+// 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING (SAFE)
 // ===================================================================
 function populateAdminForms() {
     // Game target scores aur variables sync properties
@@ -2708,7 +2705,7 @@ function populateAdminForms() {
     if (!formElement) return; 
     formElement.innerHTML = '';
     
-    // 🛡️ SAFE GUARD LAYER: Ensures menuCategories behaves as a valid iterable array
+    // 🛡️ CRITICAL SHIELD: Ensures categories is a valid iterable array
     const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
     
     safeCategories.forEach((cat, cIdx) => {
@@ -2716,11 +2713,11 @@ function populateAdminForms() {
         let catHTML = `
             <div class="admin-section-block">
                 <div class="section-header">
-                    <input type="text" value="${cat.categoryName || 'Unnamed Section'}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
+                    <input type="text" value="${cat.categoryName || ''}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();">
                     <button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button>
                 </div>`;
                 
-        // 🛡️ CRITICAL FIXED FALLBACK: Forces broken or missing items array to fall back onto empty blocks instead of crashing
+        // 🛡️ ANTI-CRASH TRIGGER: If items array is missing/empty, it safely bypasses instead of freezing the thread
         const safeItems = Array.isArray(cat.items) ? cat.items : [];
         
         safeItems.forEach((item, iIdx) => {
@@ -2763,7 +2760,7 @@ function populateAdminForms() {
 }
 
 // ===================================================================
-// 🛠️ FIX 2: DROPDOWN MANAGER WITH DEEP STRUCTURAL VALIDATION HOOKS
+// 🛠️ WAITER DROPDOWN LIST ENGINE (ANTI-CRASH RE-BUILT)
 // ===================================================================
 function populateWaiterPanelDropdownList() {
     let selector = document.getElementById('waiterItemSelect'); 
@@ -2774,10 +2771,10 @@ function populateWaiterPanelDropdownList() {
     
     safeCategories.forEach(cat => { 
         if (!cat) return;
-        // 🛡️ ANTI-CRASH TRAVERSAL LAYER
+        // 🛡️ ANTI-CRASH INNER TRAVERSAL PROTECTION
         const safeItems = Array.isArray(cat.items) ? cat.items : [];
         safeItems.forEach(dish => { 
-            if(dish && dish.name) {
+            if (dish && dish.name) {
                 selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
             }
         }); 
@@ -2785,7 +2782,6 @@ function populateWaiterPanelDropdownList() {
     
     let tableSelector = document.getElementById('waiterTableSelect'); 
     let adminViewerSelector = document.getElementById('adminBillingViewerTableSelect');
-    
     if(tableSelector && adminViewerSelector) {
         let savedWaiterTableSelection = tableSelector.value;
         let savedAdminTableSelection = adminViewerSelector.value;
@@ -2795,10 +2791,10 @@ function populateWaiterPanelDropdownList() {
         
         const safeFloors = Array.isArray(floorData) ? floorData : [];
         safeFloors.forEach(floor => {
-            if(!floor) return;
+            if (!floor) return;
             const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
             safeTables.forEach(t => { 
-                if(!t) return;
+                if (!t) return;
                 let markupOption = `<option value="${t.id}">${floor.floorName || 'Floor'} - Table ${t.id}</option>`;
                 tableSelector.innerHTML += markupOption; 
                 adminViewerSelector.innerHTML += markupOption;
@@ -2810,7 +2806,6 @@ function populateWaiterPanelDropdownList() {
     syncWaiterSizeDropdownOptions(); 
     auditSelectedTableBillInvoiceLive(); 
 }
-
 // ===================================================================
 // 🛠️ FIX 3: RE-BUILT INTERACTIVE FLOOR MATRIX GHOST BLOCK SAVER
 // ===================================================================
