@@ -423,27 +423,23 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="discountSheetModal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>🎁 Game Reward Matrix</h3>
-            <ul class="rules-list" id="rulesListDisplay"></ul>
-            <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
-        </div>
-    </div>
-    <div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
+    <!-- ================================================================= -->
+<!-- ⚠️ THE SAAS PAYWALL GATEWAY: SUBSCRIPTION EXPIRED OVERLAY LEVEL  -->
+<!-- ================================================================= -->
+<div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
     <div class="modal-content" style="max-width:390px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 25px 60px rgba(0,0,0,0.25); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
         
         <div style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">⚠️</div>
         
-        <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRE</h2>
+        <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRED</h2>
         <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">Aapka RestroFlow workspace subscription pack samapt ho chuka hai.</p>
         
         <button class="action-btn" id="activatePlanTriggerBtn" onclick="revealSaaSPricingTiersMatrix()" style="background: var(--neon-green); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 6px 15px rgba(46,204,113,0.3); margin-bottom: 0px; transition: all 0.2s;">
-            ⚡ ACTIVE YOUR PLAN
+            ⚡ ACTIVATE YOUR PLAN
         </button>
 
         <div id="saasPricingTiersContainer" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 16px; margin-top: 15px; text-align: left; box-sizing: border-box;">
-            <h4 style="margin: 0 0 12px 0; color: var(--dark-charcoal); font-weight: 800; text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px; font-size: 14px;">Scoped Enterprise Rates Selected</h4>
+            <h4 style="margin: 0 0 12px 0; color: var(--dark-charcoal); font-weight: 800; text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px; font-size: 14px;">Scoped Enterprise Rates</h4>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: white; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;">
                 <span style="font-size: 13px; color: #475569;">📅 <b>Monthly Pack:</b></span>
@@ -463,6 +459,7 @@
         </button>
     </div>
 </div>
+    
     <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
        <!-- 🍕 FIXED: High-Resolution Professional Branding Header -->
@@ -2615,7 +2612,7 @@ function addNewCategory() {
 }
        
 // ===================================================================
-// 🛡️ ANTI-CRASH SUBSCRIPTION GATEKEEPER ENGINE (NULL SAFETY SHIELD)
+// 🛡️ INDESTRUCTIBLE SUBSCRIPTION GATEKEEPER ENGINE (DOM ELEMENT ASSURANCE)
 // ===================================================================
 async function verifySubscriptionGatekeeper(ownerId) {
     try {
@@ -2632,48 +2629,55 @@ async function verifySubscriptionGatekeeper(ownerId) {
             return false;
         }
 
-        // 🛡️ CRITICAL SAFEGUARD: Agar subData null hai, toh crash hone ke bajaye yahin handle karo
+        // 🛡️ SAFE ZONE CONTAINER DETECTION
+        const paywallModal = document.getElementById('subscriptionExpiredPaywallModal');
+        const customerView = document.getElementById('customerView');
+        const adminDashboard = document.getElementById('adminDashboard');
+
+        // Agar database mein subData null hai (Naya Account)
         if (!subData) {
             console.warn("⚠️ Alert: No subscription record existing inside cloud database for UUID:", ownerId);
             
-            // Set fallback displays to avoid empty placeholder glitches
-            if (document.getElementById('paywallMonthlyPriceDisplay')) {
-                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
-            }
-            if (document.getElementById('paywallYearlyPriceDisplay')) {
-                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
-            }
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
 
-            // Redirect smoothly to paywall window without freezing the script thread
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'none';
-            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+            // Safe dynamic element visibility switches
+            if (adminDashboard) adminDashboard.style.display = 'none';
+            if (customerView) customerView.style.display = 'none';
+            if (paywallModal) {
+                paywallModal.style.display = 'flex';
+            } else {
+                // Agar HTML missing hai, toh user ko alert dikhao taaki blank screen na dikhe
+                alert("⚠️ RestroFlow Billing Notice: Aapka account active nahi hai. Kripya naye Mobile ID se signup karein ya admin se contact karein!");
+                if (customerView) customerView.style.display = 'block';
+            }
             return false; 
         }
 
-        // 📝 SAFE ZONE: Ab subData guaranteed exist karta hai, toh variables padhne mein crash nahi hoga
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // Agar plan expire ho chuka hai ya status active nahi hai
         if (subData.status !== 'active' || today > expiryDate) {
             const mPrice = subData.monthly_price || 0;
             const yPrice = subData.yearly_price || 0;
             
-            if (document.getElementById('paywallMonthlyPriceDisplay')) {
-                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
-            }
-            if (document.getElementById('paywallYearlyPriceDisplay')) {
-                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
-            }
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
 
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'none';
-            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+            if (adminDashboard) adminDashboard.style.display = 'none';
+            if (customerView) customerView.style.display = 'none';
+            if (paywallModal) {
+                paywallModal.style.display = 'flex';
+            } else {
+                alert("🚨 Plan Expired! Workspace locked. Kripya pricing system se active karein.");
+                if (customerView) customerView.style.display = 'block';
+            }
             
             return false;
         }
 
-        return true; // Plan active hai, dashboard access granted!
+        return true; // Plan active hai, welcome to admin dashboard!
     } catch (err) {
         console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
         return false;
