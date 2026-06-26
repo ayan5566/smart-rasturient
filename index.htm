@@ -2149,47 +2149,85 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earned
         // ===================================================================
 // 🍕 MISSING PILLAR A: CUSTOMER MENU PAINTER ENGINE
 // ===================================================================
+// ===================================================================
+// 🍕 UPGRADED CUSTOMER MENU PAINTER ENGINE (ANTI-WHITE SCREEN SECURITY)
+// ===================================================================
 function renderCustomerMenu() {
     const tabsWrapper = document.getElementById('customerCategoryTabs'); 
     const itemContainer = document.getElementById('menuContainer'); 
     
-    if(!tabsWrapper || !itemContainer) return; 
+    if (!tabsWrapper || !itemContainer) return; 
     tabsWrapper.innerHTML = ''; 
     itemContainer.innerHTML = ''; 
-    if(menuCategories.length === 0) return;
+    
+    // 🛡️ CRITICAL SAFEGUARD: Agar menu database mein bilkul khali (empty array []) hai, toh crash hone ke bajaye safe user placeholder dikhao
+    if (!menuCategories || menuCategories.length === 0) {
+        itemContainer.innerHTML = `
+            <div style="background: white; padding: 35px 20px; border-radius: 20px; text-align: center; border: 2px dashed #b9ae9f; margin-top: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); box-sizing: border-box; width: 100%;">
+                <span style="font-size: 45px;">📋</span>
+                <h4 style="margin: 12px 0 6px 0; color: var(--dark-charcoal); font-weight: 800; font-size: 16px;">Your Digital Menu is Empty</h4>
+                <p style="margin: 0; font-size: 12px; color: #7f8c8d; font-weight: 600; line-height: 1.4;">Kripya Admin Dashboard (Master Control) mein jaakar apni pasand ke hisab se sections aur dishes add karein!</p>
+            </div>`;
+        return;
+    }
 
-    let currentSelectedCategoryObj = menuCategories.find(c => c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
-    customerActiveCategoryName = currentSelectedCategoryObj.categoryName;
+    // 🛡️ UNDEFINED SHIELD: Falls back automatically to slice indices if target object matching pointers fail
+    let currentSelectedCategoryObj = menuCategories.find(c => c && c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
+    if (!currentSelectedCategoryObj) return;
+    
+    customerActiveCategoryName = currentSelectedCategoryObj.categoryName || "Menu";
 
+    // Dynamic rendering hooks loop for filtration categories buttons
     menuCategories.forEach(cat => { 
+        if (!cat || !cat.categoryName) return;
         let isTabActive = cat.categoryName === customerActiveCategoryName; 
-        tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive?'active':''}" onclick="filterCustomerViewCategoryTab('${cat.categoryName}')">${cat.categoryName}</button>`; 
+        let escapedCatName = cat.categoryName.replace(/'/g, "\\'");
+        tabsWrapper.innerHTML += `<button class="category-tab-btn ${isTabActive ? 'active' : ''}" onclick="filterCustomerViewCategoryTab('${escapedCatName}')">${cat.categoryName}</button>`; 
     });
 
     let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
-    currentSelectedCategoryObj.items.forEach((item, iIdx) => {
+    
+    // Ensure the inner items property behaves strictly as an iterable array pattern
+    const safeItems = Array.isArray(currentSelectedCategoryObj.items) ? currentSelectedCategoryObj.items : [];
+    
+    if (safeItems.length === 0) {
+        itemContainer.innerHTML = `<p style="text-align:center; font-size:12px; color:#7f8c8d; font-style:italic; margin-top:25px; font-weight:600;">Is section mein abhi tak koi dish jodi nahi gayi hai.</p>`;
+        return;
+    }
+
+    safeItems.forEach((item, iIdx) => {
+        if (!item) return;
+        
+        // Sizing toggles baseline metrics verification arrays mapping
         let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
         let defaultPrice = item[defaultSize] || 0; 
         
         let photoMarkup = item.image ? `<img src="${item.image}" class="dish-photo-frame">` : `<div class="dish-photo-frame">🍲</div>`; 
         let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+        let escapedDishName = (item.name || 'Recipe Dish').replace(/'/g, "\\'");
 
         itemContainer.innerHTML += `
             <div class="menu-item">
                 <div class="dish-main-info">
-                    <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
+                    <div class="dish-details">
+                        ${photoMarkup}
+                        <div class="dish-header-text"><strong>${item.name || 'Unnamed Dish'}</strong></div>
+                    </div>
                     <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
                 </div>
                 <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
-                    <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
-                    <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
-                    <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
-                        </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
-                    </div>`;
+                    <button class="size-btn ${item.sActive && item.s > 0 ? 'visible' : ''} ${defaultSize === 's' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s || 0}, this)">S</button>
+                    <button class="size-btn ${item.mActive && item.m > 0 ? 'visible' : ''} ${defaultSize === 'm' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m || 0}, this)">M</button>
+                    <button class="size-btn ${item.lActive && item.l > 0 ? 'visible' : ''} ${defaultSize === 'l' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l || 0}, this)">L</button>
+                </div>
+                <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${escapedDishName}')">Add to Live Bill</button>
+            </div>`;
     });
 }
 
+// ===================================================================
+// 🚀 UPGRADED APP BOOT INITIALIZER (100% PURE MOBILE ID IDENTITY MATRIX)
+// ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2205,12 +2243,33 @@ async function initApp() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && !urlHotel) {
-            hotelGlobalScopeID = session.user.id;
+            let userUUID = session.user.id;
+            
+            // 🟢 IDENTITY PIPELINE: Subscriptions table se logged-in user ka clean phone number dhoondho
+            const { data: subData, error: phoneFetchErr } = await supabaseClient
+                .from('subscriptions')
+                .select('user_phone')
+                .eq('user_id', userUUID)
+                .maybeSingle();
+
+            if (phoneFetchErr) {
+                console.error("🚨 Identity Hook Extraction Error:", phoneFetchErr.message);
+            }
+                
+            // 👑 THE PARADIGM SHIFT: UUID ka kaam parmanent khatam! Number ko global base banao
+            if (subData && subData.user_phone) {
+                hotelGlobalScopeID = subData.user_phone;
+                console.log("🎯 Identity Verified! Scoped Primary Key locked onto Mobile:", hotelGlobalScopeID);
+            } else {
+                hotelGlobalScopeID = userUUID; // Fallback only if database entry is compiling
+                console.warn("⚠️ Warning: Falls back onto UUID due to missing row index.");
+            }
+            
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // 🔥 CRITICAL FIX: Page refresh hote hi pehle subscription aur custom prices load karo
-            const isPlanValid = await verifySubscriptionGatekeeper(hotelGlobalScopeID);
+            // 🔥 CRITICAL FIX: Page refresh hote hi pehle subscription check karo (using userUUID for Auth API verification)
+            const isPlanValid = await verifySubscriptionGatekeeper(userUUID);
             if (!isPlanValid) {
                 return; // Yahin par execution block ho jayegi aur paywall real price ke sath dikhega
             }
@@ -2233,16 +2292,16 @@ async function initApp() {
     if (localScopedMenu) {
         menuCategories = JSON.parse(localScopedMenu);
     } else {
-        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects instead of inheriting fallback pizza elements
+        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
+    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY PHONE LOOKUP)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
-            .eq('id', hotelGlobalScopeID)
+            .eq('id', hotelGlobalScopeID) // Looks up directly using the unique 10-digit mobile key mapping
             .limit(1); 
 
         if (error) {
@@ -2264,9 +2323,9 @@ async function initApp() {
                 }
             }
             
-            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty []) to block data poisoning loops
+            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty [])
             if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                menuCategories = cloudMenu; // Securely binds the real state (empty array or customized menu)
+                menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
             
@@ -2278,7 +2337,7 @@ async function initApp() {
             renderCustomerMenu(); 
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Target restaurant record doesn't exist on server -> force clean blank canvas for scanned public profiles
+            // Target restaurant record doesn't exist on server -> force clean blank canvas
             if (urlHotel) {
                 menuCategories = [];
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
@@ -2327,6 +2386,7 @@ async function initApp() {
         cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
+    // Secure loading layout parameters sequence
     renderCustomerMenu(); 
     generateMathQuestion(); 
     generateAdminTableGrid(); 
@@ -2337,7 +2397,7 @@ async function initApp() {
     if (document.getElementById('adminDashboard').style.display === 'block') {
         populateAdminForms();
     }
-}        
+}
 // ===================================================================
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
