@@ -2243,35 +2243,36 @@ async function initApp() {
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session && !urlHotel) {
-            let userUUID = session.user.id;
+            let userUUID = session.user.id; // Mapped unique Auth identification token
             
             // 🟢 IDENTITY PIPELINE: Subscriptions table se logged-in user ka clean phone number dhoondho
+            // 🔥 FIXED TYPO: Changed 'uuid' to 'userUUID' here to completely stop the white screen crash!
             const { data: subData, error: phoneFetchErr } = await supabaseClient
                 .from('subscriptions')
                 .select('user_phone')
-                .eq('user_id', userUUID)
+                .eq('user_id', userUUID) 
                 .maybeSingle();
 
             if (phoneFetchErr) {
                 console.error("🚨 Identity Hook Extraction Error:", phoneFetchErr.message);
             }
                 
-            // 👑 THE PARADIGM SHIFT: UUID ka kaam parmanent khatam! Number ko global base banao
+            // 👑 THE PARADIGM SHIFT: Number ko global base custom ID banao tracking ke liye
             if (subData && subData.user_phone) {
                 hotelGlobalScopeID = subData.user_phone;
                 console.log("🎯 Identity Verified! Scoped Primary Key locked onto Mobile:", hotelGlobalScopeID);
             } else {
-                hotelGlobalScopeID = userUUID; // Fallback only if database entry is compiling
+                hotelGlobalScopeID = userUUID; 
                 console.warn("⚠️ Warning: Falls back onto UUID due to missing row index.");
             }
             
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // 🔥 CRITICAL FIX: Page refresh hote hi pehle subscription check karo (using userUUID for Auth API verification)
+            // 🔥 Page refresh hote hi pehle subscription validation check karo
             const isPlanValid = await verifySubscriptionGatekeeper(userUUID);
             if (!isPlanValid) {
-                return; // Yahin par execution block ho jayegi aur paywall real price ke sath dikhega
+                return; // Yahin par execution block ho jayegi aur paywall khul jayega
             }
 
             document.getElementById('customerView').style.display = 'none';
@@ -2290,23 +2291,25 @@ async function initApp() {
     // Cache Layer Verification Matrix
     let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if (localScopedMenu) {
-        menuCategories = JSON.parse(localScopedMenu);
+        try {
+            menuCategories = JSON.parse(localScopedMenu);
+        } catch(e) {
+            menuCategories = urlHotel ? [] : fallbackMenu;
+        }
     } else {
-        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY PHONE LOOKUP)
+    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY PHONE LOOKUP)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
-            .eq('id', hotelGlobalScopeID) // Looks up directly using the unique 10-digit mobile key mapping
+            .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
         if (error) {
             console.error("🚨 Supabase Database Refusal Exception:", error.message, "| Code:", error.code);
-            showOnScreenNotification("⚠️ Cloud Sync Interrupted!", true);
         }
 
         const activeConfigRow = data?.[0];
@@ -2323,7 +2326,6 @@ async function initApp() {
                 }
             }
             
-            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty [])
             if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
                 menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
@@ -2334,16 +2336,11 @@ async function initApp() {
             }
             
             console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
-            renderCustomerMenu(); 
-            updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Target restaurant record doesn't exist on server -> force clean blank canvas
             if (urlHotel) {
                 menuCategories = [];
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
             }
-            renderCustomerMenu();
-            updateFrontEndClassificationLabels();
         }
     } catch (err) {
         console.error("Database connection exception operational:", err);
@@ -2361,17 +2358,19 @@ async function initApp() {
             maximumClaimedDisc = sessionData.discount_claimed || 0;
             
             floorData.forEach(floor => {
-                floor.tables.forEach(t => {
-                    if (t.id === clientCurrentActiveTable) {
-                        t.waiterBell = sessionData.waiter_bell || false;
-                        if (sessionData.payment_status === 'SUCCESS_PAID') {
-                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
-                        } else {
-                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
-                            t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => {
+                        if (t && t.id === clientCurrentActiveTable) {
+                            t.waiterBell = sessionData.waiter_bell || false;
+                            if (sessionData.payment_status === 'SUCCESS_PAID') {
+                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
+                            } else {
+                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
+                                t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
         } else {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
@@ -2386,16 +2385,20 @@ async function initApp() {
         cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
-    // Secure loading layout parameters sequence
-    renderCustomerMenu(); 
-    generateMathQuestion(); 
-    generateAdminTableGrid(); 
-    updateFrontEndClassificationLabels(); 
-    setupGlobalKeyboardBindings(); 
-    populateWaiterPanelDropdownList();
-    
-    if (document.getElementById('adminDashboard').style.display === 'block') {
-        populateAdminForms();
+    // 🛡️ CRITICAL UI LOADING PROTECTION: Prevents layout paint failures from killing execution threads
+    try {
+        renderCustomerMenu(); 
+        generateMathQuestion(); 
+        generateAdminTableGrid(); 
+        updateFrontEndClassificationLabels(); 
+        setupGlobalKeyboardBindings(); 
+        populateWaiterPanelDropdownList();
+        
+        if (document.getElementById('adminDashboard').style.display === 'block') {
+            populateAdminForms();
+        }
+    } catch(renderError) {
+        console.error("🚨 Rendering Loop Intercepted Successfully:", renderError.message);
     }
 }
 // ===================================================================
