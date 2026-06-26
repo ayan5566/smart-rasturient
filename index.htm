@@ -2223,7 +2223,7 @@ function renderCustomerMenu() {
 }
 
 // ===================================================================
-// 🚀 UPGRADED APP BOOT INITIALIZER (100% PURE MOBILE ID IDENTITY MATRIX)
+// 🚀 UPGRADED APP BOOT INITIALIZER (HYBRID IDENTITY PROTECTION ENGINE)
 // ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
@@ -2238,12 +2238,13 @@ async function initApp() {
     }
 
     try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session && !urlHotel) {
-            let userUUID = session.user.id; // Mapped unique Auth identification token
+        const { data: { data: { session } = {} } = {} } = await supabaseClient.auth.getSession();
+        const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
+
+        if (currentSession && !urlHotel) {
+            let userUUID = currentSession.user.id; // Mapped unique Auth identification token
             
-            // 🟢 IDENTITY PIPELINE: Subscriptions table se logged-in user ka clean phone number dhoondho
-            // 🔥 FIXED TYPO: Changed 'uuid' to 'userUUID' here to completely stop the white screen crash!
+            // 🏢 IDENTITY PIPELINE: Subscriptions table se logged-in user ka clean phone number dhoondho
             const { data: subData, error: phoneFetchErr } = await supabaseClient
                 .from('subscriptions')
                 .select('user_phone')
@@ -2254,19 +2255,19 @@ async function initApp() {
                 console.error("🚨 Identity Hook Extraction Error:", phoneFetchErr.message);
             }
                 
-            // 👑 THE PARADIGM SHIFT: Number ko global base custom ID banao tracking ke liye
+            // 👑 THE RELATIONAL FIX: hotelGlobalScopeID ko structural UUID hi rehne do taaki query crash na ho
+            hotelGlobalScopeID = userUUID; 
+            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+            
+            // Mobile number ko frontend display aur storage logs ke liye save rakhlo
             if (subData && subData.user_phone) {
-                hotelGlobalScopeID = subData.user_phone;
-                console.log("🎯 Identity Verified! Scoped Primary Key locked onto Mobile:", hotelGlobalScopeID);
-            } else {
-                hotelGlobalScopeID = userUUID; 
-                console.warn("⚠️ Warning: Falls back onto UUID due to missing row index.");
+                localStorage.setItem('restaurantOwnerPhoneID', subData.user_phone);
+                console.log("🎯 Identity Verified! Scoped Primary Key mapped to Mobile Log:", subData.user_phone);
             }
             
-            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // 🔥 Page refresh hote hi pehle subscription validation check karo
+            // Page refresh hote hi pehle subscription validation check karo
             const isPlanValid = await verifySubscriptionGatekeeper(userUUID);
             if (!isPlanValid) {
                 return; // Yahin par execution block ho jayegi aur paywall khul jayega
@@ -2297,7 +2298,7 @@ async function initApp() {
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY PHONE LOOKUP)
+    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY SECURE UUID LOOKUP)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
@@ -2382,7 +2383,7 @@ async function initApp() {
         cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
     }
 
-    // 🛡️ CRITICAL UI LOADING PROTECTION: Prevents layout paint failures from killing execution threads
+    // 🛡️ UI LOADING PROTECTION
     try {
         renderCustomerMenu(); 
         generateMathQuestion(); 
