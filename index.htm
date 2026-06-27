@@ -436,10 +436,9 @@
         <h2 style="color: var(--danger-red);">Plan Expired</h2>
         <p>Aapka subscription khatam ho gaya hai. Dashboard access karne ke liye plan renew karein.</p>
         <button class="action-btn" onclick="activatePlanNow()" style="background: var(--neon-green);">⚡ Activate Plan Now</button>
-        <button onclick="closePaywall()" style="background: none; border: none; margin-top: 15px; color: #7f8c8d; text-decoration: underline; cursor: pointer;">Cancel</button>
-    </div>
-</div>
-    <div class="container" id="customerView">
+       <button onclick="closePaywallAndExitToHub()" style="...">
+    Exit & Return to Hub
+</button>
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
        <!-- 🍕 FIXED: High-Resolution Professional Branding Header -->
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 25px; width: 100%; background: transparent;">
@@ -713,6 +712,48 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // 🚪 FIXED: Secure Logout on Cancel
+async function closePaywallAndExitToHub() {
+    try {
+        console.log("🚪 User cancelled: Logging out securely...");
+        
+        // 1. Supabase session destroy karo
+        await supabaseClient.auth.signOut();
+        
+        // 2. UI Reset
+        document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+        
+        // 3. Page Reload (Session saaf ho jayega)
+        location.reload(); 
+    } catch (err) {
+        console.error("Logout Error:", err);
+        location.reload();
+    }
+}
+        // 👑 UPDATE: Activate Plan Click par Pricing Fetcher
+async function revealSaaSPricingTiersMatrix() {
+    try {
+        // Current email scope se prices fetch karo
+        const { data: subData } = await supabaseClient
+            .from('subscriptions')
+            .select('monthly_price, yearly_price')
+            .eq('id', hotelGlobalScopeID) 
+            .maybeSingle();
+
+        if (subData) {
+            // Modal mein values update karo
+            document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + (subData.monthly_price || 499);
+            document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + (subData.yearly_price || 4999);
+        }
+        
+        // Modal UI show karo
+        document.getElementById('saasPricingTiersContainer').style.display = 'block';
+        document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+    } catch (err) {
+        console.error("Pricing Fetch Error:", err);
+    }
+}
+        
 
 // ===================================================================
 // 🏷️ ANTI-WHITE-SCREEN ISOLATED QR PRINT ENGINE (NATIVE LIFECYCLE GUARD)
