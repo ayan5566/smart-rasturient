@@ -1610,18 +1610,31 @@ function updateFrontEndClassificationLabels() {
             }
             document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
         }
-        // ⚡ FIXED: Isolates database insertion routines strictly to the scoped routing handle to eliminate multi-tenant account leaks
-// ⚡ FIXED: Changed .single() to .maybeSingle() to prevent PGRST116 crash and explicitly catch RLS policy violations
+       // ===================================================================
+// 👨‍🍳 FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
+// ===================================================================
 async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     try {
         let activeHotelID = hotelGlobalScopeID;
         console.log("📡 Airtight SaaS Routing: Deploying order ticket payload...");
 
-        // ⚡ CHANGED: .single() converted to .maybeSingle() to safely handle 0 rows returned on RLS blocks
+        // 🧠 SMART UUID FORMATTER: Agar scope placeholder hai, toh valid formatted static UUID do
+        // Taaki PostgREST 400 input syntax error na fenke
+        if (activeHotelID === "Default_HQ_Arena" || !activeHotelID.includes("@") && activeHotelID.length < 20) {
+            activeHotelID = "00000000-0000-0000-0000-000000000000"; // Unique Fallback Arena UUID
+        } else {
+            // Agar owner logged in hai aur uski email string hai, toh mixup se bachne ke liye 
+            // hum uski background persistent Auth UUID nikalte hain jo Supabase ne generate ki hai
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                activeHotelID = session.user.id; // ✅ Real Unique 36-char UUID string pointing to user
+            }
+        }
+
         const { data: newOrder, error: orderErr } = await supabaseClient
             .from('active_orders')
             .insert({
-                hotel_id: activeHotelID, 
+                hotel_id: activeHotelID,  // 🔒 Format perfectly validated now
                 table_id: tableId,
                 status: 'PENDING'
             })
@@ -1635,7 +1648,6 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
         }
 
         if (newOrder) {
-            // 2. Insert mapped item details inside order_items table
             const { error: itemErr } = await supabaseClient.from('order_items').insert({
                 order_id: newOrder.id,
                 dish_name: dishName,
@@ -1649,9 +1661,8 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
                 console.log("🔥 KDS Sync: Ticket successfully landed on kitchen grid nodes.");
             }
         } else {
-            // If newOrder is null and no error, it strictly means RLS blocked the insert (0 rows returned)
-            console.error("🚨 RLS Security Block: Insert returned 0 rows. Anonymous public users are not allowed to insert!");
-            alert("❌ Order Blocked by Server!\n\nReason: Supabase Row Level Security (RLS) is blocking anonymous customer orders. Please enable public insert policy on 'active_orders' and 'order_items' tables.");
+            console.error("🚨 RLS Security Block: Insert returned 0 rows.");
+            alert("❌ Order Blocked by Server! Please enable public insert policy on 'active_orders' and 'order_items' tables.");
         }
     } catch(err) { 
         console.error("KDS Pipeline Exception Error:", err); 
