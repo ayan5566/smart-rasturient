@@ -1316,7 +1316,9 @@ function toggleAuthPortalViewMode() {
     }
 }
 
-// ✨ FIXED: Captures exact field tokens and handles length trace descriptors based on your base layout reference
+// ===================================================================
+// 🔐 EMAIL & PHONE ONBOARDING ENGINE (100% PURE EMAIL MATRIX)
+// ===================================================================
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
@@ -1366,8 +1368,8 @@ async function executeRealCloudSignUpSequence() {
 
             // 3. Insert into subscriptions using owner email as primary row key index id
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
-                id: email,                     -- Email saved as Unique Primary Identifier
-                user_phone: phone,             -- Sanitized Customer Phone Number column saved
+                id: email,                     // 👑 Unique text primary identifier locked onto Email
+                user_phone: phone,             // 📱 Sanitized Customer Phone Number column saved
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString(),
