@@ -429,7 +429,16 @@
             <ul class="rules-list" id="rulesListDisplay"></ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
         </div>
-    </div>       
+    </div>
+    <div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
+    <div class="modal-content" style="max-width:390px; width:90%; padding:30px; border-radius:24px; text-align:center; background:#ffffff;">
+        <div style="font-size: 50px; margin-bottom: 15px;">⚠️</div>
+        <h2 style="color: var(--danger-red);">Plan Expired</h2>
+        <p>Aapka subscription khatam ho gaya hai. Dashboard access karne ke liye plan renew karein.</p>
+        <button class="action-btn" onclick="activatePlanNow()" style="background: var(--neon-green);">⚡ Activate Plan Now</button>
+        <button onclick="closePaywall()" style="background: none; border: none; margin-top: 15px; color: #7f8c8d; text-decoration: underline; cursor: pointer;">Cancel</button>
+    </div>
+</div>
     <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
        <!-- 🍕 FIXED: High-Resolution Professional Branding Header -->
@@ -660,7 +669,7 @@
         <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
         
         <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()" style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
-            👑 Open SaaS Founder Master Control
+            👑 Founder Master Control
         </button>
     </div>
     <div class="container" id="superAdminDashboard" style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
@@ -2260,10 +2269,12 @@ async function initApp() {
             
             // Validation validation parameters check smoothly using email
             // 🔥 FIXED: Plan invalid hone par page block nahi hoga, gatekeeper safely exit handle karega
-        const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);   
-         if (!isPlanValid) console.log("⏳ Route Redirect: Non-active account redirected smoothly to payment nodes."); {
-                return; 
-            }
+        // initApp mein login session check ke baad:
+            const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
+            if (!isPlanValid) {
+                 console.log("🛑 Access Denied: Subscription check failed.");
+                 return; // Ye dashboard load hone se rok dega
+}
 
             document.getElementById('customerView').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
@@ -2461,6 +2472,10 @@ function generateAdminTableGrid() {
         floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
         container.innerHTML += floorHTML;
     });
+}
+        function closePaywallAndExitToHub() {
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+    location.reload(); // Page reload karke logout/hub par bhej do
 }
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
