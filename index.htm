@@ -2514,9 +2514,15 @@ function generateAdminTableGrid() {
         container.innerHTML += floorHTML;
     });
 }
-        function closePaywallAndExitToHub() {
+        async function closePaywallAndExitToHub() {
     document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
-    location.reload(); // Page reload karke logout/hub par bhej do
+    document.getElementById('saasPricingTiersContainer').style.display = 'none';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
+    
+    // Sign out to clear session credentials tokens securely
+    await supabaseClient.auth.signOut();
+    document.getElementById('customerView').style.display = 'block';
+    renderCustomerMenu();
 }
         function frameUpdateFlappy() {
             flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
@@ -2677,62 +2683,74 @@ function addNewCategory() {
        
 
 // ===================================================================
-// 🛡️ FIXED GATEKEEPER: ANTI-CRASH & GRACEFUL UI HANDLING
+// 🛡️ INDESTRUCTIBLE SUBSCRIPTION GATEKEEPER ENGINE (DOM ELEMENT ASSURANCE)
 // ===================================================================
-async function verifySubscriptionGatekeeper(ownerEmail) {
+async function verifySubscriptionGatekeeper(ownerId) {
     try {
-        console.log("🔍 Gatekeeper: Checking subscription for:", ownerEmail);
+        console.log("🔍 Gatekeeper: Checking subscription parameters for UUID:", ownerId);
         
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
             .select('status, current_period_end, monthly_price, yearly_price')
-            .eq('id', ownerEmail) 
+            .eq('user_id', ownerId)
             .maybeSingle();
 
+        if (error) {
+            console.error("🚨 Supabase Database Refusal Exception:", error.message);
+            return false;
+        }
+
+        // 🛡️ SAFE ZONE CONTAINER DETECTION
         const paywallModal = document.getElementById('subscriptionExpiredPaywallModal');
         const customerView = document.getElementById('customerView');
         const adminDashboard = document.getElementById('adminDashboard');
 
-        // 1. Agar koi record nahi mila (Naya user ya database sync error)
-        if (!subData || error) {
-            console.warn("⚠️ Alert: No active subscription found. Redirecting to paywall.");
+        // Agar database mein subData null hai (Naya Account)
+        if (!subData) {
+            console.warn("⚠️ Alert: No subscription record existing inside cloud database for UUID:", ownerId);
             
-            // UI ko blank karne ke bajaye, sirf Paywall dikhao
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
+
+            // Safe dynamic element visibility switches
             if (adminDashboard) adminDashboard.style.display = 'none';
             if (customerView) customerView.style.display = 'none';
-            
             if (paywallModal) {
                 paywallModal.style.display = 'flex';
-                // Pricing update karo
-                if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹499";
-                if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹4999";
             } else {
-                // Agar modal nahi mil raha toh kam se kam user ko batao
-                alert("Subscription required to access the dashboard.");
+                // Agar HTML missing hai, toh user ko alert dikhao taaki blank screen na dikhe
+                alert("⚠️ RestroFlow Billing Notice: Aapka account active nahi hai. Kripya naye Mobile ID se signup karein ya admin se contact karein!");
+                if (customerView) customerView.style.display = 'block';
             }
-            return false;
+            return false; 
         }
 
-        // 2. Agar record mila, toh expiry check karo
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // Agar plan expire ho chuka hai ya status active nahi hai
         if (subData.status !== 'active' || today > expiryDate) {
-            console.warn("⚠️ Plan Expired.");
+            const mPrice = subData.monthly_price || 0;
+            const yPrice = subData.yearly_price || 0;
+            
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
+
             if (adminDashboard) adminDashboard.style.display = 'none';
             if (customerView) customerView.style.display = 'none';
             if (paywallModal) {
                 paywallModal.style.display = 'flex';
-                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + (subData.monthly_price || 499);
-                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + (subData.yearly_price || 4999);
+            } else {
+                alert("🚨 Plan Expired! Workspace locked. Kripya pricing system se active karein.");
+                if (customerView) customerView.style.display = 'block';
             }
+            
             return false;
         }
 
-        // 3. Sab sahi hai, dashboard dikhao
-        return true; 
+        return true; // Plan active hai, welcome to admin dashboard!
     } catch (err) {
-        console.error("🚨 Gatekeeper Crash:", err);
+        console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
         return false;
     }
 }
@@ -3124,6 +3142,39 @@ function executeAuthPortalMasterRouter() {
         console.log("🚀 Routing execution to: LOGIN ENGINE");
         executeRealCloudLoginSequence();
     }
+}
+        // ===================================================================
+// 👑 INTERACTIVE PAYWALL LIFE-CYCLE CONTROLLERS
+// ===================================================================
+function displaySubscriptionExpiredPaywallModal(monthlyRate, yearlyRate) {
+    // Inject pricing text nodes inside targets fields flawlessly
+    document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + monthlyRate;
+    document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yearlyRate;
+    
+    // Hide primary layout environments to seal data views boundaries
+    document.getElementById('adminDashboard').style.display = 'none';
+    document.getElementById('customerView').style.display = 'none';
+    
+    // Open the premium modal screen view
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
+}
+
+function revealSaaSPricingTiersMatrix() {
+    // Reveal the hidden pricing container node smoothly
+    document.getElementById('saasPricingTiersContainer').style.display = 'block';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+    showOnScreenNotification("ℹ️ YOUR PLAN IS EXPIRE! Please contact administrator node.");
+}
+
+async function closePaywallAndExitToHub() {
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+    document.getElementById('saasPricingTiersContainer').style.display = 'none';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
+    
+    // Sign out to clear session credentials tokens securely
+    await supabaseClient.auth.signOut();
+    document.getElementById('customerView').style.display = 'block';
+    renderCustomerMenu();
 }
 
 initApp();
