@@ -1103,38 +1103,36 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
             }
         }
 
-        // Check if record exists inside tracking matrix array
-        const { data: existingRecord } = await supabaseClient
-            .from('subscriptions')
-            .select('user_id')
-            .eq('user_id', targetId)
-            .maybeSingle();
+        // Check if record exists inside tracking matrix array matching email key 'id'
+const { data: existingRecord } = await supabaseClient
+    .from('subscriptions')
+    .select('id') // ✅ user_id -> id
+    .eq('id', targetId) // ✅ user_id -> id
+    .maybeSingle();
 
-        let syncOperationError = null;
+let syncOperationError = null;
 
-        // 🟢 FEATURE 3: Binding distinct custom individual price arrays payload into row variables
-        let subscriptionPayload = {
-            status: targetStatusState,
-            current_period_start: startTime.toISOString(),
-            current_period_end: endTime.toISOString(),
-            monthly_price: allocatedMonthlyPrice,
-            yearly_price: allocatedYearlyPrice
-        };
+let subscriptionPayload = {
+    status: targetStatusState,
+    current_period_start: startTime.toISOString(),
+    current_period_end: endTime.toISOString(),
+    monthly_price: allocatedMonthlyPrice,
+    yearly_price: allocatedYearlyPrice
+};
 
-        if (existingRecord) {
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .update(subscriptionPayload)
-                .eq('user_id', targetId);
-            syncOperationError = error;
-        } else {
-            subscriptionPayload.user_id = targetId;
-            subscriptionPayload.plan_id = '1d6ca9b8-b472-4cf3-875b-df768f746ef7'; // Fallback seed placeholder token
-            const { error } = await supabaseClient
-                .from('subscriptions')
-                .insert(subscriptionPayload);
-            syncOperationError = error;
-        }
+if (existingRecord) {
+    const { error } = await supabaseClient
+        .from('subscriptions')
+        .update(subscriptionPayload)
+        .eq('id', targetId); // ✅ user_id -> id
+    syncOperationError = error;
+} else {
+    subscriptionPayload.id = targetId; // ✅ user_id -> id
+    const { error } = await supabaseClient
+        .from('subscriptions')
+        .insert(subscriptionPayload);
+    syncOperationError = error;
+}
 
         if (syncOperationError) {
             alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
@@ -2283,7 +2281,9 @@ function renderCustomerMenu() {
     });
 }
 
-// ⚡ FIXED: Multi-tenant routing handshakes strictly bind active data objects to scanned codes to eliminate fallbacks
+// ===================================================================
+// 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
+// ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
     const urlParams = new URLSearchParams(window.location.search);
@@ -2301,25 +2301,23 @@ async function initApp() {
         const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
 
         if (currentSession && !urlHotel) {
-            // 👑 UUID DETHRONED: Target identifier uniquely locked to authentic logged email string
+            // 👑 TEXT ID SCOPE: Relational token matching email text boundaries perfectly
             let ownerEmail = currentSession.user.email; 
             
             hotelGlobalScopeID = ownerEmail; 
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // Validation validation parameters check smoothly using email
-            // 🔥 FIXED: Plan invalid hone par page block nahi hoga, gatekeeper safely exit handle karega
-        // initApp mein login session check ke baad:
+            // 🛡️ ANTI-WHITE SCREEN TRAP: Gatekeeper safely executes redirects internally
             const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
             if (!isPlanValid) {
-                 console.log("🛑 Access Denied: Subscription check failed.");
-                 return; // Ye dashboard load hone se rok dega
-}
-
-            document.getElementById('customerView').style.display = 'none';
-            document.getElementById('adminDashboard').style.display = 'block';
-            console.log("🔐 RestroFlow: Active Owner email verified successfully!");
+                 console.log("⏳ SaaS Notice: Inactive profile routed seamlessly to payment view nodes.");
+                 // Ab yahan se return ko hta diya hai taaki niche waale elements freeze na hon
+            } else {
+                 document.getElementById('customerView').style.display = 'none';
+                 document.getElementById('adminDashboard').style.display = 'block';
+                 console.log("🔐 RestroFlow: Active Owner email verified successfully!");
+            }
         } else if (!urlHotel) {
             hotelGlobalScopeID = "Default_HQ_Arena";
             localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
@@ -2407,10 +2405,18 @@ async function initApp() {
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
 
+    // 🎯 IMMUNE RENDER THREAD: UI triggers cleanly without blocking or crashing the DOM window
     try {
-        renderCustomerMenu(); generateMathQuestion(); generateAdminTableGrid(); updateFrontEndClassificationLabels(); setupGlobalKeyboardBindings(); populateWaiterPanelDropdownList();
+        renderCustomerMenu(); 
+        generateMathQuestion(); 
+        generateAdminTableGrid(); 
+        updateFrontEndClassificationLabels(); 
+        setupGlobalKeyboardBindings(); 
+        populateWaiterPanelDropdownList();
         if (document.getElementById('adminDashboard').style.display === 'block') populateAdminForms();
-    } catch(renderError) { console.error(renderError.message); }
+    } catch(renderError) { 
+        console.error("🏁 Structural safe engine alert execution context handled:", renderError.message); 
+    }
 }
         
 // ===================================================================
@@ -2690,11 +2696,10 @@ async function verifySubscriptionGatekeeper(ownerId) {
         console.log("🔍 Gatekeeper: Checking subscription parameters for UUID:", ownerId);
         
         const { data: subData, error } = await supabaseClient
-            .from('subscriptions')
-            .select('status, current_period_end, monthly_price, yearly_price')
-            .eq('user_id', ownerId)
-            .maybeSingle();
-
+    .from('subscriptions')
+    .select('status, current_period_end, monthly_price, yearly_price')
+    .eq('id', ownerId) // ✅ Change 'user_id' to your actual primary key 'id'
+    .maybeSingle();
         if (error) {
             console.error("🚨 Supabase Database Refusal Exception:", error.message);
             return false;
