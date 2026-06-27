@@ -1921,129 +1921,6 @@ function executeNativeBrowserPrintTrigger() {
         // Bell status true karke cloud par bhejein
 syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
         }
-
-        
-
-async function auditSelectedTableBillInvoiceLive() {
-    let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
-    let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
-
-    try {
-        let sessionData = null;
-        let kitchenOrders = [];
-        let targetBill = [];
-        let targetDisc = 0;
-        let paymentStatusToken = 'PENDING';
-
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
-    
-        if (isUUID) {
-            const { data: sData } = await supabaseClient
-                .from('table_sessions')
-                .select('*')
-                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                .maybeSingle();
-            sessionData = sData;
-
-            const { data: kOrders } = await supabaseClient
-                .from('active_orders')
-                .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
-                .eq('hotel_id', hotelGlobalScopeID)
-                .eq('table_id', selectedAdminTable);
-            if (kOrders) kitchenOrders = kOrders;
-
-            if (sessionData) {
-                targetBill = sessionData.live_bill || [];
-                targetDisc = parseInt(sessionData.discount_claimed) || 0;
-                paymentStatusToken = sessionData.payment_status || 'PENDING';
-            }
-        } else {
-            targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
-            targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
-            paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
-        }
-
-        if(paymentStatusToken === 'SUCCESS_PAID') {
-            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
-        } else {
-            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
-        }
-
-        outputBox.innerHTML = ''; 
-        let subtotal = 0; 
-
-        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-        const safeTargetBill = Array.isArray(targetBill) ? targetBill : [];
-        safeTargetBill.forEach(row => {
-            if (!row) return;
-            let rowCost = (row.price || 0) * (row.qty || 0); 
-            subtotal += rowCost; 
-            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name || 'Item'} [${(row.size || '').toUpperCase()}] x${row.qty || 0} <span style="color:#7f8c8d;">(@₹${row.price || 0})</span></span><b>₹${rowCost}</b></div>`;
-        });
-
-        if (kitchenOrders && kitchenOrders.length > 0) {
-            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
-            kitchenOrders.forEach(order => {
-                if (!order || !order.order_items) return;
-                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
-                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
-
-                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
-
-                order.order_items.forEach(item => {
-                    if (!item) return;
-                    let calculatedLivePrice = 0;
-                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                    
-                    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
-                    safeCategories.forEach(cat => {
-                        if (!cat || !Array.isArray(cat.items)) return; // 🛡️ CRITICAL DEEP SAFEGUARD
-                        let matchedMenuDish = cat.items.find(d => d && d.name && d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                        if (matchedMenuDish) {
-                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
-                        }
-                    });
-
-                    outputBox.innerHTML += `
-                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
-                            <div>
-                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name || 'Dish'} [${(item.size || '').toUpperCase()}] x${item.qty || 0}</span>
-                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
-                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
-                            </div>
-                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
-                        </div>`;
-                });
-            });
-        }
-
-        if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
-            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
-            paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
-        }
-
-        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
-        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-
-        if(taxBox) {
-            taxBox.style.display = "block";
-            taxBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-            `;
-        }
-        grandTotalBox.innerText = "₹" + finalBillSum;
-    } catch (err) { console.error(err); }
-}
         // ⚡ FIXED: Pulls active data strictly matching the isolated tenant string layout maps
 function renderLiveCalculatedBill() {
     localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
@@ -2111,26 +1988,7 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earned
             displayBox.style.display = "block";
         }
 
-        function syncWaiterSizeDropdownOptions() {
-    let selectedDishName = document.getElementById('waiterItemSelect').value;
-    let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
-    let obj = null; 
-    
-    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
-    safeCategories.forEach(c => { 
-        if(!c) return;
-        const safeItems = Array.isArray(c.items) ? c.items : [];
-        let f = safeItems.find(i => i && i.name === selectedDishName); 
-        if(f) obj = f; 
-    });
-    
-    if(obj) {
-        if(obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (₹${obj.s})</option>`;
-        if(obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (₹${obj.m})</option>`;
-        if(obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (₹${obj.l})</option>`;
-    }
-}
-
+      
         function simulateQRScan() {
             let scannedID = prompt("Simulation Scan: Enter Table ID code (e.g. T1, T2):");
             if(scannedID) {
@@ -2687,7 +2545,7 @@ async function verifySubscriptionGatekeeper(ownerId) {
     }
 }
 // ===================================================================
-// 🛠️ SUBSECTION B: ADMIN FORM POPULATOR & MENU SECTIONS RENDERING (SAFE)
+// 🛠️ FIX 1: POPULATE ADMIN FORMS WITH CORES NULL SAFETY SHIELD
 // ===================================================================
 function populateAdminForms() {
     // Game target scores aur variables sync properties
@@ -2707,7 +2565,6 @@ function populateAdminForms() {
     document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
     document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
 
-    // Refresh display layout subsystems
     updateCustomQRAdminPreview();
     renderAnalyticsDashboard(); 
     
@@ -2726,7 +2583,7 @@ function populateAdminForms() {
                     <button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button>
                 </div>`;
                 
-        // 🛡️ SHIELD: Agar items null ya missing ho toh khali array jodo, crash mat karo
+        // 🛡️ SHIELD: Ensure items collection is a valid iterable array array fallback
         const safeItems = Array.isArray(cat.items) ? cat.items : [];
         
         safeItems.forEach((item, iIdx) => {
@@ -2767,19 +2624,20 @@ function populateAdminForms() {
     generateAdminTableGrid(); 
     populateWaiterPanelDropdownList();
 }
+
 // ===================================================================
-// 🛠️ WAITER DROPDOWN LIST ENGINE (ANTI-CRASH RE-BUILT)
+// 🛠️ FIX 2: WAITER DROPDOWN LIST ENGINE WITH DEEP OBJECT PROTECTION
 // ===================================================================
 function populateWaiterPanelDropdownList() {
     let selector = document.getElementById('waiterItemSelect'); if(!selector) return; selector.innerHTML = '';
     
-    // 🛡️ SHIELD: Ensure category and items are safe before running inner loops
     const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
     safeCategories.forEach(cat => { 
         if (!cat) return;
+        // 🛡️ SHIELD: Anti-crash inner traversal checks
         const safeItems = Array.isArray(cat.items) ? cat.items : [];
         safeItems.forEach(dish => { 
-            if(dish && dish.name) selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
+            if (dish && dish.name) selector.innerHTML += `<option value="${dish.name}">${dish.name}</option>`; 
         }); 
     });
     
@@ -2803,6 +2661,153 @@ function populateWaiterPanelDropdownList() {
         if(savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
     }
     syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive(); 
+}
+
+// ===================================================================
+// 🛠️ FIX 3: SYNC WAITER SIZE DROPDOWN WITH VALIDATION MATRIX HOOKS
+// ===================================================================
+function syncWaiterSizeDropdownOptions() {
+    let selectElem = document.getElementById('waiterItemSelect');
+    let selectedDishName = selectElem ? selectElem.value : "";
+    let sizeSelector = document.getElementById('waiterSizeSelect'); if(!sizeSelector) return; sizeSelector.innerHTML = '';
+    let obj = null; 
+    
+    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+    safeCategories.forEach(c => { 
+        if(!c || !Array.isArray(c.items)) return; // 🛡️ CRITICAL LOOP INTERCEPTOR
+        let f = c.items.find(i => i && i.name === selectedDishName); 
+        if(f) obj = f; 
+    });
+    
+    if(obj) {
+        if(obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (₹${obj.s})</option>`;
+        if(obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (₹${obj.m})</option>`;
+        if(obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (₹${obj.l})</option>`;
+    }
+}
+
+// ===================================================================
+// 🛠️ FIX 4: AUDIT RUNNING INVOICES WITH DEEP ASYNC SAFETY NESTING
+// ===================================================================
+async function auditSelectedTableBillInvoiceLive() {
+    let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
+    let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
+
+    try {
+        let sessionData = null;
+        let kitchenOrders = [];
+        let targetBill = [];
+        let targetDisc = 0;
+        let paymentStatusToken = 'PENDING';
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
+    
+        if (isUUID) {
+            const { data: sData } = await supabaseClient
+                .from('table_sessions')
+                .select('*')
+                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                .maybeSingle();
+            sessionData = sData;
+
+            const { data: kOrders } = await supabaseClient
+                .from('active_orders')
+                .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
+                .eq('hotel_id', hotelGlobalScopeID)
+                .eq('table_id', selectedAdminTable);
+            if (kOrders) kitchenOrders = kOrders;
+
+            if (sessionData) {
+                targetBill = sessionData.live_bill || [];
+                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                paymentStatusToken = sessionData.payment_status || 'PENDING';
+            }
+        } else {
+            targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
+            targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+        }
+
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+        } else {
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
+        }
+
+        outputBox.innerHTML = ''; 
+        let subtotal = 0; 
+
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
+        const safeTargetBill = Array.isArray(targetBill) ? targetBill : [];
+        safeTargetBill.forEach(row => {
+            if (!row) return;
+            let rowCost = (row.price || 0) * (row.qty || 0); 
+            subtotal += rowCost; 
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name || 'Item'} [${(row.size || '').toUpperCase()}] x${row.qty || 0} <span style="color:#7f8c8d;">(@₹${row.price || 0})</span></span><b>₹${rowCost}</b></div>`;
+        });
+
+        if (kitchenOrders && kitchenOrders.length > 0) {
+            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
+            kitchenOrders.forEach(order => {
+                if (!order || !order.order_items) return;
+                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
+                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
+
+                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
+                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
+
+                order.order_items.forEach(item => {
+                    if (!item) return;
+                    let calculatedLivePrice = 0;
+                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    
+                    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+                    safeCategories.forEach(cat => {
+                        if (!cat || !Array.isArray(cat.items)) return; // 🛡️ DEEP ITERATION SHIELD
+                        let matchedMenuDish = cat.items.find(d => d && d.name && d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedMenuDish) {
+                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
+                        }
+                    });
+
+                    outputBox.innerHTML += `
+                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
+                            <div>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name || 'Dish'} [${(item.size || '').toUpperCase()}] x${item.qty || 0}</span>
+                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
+                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
+                            </div>
+                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
+                        </div>`;
+                });
+            });
+        }
+
+        if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
+            paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
+        }
+
+        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + finalBillSum;
+    } catch (err) { console.error(err); }
 }
 // ===================================================================
 // 🛠️ FIX 3: RE-BUILT INTERACTIVE FLOOR MATRIX GHOST BLOCK SAVER
