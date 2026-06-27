@@ -944,18 +944,17 @@ function launchSuperAdminSecretModulePrompt() {
 async function fetchGlobalSaaSAccountNetworkList() {
     const listWrapper = document.getElementById('superAdminClientsListWrapper');
     if (!listWrapper) return;
-    listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Connecting global servers node...</span>`;
+    listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
     try {
-        // Fetch subscriptions data logs
+        // Fetch subscriptions using email text key (id) and safe user_phone variables parameters
         const { data: subList, error } = await supabaseClient
             .from('subscriptions')
-            .select('user_id, status, current_period_end, monthly_price, yearly_price')
+            .select('id, user_phone, status, current_period_end, monthly_price, yearly_price')
             .order('current_period_end', { ascending: false });
 
         if (error) throw error;
 
-        // 🟢 FEATURE 1: Fetch actual mapped hotel profiles to show real name instead of raw UUID
         const { data: configList } = await supabaseClient
             .from('hotel_config')
             .select('id, hotel_name');
@@ -970,22 +969,26 @@ async function fetchGlobalSaaSAccountNetworkList() {
             let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
             let formattedExpiry = new Date(sub.current_period_end).toLocaleDateString();
             
-            // Cross-reference owner UUID to check corresponding brand name field
-            let matchingConfig = configList ? configList.find(c => c.id === sub.user_id) : null;
+            let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
             let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
             
             let currentMonthlyPrice = sub.monthly_price || 0;
             let currentYearlyPrice = sub.yearly_price || 0;
+            
+            // 📱 FETCHED DIRECTLY FROM SUBSCRIPTIONS TABLE (UUID references completely deleted)
+            let clientPhone = sub.user_phone || "No Mobile Logged"; 
+            let clientEmail = sub.id; // Primary Key string representation
 
-            // Safe dynamic string escaping to block runtime crash loops inside quotes
             let sanitizedHotelName = hotelDisplayName.replace(/'/g, "\\'");
 
+            // UI RENDER: Displays Hotel Name, Phone Number and unique Email Node without UUID references
             listWrapper.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="populateSuperAdminFormFields('${sub.user_id}', '${sanitizedHotelName}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
+                     onclick="document.getElementById('saTargetUserUUID').value='${clientEmail}'; document.getElementById('saTargetHotelName').value='${sanitizedHotelName}'; document.getElementById('saCustomMonthlyRate').value=${currentMonthlyPrice}; document.getElementById('saCustomYearlyRate').value=${currentYearlyPrice}; showOnScreenNotification('📋 Loaded account node email: ${clientEmail}');">
                     <div>
                         <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName}</span><br>
-                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">UUID: ${sub.user_id.substring(0,18)}...</span><br>
+                        <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Contact Mobile Number: ${clientPhone}</span><br>
+                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Identity Email: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
                         <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
                     </div>
@@ -994,11 +997,10 @@ async function fetchGlobalSaaSAccountNetworkList() {
         });
 
     } catch (err) {
-        console.error("Super Admin System Exception:", err);
-        listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link cloud pipeline stream registry logs.</span>`;
+        console.error("Super Admin Interface Mapping Failure:", err);
+        listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link account stream templates logs.</span>`;
     }
 }
-
 // Helper function to auto-fill inputs instantly when a hotel row is clicked
 function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
     document.getElementById('saTargetUserUUID').value = userId;
@@ -1209,12 +1211,12 @@ try {
 
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 
-// ✅ FIXED REGEX: Standard 5-segment pattern verification prevents owner UUID state contamination on page reload
-if (hotelGlobalScopeID !== "Default_HQ_Arena" && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID)) {
+// 🛡️ EMAIL IDENTITY GLOBAL GUARD (UUID Reference completely deleted)
+if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
     hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
-
+        
 let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
 // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
@@ -1318,89 +1320,75 @@ function toggleAuthPortalViewMode() {
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
+    const phone = document.getElementById('authPhoneInput') ? document.getElementById('authPhoneInput').value.trim() : "";
 
-    console.log("📝 Field Check -> Email:", email, "| Password Length:", password.length);
+    console.log("📝 Onboarding Initialization Check -> Email:", email, "| Sanitized Phone:", phone);
 
-    if (!email || !password) {
-        alert("⚠️ Email and Password cannot be left blank!");
+    if (!email || !password || !phone) {
+        alert("⚠️ All fields (Email, Password, Mobile Number) are mandatory parameters!");
         return;
     }
     if (password.length < 6) {
         alert("⚠️ Security Rule: Password must be at least 6 characters long!");
         return;
     }
+    if (phone.length < 10 || isNaN(phone)) {
+        alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
+        return;
+    }
 
     try {
-        showOnScreenNotification("🚀 Registering workspace node...", false);
-        console.log("📡 Attempting signup for:", email);
+        showOnScreenNotification("🚀 Registering secure workspace...", false);
         
-        // 1. Trigger Supabase Authentication Registration Node
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password
         });
 
         if (error) {
-            console.error("Supabase Auth Object Rejection:", error);
             alert("❌ Supabase Auth Denied: " + error.message);
             return;
         }
 
-        const newUserUUID = data?.user?.id;
-
-        if (newUserUUID) {
-            console.log("🔒 Registration Success! Auth UUID Created:", newUserUUID);
-
-            // 2. ⚡ FIXED 409: Using .upsert() instead of .insert() to block duplicate row constraint crashes smoothly
+        // 🟢 EMAIL & PHONE CAPTURED ON RELATIONAL MATRIX (UUID REFERENCES DELETED)
+        if (data?.user) {
+            // 2. Build cloud template inside hotel_config mapped by email string directly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
-                id: newUserUUID,
+                id: email, 
                 hotel_name: "Restaurant",
                 menu_data: menuCategories || fallbackMenu
             });
-            if (configError) console.error("Database Writing Warning (hotel_config):", configError.message);
+            if (configError) console.error("Database Writing Warning:", configError.message);
 
-            // 3. ⚡ FIXED FOREIGN KEY: Dynamically fetch any valid available Plan ID directly from parent 'plans' table
-            const { data: planData, error: planFetchError } = await supabaseClient
-                .from('plans')
-                .select('id')
-                .limit(1)
-                .maybeSingle();
-
-            // Cloud plan table se real ID pakdo, agar table empty ho tabhi hardcoded seed backup use hoga
-            let activePlanId = planData?.id || '1d6ca9b8-b472-4cf3-875b-df768f746ef7';
-            if (planFetchError) console.warn("Plans lookup error context logs:", planFetchError.message);
-
-            // 4. Provision standard 30-day Free Trial inside subscriptions matrix safely using upsert
             let startTime = new Date();
             let endTime = new Date();
-            endTime.setDate(startTime.getDate() + 30);
+            endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial Pack
 
+            // 3. Insert into subscriptions using owner email as primary row key index id
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
-                user_id: newUserUUID,
-                plan_id: activePlanId, // Pure atomic foreign key mapped here flawlessly
+                id: email,                     -- Email saved as Unique Primary Identifier
+                user_phone: phone,             -- Sanitized Customer Phone Number column saved
                 status: 'active',
                 current_period_start: startTime.toISOString(),
-                current_period_end: endTime.toISOString()
+                current_period_end: endTime.toISOString(),
+                monthly_price: 0,
+                yearly_price: 0
             });
 
             if (subError) {
-                console.error("🚨 Critical Sub Provisioning Error:", subError.message);
-                alert("❌ Account authentication created, but subscription ledger syncing failed: " + subError.message);
+                alert("❌ Sync Error: Subscription creation failed -> " + subError.message);
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\n\nAapka account Supabase Authentication mein register ho gaya hai. Ab aap same email se login kar sakte hain.`);
+            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\nRegistered Mobile: ${phone}\n\nAapka workspace successfully trigger ho gaya hai.`);
             
             document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
+            if(document.getElementById('authPhoneInput')) document.getElementById('authPhoneInput').value = "";
             toggleAuthPortalViewMode();
-        } else {
-            alert("📩 Signup initialized! Please check your inbox for configuration codes context.");
         }
-        
     } catch (err) {
-        console.error("🚨 Critical Onboarding Core Exception:", err);
-        alert("System Exception: Multi-row relational database writing crashed.");
+        console.error("🚨 Critical Onboarding Architectural Exception:", err);
     }
 }
 // ⚡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
@@ -2172,7 +2160,7 @@ function renderCustomerMenu() {
 
 // ⚡ FIXED: Multi-tenant routing handshakes strictly bind active data objects to scanned codes to eliminate fallbacks
 async function initApp() {
-    console.log("📡 RestroFlow Core: Initializing App Boot Engine...");
+    console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
@@ -2180,18 +2168,30 @@ async function initApp() {
     if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
     if (urlHotel) {
         hotelGlobalScopeID = urlHotel;
-        console.log("🎯 QR Parameter Detected! Forcing Account Isolation Token:", hotelGlobalScopeID);
+        console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
     }
 
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session && !urlHotel) {
-            hotelGlobalScopeID = session.user.id;
+        const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
+
+        if (currentSession && !urlHotel) {
+            // 👑 UUID DETHRONED: Target identifier uniquely locked to authentic logged email string
+            let ownerEmail = currentSession.user.email; 
+            
+            hotelGlobalScopeID = ownerEmail; 
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
+            
+            // Validation validation parameters check smoothly using email
+            const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
+            if (!isPlanValid) {
+                return; 
+            }
+
             document.getElementById('customerView').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'block';
-            console.log("🔐 RestroFlow: Active Owner session verified!");
+            console.log("🔐 RestroFlow: Active Owner email verified successfully!");
         } else if (!urlHotel) {
             hotelGlobalScopeID = "Default_HQ_Arena";
             localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
@@ -2205,54 +2205,37 @@ async function initApp() {
     // Cache Layer Verification Matrix
     let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if (localScopedMenu) {
-        menuCategories = JSON.parse(localScopedMenu);
+        try { menuCategories = JSON.parse(localScopedMenu); } catch(e) { menuCategories = urlHotel ? [] : fallbackMenu; }
     } else {
-        // 🛡️ QR MENU LEAK BLOCK: Scanned QR customers strictly boot with empty objects instead of inheriting fallback pizza elements
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // 🏢 4. FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS
+    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY EMAIL TEXT MATCH)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
             .select('menu_data, hotel_name') 
-            .eq('id', hotelGlobalScopeID)
+            .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
-        if (error) {
-            console.error("🚨 Supabase Database Refusal Exception:", error.message, "| Code:", error.code);
-            showOnScreenNotification("⚠️ Cloud Sync Interrupted!", true);
-        }
+        if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
 
         const activeConfigRow = data?.[0];
-
         if (!error && activeConfigRow) {
-            console.log("📦 Fresh Cloud Row Package Discovered via Array Mapping:", activeConfigRow);
-            
             let cloudMenu = activeConfigRow.menu_data;
             if (typeof cloudMenu === 'string') {
-                try { 
-                    cloudMenu = JSON.parse(cloudMenu); 
-                } catch(jsonErr) { 
-                    console.error("🚨 RestroFlow Parser Warning: Unable to parse menu_data string context!", jsonErr); 
-                }
+                try { cloudMenu = JSON.parse(cloudMenu); } catch(jsonErr) { console.error(jsonErr); }
             }
-            
-            // ✅ FIXED MENU ENGINE: Accepts any valid cloud menu schema structure (even if empty []) to block data poisoning loops
             if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                menuCategories = cloudMenu; // Securely binds the real state (empty array or customized menu)
+                menuCategories = cloudMenu; 
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
-            
             if (activeConfigRow.hotel_name) {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
-            
-            console.log("🚀 RestroFlow Cloud Sync: Fresh tenant elements successfully binded!");
             renderCustomerMenu(); 
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
-            // Target restaurant record doesn't exist on server -> force clean blank canvas for scanned public profiles
             if (urlHotel) {
                 menuCategories = [];
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
@@ -2260,9 +2243,7 @@ async function initApp() {
             renderCustomerMenu();
             updateFrontEndClassificationLabels();
         }
-    } catch (err) {
-        console.error("Database connection exception operational:", err);
-    }
+    } catch (err) { console.error(err); }
 
     try {
         const { data: sessionData } = await supabaseClient
@@ -2274,44 +2255,36 @@ async function initApp() {
         if (sessionData) {
             localLiveRunningBill = sessionData.live_bill || [];
             maximumClaimedDisc = sessionData.discount_claimed || 0;
-            
             floorData.forEach(floor => {
-                floor.tables.forEach(t => {
-                    if (t.id === clientCurrentActiveTable) {
-                        t.waiterBell = sessionData.waiter_bell || false;
-                        if (sessionData.payment_status === 'SUCCESS_PAID') {
-                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
-                        } else {
-                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
-                            t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => {
+                        if (t && t.id === clientCurrentActiveTable) {
+                            t.waiterBell = sessionData.waiter_bell || false;
+                            if (sessionData.payment_status === 'SUCCESS_PAID') {
+                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
+                            } else {
+                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
+                                t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
         } else {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
         }
-    } catch(e) {
-        console.log("Session recovery ledger block:", e);
-    }
+    } catch(e) { console.log(e); }
 
     cosmicBackgroundStars = [];
-    for(let s = 0; s < 45; s++) {
-        cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
-    }
+    for(let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
 
-    renderCustomerMenu(); 
-    generateMathQuestion(); 
-    generateAdminTableGrid(); 
-    updateFrontEndClassificationLabels(); 
-    setupGlobalKeyboardBindings(); 
-    populateWaiterPanelDropdownList();
-    
-    if (document.getElementById('adminDashboard').style.display === 'block') {
-        populateAdminForms();
-    }
-}        
+    try {
+        renderCustomerMenu(); generateMathQuestion(); generateAdminTableGrid(); updateFrontEndClassificationLabels(); setupGlobalKeyboardBindings(); populateWaiterPanelDropdownList();
+        if (document.getElementById('adminDashboard').style.display === 'block') populateAdminForms();
+    } catch(renderError) { console.error(renderError.message); }
+}
+        
 // ===================================================================
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
@@ -2575,36 +2548,52 @@ function addNewCategory() {
 // =================================================================
 
 
-async function verifySubscriptionGatekeeper(ownerId) {
+async function verifySubscriptionGatekeeper(ownerEmail) {
     try {
+        console.log("🔍 Gatekeeper: Checking active subscription matrices for Email Node:", ownerEmail);
+        
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
-            .select('status, current_period_end')
-            .eq('user_id', ownerId)
+            .select('status, current_period_end, monthly_price, yearly_price')
+            .eq('id', ownerEmail) // Strictly filtering unique row indices by text email key
             .maybeSingle();
 
-        if (!subData) {
-            alert("🚨 Access Denied!\nAapka koi Active Subscription nahi mila. Kripya Super Admin se apna account activate karwayein.");
-            await supabaseClient.auth.signOut();
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+        if (error) {
+            console.error("🚨 Database Access Exception:", error.message);
             return false;
+        }
+
+        const paywallModal = document.getElementById('subscriptionExpiredPaywallModal');
+        const customerView = document.getElementById('customerView');
+        const adminDashboard = document.getElementById('adminDashboard');
+
+        if (!subData) {
+            console.warn("⚠️ Alert: Zero subscription logs tracked on servers for email scope.");
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
+
+            if (adminDashboard) adminDashboard.style.display = 'none';
+            if (customerView) customerView.style.display = 'none';
+            if (paywallModal) paywallModal.style.display = 'flex';
+            return false; 
         }
 
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
         if (subData.status !== 'active' || today > expiryDate) {
-            alert("🚨 Plan Expired! Access Denied.\nKripya subscription renew karwayein.");
-            await supabaseClient.auth.signOut();
-            document.getElementById('adminDashboard').style.display = 'none';
-            document.getElementById('customerView').style.display = 'block';
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + (subData.monthly_price || 0);
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + (subData.yearly_price || 0);
+
+            if (adminDashboard) adminDashboard.style.display = 'none';
+            if (customerView) customerView.style.display = 'none';
+            if (paywallModal) paywallModal.style.display = 'flex';
             return false;
         }
 
-        return true;
+        return true; 
     } catch (err) {
-        console.error("Gatekeeper Exception:", err);
+        console.error("🚨 Gatekeeper Exception HandledSmoothly:", err);
         return false;
     }
 }
