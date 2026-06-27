@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2259,8 +2259,9 @@ async function initApp() {
             initializeAdminRealtimeBillingTracker();
             
             // Validation validation parameters check smoothly using email
-            const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
-            if (!isPlanValid) {
+            // 🔥 FIXED: Plan invalid hone par page block nahi hoga, gatekeeper safely exit handle karega
+        const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);   
+         if (!isPlanValid) console.log("⏳ Route Redirect: Non-active account redirected smoothly to payment nodes."); {
                 return; 
             }
 
@@ -2618,23 +2619,22 @@ function addNewCategory() {
     }
 }
        
-// =================================================================
-// 🛡️ AUTHENTICATION ENGINE & SUBSCRIPTION GATEKEEPER COMPRESSED MODULE
-// =================================================================
 
-
+// ===================================================================
+// 🛡️ ANTI-CRASH SUBSCRIPTION GATEKEEPER ENGINE (EMAIL FIRST)
+// ===================================================================
 async function verifySubscriptionGatekeeper(ownerEmail) {
     try {
-        console.log("🔍 Gatekeeper: Checking active subscription matrices for Email Node:", ownerEmail);
+        console.log("🔍 Gatekeeper: Checking subscription parameters for Email ID:", ownerEmail);
         
         const { data: subData, error } = await supabaseClient
             .from('subscriptions')
             .select('status, current_period_end, monthly_price, yearly_price')
-            .eq('id', ownerEmail) // Strictly filtering unique row indices by text email key
+            .eq('id', ownerEmail) // Mapped directly to unique email row ID
             .maybeSingle();
 
         if (error) {
-            console.error("🚨 Database Access Exception:", error.message);
+            console.error("🚨 Supabase Database Refusal Exception:", error.message);
             return false;
         }
 
@@ -2642,10 +2642,12 @@ async function verifySubscriptionGatekeeper(ownerEmail) {
         const customerView = document.getElementById('customerView');
         const adminDashboard = document.getElementById('adminDashboard');
 
+        // 🛡️ SAFE ZONE: Agar naya user hai aur logs zero hain, toh crash mat karo, paywall dikhao
         if (!subData) {
             console.warn("⚠️ Alert: Zero subscription logs tracked on servers for email scope.");
-            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
-            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
+            
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹499"; // Real Plan Price Set
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹4999"; // Real Plan Price Set
 
             if (adminDashboard) adminDashboard.style.display = 'none';
             if (customerView) customerView.style.display = 'none';
@@ -2656,9 +2658,10 @@ async function verifySubscriptionGatekeeper(ownerEmail) {
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // Agar pack expired hai ya status active nahi hai
         if (subData.status !== 'active' || today > expiryDate) {
-            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + (subData.monthly_price || 0);
-            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + (subData.yearly_price || 0);
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + (subData.monthly_price || 499);
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + (subData.yearly_price || 4999);
 
             if (adminDashboard) adminDashboard.style.display = 'none';
             if (customerView) customerView.style.display = 'none';
@@ -2666,13 +2669,12 @@ async function verifySubscriptionGatekeeper(ownerEmail) {
             return false;
         }
 
-        return true; 
+        return true; // Subscription active hai, welcome to dashboard!
     } catch (err) {
-        console.error("🚨 Gatekeeper Exception HandledSmoothly:", err);
+        console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
         return false;
     }
 }
-
      // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
 function saveAdminConfig() {
     // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
