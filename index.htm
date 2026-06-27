@@ -1393,33 +1393,44 @@ function toggleAuthPortalViewMode() {
 }
 
 // ===================================================================
-// 🔐 EMAIL & PHONE ONBOARDING ENGINE (100% PURE EMAIL MATRIX)
+// 🔐 FLEXIBLE ONBOARDING ENGINE (EITHER EMAIL OR PHONE REQUIRED)
 // ===================================================================
 async function executeRealCloudSignUpSequence() {
     const email = document.getElementById('authEmailInput').value.trim();
     const password = document.getElementById('authPasswordInput').value;
     const phone = document.getElementById('authPhoneInput') ? document.getElementById('authPhoneInput').value.trim() : "";
 
-    console.log("📝 Onboarding Initialization Check -> Email:", email, "| Sanitized Phone:", phone);
+    console.log("📝 Onboarding Initialization Check -> Email:", email, "| Phone:", phone);
 
-    if (!email || !password || !phone) {
-        alert("⚠️ All fields (Email, Password, Mobile Number) are mandatory parameters!");
+    // 👑 NEW FLEXIBLE RULE: Password mandatory hai, aur Email ya Phone mein se koi ek hona chahiye
+    if (!password) {
+        alert("⚠️ Security Rule: Password enter karna mandatory hai!");
         return;
     }
+    if (!email && !phone) {
+        alert("⚠️ Validation Error: Account banane ke liye Email ID ya Mobile Number mein se koi ek cheez zaroor dalein!");
+        return;
+    }
+
+    // Individual conditional checks (Agar user ne dala hai tabhi length check hogi)
     if (password.length < 6) {
         alert("⚠️ Security Rule: Password must be at least 6 characters long!");
         return;
     }
-    if (phone.length < 10 || isNaN(phone)) {
+    if (phone && (phone.length < 10 || isNaN(phone))) {
         alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
         return;
     }
+
+    // 🧠 SMART COHESION: Agar email khali hai toh phone se dynamic email identity construct karo 
+    // taaki database ki unique text primary key ('id') crash na ho.
+    const targetEmail = email || `${phone}@restroflow.com`;
 
     try {
         showOnScreenNotification("🚀 Registering secure workspace...", false);
         
         const { data, error } = await supabaseClient.auth.signUp({
-            email: email,
+            email: targetEmail,
             password: password
         });
 
@@ -1428,11 +1439,11 @@ async function executeRealCloudSignUpSequence() {
             return;
         }
 
-        // 🟢 EMAIL & PHONE CAPTURED ON RELATIONAL MATRIX (UUID REFERENCES DELETED)
+        // 🟢 CAPTURED ON RELATIONAL MATRIX
         if (data?.user) {
             // 2. Build cloud template inside hotel_config mapped by email string directly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
-                id: email, 
+                id: targetEmail, 
                 hotel_name: "Restaurant",
                 menu_data: menuCategories || fallbackMenu
             });
@@ -1442,10 +1453,10 @@ async function executeRealCloudSignUpSequence() {
             let endTime = new Date();
             endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial Pack
 
-            // 3. Insert into subscriptions using owner email as primary row key index id
+            // 3. Insert into subscriptions using the target email identity as primary row key index id
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
-                id: email,                     // 👑 Unique text primary identifier locked onto Email
-                user_phone: phone,             // 📱 Sanitized Customer Phone Number column saved
+                id: targetEmail,                     // 👑 Unique text primary identifier locked
+                user_phone: phone || "No Mobile",     // 📱 Safe fallback agar phone number khali ho
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString(),
@@ -1458,7 +1469,7 @@ async function executeRealCloudSignUpSequence() {
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nEmail ID: ${email}\nRegistered Mobile: ${phone}\n\nAapka workspace successfully trigger ho gaya hai.`);
+            alert(`🎉 Account Created Successfully!\n\nRegistered Identity: ${targetEmail}\n\nAapka workspace successfully trigger ho gaya hai.`);
             
             document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
