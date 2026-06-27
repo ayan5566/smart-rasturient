@@ -1393,38 +1393,50 @@ function toggleAuthPortalViewMode() {
 }
 
 // ===================================================================
-// 🔐 FLEXIBLE ONBOARDING ENGINE (EITHER EMAIL OR PHONE REQUIRED)
+// 🔐 FIXED: ANTI-422 VALIDATED FLEXIBLE ONBOARDING ENGINE
 // ===================================================================
 async function executeRealCloudSignUpSequence() {
-    const email = document.getElementById('authEmailInput').value.trim();
+    let email = document.getElementById('authEmailInput') ? document.getElementById('authEmailInput').value.trim() : "";
     const password = document.getElementById('authPasswordInput').value;
-    const phone = document.getElementById('authPhoneInput') ? document.getElementById('authPhoneInput').value.trim() : "";
+    let phone = document.getElementById('authPhoneInput') ? document.getElementById('authPhoneInput').value.trim() : "";
 
-    console.log("📝 Onboarding Initialization Check -> Email:", email, "| Phone:", phone);
+    console.log("📝 Pre-Validation Check -> Input Email:", email, "| Input Phone:", phone);
 
-    // 👑 NEW FLEXIBLE RULE: Password mandatory hai, aur Email ya Phone mein se koi ek hona chahiye
     if (!password) {
         alert("⚠️ Security Rule: Password enter karna mandatory hai!");
         return;
     }
+    if (password.length < 6) {
+        alert("⚠️ Security Rule: Password must be at least 6 characters long!");
+        return;
+    }
+
+    // 🧠 SMART DETECTOR: Agar user ne email wale box mein hi phone number daal diya hai
+    if (email && !isNaN(email) && email.length >= 10) {
+        phone = email;
+        email = "";
+    }
+
     if (!email && !phone) {
         alert("⚠️ Validation Error: Account banane ke liye Email ID ya Mobile Number mein se koi ek cheez zaroor dalein!");
         return;
     }
 
-    // Individual conditional checks (Agar user ne dala hai tabhi length check hogi)
-    if (password.length < 6) {
-        alert("⚠️ Security Rule: Password must be at least 6 characters long!");
-        return;
+    // Client-side format shield to block 422 errors entirely
+    let targetEmail = "";
+    if (email) {
+        if (!email.includes("@")) {
+            alert("⚠️ Invalid Format: Please enter a valid email address containing '@' (e.g., name@email.com)");
+            return;
+        }
+        targetEmail = email;
+    } else if (phone) {
+        if (phone.length < 10 || isNaN(phone)) {
+            alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
+            return;
+        }
+        targetEmail = `${phone}@restroflow.com`; // Safe mock layout matching your database key matrix
     }
-    if (phone && (phone.length < 10 || isNaN(phone))) {
-        alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
-        return;
-    }
-
-    // 🧠 SMART COHESION: Agar email khali hai toh phone se dynamic email identity construct karo 
-    // taaki database ki unique text primary key ('id') crash na ho.
-    const targetEmail = email || `${phone}@restroflow.com`;
 
     try {
         showOnScreenNotification("🚀 Registering secure workspace...", false);
@@ -1439,9 +1451,8 @@ async function executeRealCloudSignUpSequence() {
             return;
         }
 
-        // 🟢 CAPTURED ON RELATIONAL MATRIX
         if (data?.user) {
-            // 2. Build cloud template inside hotel_config mapped by email string directly
+            // 2. Build cloud template inside hotel_config mapped by targetEmail string directly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: targetEmail, 
                 hotel_name: "Restaurant",
@@ -1453,10 +1464,10 @@ async function executeRealCloudSignUpSequence() {
             let endTime = new Date();
             endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial Pack
 
-            // 3. Insert into subscriptions using the target email identity as primary row key index id
+            // 3. Insert into subscriptions using owner email/mock as primary row key index 'id'
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
                 id: targetEmail,                     // 👑 Unique text primary identifier locked
-                user_phone: phone || "No Mobile",     // 📱 Safe fallback agar phone number khali ho
+                user_phone: phone || "No Mobile",     // 📱 Sanitized Customer Phone Number column saved
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString(),
@@ -1471,9 +1482,9 @@ async function executeRealCloudSignUpSequence() {
 
             alert(`🎉 Account Created Successfully!\n\nRegistered Identity: ${targetEmail}\n\nAapka workspace successfully trigger ho gaya hai.`);
             
-            document.getElementById('authEmailInput').value = "";
+            if (document.getElementById('authEmailInput')) document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
-            if(document.getElementById('authPhoneInput')) document.getElementById('authPhoneInput').value = "";
+            if (document.getElementById('authPhoneInput')) document.getElementById('authPhoneInput').value = "";
             toggleAuthPortalViewMode();
         }
     } catch (err) {
