@@ -2063,10 +2063,10 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
        
                    const { data: kOrders } = await supabaseClient
                        .from('active_orders')
-                       .select(`id, status, created_at, order_items ( dish_name, size, qty )`)
+                       .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ !order_id explicit link joda
                        .eq('hotel_id', hotelGlobalScopeID)
                        .eq('table_id', selectedAdminTable);
-                   if (kOrders) kitchenOrders = kOrders;
+                    if (kOrders) kitchenOrders = kOrders;
 
                    if (sessionData) {
                        targetBill = sessionData.live_bill || [];
@@ -3112,11 +3112,11 @@ function launchKitchenDisplaySystemModule() {
 // ⚡ FIXED: Tenant data virtualization limits fetched tickets exclusively to the scanned shop endpoint context
 async function fetchActiveKitchenOrdersQueue() {
     // 🔒 MULTI-TENANCY FILTER: Force-injecting tenant filter condition
-    const { data: orders, error } = await supabaseClient
-        .from('active_orders')
-        .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`)
-        .eq('hotel_id', hotelGlobalScopeID) // <-- FIXED DATA LEAKAGE EXTRACTION
-        .order('created_at', { ascending: true });
+const { data: orders, error } = await supabaseClient
+    .from('active_orders')
+    .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ !order_id explicit link joda
+    .eq('hotel_id', hotelGlobalScopeID) 
+    .order('created_at', { ascending: true });
 
     if (!error && orders) {
         if (orders.length > activeKdsOrdersArray.length) {
