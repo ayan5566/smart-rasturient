@@ -2203,7 +2203,7 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
     } catch (err) { console.error(err); }
 }
 // ===================================================================
-// 🧾 MASTER INVOICE SYNCHRONIZER: CLONES ADMIN BILL MATRIX PERFECTLY
+// 🧾 BALANCED INVOICE CALCULATOR: SAFE MATH ENGINE & CLEAN LAYOUT
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
@@ -2218,7 +2218,7 @@ async function renderLiveCalculatedBill() {
 
     try {
         if (isUUID || hotelGlobalScopeID.includes("@")) {
-            // 1. Fetch Master Running Ledger from table_sessions
+            // 1. Fetch Running Ledger from table_sessions
             const { data: sessionData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2234,7 +2234,7 @@ async function renderLiveCalculatedBill() {
                 maximumClaimedDisc = targetDisc;
             }
 
-            // 2. Fetch Active Kitchen Streams (Ambiguity Resolved with !order_id)
+            // 2. Fetch Active Kitchen Streams
             const { data: kOrders } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`)
@@ -2242,7 +2242,6 @@ async function renderLiveCalculatedBill() {
                 .eq('table_id', clientCurrentActiveTable);
             if (kOrders) kitchenOrders = kOrders;
         } else {
-            // Local Cache Fallback Mode
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'PENDING';
@@ -2256,22 +2255,24 @@ async function renderLiveCalculatedBill() {
         rowsContainer.innerHTML = '';
         let subtotal = 0;
 
-        // 📋 PART A: Render Account Ledger (Adds to financial math)
+        // 📋 PART A: Render Account Ledger (Math calculation safe zoned)
         rowsContainer.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px; text-align:left;">📋 Mapped Financial Account Ledger:</div>`;
-        targetBill.forEach((row, rIdx) => {
-            let rowCost = row.price * row.qty;
+        targetBill.forEach((row) => {
+            // 🛡️ PARSE INTEGERS: Force parsing to make it 100% calculable
+            let itemPrice = parseFloat(row.price) || 0;
+            let itemQty = parseInt(row.qty) || 0;
+            let rowCost = itemPrice * itemQty;
             subtotal += rowCost;
+
+            // ✅ FIXED: Cross (X) button has been completely removed from here
             rowsContainer.innerHTML += `
-                <div class="bill-item-row" style="margin-bottom: 6px;">
-                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-weight:bold; color:var(--dark-charcoal);">₹${currentTotalRowCost = row.price * row.qty}</span>
-                        <button onclick="removeInvoiceItemRow(${rIdx})" style="background:var(--danger-red); border:none; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">X</button>
-                    </div>
+                <div class="bill-item-row" style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${itemPrice} x ${itemQty}</span></div>
+                    <span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span>
                 </div>`;
         });
 
-        // 👨‍🍳 PART B: Render Live Kitchen Streams (Exactly like Admin Panel View)
+        // 👨‍🍳 PART B: Render Live Kitchen Streams
         if (kitchenOrders && kitchenOrders.length > 0) {
             rowsContainer.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px; text-align:left;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
@@ -2286,13 +2287,13 @@ async function renderLiveCalculatedBill() {
                     
                     menuCategories.forEach(cat => {
                         let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                        if (matchedMenuDish) calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || 0;
+                        if (matchedMenuDish) calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 0;
                     });
 
                     rowsContainer.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 8px; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: #333; text-align:left; box-sizing: border-box;">
                             <div>
-                                <span style="font-weight:600; font-size:12px;"> Noodles ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span><br>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span><br>
                                 <span style="font-size:11px; color:#e67e22; font-weight:700;">₹${calculatedLivePrice} (In Prep)</span><br>
                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ ${displayMin}m ${displaySec}s ago</span>
                             </div>
@@ -2306,31 +2307,35 @@ async function renderLiveCalculatedBill() {
             rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center; padding: 15px 0;">Table invoice is empty.</p>`;
         }
 
-        // 🧮 EXACT TAXATION MATHEMATICS LAYER (Admin Clone)
-        let discountValue = subtotal * (targetDisc / 100); 
+        // 🧮 CALCULATION ENGINE WITH SAFE FALLBACKS
+        let safeDiscountPercent = parseFloat(targetDisc) || 0;
+        let discountValue = subtotal * (safeDiscountPercent / 100); 
         let basicTaxableValue = subtotal - discountValue;
         
-        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let cgstRateVal = taxConfig && taxConfig.cgstActive ? parseFloat(taxConfig.cgstRate) : 0;
+        let sgstRateVal = taxConfig && taxConfig.sgstActive ? parseFloat(taxConfig.sgstRate) : 0;
+        let serviceRateVal = taxConfig && taxConfig.serviceActive ? parseFloat(taxConfig.serviceRate) : 0;
 
-        // Dynamic Text Nodes Intercept
-        document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
-        document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
-        document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
-        document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(1);
+        let cgstAmount = (basicTaxableValue * (cgstRateVal / 100));
+        let sgstAmount = (basicTaxableValue * (sgstRateVal / 100));
+        let serviceAmount = (basicTaxableValue * (serviceRateVal / 100));
 
-        // Service Charge Dynamic Node Insertion / Handle
+        // Update DOM elements safely
+        if(document.getElementById('taxRowCGST')) document.getElementById('taxRowCGST').style.display = cgstRateVal > 0 ? 'flex' : 'none';
+        if(document.getElementById('billCGSTVal')) document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
+        if(document.getElementById('taxRowSGST')) document.getElementById('taxRowSGST').style.display = sgstRateVal > 0 ? 'flex' : 'none';
+        if(document.getElementById('billSGSTVal')) document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(1);
+
         let serviceRow = document.getElementById('taxRowService');
         if (serviceRow) {
-            serviceRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
+            serviceRow.style.display = serviceRateVal > 0 ? 'flex' : 'none';
             document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
         }
 
-        // Grand Total Equation Lock
+        // Lock Final Totals
         globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
         document.getElementById('billSubtotal').innerText = "₹" + subtotal;
-        document.getElementById('billDiscountApplied').innerText = targetDisc + "%";
+        document.getElementById('billDiscountApplied').innerText = safeDiscountPercent + "%";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
@@ -2342,12 +2347,13 @@ async function renderLiveCalculatedBill() {
         document.getElementById('invoiceBillModal').style.display = 'flex';
     }
 }
-async function removeInvoiceItemRow(index) { 
-    localLiveRunningBill.splice(index, 1); 
-    localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
-    await syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
-    document.getElementById('invoiceBillModal').style.display = 'none'; 
-    await renderLiveCalculatedBill(); 
+    async function removeInvoiceItemRow(index) { 
+        
+        localLiveRunningBill.splice(index, 1); 
+        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
+        await syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
+        document.getElementById('invoiceBillModal').style.display = 'none'; 
+        await renderLiveCalculatedBill(); 
 }
 
         function removeInvoiceItemRow(index) { 
