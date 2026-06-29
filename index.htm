@@ -2203,79 +2203,138 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
     } catch (err) { console.error(err); }
 }
 // ===================================================================
-// 🧾 ASYNCHRONOUS ENGINE: LIVE SYNCHRONIZED CUSTOMER INVOICE SCHEMAS
+// 🧾 MASTER INVOICE SYNCHRONIZER: CLONES ADMIN BILL MATRIX PERFECTLY
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
     let targetDisc = 0;
-    let paymentStatusToken = 'UNPAID';
+    let kitchenOrders = [];
+    let paymentStatusToken = 'PENDING';
     
     document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${clientCurrentActiveTable}`;
-    showOnScreenNotification("⏳ Fetching your synchronized bill data...", false);
+    showOnScreenNotification("⏳ Syncing your live ledger with cloud servers...", false);
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
     try {
-        // 🔥 CLOUD INTERCEPT: Pull authoritative row data straight from database matrix
-        const { data: sessionData } = await supabaseClient
-            .from('table_sessions')
-            .select('*')
-            .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
-            .maybeSingle();
+        if (isUUID || hotelGlobalScopeID.includes("@")) {
+            // 1. Fetch Master Running Ledger from table_sessions
+            const { data: sessionData } = await supabaseClient
+                .from('table_sessions')
+                .select('*')
+                .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
+                .maybeSingle();
 
-        if (sessionData) {
-            targetBill = sessionData.live_bill || [];
-            targetDisc = parseInt(sessionData.discount_claimed) || 0;
-            paymentStatusToken = sessionData.payment_status || 'UNPAID';
-            
-            // Re-align native runtime array states inside device memory loops
-            localLiveRunningBill = targetBill;
-            maximumClaimedDisc = targetDisc;
+            if (sessionData) {
+                targetBill = sessionData.live_bill || [];
+                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                paymentStatusToken = sessionData.payment_status || 'PENDING';
+                
+                localLiveRunningBill = targetBill;
+                maximumClaimedDisc = targetDisc;
+            }
+
+            // 2. Fetch Active Kitchen Streams (Ambiguity Resolved with !order_id)
+            const { data: kOrders } = await supabaseClient
+                .from('active_orders')
+                .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`)
+                .eq('hotel_id', hotelGlobalScopeID)
+                .eq('table_id', clientCurrentActiveTable);
+            if (kOrders) kitchenOrders = kOrders;
         } else {
-            // Local Cache Fallback if network stream returns clean zero rows arrays
+            // Local Cache Fallback Mode
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
-            paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'UNPAID';
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'PENDING';
         }
     } catch (err) {
-        console.error("🚨 Billing Matrix Fetch Exception:", err);
-        targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-        targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+        console.error("🚨 Customer Billing Sync Exception:", err);
     }
 
     const rowsContainer = document.getElementById('invoiceRowsContainer'); 
-    if(rowsContainer) {
+    if (rowsContainer) {
         rowsContainer.innerHTML = '';
-        let accumulatedSubtotal = 0;
-        
+        let subtotal = 0;
+
+        // 📋 PART A: Render Account Ledger (Adds to financial math)
+        rowsContainer.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px; text-align:left;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach((row, rIdx) => {
-            let currentTotalRowCost = row.price * row.qty; 
-            accumulatedSubtotal += currentTotalRowCost;
+            let rowCost = row.price * row.qty;
+            subtotal += rowCost;
             rowsContainer.innerHTML += `
-                <div class="bill-item-row">
+                <div class="bill-item-row" style="margin-bottom: 6px;">
                     <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
-                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${currentTotalRowCost}</span><button onclick="removeInvoiceItemRow(${rIdx})" style="background:var(--danger-red); border:none; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">X</button></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-weight:bold; color:var(--dark-charcoal);">₹${currentTotalRowCost = row.price * row.qty}</span>
+                        <button onclick="removeInvoiceItemRow(${rIdx})" style="background:var(--danger-red); border:none; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">X</button>
+                    </div>
                 </div>`;
         });
 
-        if(targetBill.length === 0) rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
+        // 👨‍🍳 PART B: Render Live Kitchen Streams (Exactly like Admin Panel View)
+        if (kitchenOrders && kitchenOrders.length > 0) {
+            rowsContainer.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px; text-align:left;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
+            kitchenOrders.forEach(order => {
+                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
+                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
+                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
+                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
 
-        let discountValue = accumulatedSubtotal * (targetDisc / 100); 
-        let basicTaxableValue = accumulatedSubtotal - discountValue;
+                order.order_items.forEach(item => {
+                    let calculatedLivePrice = 0;
+                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    
+                    menuCategories.forEach(cat => {
+                        let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedMenuDish) calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || 0;
+                    });
+
+                    rowsContainer.innerHTML += `
+                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 8px; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: #333; text-align:left; box-sizing: border-box;">
+                            <div>
+                                <span style="font-weight:600; font-size:12px;"> Noodles ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span><br>
+                                <span style="font-size:11px; color:#e67e22; font-weight:700;">₹${calculatedLivePrice} (In Prep)</span><br>
+                                <span style="font-size:10px; color:#7f8c8d;">⏱️ ${displayMin}m ${displaySec}s ago</span>
+                            </div>
+                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:3px 6px; border-radius:4px;">${badgeText}</span>
+                        </div>`;
+                });
+            });
+        }
+
+        if (targetBill.length === 0 && kitchenOrders.length === 0) {
+            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center; padding: 15px 0;">Table invoice is empty.</p>`;
+        }
+
+        // 🧮 EXACT TAXATION MATHEMATICS LAYER (Admin Clone)
+        let discountValue = subtotal * (targetDisc / 100); 
+        let basicTaxableValue = subtotal - discountValue;
         
         let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
         let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
 
+        // Dynamic Text Nodes Intercept
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
         document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
         document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
         document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(1);
 
-        globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount);
-        document.getElementById('billSubtotal').innerText = "₹" + accumulatedSubtotal;
+        // Service Charge Dynamic Node Insertion / Handle
+        let serviceRow = document.getElementById('taxRowService');
+        if (serviceRow) {
+            serviceRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
+            document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
+        }
+
+        // Grand Total Equation Lock
+        globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+        document.getElementById('billSubtotal').innerText = "₹" + subtotal;
         document.getElementById('billDiscountApplied').innerText = targetDisc + "%";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
-        if(paymentStatusToken === 'SUCCESS_PAID') {
+        if (paymentStatusToken === 'SUCCESS_PAID') {
             payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI"; payButton.style.background = "#7f8c8d"; payButton.disabled = true; payButton.onclick = null;
         } else {
             payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
@@ -2283,7 +2342,6 @@ async function renderLiveCalculatedBill() {
         document.getElementById('invoiceBillModal').style.display = 'flex';
     }
 }
-
 async function removeInvoiceItemRow(index) { 
     localLiveRunningBill.splice(index, 1); 
     localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
