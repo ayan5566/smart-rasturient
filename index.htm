@@ -2053,21 +2053,22 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
            
                if (isUUID) {
-                   // User login hai, safe hokar cloud parameters query run karo
-                   const { data: sData } = await supabaseClient
-                       .from('table_sessions')
-                       .select('*')
-                       .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                       .maybeSingle();
-                   sessionData = sData;
-       
-                   const { data: kOrders } = await supabaseClient
-                       .from('active_orders')
-                       .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ !order_id explicit link joda
-                       .eq('hotel_id', hotelGlobalScopeID)
-                       .eq('table_id', selectedAdminTable);
-                    if (kOrders) kitchenOrders = kOrders;
-
+                // User login hai, safe hokar cloud parameters query run karo
+                const { data: sData } = await supabaseClient
+                    .from('table_sessions')
+                    .select('*')
+                    .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                    .maybeSingle();
+                sessionData = sData;
+    
+                // 👨‍🍳 KDS STREAM RESTORED: Clean relationship fallback configuration
+                const { data: kOrders } = await supabaseClient
+                    .from('active_orders')
+                    .select(`id, status, created_at, order_items ( dish_name, size, qty )`) // ✅ FIXED: !order_id completely saaf kar diya
+                    .eq('hotel_id', hotelGlobalScopeID)
+                    .eq('table_id', selectedAdminTable);
+                if (kOrders) kitchenOrders = kOrders;
+                   
                    if (sessionData) {
                        targetBill = sessionData.live_bill || [];
                        targetDisc = parseInt(sessionData.discount_claimed) || 0;
@@ -3109,14 +3110,13 @@ function launchKitchenDisplaySystemModule() {
     }
 }
 
-// ⚡ FIXED: Tenant data virtualization limits fetched tickets exclusively to the scanned shop endpoint context
 async function fetchActiveKitchenOrdersQueue() {
     // 🔒 MULTI-TENANCY FILTER: Force-injecting tenant filter condition
-const { data: orders, error } = await supabaseClient
-    .from('active_orders')
-    .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ !order_id explicit link joda
-    .eq('hotel_id', hotelGlobalScopeID) 
-    .order('created_at', { ascending: true });
+    const { data: orders, error } = await supabaseClient
+        .from('active_orders')
+        .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`) // ✅ RESTORED: Purana saaf syntax bina ! ke
+        .eq('hotel_id', hotelGlobalScopeID) 
+        .order('created_at', { ascending: true });
 
     if (!error && orders) {
         if (orders.length > activeKdsOrdersArray.length) {
@@ -3124,6 +3124,8 @@ const { data: orders, error } = await supabaseClient
         }
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
+    } else if (error) {
+        console.error("🚨 KDS Fetch Error:", error.message);
     }
 }
 
