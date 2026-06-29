@@ -2037,125 +2037,119 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
         
 
      async function auditSelectedTableBillInvoiceLive() {
-           let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
-           let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-           let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-           let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
-       
-           try {
-               let sessionData = null;
-               let kitchenOrders = [];
-               let targetBill = [];
-               let targetDisc = 0;
-               let paymentStatusToken = 'PENDING';
+    let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
+    let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if(!selectedAdminTable || !outputBox) return;
 
-               // ⚡ FIXED: Check if hotelGlobalScopeID is a valid UUID to completely block startup 400 errors
-               const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
-           
-               if (isUUID) {
-                // User login hai, safe hokar cloud parameters query run karo
-                const { data: sData } = await supabaseClient
-                    .from('table_sessions')
-                    .select('*')
-                    .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                    .maybeSingle();
-                sessionData = sData;
-    
-                // 👨‍🍳 KDS STREAM RESTORED: Clean relationship fallback configuration
-                const { data: kOrders } = await supabaseClient
-                    .from('active_orders')
-                    .select(`id, status, created_at, order_items ( dish_name, size, qty )`) // ✅ FIXED: !order_id completely saaf kar diya
-                    .eq('hotel_id', hotelGlobalScopeID)
-                    .eq('table_id', selectedAdminTable);
-                if (kOrders) kitchenOrders = kOrders;
-                   
-                   if (sessionData) {
-                       targetBill = sessionData.live_bill || [];
-                       targetDisc = parseInt(sessionData.discount_claimed) || 0;
-                       paymentStatusToken = sessionData.payment_status || 'PENDING';
-                   }
-               } else {
-                   // No Login Fallback: Data dynamically LocalStorage cache se pull hoga bina cloud crash ke
-                   targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
-                   targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
-                   paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
-               }
+    try {
+        let sessionData = null;
+        let kitchenOrders = [];
+        let targetBill = [];
+        let targetDisc = 0;
+        let paymentStatusToken = 'PENDING';
 
-               // 📋 RESTORED: Tumhaara billing math aur interface rendering logic jo cut gaya tha
-               if(paymentStatusToken === 'SUCCESS_PAID') {
-                   paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
-               } else {
-                   paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
-               }
-       
-               outputBox.innerHTML = ''; 
-               let subtotal = 0; // 🔥 Master financial counter initialization
-       
-               // 📋 PART A: Mapped Ledger Rendering (ONLY THIS ADDS TO THE BILL MATH)
-               outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-               targetBill.forEach(row => {
-                   let rowCost = row.price * row.qty; 
-                   subtotal += rowCost; // ✅ Verified financial items added cleanly
-                   outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
-               });
-       
-               // 👨‍🍳 PART B: Kitchen Live Streams (DISPLAY ONLY - NO WALLET OVERLAPPING)
-               if (kitchenOrders && kitchenOrders.length > 0) {
-                   outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
-                   kitchenOrders.forEach(order => {
-                       const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
-                       const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
-       
-                       let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                       let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
-       
-                       order.order_items.forEach(item => {
-                           let calculatedLivePrice = 0;
-                           let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                           
-                           menuCategories.forEach(cat => {
-                               let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                               if (matchedMenuDish) {
-                                   calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
-                               }
-                           });
-       
-                           outputBox.innerHTML += `
-                               <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
-                                   <div>
-                                       <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
-                                       <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
-                                        <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
-                                   </div>
-                                   <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
-                               </div>`;
-                       });
-                   });
-               }
-       
-               if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
-                   outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
-                   paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
-               }
-       
-               let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
-               let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-               let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-               let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-               let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-       
-               if(taxBox) {
-                   taxBox.style.display = "block";
-                   taxBox.innerHTML = `
-                       <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                       <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                       ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                       ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                       ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-                   `;
-               }
-               grandTotalBox.innerText = "₹" + finalBillSum;
-           } catch (err) { console.error(err); }
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
+
+        if (isUUID) {
+            const { data: sData } = await supabaseClient
+                .from('table_sessions')
+                .select('*')
+                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                .maybeSingle();
+            sessionData = sData;
+
+            // 👨‍🍳 KDS STREAM RESTORED: Explicit relationship configuration to prevent ambiguous joins
+            const { data: kOrders } = await supabaseClient
+                .from('active_orders')
+                .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ FIXED: Added !order_id relation mapping safely
+                .eq('hotel_id', hotelGlobalScopeID)
+                .eq('table_id', selectedAdminTable);
+            if (kOrders) kitchenOrders = kOrders;
+               
+            if (sessionData) {
+                targetBill = sessionData.live_bill || [];
+                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                paymentStatusToken = sessionData.payment_status || 'PENDING';
+            }
+        } else {
+            targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
+            targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+        }
+
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+        } else {
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
+        }
+
+        outputBox.innerHTML = ''; 
+        let subtotal = 0; 
+
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
+        targetBill.forEach(row => {
+            let rowCost = row.price * row.qty; 
+            subtotal += rowCost; 
+            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
+        });
+
+        if (kitchenOrders && kitchenOrders.length > 0) {
+            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
+            kitchenOrders.forEach(order => {
+                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
+                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
+
+                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
+                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
+
+                order.order_items.forEach(item => {
+                    let calculatedLivePrice = 0;
+                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    
+                    menuCategories.forEach(cat => {
+                        let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedMenuDish) {
+                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 0;
+                        }
+                    });
+
+                    outputBox.innerHTML += `
+                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
+                            <div>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
+                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
+                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
+                            </div>
+                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
+                        </div>`;
+                });
+            });
+        }
+
+        if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
+            paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
+        }
+
+        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
+        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + finalBillSum;
+    } catch (err) { console.error(err); }
 }
         // ⚡ FIXED: Pulls active data strictly matching the isolated tenant string layout maps
 function renderLiveCalculatedBill() {
@@ -3114,7 +3108,7 @@ async function fetchActiveKitchenOrdersQueue() {
     // 🔒 MULTI-TENANCY FILTER: Force-injecting tenant filter condition
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
-        .select(`id, hotel_id, table_id, status, created_at, order_items ( dish_name, size, qty )`) // ✅ RESTORED: Purana saaf syntax bina ! ke
+        .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ FIXED: Explicit link added to resolve ambiguity
         .eq('hotel_id', hotelGlobalScopeID) 
         .order('created_at', { ascending: true });
 
@@ -3128,7 +3122,6 @@ async function fetchActiveKitchenOrdersQueue() {
         console.error("🚨 KDS Fetch Error:", error.message);
     }
 }
-
 function renderKdsInterfaceMatrix() {
     const container = document.getElementById('kdsGridDisplayContainer');
     if (!container) return;
