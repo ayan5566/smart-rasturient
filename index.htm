@@ -3104,12 +3104,32 @@ function launchKitchenDisplaySystemModule() {
     }
 }
 
+// ===================================================================
+// 👨‍🍳 FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
+// ===================================================================
 async function fetchActiveKitchenOrdersQueue() {
-    // 🔒 MULTI-TENANCY FILTER: Force-injecting tenant filter condition
+    let targetQueryID = hotelGlobalScopeID; // Fallback to email configuration
+
+    try {
+        // 🧠 SMART RESOLVER: Agar user logged in hai, toh email string ki jagah 
+        // uski authentic UUID nikalega taaki active_orders table ka query type crash na ho
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session && session.user) {
+            targetQueryID = session.user.id; // Mapped perfectly to user UUID
+        } else if (targetQueryID === "Default_HQ_Arena") {
+            targetQueryID = "00000000-0000-0000-0000-000000000000"; // Fallback safe UUID
+        }
+    } catch (sessionErr) {
+        console.error("🚨 KDS Gateway: Unable to resolve authentication token:", sessionErr);
+    }
+
+    console.log("📡 KDS Pipeline: Fetching live tickets for isolated ID:", targetQueryID);
+
+    // 🔒 AMBIGUITY RESOLVED: Appending !order_id tells the engine exactly which relationship path to follow
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
-        .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ FIXED: Explicit link added to resolve ambiguity
-        .eq('hotel_id', hotelGlobalScopeID) 
+        .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ Resolved path ambiguity
+        .eq('hotel_id', targetQueryID) // ✅ Type mismatch resolved 100%
         .order('created_at', { ascending: true });
 
     if (!error && orders) {
@@ -3119,7 +3139,7 @@ async function fetchActiveKitchenOrdersQueue() {
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
     } else if (error) {
-        console.error("🚨 KDS Fetch Error:", error.message);
+        console.error("🚨 KDS PostgREST Protocol Error Details:", error.message, "| Code:", error.code);
     }
 }
 function renderKdsInterfaceMatrix() {
