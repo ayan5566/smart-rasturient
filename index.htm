@@ -394,16 +394,17 @@
     </div>
 
     <div class="modal-overlay" id="mobilePaymentSimulatorModal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()" style="text-align:center;">
-            <h3>📱 UPI Mobile Payment Gateway</h3>
-            <p style="font-size:13px; color:#666;">Scan QR using PhonePe / GooglePay / Paytm Simulator</p>
-            
-            <div style="background:#f5f6fa; padding:8px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px; text-align:left;">
-                <label style="font-size:11px; font-weight:bold; color:#555;">⚙️ Bring Personal Pay Asset Code Image:</label>
-                <input type="file" accept="image/*" onchange="processCustomPaymentQRUpload(event)" style="font-size:11px; width:100%; margin:4px 0;">
-                <button onclick="removeCustomPaymentQR()" style="background:var(--danger-red); border:none; color:white; border-radius:4px; font-size:10px; padding:3px 6px; cursor:pointer; width:100%; font-weight:bold; margin-top:2px;">🗑️ Remove Custom QR</button>
-            </div>
+    <div class="modal-content" onclick="event.stopPropagation()" style="text-align:center; max-width: 400px; width: 90%;">
+        <h3>📱 UPI Mobile Payment Gateway</h3>
+        <p style="font-size:13px; color:#666;">Scan QR using PhonePe / GooglePay / Paytm Simulator</p>
+        
+        <div id="adminQrUploadControls" style="background:#f5f6fa; padding:10px; border-radius:12px; border:1px solid #ddd; margin-bottom:15px; text-align:left; display:none;">
+            <label style="font-size:11px; font-weight:bold; color:#555;">⚙️ [ADMIN ONLY] Bring Personal Pay Asset Code Image:</label>
+            <input type="file" accept="image/*" onchange="processCustomPaymentQRUpload(event)" style="font-size:11px; width:100%; margin:4px 0;">
+            <button onclick="removeCustomPaymentQR()" style="background:var(--danger-red); border:none; color:white; border-radius:4px; font-size:10px; padding:4px 6px; cursor:pointer; width:100%; font-weight:bold; margin-top:2px;">🗑️ Remove Custom QR</button>
+        </div>
 
+        <div style="background:white; padding:15px; display:inline-block; margin:10px 0; border:1px solid #ccc; border-radius:12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);" id="paymentGatewayQRCodeOutputBox"></div>
             <div style="background:white; padding:10px; display:inline-block; margin:10px 0; border:1px solid #ccc;" id="paymentGatewayQRCodeOutputBox"></div>
             <h2 style="color:var(--dark-charcoal); margin:5px 0;" id="paymentGatewayBillAmountDisplay">₹0</h2>
             <div style="background:#eef9f5; color:#27ae60; padding:8px; border-radius:8px; font-size:12px; margin-bottom:15px; font-weight:bold;">🔒 Secure 256-bit Encrypted Transaction Node</div>
@@ -1625,19 +1626,32 @@ function updateFrontEndClassificationLabels() {
     document.getElementById('discountSheetModal').style.display = 'flex';
 }
 
-        function openSmartMobilePaymentGatewayGateway() {
-            if(globalRunningInvoiceSumTotal <= 0) { alert("❌ Bill is Empty! Cannot trigger payment simulation."); return; }
-            let qrContainer = document.getElementById('paymentGatewayQRCodeOutputBox'); if(!qrContainer) return; qrContainer.innerHTML = ''; 
-            document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
+       // ===================================================================
+// 💳 CUSTOMER SHIELD: SECURE SCALED MODAL PAYMENT ENGINE 
+// ===================================================================
+function openSmartMobilePaymentGatewayGateway() {
+    if(globalRunningInvoiceSumTotal <= 0) { alert("❌ Bill is Empty! Cannot trigger payment simulation."); return; }
+    let qrContainer = document.getElementById('paymentGatewayQRCodeOutputBox'); if(!qrContainer) return; qrContainer.innerHTML = ''; 
+    document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
 
-            if(customPaymentQRData) {
-                qrContainer.innerHTML = `<img src="${customPaymentQRData}" style="width:140px; height:140px; object-fit:contain;">`;
-            } else {
-                let simulatedUPIIntentString = `upi://pay?pa=merchant_inject_node@sbi&pn=${encodeURIComponent(hotelGlobalScopeID)}&am=${globalRunningInvoiceSumTotal}&cu=INR`;
-                new QRCode(qrContainer, { text: simulatedUPIIntentString, width: 140, height: 140, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
-            }
-            document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
-        }
+    // 🛡️ SECURITY TRAP: Check if current route viewport is the active administrative control dashboard
+    const isOwnerViewingDashboard = document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block';
+    const uploadControlsBlock = document.getElementById('adminQrUploadControls');
+    
+    if (uploadControlsBlock) {
+        // Customer view mein upload file asset boxes aur delete buttons automatic permanent hide ho jayenge
+        uploadControlsBlock.style.display = isOwnerViewingDashboard ? 'block' : 'none';
+    }
+
+    if(customPaymentQRData) {
+        qrContainer.innerHTML = `<img src="${customPaymentQRData}" style="width:220px; height:220px; object-fit:contain; border-radius:8px;">`;
+    } else {
+        let simulatedUPIIntentString = `upi://pay?pa=merchant_inject_node@sbi&pn=${encodeURIComponent(hotelGlobalScopeID)}&am=${globalRunningInvoiceSumTotal}&cu=INR`;
+        // 🚀 SCALED UP SIZE: Increased matrix dimensions from 140 to 220 for fast sharp mobile lens tracking
+        new QRCode(qrContainer, { text: simulatedUPIIntentString, width: 220, height: 220, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+    }
+    document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
+}
        // ===================================================================
 // 👨‍🍳 FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
 // ===================================================================
@@ -2188,51 +2202,94 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
         grandTotalBox.innerText = "₹" + finalBillSum;
     } catch (err) { console.error(err); }
 }
-        // ⚡ FIXED: Pulls active data strictly matching the isolated tenant string layout maps
-function renderLiveCalculatedBill() {
-    localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-    maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
-    let paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'UNPAID';
-
-    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${clientCurrentActiveTable}`;
-    const rowsContainer = document.getElementById('invoiceRowsContainer'); rowsContainer.innerHTML = '';
+// ===================================================================
+// 🧾 ASYNCHRONOUS ENGINE: LIVE SYNCHRONIZED CUSTOMER INVOICE SCHEMAS
+// ===================================================================
+async function renderLiveCalculatedBill() {
+    let targetBill = [];
+    let targetDisc = 0;
+    let paymentStatusToken = 'UNPAID';
     
-    let accumulatedSubtotal = 0;
-    localLiveRunningBill.forEach((row, rIdx) => {
-        let currentTotalRowCost = row.price * row.qty; accumulatedSubtotal += currentTotalRowCost;
-        rowsContainer.innerHTML += `
-            <div class="bill-item-row">
-                <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
-                <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${currentTotalRowCost}</span><button onclick="removeInvoiceItemRow(${rIdx})" style="background:var(--danger-red); border:none; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">X</button></div>
-            </div>`;
-    });
+    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${clientCurrentActiveTable}`;
+    showOnScreenNotification("⏳ Fetching your synchronized bill data...", false);
 
-    if(localLiveRunningBill.length === 0) rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
+    try {
+        // 🔥 CLOUD INTERCEPT: Pull authoritative row data straight from database matrix
+        const { data: sessionData } = await supabaseClient
+            .from('table_sessions')
+            .select('*')
+            .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
+            .maybeSingle();
 
-    let discountValue = accumulatedSubtotal * (maximumClaimedDisc / 100); let basicTaxableValue = accumulatedSubtotal - discountValue;
-    let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-    let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-    let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-
-    document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
-    document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
-    document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
-    document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(1);
-    document.getElementById('taxRowService').style.display = taxConfig.serviceActive ? 'flex' : 'none';
-    document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
-
-    globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-    document.getElementById('billSubtotal').innerText = "₹" + accumulatedSubtotal;
-    document.getElementById('billDiscountApplied').innerText = maximumClaimedDisc + "%";
-    document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
-
-    let payButton = document.getElementById('payOnlineInvoiceMainBtn');
-    if(paymentStatusToken === 'SUCCESS_PAID') {
-        payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI"; payButton.style.background = "#7f8c8d"; payButton.disabled = true; payButton.onclick = null;
-    } else {
-        payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
+        if (sessionData) {
+            targetBill = sessionData.live_bill || [];
+            targetDisc = parseInt(sessionData.discount_claimed) || 0;
+            paymentStatusToken = sessionData.payment_status || 'UNPAID';
+            
+            // Re-align native runtime array states inside device memory loops
+            localLiveRunningBill = targetBill;
+            maximumClaimedDisc = targetDisc;
+        } else {
+            // Local Cache Fallback if network stream returns clean zero rows arrays
+            targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
+            targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'UNPAID';
+        }
+    } catch (err) {
+        console.error("🚨 Billing Matrix Fetch Exception:", err);
+        targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
+        targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
     }
-    document.getElementById('invoiceBillModal').style.display = 'flex';
+
+    const rowsContainer = document.getElementById('invoiceRowsContainer'); 
+    if(rowsContainer) {
+        rowsContainer.innerHTML = '';
+        let accumulatedSubtotal = 0;
+        
+        targetBill.forEach((row, rIdx) => {
+            let currentTotalRowCost = row.price * row.qty; 
+            accumulatedSubtotal += currentTotalRowCost;
+            rowsContainer.innerHTML += `
+                <div class="bill-item-row">
+                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
+                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${currentTotalRowCost}</span><button onclick="removeInvoiceItemRow(${rIdx})" style="background:var(--danger-red); border:none; color:white; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:10px;">X</button></div>
+                </div>`;
+        });
+
+        if(targetBill.length === 0) rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
+
+        let discountValue = accumulatedSubtotal * (targetDisc / 100); 
+        let basicTaxableValue = accumulatedSubtotal - discountValue;
+        
+        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
+        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
+
+        document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
+        document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
+        document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
+        document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(1);
+
+        globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount);
+        document.getElementById('billSubtotal').innerText = "₹" + accumulatedSubtotal;
+        document.getElementById('billDiscountApplied').innerText = targetDisc + "%";
+        document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
+
+        let payButton = document.getElementById('payOnlineInvoiceMainBtn');
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI"; payButton.style.background = "#7f8c8d"; payButton.disabled = true; payButton.onclick = null;
+        } else {
+            payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
+        }
+        document.getElementById('invoiceBillModal').style.display = 'flex';
+    }
+}
+
+async function removeInvoiceItemRow(index) { 
+    localLiveRunningBill.splice(index, 1); 
+    localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
+    await syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
+    document.getElementById('invoiceBillModal').style.display = 'none'; 
+    await renderLiveCalculatedBill(); 
 }
 
         function removeInvoiceItemRow(index) { 
