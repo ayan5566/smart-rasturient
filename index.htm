@@ -2040,22 +2040,40 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
-        if (isUUID || hotelGlobalScopeID.includes("@")) {
-            // Safe zone cloud parameter query run
-            const { data: sData } = await supabaseClient
-                .from('table_sessions')
-                .select('*')
-                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                .maybeSingle();
-            sessionData = sData;
+if (isUUID || hotelGlobalScopeID.includes("@")) {
+                    // User login hai, safe hokar cloud parameters query run karo
+                    const { data: sData } = await supabaseClient
+                        .from('table_sessions')
+                        .select('*')
+                        .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                        .maybeSingle();
+                    sessionData = sData;
+        
+                    // 🧠 BYPASS ENGINE: Fetch table orders without ambiguous embedding queries
+                    const { data: kOrders, error: kOrdersErr } = await supabaseClient
+                        .from('active_orders')
+                        .select(`id, status, created_at`)
+                        .eq('hotel_id', hotelGlobalScopeID)
+                        .eq('table_id', selectedAdminTable);
 
-            // ✅ AMBIGUITY & TYPE SYNCED: Strict explicit text mapping matching your database links
-            const { data: kOrders } = await supabaseClient
-                .from('active_orders')
-                .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`) 
-                .eq('hotel_id', hotelGlobalScopeID)
-                .eq('table_id', selectedAdminTable);
-            if (kOrders) kitchenOrders = kOrders;
+                    if (!kOrdersErr && kOrders && kOrders.length > 0) {
+                        const orderIds = kOrders.map(o => o.id);
+                        
+                        // Clean isolated items fetch (No ambiguity crash possible)
+                        const { data: items, error: itemsErr } = await supabaseClient
+                            .from('order_items')
+                            .select('order_id, dish_name, size, qty')
+                            .in('order_id', orderIds);
+
+                        if (!itemsErr && items) {
+                            kOrders.forEach(order => {
+                                order.order_items = items.filter(item => item.order_id === order.id);
+                            });
+                        }
+                        kitchenOrders = kOrders;
+                    } else {
+                        kitchenOrders = [];
+                    }
                
             if (sessionData) {
                 targetBill = sessionData.live_bill || [];
@@ -3098,21 +3116,46 @@ function launchKitchenDisplaySystemModule() {
 // 👨‍🍳 FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
 // ===================================================================
 async function fetchActiveKitchenOrdersQueue() {
-    // 🔒 MULTI-TENANCY FILTER: Fetching orders cleanly matching the email scope
+    console.log("📡 KDS Pipeline: Fetching live tickets for isolated ID:", hotelGlobalScopeID);
+
+    // Step A: Fetch base active orders cleanly without embedding/joining
     const { data: orders, error } = await supabaseClient
         .from('active_orders')
-        .select(`id, hotel_id, table_id, status, created_at, order_items!order_id ( dish_name, size, qty )`) // ✅ Ambiguity fixed using your schema reference
+        .select(`id, hotel_id, table_id, status, created_at`)
         .eq('hotel_id', hotelGlobalScopeID) 
         .order('created_at', { ascending: true });
 
-    if (!error && orders) {
+    if (error) {
+        console.error("🚨 KDS Fetch Error:", error.message);
+        return;
+    }
+
+    // Step B: Agar orders mile hain, toh unke items ko bina ambiguity ke alag se fetch karo
+    if (orders && orders.length > 0) {
+        const orderIds = orders.map(o => o.id);
+
+        const { data: items, error: itemsError } = await supabaseClient
+            .from('order_items')
+            .select('order_id, dish_name, size, qty')
+            .in('order_id', orderIds);
+
+        if (!itemsError && items) {
+            // Step C: JavaScript engine se items ko unke parent order ke sath jodd do
+            orders.forEach(order => {
+                order.order_items = items.filter(item => item.order_id === order.id);
+            });
+        } else if (itemsError) {
+            console.error("🚨 KDS Items Fetch Error:", itemsError.message);
+        }
+    }
+
+    // Traditional rendering layers untouched and safe
+    if (orders) {
         if (orders.length > activeKdsOrdersArray.length) {
             triggerAudioBeepAlert(); 
         }
         activeKdsOrdersArray = orders;
         renderKdsInterfaceMatrix();
-    } else if (error) {
-        console.error("🚨 KDS Fetch Error:", error.message);
     }
 }
 function renderKdsInterfaceMatrix() {
