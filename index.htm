@@ -2053,7 +2053,10 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-     async function auditSelectedTableBillInvoiceLive() {
+     // ===================================================================
+// 📊 FIXED: ADMIN BILL TRACKER (REMOVED DOUBLE COUNTING & SYNCED MATH)
+// ===================================================================
+async function auditSelectedTableBillInvoiceLive() {
     let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
     let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
     let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
@@ -2076,7 +2079,6 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
                 .maybeSingle();
             sessionData = sData;
 
-            // 🧠 Split Bypass Query to prevent PostgREST ambiguity block error
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2118,11 +2120,11 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
         }
 
         outputBox.innerHTML = ''; 
-        let subtotal = 0; // Master financial counter initialization
+        let subtotal = 0; 
 
         outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach(row => {
-            let rowCost = row.price * row.qty; 
+            let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0); 
             subtotal += rowCost; 
             outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
         });
@@ -2132,25 +2134,21 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
             kitchenOrders.forEach(order => {
                 const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
                 const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
-
                 let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
                 let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
 
                 order.order_items.forEach(item => {
-                    let calculatedLivePrice = 200; // Standard pricing fallback template
+                    let calculatedLivePrice = 200; 
                     let sizeKey = item.size ? item.size.toLowerCase() : 'm';
                     
                     menuCategories.forEach(cat => {
                         let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
                         if (matchedMenuDish) {
-                            calculatedLivePrice = matchedMenuDish[sizeKey] || matchedMenuDish.m || matchedMenuDish.s || matchedMenuDish.l || 200;
+                            calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
                         }
                     });
 
-                    // ✅ GLOBAL MATH UPGRADE: Kitchen streams item costs are now dynamically added to the rolling subtotal calculation matrix
-                    let streamItemCost = calculatedLivePrice * item.qty;
-                    subtotal += streamItemCost;
-
+                    // 🛡️ FIXED: subtotal += streamItemCost line removed from here to prevent double counting
                     outputBox.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
                             <div>
@@ -2188,8 +2186,9 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
         grandTotalBox.innerText = "₹" + finalBillSum;
     } catch (err) { console.error(err); }
 }
-        // ===================================================================
-// 🧾 CUSTOMER INVOICE RE-ENGINEERED: EXACT CLONE OF CASHER DASHBOARD
+        
+       // ===================================================================
+// 🧾 FIXED: CUSTOMER ORDER INVOICE (MIRRORS ADMIN VALUE MATRIX)
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
@@ -2204,7 +2203,6 @@ async function renderLiveCalculatedBill() {
 
     try {
         if (isUUID || hotelGlobalScopeID.includes("@")) {
-            // 1. Fetch Running Master Account Balance Ledger from table_sessions
             const { data: sessionData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2220,7 +2218,6 @@ async function renderLiveCalculatedBill() {
                 maximumClaimedDisc = targetDisc;
             }
 
-            // 2. Fetch Active Volatile Kitchen Orders (Split Bypass to block ambiguity crashes)
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2235,7 +2232,7 @@ async function renderLiveCalculatedBill() {
                     .in('order_id', orderIds);
 
                 if (!itemsErr && items) {
-                    kdsDataCrossLink: kOrders.forEach(order => {
+                    kOrders.forEach(order => {
                         order.order_items = items.filter(item => item.order_id === order.id);
                     });
                 }
@@ -2244,7 +2241,6 @@ async function renderLiveCalculatedBill() {
                 kitchenOrders = [];
             }
         } else {
-            // No Login Fallback Local Cache Loop
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'PENDING';
@@ -2256,9 +2252,8 @@ async function renderLiveCalculatedBill() {
     const rowsContainer = document.getElementById('invoiceRowsContainer'); 
     if (rowsContainer) {
         rowsContainer.innerHTML = '';
-        let subtotal = 0; // Master calculator initialization
+        let subtotal = 0;
 
-        // 📋 PART A: Render Account Ledger (Explicit float value updates)
         rowsContainer.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px; text-align:left;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach((row) => {
             let itemPrice = parseFloat(row.price) || 0;
@@ -2266,7 +2261,6 @@ async function renderLiveCalculatedBill() {
             let rowCost = itemPrice * itemQty;
             subtotal += rowCost;
 
-            // 🌟 CROSS BUTTON CLEANED: Customers can no longer manually drop row matrices items
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding:10px; border-radius:8px;">
                     <div style="text-align:left;"><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${itemPrice} x ${itemQty}</span></div>
@@ -2274,7 +2268,6 @@ async function renderLiveCalculatedBill() {
                 </div>`;
         });
 
-        // 👨‍🍳 PART B: Render Live Kitchen Streams (100% Mirroring Admin dashboard display fields)
         if (kitchenOrders && kitchenOrders.length > 0) {
             rowsContainer.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px; text-align:left;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
@@ -2292,10 +2285,7 @@ async function renderLiveCalculatedBill() {
                         if (matchedMenuDish) calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
                     });
 
-                    // Update subtotal calculation with continuous dynamic stream price tracking values
-                    let streamItemCost = calculatedLivePrice * item.qty;
-                    subtotal += streamItemCost;
-
+                    // 🛡️ FIXED: subtotal += streamItemCost line removed from here to mirror admin view perfectly
                     rowsContainer.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 8px; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: #333; text-align:left; box-sizing: border-box;">
                             <div>
@@ -2313,7 +2303,6 @@ async function renderLiveCalculatedBill() {
             rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center; padding: 15px 0;">Table invoice is empty.</p>`;
         }
 
-        // 🧮 MATHEMATICAL TAXATION MATRIX SYNC (Admin Copy Paste Math Logic)
         let safeDiscountPercent = parseFloat(targetDisc) || 0;
         let discountValue = subtotal * (safeDiscountPercent / 100); 
         let basicTaxableValue = subtotal - discountValue;
@@ -2326,7 +2315,6 @@ async function renderLiveCalculatedBill() {
         let sgstAmount = (basicTaxableValue * (sgstRateVal / 100));
         let serviceAmount = (basicTaxableValue * (serviceRateVal / 100));
 
-        // Sync visibility on template nodes mappings loop
         if(document.getElementById('taxRowCGST')) document.getElementById('taxRowCGST').style.display = cgstRateVal > 0 ? 'flex' : 'none';
         if(document.getElementById('billCGSTVal')) document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
         if(document.getElementById('taxRowSGST')) document.getElementById('taxRowSGST').style.display = sgstRateVal > 0 ? 'flex' : 'none';
@@ -2338,7 +2326,6 @@ async function renderLiveCalculatedBill() {
             document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
         }
 
-        // Lock values inside final fields tokens layout
         globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
         document.getElementById('billSubtotal').innerText = "₹" + subtotal;
         document.getElementById('billDiscountApplied').innerText = safeDiscountPercent + "%";
