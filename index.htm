@@ -177,7 +177,6 @@
 
         .qr-scan-btn { background: #34495e; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); transition: 0.2s; }
         .qr-scan-btn:hover { background: #2c3e50; transform: translateY(-2px); }
-
         /* Customer Tab Scrolling Controls */
         .category-tabs-wrapper { display: flex; gap: 8px; margin: 15px 0; overflow-x: auto; padding-bottom: 8px; width: 100%; scrollbar-width: none; }
         .category-tabs-wrapper::-webkit-scrollbar { display: none; }
@@ -359,6 +358,44 @@
             font-size: 12px !important;
         }
     }
+        /* ================================================================= */
+/* 🌊 WATER LIQUID RESPONSIVE ENGINE (PASTE RIGHT HERE)              */
+/* ================================================================= */
+.container { 
+    width: 95% !important; 
+    max-width: 1280px !important; /* Fixed 500px lock standard destroyed */
+    background: var(--card-bg); 
+    padding: 25px; 
+    border-radius: 20px; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+    margin: 0 auto 20px auto; 
+    box-sizing: border-box; 
+    position: relative; 
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* 📊 AUTOMATED GRID: Screen ke size ke hisab se dishes khud ko adjust karengi */
+#menuContainer, #adminMenuForm {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Wide Monitor Screens parameters adjustment loop */
+@media screen and (min-width: 768px) {
+    body {
+        padding: 30px !important;
+    }
+    .menu-item {
+        margin-bottom: 0px !important; 
+    }
+    .container {
+        padding: 30px;
+    }
+}
+        
     /* ================================================================= */
     </style>
 </head>
