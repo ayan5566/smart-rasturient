@@ -2187,8 +2187,8 @@ async function auditSelectedTableBillInvoiceLive() {
     } catch (err) { console.error(err); }
 }
         
-       // ===================================================================
-// 🧾 FIXED: CUSTOMER ORDER INVOICE (MIRRORS ADMIN VALUE MATRIX)
+     // ===================================================================
+// 🧾 BALANCED INVOICE CALCULATOR: SAFE MATH ENGINE & CLEAN LAYOUT
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
@@ -2203,6 +2203,7 @@ async function renderLiveCalculatedBill() {
 
     try {
         if (isUUID || hotelGlobalScopeID.includes("@")) {
+            // 1. Fetch Running Master Account Balance Ledger from table_sessions
             const { data: sessionData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2218,6 +2219,7 @@ async function renderLiveCalculatedBill() {
                 maximumClaimedDisc = targetDisc;
             }
 
+            // 2. Fetch Active Volatile Kitchen Orders (Bypass Split to block ambiguity crashes)
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2241,6 +2243,7 @@ async function renderLiveCalculatedBill() {
                 kitchenOrders = [];
             }
         } else {
+            // No Login Fallback Local Cache Loop
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'PENDING';
@@ -2252,8 +2255,9 @@ async function renderLiveCalculatedBill() {
     const rowsContainer = document.getElementById('invoiceRowsContainer'); 
     if (rowsContainer) {
         rowsContainer.innerHTML = '';
-        let subtotal = 0;
+        let subtotal = 0; // Master calculator initialization forced numeric
 
+        // 📋 PART A: Render Account Ledger (Explicit float value updates)
         rowsContainer.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px; text-align:left;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach((row) => {
             let itemPrice = parseFloat(row.price) || 0;
@@ -2261,6 +2265,7 @@ async function renderLiveCalculatedBill() {
             let rowCost = itemPrice * itemQty;
             subtotal += rowCost;
 
+            // 🌟 CROSS BUTTON COMPLETELY REMOVED FROM LAYOUT DEFINITIONS
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding:10px; border-radius:8px;">
                     <div style="text-align:left;"><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${itemPrice} x ${itemQty}</span></div>
@@ -2268,6 +2273,7 @@ async function renderLiveCalculatedBill() {
                 </div>`;
         });
 
+        // 👨‍🍳 PART B: Render Live Kitchen Streams (100% Mirroring Admin Dashboard logic)
         if (kitchenOrders && kitchenOrders.length > 0) {
             rowsContainer.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px; text-align:left;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
             kitchenOrders.forEach(order => {
@@ -2279,17 +2285,21 @@ async function renderLiveCalculatedBill() {
                 order.order_items.forEach(item => {
                     let calculatedLivePrice = 200; 
                     let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                    let itemQty = parseInt(item.qty) || 0;
                     
                     menuCategories.forEach(cat => {
                         let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
                         if (matchedMenuDish) calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
                     });
 
-                    // 🛡️ FIXED: subtotal += streamItemCost line removed from here to mirror admin view perfectly
+                    // Update subtotal calculation loop matching exact operational nodes
+                    let streamItemCost = calculatedLivePrice * itemQty;
+                    subtotal += streamItemCost;
+
                     rowsContainer.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 8px; margin-bottom: 6px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: #333; text-align:left; box-sizing: border-box;">
                             <div>
-                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span><br>
+                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${itemQty}</span><br>
                                 <span style="font-size:11px; color:#e67e22; font-weight:700;">₹${calculatedLivePrice} (In Prep)</span><br>
                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ ${displayMin}m ${displaySec}s ago</span>
                             </div>
@@ -2303,6 +2313,7 @@ async function renderLiveCalculatedBill() {
             rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center; padding: 15px 0;">Table invoice is empty.</p>`;
         }
 
+        // 🧮 MATHEMATICAL TAXATION MATRIX SYNC (Admin Copy Paste Math Logic Forced Numeric)
         let safeDiscountPercent = parseFloat(targetDisc) || 0;
         let discountValue = subtotal * (safeDiscountPercent / 100); 
         let basicTaxableValue = subtotal - discountValue;
@@ -2315,6 +2326,7 @@ async function renderLiveCalculatedBill() {
         let sgstAmount = (basicTaxableValue * (sgstRateVal / 100));
         let serviceAmount = (basicTaxableValue * (serviceRateVal / 100));
 
+        // Sync visibility on template nodes mappings loop safely
         if(document.getElementById('taxRowCGST')) document.getElementById('taxRowCGST').style.display = cgstRateVal > 0 ? 'flex' : 'none';
         if(document.getElementById('billCGSTVal')) document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
         if(document.getElementById('taxRowSGST')) document.getElementById('taxRowSGST').style.display = sgstRateVal > 0 ? 'flex' : 'none';
@@ -2326,8 +2338,9 @@ async function renderLiveCalculatedBill() {
             document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
         }
 
+        // Lock values inside final fields tokens layout
         globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-        document.getElementById('billSubtotal').innerText = "₹" + subtotal;
+        document.getElementById('billSubtotal').innerText = "₹" + subtotal.toFixed(1);
         document.getElementById('billDiscountApplied').innerText = safeDiscountPercent + "%";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
