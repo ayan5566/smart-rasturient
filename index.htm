@@ -2407,7 +2407,7 @@ function syncWaiterSizeDropdownOptions() {
 }
 
 // ===================================================================
-// 🛡️ RE-BUILT ADMIN FORMS POPULATOR ENGINE (STRUCTURAL SAFE NET)
+// 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH IN-STOCK MANAGEMENT ENGINE)
 // ===================================================================
 function populateAdminForms() {
     document.getElementById('cfgMathDisc').value = rules.math;
@@ -2441,11 +2441,28 @@ function populateAdminForms() {
         safeItems.forEach((item, iIdx) => {
             if(!item) return;
             let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
-            catHTML += `<div class="admin-row"><div class="image-upload-container">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
-                <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
-                <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
-                <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
-                <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button></div>`;
+            
+            // Checking availability binary state toggles
+            let isItemInStock = item.inStock !== false; 
+            let stockBadgeBg = isItemInStock ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+            let stockTextColor = isItemInStock ? 'var(--neon-green)' : 'var(--danger-red)';
+
+            catHTML += `
+                <div class="admin-row">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fff; padding: 4px; border-radius: 8px;">
+                        <div class="image-upload-container" style="flex: 1; border: none; padding: 0;">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>
+                        
+                        <label style="font-size: 12px; font-weight: 800; color: ${stockTextColor}; background: ${stockBadgeBg}; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; border: 1px solid rgba(0,0,0,0.03);">
+                            <input type="checkbox" ${isItemInStock ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].inStock=this.checked; saveAdminConfig(); populateAdminForms();" style="margin:0; cursor:pointer; width:auto;"> ${isItemInStock ? '🟢 In Stock' : '🔴 Out Of Stock'}
+                        </label>
+                    </div>
+                    
+                    Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
+                </div>`;
         });
         catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName || ''}</button></div>`; 
         formElement.innerHTML += catHTML;
@@ -2453,7 +2470,6 @@ function populateAdminForms() {
     generateAdminTableGrid(); 
     populateWaiterPanelDropdownList();
 }
-
         function simulateQRScan() {
             let scannedID = prompt("Simulation Scan: Enter Table ID code (e.g. T1, T2):");
             if(scannedID) {
@@ -2468,8 +2484,8 @@ function populateAdminForms() {
                 } else { alert("❌ Unknown QR Code Target!"); }
             }
         }
-        // ===================================================================
-// 🍕 MISSING PILLAR A: CUSTOMER MENU PAINTER ENGINE
+// ===================================================================
+// 🍕 CUSTOMER MENU PAINTER ENGINE (FILTERING STALE / OUT OF STOCK ITEMS)
 // ===================================================================
 function renderCustomerMenu() {
     const tabsWrapper = document.getElementById('customerCategoryTabs'); 
@@ -2490,6 +2506,10 @@ function renderCustomerMenu() {
 
     let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
     currentSelectedCategoryObj.items.forEach((item, iIdx) => {
+        
+        // 🚫 STOCK GATEKEEPER: Agar dish 'Out of Stock' hai toh customer view menu par render nahi hogi!
+        if (item.inStock === false) return;
+
         let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
         let defaultPrice = item[defaultSize] || 0; 
         
@@ -2506,12 +2526,11 @@ function renderCustomerMenu() {
                     <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
                     <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
                     <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
-                        </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
-                    </div>`;
+                </div>
+                <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
+            </div>`;
     });
 }
-
 // ===================================================================
 // 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
 // ===================================================================
@@ -2889,7 +2908,21 @@ function generateAdminTableGrid() {
            document.getElementById('startBtn').innerText = "🔄 Try Campaign Attempt Again";
 }
         function removeDishRow(cIdx, iIdx) { menuCategories[cIdx].items.splice(iIdx, 1); saveAdminConfig(); populateAdminForms(); }
-        function addDishToCategory(cIdx) { menuCategories[cIdx].items.push({ name: "New Recipe Dish", s: 100, m: 200, l: 300, sActive: true, mActive: true, lActive: true, image: "" }); saveAdminConfig(); populateAdminForms(); }
+        function addDishToCategory(cIdx) { 
+             menuCategories[cIdx].items.push({ 
+             name: "New Recipe Dish", 
+             s: 100, 
+             m: 200, 
+             l: 300, 
+             sActive: true, 
+             mActive: true, 
+             lActive: true, 
+             inStock: true, // ✅ Seeded state defaults active
+             image: "" 
+    }); 
+    saveAdminConfig(); 
+    populateAdminForms(); 
+}
         function removeCategory(cIdx) { if(confirm('Delete entire section?')) { menuCategories.splice(cIdx, 1); saveAdminConfig(); populateAdminForms(); } }
         function removeFloor(fIdx) { if(confirm('Delete floor area?')) { floorData.splice(fIdx, 1); saveAdminConfig(); generateAdminTableGrid(); } }
         function addTableToFloor(fIdx) { let tNum = floorData[fIdx].tables.length + 1; floorData[fIdx].tables.push({ id: "T"+tNum, state: 0, waiterBell: false }); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
