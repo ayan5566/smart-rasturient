@@ -2225,7 +2225,7 @@ async function auditSelectedTableBillInvoiceLive() {
 }
         
 // ===================================================================
-// 🧾 FIXED CORE BILLING ENGINE: ANTI-DOUBLE COUNTING & SYNCED TAXES
+// 🧾 FIXED CORE BILLING ENGINE: ANTI-DOUBLE COUNTING & LIVE FALLBACK
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
@@ -2239,7 +2239,6 @@ async function renderLiveCalculatedBill() {
     const isOwnerViewingDashboard = document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block';
     const uploadControlsBlock = document.getElementById('adminQrUploadControls');
     if (uploadControlsBlock) {
-        // Customer panel par QR change/delete karne wale toggles permanent clean-hide rahenge
         uploadControlsBlock.style.display = isOwnerViewingDashboard ? 'block' : 'none';
     }
 
@@ -2257,19 +2256,29 @@ async function renderLiveCalculatedBill() {
             // 2. Fetch parallel running kitchen preparation status logs
             const { data: kOrders } = await supabaseClient
                 .from('active_orders')
-                .select(`id, status, created_at, order_items!order_id ( dish_name, size, qty )`)
+                .select(`id, status, created_at`)
                 .eq('hotel_id', hotelGlobalScopeID)
                 .eq('table_id', clientCurrentActiveTable);
 
-            if (kOrders) kitchenOrders = kOrders;
+            if (kOrders && kOrders.length > 0) {
+                const orderIds = kOrders.map(o => o.id);
+                const { data: items } = await supabaseClient
+                    .from('order_items')
+                    .select('order_id, dish_name, size, qty')
+                    .in('order_id', orderIds);
+
+                if (items) {
+                    kOrders.forEach(order => {
+                        order.order_items = items.filter(item => item.order_id === order.id);
+                    });
+                }
+                kitchenOrders = kOrders;
+            }
 
             if (sessionData) {
                 targetBill = sessionData.live_bill || [];
                 targetDisc = parseInt(sessionData.discount_claimed) || 0;
                 paymentStatusToken = sessionData.payment_status || 'UNPAID';
-                
-                localLiveRunningBill = targetBill;
-                maximumClaimedDisc = targetDisc;
             }
         } else {
             // Offline No-Login Cache LocalStorage Fallback matrix loops
@@ -2283,15 +2292,40 @@ async function renderLiveCalculatedBill() {
         targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
     }
 
+    // 🔥 HIGH-PRIORITY PIPELINE: Place fallback data rebuilding BEFORE the calculation loop starts
+    if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
+        kitchenOrders.forEach(order => {
+            if (order.order_items) {
+                order.order_items.forEach(item => {
+                    let liveItemPrice = 200;
+                    let szKey = item.size ? item.size.toLowerCase() : 'm';
+                    menuCategories.forEach(cat => {
+                        let matchedDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                        if (matchedDish) liveItemPrice = matchedDish[szKey] || matchedDish.m || 200;
+                    });
+
+                    let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
+                    if (existing) {
+                        existing.qty += item.qty;
+                    } else {
+                        targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: liveItemPrice, qty: item.qty });
+                    }
+                });
+            }
+        });
+        localLiveRunningBill = targetBill;
+        maximumClaimedDisc = targetDisc;
+    }
+
     const rowsContainer = document.getElementById('invoiceRowsContainer'); 
     if(rowsContainer) {
         rowsContainer.innerHTML = '';
         let accumulatedSubtotal = 0;
         
-        // 🧾 PART A: Calculate subtotal STRICTLY from the financial ledger rows array only
+        // 🧾 MATHEMATICAL LOOP: Reconstruct subtotal with accurate database sync references
         targetBill.forEach((row, rIdx) => {
             let rowCost = row.price * row.qty; 
-            accumulatedSubtotal += rowCost; // ✅ ONLY ledger items add to your money math
+            accumulatedSubtotal += rowCost; // ✅ Subtotal adds up perfectly now!
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 8px;">
                     <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
@@ -2299,38 +2333,11 @@ async function renderLiveCalculatedBill() {
                 </div>`;
         });
 
-        // 👨‍🍳 PART B: Visual-Only Kitchen Status Stream injection (MATH IS COMPLETELY BLOCKED HERE)
-        if (kitchenOrders && kitchenOrders.length > 0) {
-            rowsContainer.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:15px 0 8px 0; padding-bottom:4px; font-size:13px; text-align:left;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
-            kitchenOrders.forEach(order => {
-                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
-
-                order.order_items.forEach(item => {
-                    let liveItemPrice = 0;
-                    let szKey = item.size ? item.size.toLowerCase() : 'm';
-                    menuCategories.forEach(cat => {
-                        let matchedDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                        if (matchedDish) liveItemPrice = matchedDish[szKey] || matchedDish.m || 0;
-                    });
-
-                    rowsContainer.innerHTML += `
-                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 8px; margin-bottom: 6px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; color: #333; text-align:left;">
-                            <div>
-                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
-                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${liveItemPrice}</span>
-                            </div>
-                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
-                        </div>`;
-                });
-            });
-        }
-
-        if(targetBill.length === 0 && kitchenOrders.length === 0) {
+        if(targetBill.length === 0) {
             rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
         }
 
-        // 👑 MATHEMATICAL HANDSHAKE SYNCHRONIZED DIRECTLY WITH CASHIER DASHBOARD
+        // 👑 TAX & DISCOUNT COMPLIANCE LOGIC
         let discountValue = accumulatedSubtotal * (targetDisc / 100); 
         let basicTaxableValue = accumulatedSubtotal - discountValue;
         
@@ -2338,7 +2345,6 @@ async function renderLiveCalculatedBill() {
         let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
         let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
 
-        // Display labels controls updates properties definitions
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
         document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(1);
         document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
@@ -2350,7 +2356,7 @@ async function renderLiveCalculatedBill() {
             document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(1);
         }
 
-        // ⚡ FINAL ALIGNED BILL FORMULA MATRIX
+        // ⚡ FINAL ALIGNED GRAND TOTAL FORMULA
         globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
         
         document.getElementById('billSubtotal').innerText = "₹" + accumulatedSubtotal;
