@@ -2082,8 +2082,8 @@ syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximu
 
         
 
-     // ===================================================================
-// 📊 FIXED: ADMIN BILL TRACKER (REMOVED DOUBLE COUNTING & SYNCED MATH)
+// ===================================================================
+// 📊 FIXED: ADMIN BILL TRACKER WITH AUTOMATIC KITCHEN FALLBACK MATH
 // ===================================================================
 async function auditSelectedTableBillInvoiceLive() {
     let selectElement = document.getElementById('adminBillingViewerTableSelect'); if(!selectElement) return;
@@ -2127,8 +2127,6 @@ async function auditSelectedTableBillInvoiceLive() {
                     });
                 }
                 kitchenOrders = kOrders;
-            } else {
-                kitchenOrders = [];
             }
 
             if (sessionData) {
@@ -2140,6 +2138,32 @@ async function auditSelectedTableBillInvoiceLive() {
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+        }
+
+        // 🧠 AUTOMATIC FALLBACK: Agar cloud ledger khali hai par kitchen mein items hain, toh unhe math mein shamil karo!
+        if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
+            kitchenOrders.forEach(order => {
+                if (order.order_items) {
+                    order.order_items.forEach(item => {
+                        let calculatedLivePrice = 200; 
+                        let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                        
+                        menuCategories.forEach(cat => {
+                            let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                            if (matchedMenuDish) {
+                                calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
+                            }
+                        });
+
+                        let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
+                        if (existing) {
+                            existing.qty += item.qty;
+                        } else {
+                            targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedLivePrice, qty: item.qty });
+                        }
+                    });
+                }
+            });
         }
 
         if(paymentStatusToken === 'SUCCESS_PAID') {
@@ -2169,15 +2193,11 @@ async function auditSelectedTableBillInvoiceLive() {
                 order.order_items.forEach(item => {
                     let calculatedLivePrice = 200; 
                     let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                    
                     menuCategories.forEach(cat => {
                         let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                        if (matchedMenuDish) {
-                            calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
-                        }
+                        if (matchedMenuDish) calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
                     });
 
-                    // 🛡️ FIXED: subtotal += streamItemCost line removed from here to prevent double counting
                     outputBox.innerHTML += `
                         <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
                             <div>
