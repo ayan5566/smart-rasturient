@@ -674,8 +674,8 @@ f
 
         <h3>🏢 Interactive Floor & QR Table Grid System</h3>
         <div class="table-legend-bar">
-            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: Khali</span>
-            <span class="legend-dot" style="background:var(--tbl-green)">Green: Bhra</span>
+            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
+            <span class="legend-dot" style="background:var(--tbl-green)">Green: full </span>
             <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
             <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
         </div>
@@ -1863,7 +1863,7 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
- async function executeAdminManualBillWipeSettlement() {
+async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
     if(!activeOwnerAuditTable) {
@@ -1878,6 +1878,8 @@ function renderAnalyticsDashboard() {
             localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
             localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
+            localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
+            localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             
             // Hard reset global variables to block any ghost data merges
             if(activeOwnerAuditTable === clientCurrentActiveTable) {
@@ -1887,7 +1889,6 @@ function renderAnalyticsDashboard() {
             }
 
             // 🔥 STEP 2: HARD WRITE EMPTY MATRIX DIRECTLY TO TABLE SESSIONS (CLOUD)
-            // Hamein 'await' ensure karna hoga taaki cloud execution state confirm ho sake
             await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
 
             // 🔥 STEP 3: DELETE ALL VOLATILE KITCHEN QUEUE PENDING ORDERS FROM SUPABASE
@@ -1897,21 +1898,19 @@ function renderAnalyticsDashboard() {
                 .eq('hotel_id', hotelGlobalScopeID)
                 .eq('table_id', activeOwnerAuditTable);
 
-            if (orderDeleteErr) {
-                console.error("🚨 KDS Cloud Deletion Interrupted:", orderDeleteErr.message);
-            } else {
-                console.log(`🚀 Kitchen pending queues securely wiped for Table ${activeOwnerAuditTable}`);
-            }
+            if (orderDeleteErr) console.error("🚨 KDS Cloud Deletion Interrupted:", orderDeleteErr.message);
 
-            // 🔥 STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX
+            // 🔥 STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX TO AUTOMATIC EMPTY
             floorData.forEach(floor => { 
-                floor.tables.forEach(t => { 
-                    if(t.id === activeOwnerAuditTable) { 
-                        t.state = 0; // Set back to clean, fresh "Empty" state
-                        t.waiterBell = false; 
-                        delete t.custom_color; // Default state tracking identity restored
-                    } 
-                }); 
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => { 
+                        if(t.id === activeOwnerAuditTable) { 
+                            t.state = 0; // 🍊 Set back to fresh factory Empty state
+                            t.waiterBell = false; 
+                            delete t.custom_color; 
+                        } 
+                    }); 
+                }
             });
             
             // 🔥 STEP 5: ATOMIC ENGINE RE-BALANCING
@@ -1920,7 +1919,6 @@ function renderAnalyticsDashboard() {
             generateAdminTableGrid(); 
             auditSelectedTableBillInvoiceLive();
             
-            // Flash standard notification
             showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been reset to a brand-new factory state!`, false);
             alert(`🧹 Success! Table ${activeOwnerAuditTable} session records completely wiped from Cloud, LocalStorage, and Memory variables.`);
 
@@ -1930,10 +1928,6 @@ function renderAnalyticsDashboard() {
         }
     }
 }
-        
-
-        
-        
         function switchGameMode(selectedTargetMode) {
             activeGameMode = selectedTargetMode; clearInterval(loopTimerInstance);
             document.getElementById('flappyCanvas').style.display = 'none';
@@ -2568,8 +2562,9 @@ function renderCustomerMenu() {
             </div>`;
     });
 }
+        
 // ===================================================================
-// 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
+// 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (AUTOMATIC QR GREEN STATE)
 // ===================================================================
 async function initApp() {
     console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
@@ -2588,18 +2583,14 @@ async function initApp() {
         const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
 
         if (currentSession && !urlHotel) {
-            // 👑 TEXT ID SCOPE: Relational token matching email text boundaries perfectly
             let ownerEmail = currentSession.user.email; 
-            
             hotelGlobalScopeID = ownerEmail; 
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // 🛡️ ANTI-WHITE SCREEN TRAP: Gatekeeper safely executes redirects internally
             const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
             if (!isPlanValid) {
                  console.log("⏳ SaaS Notice: Inactive profile routed seamlessly to payment view nodes.");
-                 // Ab yahan se return ko hta diya hai taaki niche waale elements freeze na hon
             } else {
                  document.getElementById('customerView').style.display = 'none';
                  document.getElementById('adminDashboard').style.display = 'block';
@@ -2675,9 +2666,11 @@ async function initApp() {
                             t.waiterBell = sessionData.waiter_bell || false;
                             if (sessionData.payment_status === 'SUCCESS_PAID') {
                                 localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
+                                t.state = 0; // Automatic Empty on successful cloud paid records
                             } else {
                                 localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
-                                t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                                // 🟢 AUTOMATION HACK: If table opened via QR param, always force state = 1 (Full/Green)
+                                t.state = urlTable ? 1 : (localLiveRunningBill.length > 0 ? 1 : 0);
                             }
                         }
                     });
@@ -2686,13 +2679,21 @@ async function initApp() {
         } else {
             localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
             maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+            if (urlTable) {
+                floorData.forEach(floor => {
+                    if (floor && floor.tables) {
+                        floor.tables.forEach(t => {
+                            if (t && t.id === clientCurrentActiveTable) t.state = 1; // 🟢 Force QR table to full
+                        });
+                    }
+                });
+            }
         }
     } catch(e) { console.log(e); }
 
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
 
-    // 🎯 IMMUNE RENDER THREAD: UI triggers cleanly without blocking or crashing the DOM window
     try {
         renderCustomerMenu(); 
         generateMathQuestion(); 
