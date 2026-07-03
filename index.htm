@@ -1577,11 +1577,11 @@ async function executeRealCloudSignUpSequence() {
         }
 
         if (data?.user) {
-            // 🔥 THE FIX: Naya account banate samay bhi initial menu ko stringify karke push karenge
+            // 🔥 CRITICAL FIX: Pass menuCategories array/object directly to match JSONB constraint requirements
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: targetEmail, 
                 hotel_name: "Restaurant",
-                menu_data: JSON.stringify(menuCategories || fallbackMenu)
+                menu_data: menuCategories || fallbackMenu
             });
             if (configError) console.error("Database Writing Warning:", configError.message);
 
@@ -2596,9 +2596,10 @@ function renderCustomerMenu() {
     if(!tabsWrapper || !itemContainer) return; 
     tabsWrapper.innerHTML = ''; 
     itemContainer.innerHTML = ''; 
-    if(menuCategories.length === 0) return;
+    if(!menuCategories || menuCategories.length === 0) return;
 
     let currentSelectedCategoryObj = menuCategories.find(c => c.categoryName === customerActiveCategoryName) || menuCategories[0]; 
+    if (!currentSelectedCategoryObj) return;
     customerActiveCategoryName = currentSelectedCategoryObj.categoryName;
 
     menuCategories.forEach(cat => { 
@@ -2607,30 +2608,40 @@ function renderCustomerMenu() {
     });
 
     let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
-    currentSelectedCategoryObj.items.forEach((item, iIdx) => {
-        
-        // 🚫 STOCK GATEKEEPER: Agar dish 'Out of Stock' hai toh customer view menu par render nahi hogi!
-        if (item.inStock === false) return;
+    const safeItems = Array.isArray(currentSelectedCategoryObj.items) ? currentSelectedCategoryObj.items : [];
 
-        let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
-        let defaultPrice = item[defaultSize] || 0; 
-        
-        let photoMarkup = item.image ? `<img src="${item.image}" class="dish-photo-frame">` : `<div class="dish-photo-frame">🍲</div>`; 
-        let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+    safeItems.forEach((item, iIdx) => {
+        // 🔥 CRITICAL FIX: Wrapped inside a separate isolation evaluation block. 
+        // A failure or anomalous data structure in one item will never freeze adjacent element generation loops.
+        try {
+            if (!item || item.inStock === false) return;
 
-        itemContainer.innerHTML += `
-            <div class="menu-item">
-                <div class="dish-main-info">
-                    <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name}</strong></div></div>
-                    <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
-                </div>
-                <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
-                    <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
-                    <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
-                    <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
-                </div>
-                <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name}')">Add to Live Bill</button>
-            </div>`;
+            let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
+            let defaultPrice = item[defaultSize] || 0; 
+            
+            // Safe image placeholder rendering fallback engine built-in
+            let photoMarkup = item.image ? 
+                `<img src="${item.image}" class="dish-photo-frame" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🍲</text></svg>';">` : 
+                `<div class="dish-photo-frame">🍲</div>`; 
+                
+            let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+
+            itemContainer.innerHTML += `
+                <div class="menu-item">
+                    <div class="dish-main-info">
+                        <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name || 'Delicious Dish'}</strong></div></div>
+                        <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
+                    </div>
+                    <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
+                        <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
+                        <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
+                        <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
+                    </div>
+                    <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}')">Add to Live Bill</button>
+                </div>`;
+        } catch (itemRenderError) {
+            console.error("🛡️ Render Pipeline Isolation Exception Handled Safely:", itemRenderError);
+        }
     });
 }
 // ===================================================================
@@ -3265,14 +3276,14 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // 🔥 THE SILVER BULLET: menu_data ko JSON.stringify() karke bhejenge 
-        // taaki PostgreSQL bina kisi 500 Internal Error ke use instantly accept kar le!
+        // 🔥 CRITICAL FIX: Pass menuCategories array/object directly. 
+        // Supabase Client handles native JSONB object serialization under the hood.
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
-                menu_data: JSON.stringify(menuCategories) 
+                menu_data: menuCategories 
             })
             .select(); 
 
@@ -3287,7 +3298,7 @@ async function uploadMenuToCloud() {
         console.error("Critical Cloud Save Exception:", e); 
     }
 }
-    function initSpaceShooterGame() { 
+        function initSpaceShooterGame() { 
         currentLevelState = 1; spaceMoveDir = 0; spaceFrameTracker = 0; spaceTransitionCount = 0; 
         pShipObj = { x: 140, y: 340, w: 40, h: 32, health: 5, maxHealth: 5 }; 
         setupLevelParameters(); loopTimerInstance = setInterval(frameUpdateSpace, 20); 
@@ -3375,13 +3386,13 @@ async function logoutAdmin() {
             let typedBrandName = identityInput.value || "RestroFlow";
             localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
             
-            // 🔥 THE FIX: Yahan bhi menu_data ko stringify kiya taaki logout instantly bina kisi lag ke trigger ho sake
+            // 🔥 CRITICAL FIX: Removed JSON.stringify to provide type compliance and remove logout lag
             await supabaseClient
                 .from('hotel_config')
                 .upsert({ 
                     id: hotelGlobalScopeID, 
                     hotel_name: typedBrandName, 
-                    menu_data: JSON.stringify(menuCategories) 
+                    menu_data: menuCategories 
                 });
             console.log("💾 Guard Active: Scoped database rows persistent updates deployed before session exit.");
         }
