@@ -1538,7 +1538,6 @@ async function executeRealCloudSignUpSequence() {
         return;
     }
 
-    // 🧠 SMART DETECTOR: Agar user ne email wale box mein hi phone number daal diya hai
     if (email && !isNaN(email) && email.length >= 10) {
         phone = email;
         email = "";
@@ -1549,7 +1548,6 @@ async function executeRealCloudSignUpSequence() {
         return;
     }
 
-    // Client-side format shield to block 422 errors entirely
     let targetEmail = "";
     if (email) {
         if (!email.includes("@")) {
@@ -1562,7 +1560,7 @@ async function executeRealCloudSignUpSequence() {
             alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
             return;
         }
-        targetEmail = `${phone}@restroflow.com`; // Safe mock layout matching your database key matrix
+        targetEmail = `${phone}@restroflow.com`;
     }
 
     try {
@@ -1579,22 +1577,21 @@ async function executeRealCloudSignUpSequence() {
         }
 
         if (data?.user) {
-            // 2. Build cloud template inside hotel_config mapped by targetEmail string directly
+            // 🔥 THE FIX: Naya account banate samay bhi initial menu ko stringify karke push karenge
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: targetEmail, 
                 hotel_name: "Restaurant",
-                menu_data: menuCategories || fallbackMenu
+                menu_data: JSON.stringify(menuCategories || fallbackMenu)
             });
             if (configError) console.error("Database Writing Warning:", configError.message);
 
             let startTime = new Date();
             let endTime = new Date();
-            endTime.setDate(startTime.getDate() + 30); // 30 Days Free Trial Pack
+            endTime.setDate(startTime.getDate() + 30);
 
-            // 3. Insert into subscriptions using owner email/mock as primary row key index 'id'
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
-                id: targetEmail,                     // 👑 Unique text primary identifier locked
-                user_phone: phone || "No Mobile",     // 📱 Sanitized Customer Phone Number column saved
+                id: targetEmail,                     
+                user_phone: phone || "No Mobile",     
                 status: 'active',
                 current_period_start: startTime.toISOString(),
                 current_period_end: endTime.toISOString(),
@@ -3257,7 +3254,6 @@ async function uploadMenuToCloud() {
     try {
         console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
 
-        // 🔥 STEP 1: Is hotelGlobalScopeID ke jitne bhi purane tute-foote/ghost records hain, unhe permanent DELETE karo
         const { error: deleteError } = await supabaseClient
             .from('hotel_config')
             .delete()
@@ -3269,13 +3265,14 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // 🔥 STEP 2: Purana data saaf hone ke baad, ab ekdum current fresh data brand new row bankar INSERT hoga
+        // 🔥 THE SILVER BULLET: menu_data ko JSON.stringify() karke bhejenge 
+        // taaki PostgreSQL bina kisi 500 Internal Error ke use instantly accept kar le!
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
-                menu_data: menuCategories 
+                menu_data: JSON.stringify(menuCategories) 
             })
             .select(); 
 
@@ -3284,7 +3281,6 @@ async function uploadMenuToCloud() {
             showOnScreenNotification("❌ Cloud save failed!", true);
         } else {
             console.log(`🎉 Fresh configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
-            // Header elements ko instantly update karo
             updateFrontEndClassificationLabels();
         }
     } catch(e) { 
@@ -3372,7 +3368,6 @@ async function triggerJustSaveConfig() {
 // ===================================================================
 async function logoutAdmin() { 
     try {
-        // Kill background delayed loops instantly
         clearTimeout(configSaveTimeout);
         
         let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
@@ -3380,18 +3375,17 @@ async function logoutAdmin() {
             let typedBrandName = identityInput.value || "RestroFlow";
             localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
             
-            // 🛡️ SESSION PERSISTENCE GUARD: Await synchronous write while auth session token is valid
+            // 🔥 THE FIX: Yahan bhi menu_data ko stringify kiya taaki logout instantly bina kisi lag ke trigger ho sake
             await supabaseClient
                 .from('hotel_config')
                 .upsert({ 
                     id: hotelGlobalScopeID, 
                     hotel_name: typedBrandName, 
-                    menu_data: menuCategories 
+                    menu_data: JSON.stringify(menuCategories) 
                 });
             console.log("💾 Guard Active: Scoped database rows persistent updates deployed before session exit.");
         }
         
-        // Terminate security token handles securely once database pipeline returns success
         await supabaseClient.auth.signOut(); 
         
         document.getElementById('adminDashboard').style.display = 'none'; 
