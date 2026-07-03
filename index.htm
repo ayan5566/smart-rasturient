@@ -2636,29 +2636,68 @@ function renderCustomerMenu() {
             </div>`;
     });
 }
-        // ===================================================================
-// 🍔 FIXED: DISH IMAGE UPLOAD ENGINE (RESOLVES UNCAUGHT REFERENCEERROR)
+      // ===================================================================
+// 🍔 FIXED: PRODUCTION-GRADE SUPABASE STORAGE BUCKET IMAGE UPLOADER
 // ===================================================================
-function processDishImageUpload(event, cIdx, iIdx) {
+async function processDishImageUpload(event, cIdx, iIdx) {
     const file = event.target.files[0];
     if (!file) return;
 
-    showOnScreenNotification("⏳ Processing dish photo...", false);
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        // 1. DataURL/Base64 stream ko target category item matrix mein inject karo
-        menuCategories[cIdx].items[iIdx].image = e.target.result;
+    // File size check guard (Industry practice: max 3MB file block)
+    if (file.size > 3 * 1024 * 1024) {
+        alert("⚠️ File size too large! Please upload an image under 3MB.");
+        return;
+    }
+
+    showOnScreenNotification("⏳ Uploading photo to Supabase Storage...", false);
+
+    try {
+        // 1. File name collision se bachne ke liye safe random timestamp pattern generate karo
+        const fileExt = file.name.split('.').pop();
+        const randomToken = Math.random().toString(36).substring(2, 7);
+        const fileName = `${Date.now()}_${randomToken}.${fileExt}`;
         
-        // 2. Configuration ko automatic local aur Supabase cloud par save karo
+        // Hotel ID folder ke andar file paths allocate karo (Tenant Isolation)
+        const filePath = `${hotelGlobalScopeID}/${fileName}`;
+
+        // 2. Binary file payload ko direct Supabase storage bucket ('dishes') mein upload karo
+        const { data: uploadData, error: uploadError } = await supabaseClient
+            .storage
+            .from('dishes')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error("🚨 Supabase Storage Bucket Error:", uploadError.message);
+            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Ensure you created a bucket named 'dishes' and turned on the Public toggle!");
+            return;
+        }
+
+        // 3. Uploaded asset ka permanent CDN Public URL extract karo
+        const { data: urlData } = supabaseClient
+            .storage
+            .from('dishes')
+            .getPublicUrl(filePath);
+
+        const publicCDNUrl = urlData.publicUrl;
+        console.log("🚀 Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
+
+        // 4. Database text blocks column mein lakho aksharo ke badle sirf chota sa link save hoga
+        menuCategories[cIdx].items[iIdx].image = publicCDNUrl;
+        
+        // 5. Master config save karo aur UI forms templates instantly flush reload karo
         saveAdminConfig();
-        
-        // 3. Admin panels aur customer preview form elements ko instantly refresh karo
         populateAdminForms();
         if (typeof renderCustomerMenu === "function") renderCustomerMenu();
         
-        showOnScreenNotification("📸 Dish photo updated and saved to cloud!");
-    };
-    reader.readAsDataURL(file);
+        showOnScreenNotification("📸 Dish photo uploaded and live via CDN!");
+
+    } catch (err) {
+        console.error("🚨 Critical Storage Architecture Exception:", err);
+        alert("System Exception: Storage server nodes are unreachable or transmission was corrupted.");
+    }
 }
 
 // ===================================================================
