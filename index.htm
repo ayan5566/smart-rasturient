@@ -2636,31 +2636,32 @@ function renderCustomerMenu() {
             </div>`;
     });
 }
-      // ===================================================================
-// 🍔 FIXED: PRODUCTION-GRADE SUPABASE STORAGE BUCKET IMAGE UPLOADER
+// ===================================================================
+// 🍔 FIXED: MULTI-TENANT SANITIZED PATH SUPABASE STORAGE BUCKET UPLOADER
 // ===================================================================
 async function processDishImageUpload(event, cIdx, iIdx) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // File size check guard (Industry practice: max 3MB file block)
     if (file.size > 3 * 1024 * 1024) {
         alert("⚠️ File size too large! Please upload an image under 3MB.");
         return;
     }
 
-    showOnScreenNotification("⏳ Uploading photo to Supabase Storage...", false);
+    showOnScreenNotification("⏳ Uploading photo securely to Supabase...", false);
 
     try {
-        // 1. File name collision se bachne ke liye safe random timestamp pattern generate karo
+        // 🔥 THE FIX: Email ID se @ aur . ko mita kar clean folder name banata hai taaki 400 error na aaye
+        const sanitizedHotelFolder = hotelGlobalScopeID.replace(/[^a-zA-Z0-9]/g, '_');
+        
         const fileExt = file.name.split('.').pop();
         const randomToken = Math.random().toString(36).substring(2, 7);
         const fileName = `${Date.now()}_${randomToken}.${fileExt}`;
         
-        // Hotel ID folder ke andar file paths allocate karo (Tenant Isolation)
-        const filePath = `${hotelGlobalScopeID}/${fileName}`;
+        // Sanitized folder path use karo
+        const filePath = `${sanitizedHotelFolder}/${fileName}`;
 
-        // 2. Binary file payload ko direct Supabase storage bucket ('dishes') mein upload karo
+        // Direct upload transmission run karo
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
             .from('dishes')
@@ -2670,12 +2671,12 @@ async function processDishImageUpload(event, cIdx, iIdx) {
             });
 
         if (uploadError) {
-            console.error("🚨 Supabase Storage Bucket Error:", uploadError.message);
-            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Ensure you created a bucket named 'dishes' and turned on the Public toggle!");
+            console.error("🚨 Supabase Storage Bucket Policy Error:", uploadError.message);
+            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Supabase -> Storage -> Policies mein jaakar 'dishes' bucket ke liye INSERT/SELECT policy enable karo!");
             return;
         }
 
-        // 3. Uploaded asset ka permanent CDN Public URL extract karo
+        // Permanent CDN Public URL nikaalo
         const { data: urlData } = supabaseClient
             .storage
             .from('dishes')
@@ -2684,10 +2685,9 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         const publicCDNUrl = urlData.publicUrl;
         console.log("🚀 Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
 
-        // 4. Database text blocks column mein lakho aksharo ke badle sirf chota sa link save hoga
+        // Database columns parameters flush update
         menuCategories[cIdx].items[iIdx].image = publicCDNUrl;
         
-        // 5. Master config save karo aur UI forms templates instantly flush reload karo
         saveAdminConfig();
         populateAdminForms();
         if (typeof renderCustomerMenu === "function") renderCustomerMenu();
@@ -2696,10 +2696,10 @@ async function processDishImageUpload(event, cIdx, iIdx) {
 
     } catch (err) {
         console.error("🚨 Critical Storage Architecture Exception:", err);
-        alert("System Exception: Storage server nodes are unreachable or transmission was corrupted.");
+        alert("System Exception: Unable to complete cloud transmission handshakes.");
     }
 }
-
+        
 // ===================================================================
 // 💳 FIXED: CUSTOM BUSINESS QR CODE IMAGE UPLOAD ENGINE
 // ===================================================================
