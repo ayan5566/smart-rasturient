@@ -514,12 +514,21 @@ f
 
 <div class="container" id="customerView">
     <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
-<!-- 🍕 FIXED: REAL HIGH-RESOLUTION RESTROFLOW LOGO ACTIVATED -->
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 20px; width: 100%; background: transparent;">
     
     <img src="favicon.jpg" 
          alt="RestroFlow Premium Logo" 
-         style="width: 140px; height: auto; object-fit: contain; margin-bottom: 12px; display: block; mix-blend-mode: multiply; filter: multiply; image-rendering: -webkit-optimize-contrast;">
+         style="width: 140px; height: auto; object-fit: contain; margin-bottom: 12px; display: block; mix-blend-mode: multiply; image-rendering: -webkit-optimize-contrast;"
+         onerror="if(this.src.includes('favicon.jpg')) { 
+                      console.log('404 Error Captured: Trying image of restroflow.jpg...'); 
+                      this.src='image%20of%20restroflow.jpg'; 
+                  } else if(this.src.includes('image%20of%20restroflow.jpg')) { 
+                      console.log('404 Error Captured: Trying favicon.png...'); 
+                      this.src='favicon.png'; 
+                  } else if(this.src.includes('favicon.png')) {
+                      console.log('404 Error Captured: Falling back to text avatar.');
+                      this.style.display='none';
+                  }">
     
     <h2 id="displayHotelRegistryScopeLabel" style="font-size: 26px; font-weight: 800; color: var(--dark-charcoal); margin: 0; padding: 0; line-height: 1.2;">RestroFlow</h2>
     
