@@ -1069,11 +1069,10 @@ function initializeAdminRealtimeBillingTracker() {
             }, (payload) => {
                 console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
                 
-                // 🔥 REAL-TIME DYNAMIC GRID ENGINE: Maps live channel changes instantly into layout nodes graphical states
                 if (payload.new) {
                     const rawCloudTableId = payload.new.table_id;
                     if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
-                        let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1); // Extract "Floor_Table"
+                        let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
                         
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
@@ -1081,17 +1080,18 @@ function initializeAdminRealtimeBillingTracker() {
                                 if (currentLocalKey === innerTableToken) {
                                     t.waiterBell = payload.new.waiter_bell || false;
                                     if (payload.new.payment_status === 'SUCCESS_PAID') {
-                                        t.state = 0; // Back to Empty
+                                        t.state = 0; // Force empty state on payment completion
                                     } else {
-                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 1; // Mark occupied
+                                        // 🍊 FIXED CAPTURE OPERATOR: Automatically turns table into empty state if bill rows array settles to 0
+                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
                                     }
                                 }
                             });
                         });
-                        // Safe save and redraw grid nodes layout instantly
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
                 }
+                generateAdminTableGrid(); // Forces immediate layout visual synchronization
                 queueDebouncedBillRender();
             })
             .subscribe();
@@ -1840,25 +1840,43 @@ async function injectExtraItemFromBillPanel() {
 
 function executeSimulatedMobilePaymentSuccessSequence() {
     updateDishOrderAnalytics();
-    localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
+    
+    // Clear tokens matching exact compound structure parameters boundaries
+    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
+    localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
+    localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
+    localStorage.removeItem('bill_map_' + clientCurrentActiveTable);
+    
+    localLiveRunningBill = [];
+    maximumClaimedDisc = 0;
+    globalRunningInvoiceSumTotal = 0;
+
+    // 🍊 AUTOMATIC RESET: Instantly turn current active table status to 0 (Empty) via compound keys
+    floorData.forEach(floor => { 
+        if (floor && floor.tables) {
+            floor.tables.forEach(t => { 
+                let localKeyStr = `${floor.floorName}_${t.id}`;
+                if(localKeyStr === clientCurrentActiveTable) {
+                    t.state = 0; // Reset back to dynamic empty status maps
+                    t.waiterBell = false;
+                    delete t.custom_color;
+                }
+            }); 
+        }
+    });
+    
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
     
     document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
     document.getElementById('invoiceBillModal').style.display = 'none';
     
+    // Sync clear state parameters directly to cloud engine database corridors
+    syncLiveSessionToSupabase(clientCurrentActiveTable, [], 0, false, 'PENDING');
+    
     saveAdminConfig(); 
     generateAdminTableGrid();
     
-    // RESTORED VIA ON-SCREEN TOAST
-    showOnScreenNotification(`💰 Payment captured! Table ${clientCurrentActiveTable} locked to grey status maps.`);
-
-    setTimeout(function() {
-        let currentFloors = JSON.parse(localStorage.getItem('restaurantFloors')) || floorData;
-        currentFloors.forEach(floor => { floor.tables.forEach(t => { if(t.id === clientCurrentActiveTable) t.state = 2; }); });
-        floorData = currentFloors;
-        localStorage.removeItem('payment_status_map_' + clientCurrentActiveTable);
-        saveAdminConfig(); 
-        generateAdminTableGrid();
-    }, 5000);
+    showOnScreenNotification(`💰 Payment captured successfully! Table ${clientCurrentActiveTable} is now automatic Empty.`);
 }
 function renderAnalyticsDashboard() {
     let outputGrid = document.getElementById('adminAnalyticsLiveOutputGrid');
