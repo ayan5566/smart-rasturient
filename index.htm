@@ -1049,16 +1049,16 @@ function initializeAdminRealtimeBillingTracker() {
     console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
     try {
-        // 🔥 CHANNEL A: Isolated listener mapping active transactions
         window.billingOrdersChannel = supabaseClient
             .channel('billing-orders-stream')
             .on('postgres_changes', { 
                 event: '*', 
                 schema: 'public', 
                 table: 'active_orders',
-                filter: 'hotel_id=eq.' + hotelGlobalScopeID // <-- STRICT TENANT BROADCAST KEY
+                filter: 'hotel_id=eq.' + hotelGlobalScopeID
             }, () => {
                 console.log("🔔 Tracker Trigger: Active order state mutation captured!");
+                fetchActiveKitchenOrdersQueue();
                 queueDebouncedBillRender(); 
             })
             .subscribe();
@@ -1069,8 +1069,32 @@ function initializeAdminRealtimeBillingTracker() {
                 event: '*', 
                 schema: 'public', 
                 table: 'table_sessions' 
-            }, () => {
-                console.log("🔔 Tracker Trigger: Financial ledger modification captured!");
+            }, (payload) => {
+                console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
+                
+                // 🔥 REAL-TIME DYNAMIC GRID ENGINE: Maps live channel changes instantly into layout nodes graphical states
+                if (payload.new) {
+                    const rawCloudTableId = payload.new.table_id;
+                    if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
+                        let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1); // Extract "Floor_Table"
+                        
+                        floorData.forEach(floor => {
+                            floor.tables.forEach(t => {
+                                let currentLocalKey = `${floor.floorName}_${t.id}`;
+                                if (currentLocalKey === innerTableToken) {
+                                    t.waiterBell = payload.new.waiter_bell || false;
+                                    if (payload.new.payment_status === 'SUCCESS_PAID') {
+                                        t.state = 0; // Back to Empty
+                                    } else {
+                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 1; // Mark occupied
+                                    }
+                                }
+                            });
+                        });
+                        // Safe save and redraw grid nodes layout instantly
+                        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                    }
+                }
                 queueDebouncedBillRender();
             })
             .subscribe();
@@ -1079,7 +1103,6 @@ function initializeAdminRealtimeBillingTracker() {
         console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
     }
 }
-
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
     
@@ -1602,28 +1625,34 @@ async function executeRealCloudSignUpSequence() {
 function updateFrontEndClassificationLabels() {
     let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
     
-    // 🛡️ UUID IDENTITY MASK: Strict validation blocks raw UUID strings or internal database keys from leaking to headers
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!realBrandName || realBrandName === hotelGlobalScopeID || uuidPattern.test(realBrandName)) {
         const urlParams = new URLSearchParams(window.location.search);
-        // Scanned QR view customer ke liye ek clean fallback title use hoga, aur website visitor ke liye RestroFlow
         realBrandName = urlParams.get('hotel') ? "Welcome to Our Restaurant" : "RestroFlow";
     }
     
     let tableNameElem = document.getElementById('displayTableName');
-    if (tableNameElem) tableNameElem.innerText = "Table " + clientCurrentActiveTable;
+    if (tableNameElem) {
+        // 🔥 FRONTEND DECORATOR: Parse compound names to read clean formats natively
+        if (clientCurrentActiveTable.includes('_')) {
+            let parts = clientCurrentActiveTable.split('_');
+            tableNameElem.innerText = `${parts[0]} - Table ${parts[1]}`;
+        } else {
+            tableNameElem.innerText = "Table " + clientCurrentActiveTable;
+        }
+    }
     
     let hotelLabelElem = document.getElementById('displayHotelRegistryScopeLabel');
     if (hotelLabelElem) hotelLabelElem.innerText = realBrandName;
     
     document.getElementById('liveCoinBadge').innerText = maximumClaimedDisc + "%";
     
-    // 🛡️ INPUT FOCUS GUARD: Master configuration field becomes 100% responsive and fully editable without resetting cursors
     let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
     if (identityInput && document.activeElement !== identityInput) {
         identityInput.value = realBrandName;
     }
-}        function setupGlobalKeyboardBindings() {
+}
+        function setupGlobalKeyboardBindings() {
             window.addEventListener('keydown', (e) => {
                 if (activeGameMode === 'SPACE') {
                     if (e.key === 'ArrowLeft') spaceMoveDir = -6;
@@ -2025,21 +2054,19 @@ function generateMathQuestion() {
 
         function generateSnakeFoodLocation() { snakeFoodUnit = { x: Math.floor(Math.random()*15)*20, y: Math.floor(Math.random()*14+1)*20 }; }
 
-        function executeTriggerNativeQRGenCardWindow(tableUnitID) {
-            let qrCanvasFrame = document.getElementById('qrcodeCanvasOutputFrame'); if(!qrCanvasFrame) return; qrCanvasFrame.innerHTML = ''; 
+      function executeTriggerNativeQRGenCardWindow(floorName, tableUnitID) {
+    let qrCanvasFrame = document.getElementById('qrcodeCanvasOutputFrame'); if(!qrCanvasFrame) return; qrCanvasFrame.innerHTML = ''; 
     
-             // Fetch active restaurant brand name linked strictly to this owner's workspace ID context
-            let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
+    let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
     
-            // Airtight Token Binding: Deep linking URL query strings containing both unique hotel token and current table sector code
-            let routingRawLinkURL = window.location.origin + window.location.pathname + `?hotel=${encodeURIComponent(hotelGlobalScopeID)}&table=${encodeURIComponent(tableUnitID)}`;
+    // 🔥 UNIQUE LINK TOKEN BINDING: URL parameters mein floor identity aur table sector code dono inject kar diye hain
+    let routingRawLinkURL = window.location.origin + window.location.pathname + `?hotel=${encodeURIComponent(hotelGlobalScopeID)}&floor=${encodeURIComponent(floorName)}&table=${encodeURIComponent(tableUnitID)}`;
     
-            // Automatic text label population mapping
-            document.getElementById('qrPrintTitle').innerText = `${realBrandName} - Table ${tableUnitID}`;
-            document.getElementById('qrPrintMetaSubText').innerText = `Linked Account Node: ${hotelGlobalScopeID.substring(0, 8)}... | Sharp High-Res Matrix`;
+    document.getElementById('qrPrintTitle').innerText = `${realBrandName} - ${tableUnitID}`;
+    document.getElementById('qrPrintMetaSubText').innerText = `Floor: ${floorName} | Sharp High-Res Matrix`;
     
-            new QRCode(qrCanvasFrame, { text: routingRawLinkURL, width: 150, height: 150, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
-            document.getElementById('qrPrintPreviewModal').style.display = 'flex';
+    new QRCode(qrCanvasFrame, { text: routingRawLinkURL, width: 150, height: 150, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+    document.getElementById('qrPrintPreviewModal').style.display = 'flex';
 }
 
     // ===================================================================
@@ -2435,7 +2462,9 @@ function populateWaiterPanelDropdownList() {
             if(!floor || !Array.isArray(floor.tables)) return;
             floor.tables.forEach(t => { 
                 if(!t) return;
-                let markupOption = `<option value="${t.id}">${floor.floorName || 'Floor'} - Table ${t.id}</option>`;
+                let compoundValue = `${floor.floorName}_${t.id}`;
+                let displayLabel = `${floor.floorName} - Table ${t.id}`;
+                let markupOption = `<option value="${compoundValue}">${displayLabel}</option>`;
                 tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
             });
         });
@@ -2600,8 +2629,12 @@ async function initApp() {
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
+    const urlFloor = urlParams.get('floor');
     
-    if (urlTable) clientCurrentActiveTable = urlTable.toUpperCase();
+    if (urlTable) {
+        // Floor aur Table ko aapas mein safe cross-bind karo matrix isolation ke liye
+        clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
+    }
     if (urlHotel) {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
@@ -2612,18 +2645,14 @@ async function initApp() {
         const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
 
         if (currentSession && !urlHotel) {
-            // 👑 TEXT ID SCOPE: Relational token matching email text boundaries perfectly
             let ownerEmail = currentSession.user.email; 
-            
             hotelGlobalScopeID = ownerEmail; 
             localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
             initializeAdminRealtimeBillingTracker();
             
-            // 🛡️ ANTI-WHITE SCREEN TRAP: Gatekeeper safely executes redirects internally
             const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
             if (!isPlanValid) {
                  console.log("⏳ SaaS Notice: Inactive profile routed seamlessly to payment view nodes.");
-                 // Ab yahan se return ko hta diya hai taaki niche waale elements freeze na hon
             } else {
                  document.getElementById('customerView').style.display = 'none';
                  document.getElementById('adminDashboard').style.display = 'block';
@@ -2639,7 +2668,6 @@ async function initApp() {
         console.log("No session pipeline active:", sessionErr);
     }
 
-    // Cache Layer Verification Matrix
     let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if (localScopedMenu) {
         try { menuCategories = JSON.parse(localScopedMenu); } catch(e) { menuCategories = urlHotel ? [] : fallbackMenu; }
@@ -2647,7 +2675,6 @@ async function initApp() {
         menuCategories = urlHotel ? [] : fallbackMenu; 
     }
 
-    // FETCH REAL LIVE DATA FROM SUPABASE CLOUD CORRIDORS (STRICTLY EMAIL TEXT MATCH)
     try {
         const { data, error } = await supabaseClient
             .from('hotel_config')
@@ -2695,12 +2722,13 @@ async function initApp() {
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
-                        if (t && t.id === clientCurrentActiveTable) {
+                        let currentCompoundKey = `${floor.floorName}_${t.id}`;
+                        if (currentCompoundKey === clientCurrentActiveTable) {
                             t.waiterBell = sessionData.waiter_bell || false;
                             if (sessionData.payment_status === 'SUCCESS_PAID') {
-                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, 'SUCCESS_PAID');
+                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
                             } else {
-                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id);
+                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
                                 t.state = localLiveRunningBill.length > 0 ? 1 : 0;
                             }
                         }
@@ -2716,7 +2744,6 @@ async function initApp() {
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
 
-    // 🎯 IMMUNE RENDER THREAD: UI triggers cleanly without blocking or crashing the DOM window
     try {
         renderCustomerMenu(); 
         generateMathQuestion(); 
@@ -2734,29 +2761,26 @@ async function initApp() {
 // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
 function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
-    let tbl = floorData[floorIdx].tables[tableIdx];
+    let floor = floorData[floorIdx];
+    let tbl = floor.tables[tableIdx];
+    let compoundKey = `${floor.floorName}_${tbl.id}`;
     
-    // 1. Agar us table par waiter bell baji hui hai, toh click karte hi use clear (OFF) karo
     if (tbl.waiterBell) {
         tbl.waiterBell = false;
-        showOnScreenNotification(`🔔 Waiter notification clear for Table ${tbl.id}`);
+        showOnScreenNotification(`🔔 Waiter notification clear for Floor ${floor.floorName} Table ${tbl.id}`);
     } else {
-        // 2. Agar bell nahi baji hai, toh click par state badlo: 0 (Khali) ➔ 1 (Bhra) ➔ 2 (Booked)
         tbl.state = (tbl.state + 1) % 3;
     }
 
-    // 3. Target tracking pointers set karo taaki color palette ko pata chale kaun si table badalni hai
     currentActiveStylingTargetFloorIdx = floorIdx;
     currentActiveStylingTargetTableIdx = tableIdx;
 
-    // 4. Rang badalne wala premium context menu overlay display open karo
     const colorModal = document.getElementById('tableColorPickerContextModal');
     if (colorModal) {
-        document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "var(--tbl-orange)";
+        document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "";
         colorModal.style.display = 'flex';
     }
 
-    // 5. Configuration ko instantly save karo aur grid ko live redraw karo
     saveAdminConfig();
     generateAdminTableGrid();
 }
@@ -2785,8 +2809,8 @@ function filterCustomerViewCategoryTab(targetCategoryName) {
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
-       // ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: RE-BUILT WITH EMPTY/FULL LABELS & THEME LOGIC
+     // ===================================================================
+// 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid'); 
@@ -2797,23 +2821,23 @@ function generateAdminTableGrid() {
         let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
         
         floor.tables.forEach((tbl, tIdx) => {
-            // 🎨 COLOR SEQUENCE MATRIX: Agar custom color nahi hai toh state wise default color uthao
             let baseThemeColor = tbl.custom_color;
-            let currentLabel = 'Empty'; // Default fallback text state
+            let currentLabel = 'Empty';
+            let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
             
             if(tbl.state === 0) {
                 if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                currentLabel = 'Empty'; // 🔄 Khali -> Empty Fixed
+                currentLabel = 'Empty';
             } else if(tbl.state === 1) {
                 if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                currentLabel = 'Full'; // 🔄 Bhra -> Full Fixed
+                currentLabel = 'Full';
             } else if(tbl.state === 2) {
                 if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
                 currentLabel = 'Booked';
             }
             
-            // Cashier dynamic pay verification check override
-            if(localStorage.getItem('payment_status_map_' + tbl.id) === 'SUCCESS_PAID') { 
+            // Scoped payment tracking prevents duplicate mapping bugs
+            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') { 
                 baseThemeColor = '#2196f3'; 
                 currentLabel = '💰 Paid UPI'; 
             }
@@ -2821,7 +2845,7 @@ function generateAdminTableGrid() {
             let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
             floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${tbl.id}')">🖨️ QR</button>
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
                 ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
@@ -3407,6 +3431,15 @@ function renderKdsInterfaceMatrix() {
             actionButtonHtml = `<button class="order-btn" onclick="executeChefCompletionSequence('${order.id}', '${order.hotel_id}')" style="background:#2ecc71; margin:0;">Mark Complete</button>`;
         }
 
+        // 🔥 SHARP RENDER HACK: Checks compound fields structure to split and decorate floor headers clearly on kitchen streams
+        let displayTableTitle = order.table_id;
+        if (displayTableTitle.includes('_')) {
+            let parts = displayTableTitle.split('_');
+            displayTableTitle = `${parts[0]} - Table ${parts[1]}`;
+        } else {
+            displayTableTitle = `Table ${displayTableTitle}`;
+        }
+
         container.innerHTML += `
             <div style="background: #1f232d; border: 1px solid #2d323f; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                 <div>
@@ -3414,7 +3447,7 @@ function renderKdsInterfaceMatrix() {
                         <span style="color:#7f8c8d;">ID: ${order.id.substring(0,6).toUpperCase()}</span>
                         <span style="color:#e74c3c; font-weight:bold;">⏱️ ${displayMin}m ${displaySec}s ago</span>
                     </div>
-                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🚪 Table Number: ${order.table_id}</h3>
+                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🚪 ${displayTableTitle}</h3>
                     <div>${itemsHtml}</div>
                 </div>
                 <div style="margin-top:15px;">${actionButtonHtml}</div>
