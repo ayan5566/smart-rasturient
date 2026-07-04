@@ -2645,12 +2645,13 @@ function renderCustomerMenu() {
     });
 }
 // ===================================================================
-// 🍔 FIXED: CASE-COMPLIANT DISH IMAGE UPLOADER ENGINE
+// 🍔 FINAL FIXED: DISH IMAGE UPLOADER ENGINE (LOWERCASE BUCKET ALIGNED)
 // ===================================================================
 async function processDishImageUpload(event, cIdx, iIdx) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Guard Clause: Strict 3MB file payload safety restriction
     if (file.size > 3 * 1024 * 1024) {
         alert("⚠️ File size too large! Please upload an image under 3MB.");
         return;
@@ -2659,7 +2660,7 @@ async function processDishImageUpload(event, cIdx, iIdx) {
     showOnScreenNotification("⏳ Uploading photo securely to Supabase Storage...", false);
 
     try {
-        // Email ID se special characters hatakar folder name sanitize karo
+        // 1. Email ID se special characters (@ aur .) hatakar clean tenant folder name sanitize karo
         const sanitizedHotelFolder = hotelGlobalScopeID.replace(/[^a-zA-Z0-9]/g, '_');
         
         const fileExt = file.name.split('.').pop();
@@ -2668,22 +2669,22 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         
         const filePath = `${sanitizedHotelFolder}/${fileName}`;
 
-        // 🔥 FIX: Mapped strictly to lowercase 'dishes' as confirmed by your dashboard breadcrumbs
+        // 2. Binary file block payload ko directly lowercase 'dishes' bucket mein transmit karo
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
-            .from('dishes')
+            .from('dishes') // 🌟 Aligned tightly to your lowercase bucket routing parameters
             .upload(filePath, file, {
                 cacheControl: '3600',
-                upsert: true // True rakhne se photo bina crash kiye update/replace ho jayegi
+                upsert: true // True enables frictionless file overwrites on duplicate dish edits
             });
 
         if (uploadError) {
             console.error("🚨 Supabase Storage Bucket Policy Error:", uploadError.message);
-            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Supabase Dashboard -> Storage -> Policies mein jaakar 'dishes' bucket ke liye 'New Policy' banayein aur INSERT/SELECT tick karke save karein!");
+            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Ensure your Supabase RLS Policy uses lowercase 'dishes' exactly!");
             return;
         }
 
-        // Same lowercase bucket se CDN link generate karo
+        // 3. Uploaded asset ka clean public CDN fetch link resolve karo
         const { data: urlData } = supabaseClient
             .storage
             .from('dishes')
@@ -2692,9 +2693,10 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         const publicCDNUrl = urlData.publicUrl;
         console.log("🚀 Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
 
-        // State update aur dynamic UI refresh rendering
+        // 4. Memory matrix state layers variables flush karo
         menuCategories[cIdx].items[iIdx].image = publicCDNUrl;
         
+        // 5. Automatic persistent database write configurations call backup
         saveAdminConfig();
         populateAdminForms();
         if (typeof renderCustomerMenu === "function") renderCustomerMenu();
