@@ -2667,22 +2667,22 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         
         const filePath = `${sanitizedHotelFolder}/${fileName}`;
 
-        // 🔥 CRITICAL CASE-SENSITIVE FIX: Targeted string parameters changed explicitly to uppercase 'DISHES' to match dashboard configuration rules logs
+        // 🔥 CASE-SENSITIVE ENFORCEMENT: Targets uppercase 'DISHES' matching your backend bucket exactly
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
-            .from('dishes')
+            .from('DISHES')
             .upload(filePath, file, {
                 cacheControl: '3600',
-                upsert: false
+                upsert: true // Changed to true to allow clean file overwrites on item updates safely
             });
 
         if (uploadError) {
             console.error("🚨 Supabase Storage Bucket Policy Error:", uploadError.message);
-            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Supabase Dashboard -> Storage -> Policies mein jaakar 'DISHES' bucket ke samne 'New Policy' dabein aur INSERT aur SELECT operation rules create karein!");
+            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Run the provided SQL Patch in your Supabase SQL Editor to link policies with uppercase 'DISHES'!");
             return;
         }
 
-        // 🔥 CDN LINK RESOLVER FIX: Get public url mapped pointer linked securely to uppercase target zone arrays
+        // Fetch CDN public link pointers from the identical uppercase location structure
         const { data: urlData } = supabaseClient
             .storage
             .from('DISHES')
