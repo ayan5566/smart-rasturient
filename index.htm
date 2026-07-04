@@ -3266,6 +3266,23 @@ async function uploadMenuToCloud() {
     try {
         console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
 
+        // 🔥 ANTI-BLOAT SHIELD: Database mein bhejne se pehle local array ko check karo
+        // Agar kisi item mein abhi bhi purana bada Base64 string bacha hai, toh use instant mita do
+        if (Array.isArray(menuCategories)) {
+            menuCategories.forEach(cat => {
+                if (cat && Array.isArray(cat.items)) {
+                    cat.items.forEach(item => {
+                        if (item && item.image && item.image.startsWith('data:image')) {
+                            console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
+                            item.image = ''; // Kachra string saaf kiya, ab yahan naya storage link aayega
+                        }
+                    });
+                }
+            });
+            // Local storage ko bhi ekdam clean aur fresh kar do
+            localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
+        }
+
         const { error: deleteError } = await supabaseClient
             .from('hotel_config')
             .delete()
@@ -3277,8 +3294,7 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // 🔥 CRITICAL FIX: Pass menuCategories array/object directly. 
-        // Supabase Client handles native JSONB object serialization under the hood.
+        // Fresh token parameters push karo bina kisi stringify jhol ke
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
