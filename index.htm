@@ -2670,7 +2670,7 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         // 🔥 CRITICAL CASE-SENSITIVE FIX: Targeted string parameters changed explicitly to uppercase 'DISHES' to match dashboard configuration rules logs
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
-            .from('DISHES')
+            .from('dishes')
             .upload(filePath, file, {
                 cacheControl: '3600',
                 upsert: false
