@@ -2645,7 +2645,7 @@ function renderCustomerMenu() {
     });
 }
 // ===================================================================
-// 🍔 FIXED: MULTI-TENANT SANITIZED PATH UPPERCASE BUCKET COMPLIANT UPLOADER
+// 🍔 FIXED: CASE-COMPLIANT DISH IMAGE UPLOADER ENGINE
 // ===================================================================
 async function processDishImageUpload(event, cIdx, iIdx) {
     const file = event.target.files[0];
@@ -2659,6 +2659,7 @@ async function processDishImageUpload(event, cIdx, iIdx) {
     showOnScreenNotification("⏳ Uploading photo securely to Supabase Storage...", false);
 
     try {
+        // Email ID se special characters hatakar folder name sanitize karo
         const sanitizedHotelFolder = hotelGlobalScopeID.replace(/[^a-zA-Z0-9]/g, '_');
         
         const fileExt = file.name.split('.').pop();
@@ -2667,30 +2668,31 @@ async function processDishImageUpload(event, cIdx, iIdx) {
         
         const filePath = `${sanitizedHotelFolder}/${fileName}`;
 
-        // 🔥 CASE-SENSITIVE ENFORCEMENT: Targets uppercase 'DISHES' matching your backend bucket exactly
+        // 🔥 FIX: Mapped strictly to lowercase 'dishes' as confirmed by your dashboard breadcrumbs
         const { data: uploadData, error: uploadError } = await supabaseClient
             .storage
-            .from('DISHES')
+            .from('dishes')
             .upload(filePath, file, {
                 cacheControl: '3600',
-                upsert: true // Changed to true to allow clean file overwrites on item updates safely
+                upsert: true // True rakhne se photo bina crash kiye update/replace ho jayegi
             });
 
         if (uploadError) {
             console.error("🚨 Supabase Storage Bucket Policy Error:", uploadError.message);
-            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Run the provided SQL Patch in your Supabase SQL Editor to link policies with uppercase 'DISHES'!");
+            alert("❌ Upload Failed: " + uploadError.message + "\n\n💡 Solution: Supabase Dashboard -> Storage -> Policies mein jaakar 'dishes' bucket ke liye 'New Policy' banayein aur INSERT/SELECT tick karke save karein!");
             return;
         }
 
-        // Fetch CDN public link pointers from the identical uppercase location structure
+        // Same lowercase bucket se CDN link generate karo
         const { data: urlData } = supabaseClient
             .storage
-            .from('DISHES')
+            .from('dishes')
             .getPublicUrl(filePath);
 
         const publicCDNUrl = urlData.publicUrl;
         console.log("🚀 Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
 
+        // State update aur dynamic UI refresh rendering
         menuCategories[cIdx].items[iIdx].image = publicCDNUrl;
         
         saveAdminConfig();
