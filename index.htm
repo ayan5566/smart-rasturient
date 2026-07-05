@@ -3572,24 +3572,44 @@ async function updateKdsTicketState(orderId, nextStatusState) {
     fetchActiveKitchenOrdersQueue();
 }
 
+// ===================================================================
+// 👨‍🍳 FIXED: ANTI-FREEZE KDS COMPLETION ROUTER WITH TRY-CATCH SHIELD
+// ===================================================================
 async function executeChefCompletionSequence(orderId, hotelId) {
     const ticket = activeKdsOrdersArray.find(o => o.id === orderId);
     if (!ticket) return;
 
-    // 1. Trigger the background analytics upsert increment counter function on cloud
+    showOnScreenNotification("⏳ Dispatching order and updating analytics...", false);
+
+    // 1. Analytics calculation logic wrapped in try-catch to prevent loop crashes
     for (const item of ticket.order_items) {
-        await supabaseClient.rpc('increment_analytics_counter', {
-            target_hotel_id: hotelId,
-            target_dish_name: item.dish_name,
-            qty_increment: item.qty
-        });
+        try {
+            await supabaseClient.rpc('increment_analytics_counter', {
+                target_hotel_id: hotelId,
+                target_dish_name: item.dish_name,
+                qty_increment: parseInt(item.qty) || 1
+            });
+            console.log(`📊 Analytics synced for item: ${item.dish_name}`);
+        } catch (rpcErr) {
+            console.error("🚨 Non-blocking Analytics Error:", rpcErr.message);
+            // Non-blocking: Analytics fail hone par bhi loop chalta rahega
+        }
     }
 
-    // 2. Erase volatile active kitchen record entirely to save DB space
-    await supabaseClient.from('active_orders').delete().eq('id', orderId);
-    
-    showOnScreenNotification("🍽️ Order Completed & Dispatched! Local records optimized.");
-    fetchActiveKitchenOrdersQueue();
+    try {
+        // 2. Pehle child table 'order_items' se items delete karo (Foreign Key Violation Protection)
+        await supabaseClient.from('order_items').delete().eq('order_id', orderId);
+
+        // 3. Ab parent active record ko erase karo cleanly
+        await supabaseClient.from('active_orders').delete().eq('id', orderId);
+        
+        showOnScreenNotification("🍽️ Order Completed & Dispatched! Database optimized safely.");
+        fetchActiveKitchenOrdersQueue();
+
+    } catch (dbErr) {
+        console.error("🚨 KDS Purge Exception:", dbErr);
+        alert("❌ Error clearing order from KDS table rows.");
+    }
 }
         
 function filterKdsView(targetFilterState) {
