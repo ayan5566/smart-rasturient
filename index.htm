@@ -1161,10 +1161,10 @@ async function fetchGlobalSaaSAccountNetworkList() {
     listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
     try {
-        // Fetch subscriptions using email text key (id) and safe user_phone variables parameters
+        // 🔥 FIX: select query ke andar 'founder_label' ko bhi add kiya
         const { data: subList, error } = await supabaseClient
             .from('subscriptions')
-            .select('id, user_phone, status, current_period_end, monthly_price, yearly_price')
+            .select('id, user_phone, status, current_period_end, monthly_price, yearly_price, founder_label')
             .order('current_period_end', { ascending: false });
 
         if (error) throw error;
@@ -1186,21 +1186,21 @@ async function fetchGlobalSaaSAccountNetworkList() {
             let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
             let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
             
+            // 🔥 FIX: Agar founder ne koi custom label diya hai toh display ke liye vahi use hoga, warna original name
+            let administrativeTitle = sub.founder_label || hotelDisplayName;
+            
             let currentMonthlyPrice = sub.monthly_price || 0;
             let currentYearlyPrice = sub.yearly_price || 0;
-            
-            // 📱 FETCHED DIRECTLY FROM SUBSCRIPTIONS TABLE (UUID references completely deleted)
             let clientPhone = sub.user_phone || "No Mobile Logged"; 
-            let clientEmail = sub.id; // Primary Key string representation
+            let clientEmail = sub.id; 
 
-            let sanitizedHotelName = hotelDisplayName.replace(/'/g, "\\'");
+            let sanitizedAdminTitle = administrativeTitle.replace(/'/g, "\\'");
 
-            // UI RENDER: Displays Hotel Name, Phone Number and unique Email Node without UUID references
             listWrapper.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="document.getElementById('saTargetUserUUID').value='${clientEmail}'; document.getElementById('saTargetHotelName').value='${sanitizedHotelName}'; document.getElementById('saCustomMonthlyRate').value=${currentMonthlyPrice}; document.getElementById('saCustomYearlyRate').value=${currentYearlyPrice}; showOnScreenNotification('📋 Loaded account node email: ${clientEmail}');">
+                     onclick="document.getElementById('saTargetUserUUID').value='${clientEmail}'; document.getElementById('saTargetHotelName').value='${sanitizedAdminTitle}'; document.getElementById('saCustomMonthlyRate').value=${currentMonthlyPrice}; document.getElementById('saCustomYearlyRate').value=${currentYearlyPrice}; showOnScreenNotification('📋 Loaded account node email: ${clientEmail}');">
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${hotelDisplayName}</span><br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span> ${sub.founder_label ? `<small style="color:#7f8c8d; font-style:italic;">(${hotelDisplayName})</small>` : ''}<br>
                         <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Contact Mobile Number: ${clientPhone}</span><br>
                         <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Identity Email: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
@@ -1235,75 +1235,57 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         alert("❌ Invalid user classification identifier code string pattern.");
         return;
     }
-    if (validityDays <= 0 && targetStatusState === 'active') {
-        alert("⚠️ Please enter a valid custom number of days for activation parameters.");
-        return;
-    }
 
     try {
-        let startTime = new Date();
-        let endTime = new Date();
-        endTime.setDate(startTime.getDate() + validityDays);
-
         showOnScreenNotification("⚡ Processing security write override data...", false);
 
-        // 🟢 FEATURE 2: Update Hotel Name directly on cloud configuration nodes inside 'hotel_config'
-        if (updatedHotelName) {
-            const { data: configCheck } = await supabaseClient
-                .from('hotel_config')
-                .select('id')
-                .eq('id', targetId)
-                .maybeSingle();
+        // Check if record exists inside tracking matrix array matching email key 'id'
+        const { data: existingRecord } = await supabaseClient
+            .from('subscriptions')
+            .select('id') 
+            .eq('id', targetId) 
+            .maybeSingle();
 
-            if (configCheck) {
-                await supabaseClient
-                    .from('hotel_config')
-                    .update({ hotel_name: updatedHotelName })
-                    .eq('id', targetId);
-            } else {
-                await supabaseClient
-                    .from('hotel_config')
-                    .insert({ id: targetId, hotel_name: updatedHotelName, menu_data: [] });
-            }
+        let syncOperationError = null;
+
+        // Base payload build karo bina dates ke
+        let subscriptionPayload = {
+            status: targetStatusState,
+            monthly_price: allocatedMonthlyPrice,
+            yearly_price: allocatedYearlyPrice,
+            founder_label: updatedHotelName // 🔥 FIX: Hotel name ko hotel_config ke bajay subscriptions ke founder_label mein alag save karo
+        };
+
+        // 🔥 FIX: Din badhane ki bandish khatam! 
+        // Dates tabhi update hongi jab validityDays 0 se bada hoga, warna purani dates safe rahengi.
+        if (validityDays > 0) {
+            let startTime = new Date();
+            let endTime = new Date();
+            endTime.setDate(startTime.getDate() + validityDays);
+            subscriptionPayload.current_period_start = startTime.toISOString();
+            subscriptionPayload.current_period_end = endTime.toISOString();
         }
 
-        // Check if record exists inside tracking matrix array matching email key 'id'
-const { data: existingRecord } = await supabaseClient
-    .from('subscriptions')
-    .select('id') // ✅ user_id -> id
-    .eq('id', targetId) // ✅ user_id -> id
-    .maybeSingle();
-
-let syncOperationError = null;
-
-let subscriptionPayload = {
-    status: targetStatusState,
-    current_period_start: startTime.toISOString(),
-    current_period_end: endTime.toISOString(),
-    monthly_price: allocatedMonthlyPrice,
-    yearly_price: allocatedYearlyPrice
-};
-
-if (existingRecord) {
-    const { error } = await supabaseClient
-        .from('subscriptions')
-        .update(subscriptionPayload)
-        .eq('id', targetId); // ✅ user_id -> id
-    syncOperationError = error;
-} else {
-    subscriptionPayload.id = targetId; // ✅ user_id -> id
-    const { error } = await supabaseClient
-        .from('subscriptions')
-        .insert(subscriptionPayload);
-    syncOperationError = error;
-}
+        if (existingRecord) {
+            const { error } = await supabaseClient
+                .from('subscriptions')
+                .update(subscriptionPayload)
+                .eq('id', targetId); 
+            syncOperationError = error;
+        } else {
+            subscriptionPayload.id = targetId; 
+            const { error } = await supabaseClient
+                .from('subscriptions')
+                .insert(subscriptionPayload);
+            syncOperationError = error;
+        }
 
         if (syncOperationError) {
             alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
         } else {
-            showOnScreenNotification(`👑 Subscription Scoped Parameters updated to [${targetStatusState.toUpperCase()}] successfully!`);
+            showOnScreenNotification(`👑 Scoped Parameters updated successfully!`);
             
-            // Clean input boxes values parameters mapping loops after success action
+            // Input fields ko clear karo
             document.getElementById('saTargetUserUUID').value = '';
             document.getElementById('saTargetHotelName').value = '';
             document.getElementById('saPlanValidityDays').value = '';
@@ -1317,7 +1299,6 @@ if (existingRecord) {
         console.error("Super Admin Operation Exception:", err);
     }
 }
-
 function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
