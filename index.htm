@@ -2122,7 +2122,6 @@ function executeNativeBrowserPrintTrigger() {
 syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
         }
 
-        
 
 // ===================================================================
 // 📊 FIXED: ADMIN BILL TRACKER WITH AUTOMATIC KITCHEN FALLBACK MATH
@@ -2143,6 +2142,7 @@ async function auditSelectedTableBillInvoiceLive() {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
         if (isUUID || hotelGlobalScopeID.includes("@")) {
+            // 1. Cloud table sessions registry mapping rows straight from cloud database
             const { data: sData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2150,6 +2150,7 @@ async function auditSelectedTableBillInvoiceLive() {
                 .maybeSingle();
             sessionData = sData;
 
+            // 2. Parallel kitchen preparation lines monitoring nodes lookup
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2177,6 +2178,7 @@ async function auditSelectedTableBillInvoiceLive() {
                 paymentStatusToken = sessionData.payment_status || 'PENDING';
             }
         } else {
+            // Offline localStorage cached data stream matrices tracking loop fallback
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
@@ -2208,6 +2210,7 @@ async function auditSelectedTableBillInvoiceLive() {
             });
         }
 
+        // Cashier dashboard color banner alerts router mapping tokens
         if(paymentStatusToken === 'SUCCESS_PAID') {
             paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
         } else {
@@ -2281,15 +2284,14 @@ async function auditSelectedTableBillInvoiceLive() {
         console.error("🚨 Admin Invoice Tracker Exception:", err); 
     }
 }
-
 // ===================================================================
-// 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE
+// 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE (FIXED GLOBAL LEAK)
 // ===================================================================
- function calculateUnifiedMasterInvoice(billArray, discountRate, activeTaxConfig) {
+function calculateUnifiedMasterInvoice(billArray, discountRate, activeTaxConfig) {
     let accumulatedSubtotal = 0;
     const safeBill = Array.isArray(billArray) ? billArray : [];
     
-    // Items ka cost calculate karo
+    // Items ka cost calculate karo smoothly
     safeBill.forEach(row => {
         accumulatedSubtotal += (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
     });
@@ -2300,10 +2302,10 @@ async function auditSelectedTableBillInvoiceLive() {
     let discountValue = cleanSubtotal * (cleanDiscountRate / 100); 
     let basicTaxableValue = cleanSubtotal - discountValue;
     
-    // Strict Tax configuration mapping
-    let parsedCgstRate = activeTaxConfig.cgstActive ? parseFloat(activeTaxConfig.cgstRate || 0) : 0;
-    let parsedSgstRate = taxConfig.sgstActive ? parseFloat(activeTaxConfig.sgstRate || 0) : 0;
-    let parsedServiceRate = activeTaxConfig.serviceActive ? parseFloat(activeTaxConfig.serviceRate || 0) : 0;
+    // 🛡️ SYNTAX SHIELD & INVERTER FIX: Strictly mapped only to passed activeTaxConfig to avoid variable leaks
+    let parsedCgstRate = activeTaxConfig && activeTaxConfig.cgstActive ? parseFloat(activeTaxConfig.cgstRate || 0) : 0;
+    let parsedSgstRate = activeTaxConfig && activeTaxConfig.sgstActive ? parseFloat(activeTaxConfig.sgstRate || 0) : 0;
+    let parsedServiceRate = activeTaxConfig && activeTaxConfig.serviceActive ? parseFloat(activeTaxConfig.serviceRate || 0) : 0;
 
     let cgstAmount = basicTaxableValue * (parsedCgstRate / 100);
     let sgstAmount = basicTaxableValue * (parsedSgstRate / 100);
@@ -2311,7 +2313,7 @@ async function auditSelectedTableBillInvoiceLive() {
 
     let finalGrandTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
 
-    // Poora calculated data ek sath return karo
+    // Poora calculated data layout engine ko transfer karo
     return {
         subtotal: cleanSubtotal,
         discountRate: cleanDiscountRate,
@@ -2321,7 +2323,7 @@ async function auditSelectedTableBillInvoiceLive() {
         service: serviceAmount,
         grandTotal: finalGrandTotal
     };
- }
+}
 
         
         
@@ -2477,7 +2479,7 @@ async function renderLiveCalculatedBill() {
             payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
         }
         document.getElementById('invoiceBillModal').style.display = 'flex';
-} // <--- Yeh curly brace aapke pure 'renderLiveCalculatedBill' function ko cleanly close kar dega
+    }
 }
         function removeInvoiceItemRow(index) { 
             localLiveRunningBill.splice(index, 1); localStorage.setItem('bill_map_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
@@ -3333,8 +3335,8 @@ function saveAdminConfig() {
     }, 600);
 }
  
- // ===================================================================
-// 📡 FIXED: Deletes all previous hotel configurations before inserting the fresh current state
+// ===================================================================
+// 📡 FIXED: UNIFIED CLOUD SYNC ENGINE (UPDATES MENU DATA & TAX CONFIG)
 // ===================================================================
 async function uploadMenuToCloud() {
     const currentActiveSaveId = hotelGlobalScopeID;
@@ -3360,6 +3362,7 @@ async function uploadMenuToCloud() {
             localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
         }
 
+        // 1. Old configurations rows ko safe purge/delete karo conflict se bachne ke liye
         const { error: deleteError } = await supabaseClient
             .from('hotel_config')
             .delete()
@@ -3371,13 +3374,14 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // Fresh token parameters push karo bina kisi stringify jhol ke
+        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly 'tax_data' column ko inject karke insert karo
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
-                menu_data: menuCategories 
+                menu_data: menuCategories,
+                tax_data: taxConfig // Synchronizes identical tax profiles straight onto the cloud structure!
             })
             .select(); 
 
