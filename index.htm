@@ -1883,6 +1883,9 @@ function renderAnalyticsDashboard() {
             </div>`;
     });
 }    
+// ===================================================================
+// 📊 FIXED: ADMIN BILL SETTLEMENT MASTER (WIPES DISHES, PRICES & DISCOUNTS)
+// ===================================================================
 async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
@@ -1894,55 +1897,65 @@ async function executeAdminManualBillWipeSettlement() {
     if(confirm(`⚠️ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
         
         try {
-            // 🔥 STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY
+            // 🔥 STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY (INCLUDING DISCOUNTS)
             localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
             localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
             
-            // Hard reset global variables to block any ghost data merges
-            if(activeOwnerAuditTable === clientCurrentActiveTable) {
+            // Scoped keys ko bhi safaya karo taaki koi ghost discount merge na ho
+            localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
+            localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
+            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
+            
+            // 🔥 THE FIX: Agar wahi table active hai toh global discount state aur UI badge ko 0% karo
+            let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
+            if(activeOwnerAuditTable === clientCurrentActiveTable || cleanTableId === clientCurrentActiveTable) {
                 localLiveRunningBill = [];
-                maximumClaimedDisc = 0;
+                maximumClaimedDisc = 0; // Discount memory reset to 0
                 globalRunningInvoiceSumTotal = 0;
+                
+                // Yellow coin badge ko screen par wapas 0% par le aao
+                let badge = document.getElementById('liveCoinBadge');
+                if(badge) badge.innerText = "0%";
             }
 
-            // 🔥 STEP 2: HARD WRITE EMPTY MATRIX DIRECTLY TO TABLE SESSIONS (CLOUD)
-            // Hamein 'await' ensure karna hoga taaki cloud execution state confirm ho sake
+            // 🔥 STEP 2: HARD WRITE EMPTY MATRIX & 0% DISCOUNT DIRECTLY TO CLOUD
+            // Teesra parameter '0' bheja hai taaki Supabase mein bhi discount 0 ho jaye
             await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
 
-            // 🔥 STEP 3: DELETE ALL VOLATILE KITCHEN QUEUE PENDING ORDERS FROM SUPABASE
-            const { error: orderDeleteErr } = await supabaseClient
+            // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN TO PRESERVE DB SPACE
+            const { data: ordersToClear } = await supabaseClient
                 .from('active_orders')
-                .delete()
+                .select('id')
                 .eq('hotel_id', hotelGlobalScopeID)
                 .eq('table_id', activeOwnerAuditTable);
 
-            if (orderDeleteErr) {
-                console.error("🚨 KDS Cloud Deletion Interrupted:", orderDeleteErr.message);
-            } else {
-                console.log(`🚀 Kitchen pending queues securely wiped for Table ${activeOwnerAuditTable}`);
+            if (ordersToClear && ordersToClear.length > 0) {
+                const orderIds = ordersToClear.map(o => o.id);
+                await supabaseClient.from('order_items').delete().in('order_id', orderIds);
+                await supabaseClient.from('active_orders').delete().in('id', orderIds);
             }
 
-            // 🔥 STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX
+            // STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX TO EMPTY (STATE 0)
             floorData.forEach(floor => { 
                 floor.tables.forEach(t => { 
-                    if(t.id === activeOwnerAuditTable) { 
-                        t.state = 0; // Set back to clean, fresh "Empty" state
+                    let currentCompoundKey = `${floor.floorName}_${t.id}`;
+                    if(t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) { 
+                        t.state = 0; // Wapas Orange (Empty) state mein badlo
                         t.waiterBell = false; 
-                        delete t.custom_color; // Default state tracking identity restored
+                        delete t.custom_color; 
                     } 
                 }); 
             });
             
-            // 🔥 STEP 5: ATOMIC ENGINE RE-BALANCING
+            // STEP 5: ATOMIC ENGINE RE-BALANCING & RE-RENDERING
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
             saveAdminConfig(); 
             generateAdminTableGrid(); 
             auditSelectedTableBillInvoiceLive();
             
-            // Flash standard notification
-            showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been reset to a brand-new factory state!`, false);
-            alert(`🧹 Success! Table ${activeOwnerAuditTable} session records completely wiped from Cloud, LocalStorage, and Memory variables.`);
+            showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
+            alert(`🧹 Success! Table session and discounts completely wiped from Cloud, Memory, and UI.`);
 
         } catch (err) {
             console.error("🚨 CRITICAL CORE WIPEOUT FAILURE:", err);
