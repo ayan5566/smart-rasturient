@@ -1725,11 +1725,12 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     }
 }
         
-async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride) {
+async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
+    // Read validated integer quantity bounds natively
+    let parsedItemQty = parseInt(customQty) || 1;
     
     try {
-        // 🔥 FIX: 'live_bill' ke sath strictly 'discount_claimed' ko bhi cloud se live read karo
         const { data: cloudSession } = await supabaseClient
             .from('table_sessions')
             .select('live_bill, discount_claimed')
@@ -1737,16 +1738,16 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             .maybeSingle();
 
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
-        
-        // 🔥 FIX: Cloud par pehle se maujood discount ko pakdo
         let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
 
+        // Anti Double-Counting Block: Checks if same recipe size already allocated to table stack
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
         if (matchingRecord) {
-            matchingRecord.qty += 1; 
+            // 🔥 FIXED: Direct summation of selected counter variable value layers (No row duplications!)
+            matchingRecord.qty += parsedItemQty; 
         } else { 
-            targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
+            targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
         }
         
         localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + activeTableId, JSON.stringify(targetTableBill));
@@ -1759,12 +1760,12 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             auditSelectedTableBillInvoiceLive();
         }
 
-        // 🔥 FIX: Local variable aur cloud discount ka maximum le kar bhejo taaki koi bhi mobile discount ko 0 na kar sake
         let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
-        maximumClaimedDisc = finalDiscountToPush; // Local state sync
+        maximumClaimedDisc = finalDiscountToPush; 
 
         await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
-        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, 1);
+        // Sends quantity packet cleanly straight onto the kitchen tracker streams
+        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, parsedItemQty);
 
     } catch (err) {
         console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
@@ -1772,10 +1773,14 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
     }
 }
 // ✅ REPAIRED: Customer Click Router converted to Asynchronous
-async function executeCustomerOrderCommitLink(priceDomId, dishName) {
+async function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFieldId) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
     let price = parseInt(selectorNode.getAttribute('data-selected-price'));
+    
+    // Read the modern live active UI input counter element metrics safely
+    let qtySelectorElement = document.getElementById(qtyInputFieldId);
+    let selectedQuantityToken = qtySelectorElement ? (parseInt(qtySelectorElement.value) || 1) : 1;
     
     if (!size) {
         let cIdx = selectorNode.getAttribute('data-c');
@@ -1785,9 +1790,12 @@ async function executeCustomerOrderCommitLink(priceDomId, dishName) {
         price = bluePrint[size];
     }
     
-    // 🔥 Added await execution mapping loops safely
-    await appendDishToBillInvoice(dishName, size, price);
-    showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] (₹${price}) directly to your bill!`);
+    // 🔥 FIXED: Passes selected dynamic integer quantity straight to the core billing thread pool
+    await appendDishToBillInvoice(dishName, size, price, null, selectedQuantityToken);
+    showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] × ${selectedQuantityToken} directly to your bill!`);
+    
+    // UI Reset Rule: Resets the selector display back onto standard baseline node layer 1 after commit link triggers
+    if(qtySelectorElement) qtySelectorElement.value = "1";
 }
 
 // ✅ REPAIRED: Waiter Injection Logic tied onto cloud base arrays
@@ -2659,7 +2667,7 @@ function populateAdminForms() {
             }
         }
 // ===================================================================
-// 🍕 CUSTOMER MENU PAINTER ENGINE (FILTERING STALE / OUT OF STOCK ITEMS)
+// 🍕 CUSTOMER MENU PAINTER ENGINE: WITH MOBILE-RESPONSIVE QUANTITY SELECTOR
 // ===================================================================
 function renderCustomerMenu() {
     const tabsWrapper = document.getElementById('customerCategoryTabs'); 
@@ -2683,38 +2691,58 @@ function renderCustomerMenu() {
     const safeItems = Array.isArray(currentSelectedCategoryObj.items) ? currentSelectedCategoryObj.items : [];
 
     safeItems.forEach((item, iIdx) => {
-        // 🔥 CRITICAL FIX: Wrapped inside a separate isolation evaluation block. 
-        // A failure or anomalous data structure in one item will never freeze adjacent element generation loops.
         try {
             if (!item || item.inStock === false) return;
 
             let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l'); 
             let defaultPrice = item[defaultSize] || 0; 
             
-            // Safe image placeholder rendering fallback engine built-in
             let photoMarkup = item.image ? 
                 `<img src="${item.image}" class="dish-photo-frame" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🍲</text></svg>';">` : 
                 `<div class="dish-photo-frame">🍲</div>`; 
                 
             let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+            // Unique ID tracker string for the quantity counter box
+            let qtyInputId = `itemQty_${cIdx}_${iIdx}`;
 
             itemContainer.innerHTML += `
-                <div class="menu-item">
-                    <div class="dish-main-info">
-                        <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name || 'Delicious Dish'}</strong></div></div>
-                        <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
+                <div class="menu-item" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="dish-main-info">
+                            <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name || 'Delicious Dish'}</strong></div></div>
+                            <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
+                        </div>
+                        <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
+                            <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
+                            <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
+                            <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
+                        </div>
                     </div>
-                    <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
-                        <button class="size-btn ${item.sActive && item.s>0?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
-                        <button class="size-btn ${item.mActive && item.m>0?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m}, this)">M</button>
-                        <button class="size-btn ${item.lActive && item.l>0?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l}, this)">L</button>
+                    
+                    <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+                            <button onclick="modifyInputQtyCounter('${qtyInputId}', -1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">−</button>
+                            <input type="number" id="${qtyInputId}" value="1" min="1" max="20" readonly style="width: 45px; text-align: center; font-weight: bold; border: none; background: transparent; margin: 0; padding: 0; font-size: 16px; color: var(--dark-charcoal);">
+                            <button onclick="modifyInputQtyCounter('${qtyInputId}', 1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">+</button>
+                        </div>
+                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')" style="margin-top: 4px;">🛒 Add to Order Link</button>
                     </div>
-                    <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}')">Add to Live Bill</button>
                 </div>`;
         } catch (itemRenderError) {
             console.error("🛡️ Render Pipeline Isolation Exception Handled Safely:", itemRenderError);
         }
     });
+}
+
+// ➕ NEW LAYOUT HELPER MODULE: Manages dynamic incremental state on customer tap events safely
+function modifyInputQtyCounter(elementId, shiftValue) {
+    const inputField = document.getElementById(elementId);
+    if (!inputField) return;
+    let currentVal = parseInt(inputField.value) || 1;
+    let finalVal = currentVal + shiftValue;
+    if (finalVal < 1) finalVal = 1;
+    if (finalVal > 20) finalVal = 20; // Caps ordering limits safely to prevent spam clicks
+    inputField.value = finalVal;
 }
 // ===================================================================
 // 🍔 FINAL FIXED: DISH IMAGE UPLOADER ENGINE (LOWERCASE BUCKET ALIGNED)
