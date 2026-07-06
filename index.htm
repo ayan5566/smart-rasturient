@@ -2803,11 +2803,69 @@ function processCustomPaymentQRUpload(event) {
     };
     reader.readAsDataURL(file);
 }
+        // ===================================================================
+// 📡 NEW PIPELINE: CUSTOMER SIDE LIVE TAX & REGISTER ENGINE SYNC WORKER
+// ===================================================================
+function initializeCustomerRealtimeTracker() {
+    if (window.customerSessionsChannel) supabaseClient.removeChannel(window.customerSessionsChannel);
+    if (window.customerConfigChannel) supabaseClient.removeChannel(window.customerConfigChannel);
+    
+    const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
+    console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
+
+    // [Block A]: Listen to live table sessions changes (Dishes, Status, Live Claims)
+    window.customerSessionsChannel = supabaseClient
+        .channel('customer-session-stream-node')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'table_sessions',
+            filter: `table_id=eq.${compositeTableKey}`
+        }, (payload) => {
+            console.log("🔔 Customer Core: Live table session modification captured!", payload);
+            if (payload.new) {
+                localLiveRunningBill = payload.new.live_bill || [];
+                maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
+                
+                localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
+                localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
+                
+                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
+                updateFrontEndClassificationLabels();
+            }
+        })
+        .subscribe();
+
+    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST & TAX SYNC WITH NO REFRESH)
+    window.customerConfigChannel = supabaseClient
+        .channel('customer-config-stream-node')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'hotel_config',
+            filter: `id=eq.${hotelGlobalScopeID}`
+        }, (payload) => {
+            console.log("🔔 Customer Tax Engine: Realtime GST/Tax update captured from admin!", payload);
+            if (payload.new && payload.new.tax_data) {
+                // Admin se change hote hi customer phone ki memory mein sateek rate inject karo
+                taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+                
+                // Agar user bill modal khol kar baitha hai, toh bina refresh kiye calculation turant badal do
+                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
+            }
+        })
+        .subscribe();
+}
 // ===================================================================
 // 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
 // ===================================================================
 async function initApp() {
-    console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
+   console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
@@ -2816,11 +2874,14 @@ async function initApp() {
     if (urlTable) {
         clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
     }
+    
     if (urlHotel) {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
+        
+        // 🔥 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
+        initializeCustomerRealtimeTracker(); 
     }
-
     try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
