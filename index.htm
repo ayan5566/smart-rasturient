@@ -2238,26 +2238,81 @@ async function auditSelectedTableBillInvoiceLive() {
             outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
+        // ===================================================================
+        // 🔌 CONNECTED TO INVERTER: CUSTOMER PANEL DISPLAY NODE
+        // ===================================================================
+        // Inverter core se calculated data direct fetch karo bina double dynamic math ke
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
-        let discountValue = subtotal * (targetDisc / 100); let basicTaxableValue = subtotal - discountValue;
-        let cgstAmount = taxConfig.cgstActive ? (basicTaxableValue * (taxConfig.cgstRate / 100)) : 0;
-        let sgstAmount = taxConfig.sgstActive ? (basicTaxableValue * (taxConfig.sgstRate / 100)) : 0;
-        let serviceAmount = taxConfig.serviceActive ? (basicTaxableValue * (taxConfig.serviceRate / 100)) : 0;
-        let finalBillSum = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
-
-        if(taxBox) {
-            taxBox.style.display = "block";
-            taxBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${subtotal}</span></div>
-                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${targetDisc}%):</span><span>-₹${discountValue.toFixed(1)}</span></div>
-                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${cgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${sgstAmount.toFixed(1)}</span></div>` : ''}
-                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${serviceAmount.toFixed(1)}</span></div>` : ''}
-            `;
+        document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
+        document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
+        document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
+        document.getElementById('billSGSTVal').innerText = "₹" + invoiceMath.sgst.toFixed(2);
+        
+        let srvTaxRow = document.getElementById('taxRowService');
+        if(srvTaxRow) {
+            srvTaxRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
+            document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
         }
-        grandTotalBox.innerText = "₹" + finalBillSum;
-    } catch (err) { console.error(err); }
+
+        // Global total update straight from the master inverter engine
+        globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
+        
+        document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
+        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "%";
+        document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
+
+        let payButton = document.getElementById('payOnlineInvoiceMainBtn');
+        if(paymentStatusToken === 'SUCCESS_PAID') {
+            payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI"; payButton.style.background = "#7f8c8d"; payButton.disabled = true; payButton.onclick = null;
+        } else {
+            payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
+        }
+        document.getElementById('invoiceBillModal').style.display = 'flex';
+} // <--- Yeh curly brace aapke pure 'renderLiveCalculatedBill' function ko cleanly close kar dega
+        
+
+// ===================================================================
+// 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE
+// ===================================================================
+function calculateUnifiedMasterInvoice(billArray, discountRate, activeTaxConfig) {
+    let accumulatedSubtotal = 0;
+    const safeBill = Array.isArray(billArray) ? billArray : [];
+    
+    // Items ka cost calculate karo
+    safeBill.forEach(row => {
+        accumulatedSubtotal += (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
+    });
+
+    let cleanSubtotal = parseFloat(accumulatedSubtotal) || 0;
+    let cleanDiscountRate = parseFloat(discountRate) || 0;
+    
+    let discountValue = cleanSubtotal * (cleanDiscountRate / 100); 
+    let basicTaxableValue = cleanSubtotal - discountValue;
+    
+    // Strict Tax configuration mapping
+    let parsedCgstRate = activeTaxConfig.cgstActive ? parseFloat(activeTaxConfig.cgstRate || 0) : 0;
+    let parsedSgstRate = taxConfig.sgstActive ? parseFloat(activeTaxConfig.sgstRate || 0) : 0;
+    let parsedServiceRate = activeTaxConfig.serviceActive ? parseFloat(activeTaxConfig.serviceRate || 0) : 0;
+
+    let cgstAmount = basicTaxableValue * (parsedCgstRate / 100);
+    let sgstAmount = basicTaxableValue * (parsedSgstRate / 100);
+    let serviceAmount = basicTaxableValue * (parsedServiceRate / 100);
+
+    let finalGrandTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+
+    // Poora calculated data ek sath return karo
+    return {
+        subtotal: cleanSubtotal,
+        discountRate: cleanDiscountRate,
+        discountValue: discountValue,
+        cgst: cgstAmount,
+        sgst: sgstAmount,
+        service: serviceAmount,
+        grandTotal: finalGrandTotal
+    };
 }
+        
         
 // ===================================================================
 // 🧾 FIXED CORE BILLING ENGINE: ANTI-DOUBLE COUNTING & LIVE ACCURATE CALCULATION
@@ -2375,39 +2430,27 @@ async function renderLiveCalculatedBill() {
         }
 
         // ===================================================================
-        // 👑 IRON-CLAD TAX & DISCOUNT COMPLIANCE CALCULATION ENGINE
+        // 🔌 CONNECTED TO INVERTER: CUSTOMER PANEL DISPLAY NODE
         // ===================================================================
-        // Force-convert strings to pure floating points to prevent math breakdowns
-        let cleanSubtotal = parseFloat(accumulatedSubtotal) || 0;
-        let cleanDiscountRate = parseFloat(targetDisc) || 0;
-        
-        let discountValue = cleanSubtotal * (cleanDiscountRate / 100); 
-        let basicTaxableValue = cleanSubtotal - discountValue;
-        
-        let parsedCgstRate = taxConfig.cgstActive ? parseFloat(taxConfig.cgstRate || 0) : 0;
-        let parsedSgstRate = taxConfig.sgstActive ? parseFloat(taxConfig.sgstRate || 0) : 0;
-        let parsedServiceRate = taxConfig.serviceActive ? parseFloat(taxConfig.serviceRate || 0) : 0;
-
-        let cgstAmount = basicTaxableValue * (parsedCgstRate / 100);
-        let sgstAmount = basicTaxableValue * (parsedSgstRate / 100);
-        let serviceAmount = basicTaxableValue * (parsedServiceRate / 100);
+        // Inverter core se calculated data direct fetch karo bina double dynamic math ke
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
-        document.getElementById('billCGSTVal').innerText = "₹" + cgstAmount.toFixed(2); // Aligned to sharp 2 decimal precision
+        document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
         document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
-        document.getElementById('billSGSTVal').innerText = "₹" + sgstAmount.toFixed(2);
+        document.getElementById('billSGSTVal').innerText = "₹" + invoiceMath.sgst.toFixed(2);
         
         let srvTaxRow = document.getElementById('taxRowService');
         if(srvTaxRow) {
             srvTaxRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
-            document.getElementById('billServiceVal').innerText = "₹" + serviceAmount.toFixed(2);
+            document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
         }
 
-        // ⚡ FINAL ALIGNED GRAND TOTAL FORMULA (AUTO-ROUNDED)
-        globalRunningInvoiceSumTotal = Math.round(basicTaxableValue + cgstAmount + sgstAmount + serviceAmount);
+        // Global total update straight from the master inverter engine
+        globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
         
-        document.getElementById('billSubtotal').innerText = "₹" + cleanSubtotal.toFixed(2);
-        document.getElementById('billDiscountApplied').innerText = cleanDiscountRate + "%";
+        document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
+        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "%";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
@@ -2417,8 +2460,8 @@ async function renderLiveCalculatedBill() {
             payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
         }
         document.getElementById('invoiceBillModal').style.display = 'flex';
-    }
-}
+} // <--- Yeh curly brace aapke pure 'renderLiveCalculatedBill' function ko cleanly close kar dega
+    
         function removeInvoiceItemRow(index) { 
             localLiveRunningBill.splice(index, 1); localStorage.setItem('bill_map_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill)); 
             document.getElementById('invoiceBillModal').style.display = 'none'; renderLiveCalculatedBill(); 
