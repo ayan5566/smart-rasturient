@@ -2312,7 +2312,9 @@ async function renderLiveCalculatedBill() {
 
             if (sessionData) {
                 targetBill = sessionData.live_bill || [];
-                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                // 🔥 🔥 THE FIX: Cloud data aur local state ka maximum uthao taaki network delay ki wajah se discount lag na kare
+                let localSavedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
+                targetDisc = Math.max(parseInt(sessionData.discount_claimed) || 0, localSavedDisc, maximumClaimedDisc);
                 paymentStatusToken = sessionData.payment_status || 'UNPAID';
             }
         } else {
@@ -2423,19 +2425,39 @@ async function renderLiveCalculatedBill() {
         }
 
         function triggerRewardCoupon(earnedPercent) {
-            // Coupon applied hone ke baad cloud par discount sync karein
-syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earnedPercent, false, 'PENDING');
-            let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
-            if(earnedPercent > activeTableDiscount) {
-                activeTableDiscount = earnedPercent; maximumClaimedDisc = activeTableDiscount;
-                localStorage.setItem('discount_map_' + clientCurrentActiveTable, maximumClaimedDisc);
-                let badge = document.getElementById('liveCoinBadge'); badge.innerText = maximumClaimedDisc + "%";
-                badge.classList.remove('coin-pop'); void badge.offsetWidth; badge.classList.add('coin-pop');
-            }
-            let displayBox = document.getElementById('couponDisplay');
-            displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
-            displayBox.style.display = "block";
-        }
+    // Coupon applied hone ke baad cloud par discount sync karein
+    syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earnedPercent, false, 'PENDING');
+    
+    // 🔥 🔥 THE FIX: Dono dynamic storage keys ko ek sath update karo taaki pipeline sync loose na ho
+    localStorage.setItem('discount_map_' + clientCurrentActiveTable, earnedPercent);
+    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent);
+    
+    let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+    if(earnedPercent > activeTableDiscount) {
+        activeTableDiscount = earnedPercent;
+    }
+    maximumClaimedDisc = Math.max(maximumClaimedDisc, activeTableDiscount, earnedPercent);
+    
+    let badge = document.getElementById('liveCoinBadge'); 
+    if(badge) {
+        badge.innerText = maximumClaimedDisc + "%";
+        badge.classList.remove('coin-pop'); 
+        void badge.offsetWidth; 
+        badge.classList.add('coin-pop');
+    }
+    
+    let displayBox = document.getElementById('couponDisplay');
+    if(displayBox) {
+        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
+        displayBox.style.display = "block";
+    }
+
+    // 🔥 🔥 THE FIX: Bina refresh kiye modal screen data ko turant fresh calculation loops par bhejo
+    if (document.getElementById('invoiceBillModal').style.display === 'flex') {
+        renderLiveCalculatedBill();
+    }
+    updateFrontEndClassificationLabels();
+}
 // ===================================================================
 // 🛡️ RE-BUILT WAITER PANEL DROPDOWN (ANTI-CRASH DEEP GUARD)
 // ===================================================================
@@ -2730,7 +2752,6 @@ async function initApp() {
     const urlFloor = urlParams.get('floor');
     
     if (urlTable) {
-        // Floor aur Table ko aapas mein safe cross-bind karo matrix isolation ke liye
         clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
     }
     if (urlHotel) {
@@ -2774,9 +2795,10 @@ async function initApp() {
     }
 
     try {
+        // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' jadd diya hai taaki customer phone sahi tax uthaye
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data, hotel_name') 
+            .select('menu_data, hotel_name, tax_data') 
             .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
@@ -2795,6 +2817,13 @@ async function initApp() {
             if (activeConfigRow.hotel_name) {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
+            
+            // 🔥 🔥 THE REAL FIX: Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
+            if (activeConfigRow.tax_data) {
+                taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            }
+            
             renderCustomerMenu(); 
             updateFrontEndClassificationLabels();
         } else if (!activeConfigRow && !error) {
