@@ -1729,13 +1729,17 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     
     try {
+        // 🔥 FIX: 'live_bill' ke sath strictly 'discount_claimed' ko bhi cloud se live read karo
         const { data: cloudSession } = await supabaseClient
             .from('table_sessions')
-            .select('live_bill')
+            .select('live_bill, discount_claimed')
             .eq('table_id', `${hotelGlobalScopeID}_${activeTableId}`)
             .maybeSingle();
 
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
+        
+        // 🔥 FIX: Cloud par pehle se maujood discount ko pakdo
+        let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
 
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
@@ -1745,7 +1749,6 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: 1 }); 
         }
         
-        // 🛡️ FIXED ACCOUNT ISOLATION: Table tracking token binds explicitly to hotel scope key parameters
         localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + activeTableId, JSON.stringify(targetTableBill));
         
         if (activeTableId === clientCurrentActiveTable) {
@@ -1756,7 +1759,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             auditSelectedTableBillInvoiceLive();
         }
 
-        await syncLiveSessionToSupabase(activeTableId, targetTableBill, maximumClaimedDisc, false, 'PENDING');
+        // 🔥 FIX: Local variable aur cloud discount ka maximum le kar bhejo taaki koi bhi mobile discount ko 0 na kar sake
+        let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
+        maximumClaimedDisc = finalDiscountToPush; // Local state sync
+
+        await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
         await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, 1);
 
     } catch (err) {
@@ -1764,7 +1771,6 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         showOnScreenNotification("❌ Cloud transmission broken!", true);
     }
 }
-
 // ✅ REPAIRED: Customer Click Router converted to Asynchronous
 async function executeCustomerOrderCommitLink(priceDomId, dishName) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
@@ -2372,10 +2378,16 @@ async function renderLiveCalculatedBill() {
 
             if (sessionData) {
                 targetBill = sessionData.live_bill || [];
-                // 🔥 🔥 THE FIX: Cloud data aur local state ka maximum uthao taaki network delay ki wajah se discount lag na kare
+                
+                // 1. Cloud aur local memory dono mein se jo bada discount ho use pakdo (Anti-Lag check)
                 let localSavedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
                 targetDisc = Math.max(parseInt(sessionData.discount_claimed) || 0, localSavedDisc, maximumClaimedDisc);
                 paymentStatusToken = sessionData.payment_status || 'UNPAID';
+
+                // 🔥 🔥 THE INVERTER FIX: Cloud se aaye discount ko poore phone ki global memory aur main coin badge mein force sync karo
+                maximumClaimedDisc = Math.max(maximumClaimedDisc, targetDisc);
+                let badge = document.getElementById('liveCoinBadge');
+                if (badge) badge.innerText = maximumClaimedDisc + "%";
             }
         } else {
             // Offline No-Login Cache LocalStorage Fallback matrix loops
