@@ -2071,44 +2071,47 @@ async function executeAdminManualBillWipeSettlement() {
             document.getElementById('startBtn').style.display = (selectedTargetMode==='MATH')?'none':'block';
             document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
         }
-// 1) Purane function ki jagah ye naya function aaya
-   // ===================================================================
-// 🎮 UPGRADED: GAME START HANDLER WITH INTERNAL RESOLUTION AUTO-SCALE
+// ===================================================================
+// 🎮 FIXED MASTER ROUTER: SEALS ALL CANVAS OVERLAPS & AUTOSCALES CORRECTLY
 // ===================================================================
 function startSelectedGame() {
     document.getElementById('startBtn').style.display = "none";
     document.getElementById('couponDisplay').style.display = "none";
     document.getElementById('gameScreenStatusMsg').style.display = "none"; 
     
-    document.getElementById('flappyCanvas').style.display = 'none';
-    document.getElementById('spaceCanvas').style.display = 'none';
-    document.getElementById('snakeCanvas').style.display = 'none';
+    // 🛡️ THE SHIELD: Forces every canvas to turn off completely before booting active session
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
+    allGameCanvasIds.forEach(id => {
+        const targetCanvasElement = document.getElementById(id);
+        if (targetCanvasElement) {
+            targetCanvasElement.style.display = 'none'; // Strips residual visual overlaps cleanly
+        }
+    });
 
     if(activeGameMode !== 'MATH') {
         document.querySelector('.game-box').classList.add('fullscreen-arcade-active');
         document.getElementById('exitGameBtn').style.display = "block";
     }
 
-    // 🔥 🔥 THE RESPONSIVE ENGINE: Forces internal coordinate grid attributes to map viewport scale rules
+    // Dynamic scale computation layer configurations
     const maxBoundWidth = Math.min(window.innerWidth * 0.9, 450);
 
     if(activeGameMode === 'FLAPPY') { 
         const fCanvas = document.getElementById('flappyCanvas');
         fCanvas.width = maxBoundWidth;
-        fCanvas.height = Math.min(window.innerHeight * 0.55, 350);
+        fCanvas.height = Math.min(window.innerHeight * 0.52, 350);
         fCanvas.style.display = 'block'; 
         initFlappyBirdGame(); 
     }
     else if(activeGameMode === 'SPACE') { 
         const sCanvas = document.getElementById('spaceCanvas');
         sCanvas.width = maxBoundWidth;
-        sCanvas.height = Math.min(window.innerHeight * 0.6, 400);
+        sCanvas.height = Math.min(window.innerHeight * 0.55, 400);
         sCanvas.style.display = 'block'; 
         initSpaceShooterGame(); 
     }
     else if(activeGameMode === 'SNAKE') { 
-        // Enforces exact 20px grid block boundaries alignment matches smoothly
-        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20;
+        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; // Exact 20px cell alignments matching
         const sCanvas = document.getElementById('snakeCanvas');
         sCanvas.width = alignedGridWidth;
         sCanvas.height = alignedGridWidth;
@@ -2116,21 +2119,27 @@ function startSelectedGame() {
         initSnakeGameLoop(); 
     }
 }
-// 2) Naya exit function jo screen se game hatayega
+// ===================================================================
+// 🧹 FIXED LIFECYCLE CLEANER: WIPES ALL GRAPHICAL LAYERS ON DISMISSAL
+// ===================================================================
 function exitGameEngine() {
-    clearInterval(loopTimerInstance);
+    clearInterval(loopTimerInstance); // Stops background ticks instantly
+    
     document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
     document.getElementById('exitGameBtn').style.display = "none";
     document.getElementById('startBtn').style.display = "block";
     document.getElementById('startBtn').innerText = "Launch Engine Run";
     document.getElementById('gameScreenStatusMsg').style.display = "none";
     
-    document.getElementById('flappyCanvas').style.display = 'none';
-    document.getElementById('spaceCanvas').style.display = 'none';
-    document.getElementById('snakeCanvas').style.display = 'none';
+    // Hard loop wipes all canvas visibilities on exit gesture
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
+    allGameCanvasIds.forEach(id => {
+        const targetCanvasElement = document.getElementById(id);
+        if (targetCanvasElement) {
+            targetCanvasElement.style.display = 'none';
+        }
+    });
 }
-        // ✅ RE-ADDED: Yeh function ab math quiz ke sawal automatic banayega
-let evaluatedMathSolution = 0; 
 function generateMathQuestion() {
     let num1 = Math.floor(Math.random() * 10) + 1;
     let num2 = Math.floor(Math.random() * 10) + 1;
