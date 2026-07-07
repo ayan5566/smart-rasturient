@@ -2072,34 +2072,50 @@ async function executeAdminManualBillWipeSettlement() {
             document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
         }
 // 1) Purane function ki jagah ye naya function aaya
-       function startSelectedGame() {
-           document.getElementById('startBtn').style.display = "none";
-           document.getElementById('couponDisplay').style.display = "none";
-           document.getElementById('gameScreenStatusMsg').style.display = "none"; 
-           
-           document.getElementById('flappyCanvas').style.display = 'none';
-           document.getElementById('spaceCanvas').style.display = 'none';
-           document.getElementById('snakeCanvas').style.display = 'none';
-       
-           if(activeGameMode !== 'MATH') {
-               document.querySelector('.game-box').classList.add('fullscreen-arcade-active');
-               document.getElementById('exitGameBtn').style.display = "block";
-           }
-       
-           if(activeGameMode === 'FLAPPY') { 
-               document.getElementById('flappyCanvas').style.display = 'block'; 
-               initFlappyBirdGame(); 
-           }
-           else if(activeGameMode === 'SPACE') { 
-               document.getElementById('spaceCanvas').style.display = 'block'; 
-               initSpaceShooterGame(); 
-           }
-           else if(activeGameMode === 'SNAKE') { 
-               document.getElementById('snakeCanvas').style.display = 'block'; 
-               initSnakeGameLoop(); 
+   // ===================================================================
+// 🎮 UPGRADED: GAME START HANDLER WITH INTERNAL RESOLUTION AUTO-SCALE
+// ===================================================================
+function startSelectedGame() {
+    document.getElementById('startBtn').style.display = "none";
+    document.getElementById('couponDisplay').style.display = "none";
+    document.getElementById('gameScreenStatusMsg').style.display = "none"; 
+    
+    document.getElementById('flappyCanvas').style.display = 'none';
+    document.getElementById('spaceCanvas').style.display = 'none';
+    document.getElementById('snakeCanvas').style.display = 'none';
+
+    if(activeGameMode !== 'MATH') {
+        document.querySelector('.game-box').classList.add('fullscreen-arcade-active');
+        document.getElementById('exitGameBtn').style.display = "block";
+    }
+
+    // 🔥 🔥 THE RESPONSIVE ENGINE: Forces internal coordinate grid attributes to map viewport scale rules
+    const maxBoundWidth = Math.min(window.innerWidth * 0.9, 450);
+
+    if(activeGameMode === 'FLAPPY') { 
+        const fCanvas = document.getElementById('flappyCanvas');
+        fCanvas.width = maxBoundWidth;
+        fCanvas.height = Math.min(window.innerHeight * 0.55, 350);
+        fCanvas.style.display = 'block'; 
+        initFlappyBirdGame(); 
+    }
+    else if(activeGameMode === 'SPACE') { 
+        const sCanvas = document.getElementById('spaceCanvas');
+        sCanvas.width = maxBoundWidth;
+        sCanvas.height = Math.min(window.innerHeight * 0.6, 400);
+        sCanvas.style.display = 'block'; 
+        initSpaceShooterGame(); 
+    }
+    else if(activeGameMode === 'SNAKE') { 
+        // Enforces exact 20px grid block boundaries alignment matches smoothly
+        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20;
+        const sCanvas = document.getElementById('snakeCanvas');
+        sCanvas.width = alignedGridWidth;
+        sCanvas.height = alignedGridWidth;
+        sCanvas.style.display = 'block'; 
+        initSnakeGameLoop(); 
     }
 }
-
 // 2) Naya exit function jo screen se game hatayega
 function exitGameEngine() {
     clearInterval(loopTimerInstance);
@@ -2134,10 +2150,6 @@ function generateMathQuestion() {
             else { feedback.innerText = "❌ Incorrect!"; feedback.style.color = "red"; }
         }
 
-        function initFlappyBirdGame() {
-            fBird = { y: 140, velocity: 0, width: 22, height: 22 }; fPipes = [{ x: 320, gapTop: 90, gapBottom: 210, registered: false }]; flappyScoreTracker = 0;
-            flappyCanvasElement.onclick = () => fBird.velocity = -4.6; loopTimerInstance = setInterval(frameUpdateFlappy, 22);
-        }
 
         function initSnakeGameLoop() {
             snakeArr = [{x: 80, y: 80}, {x: 60, y: 80}, {x: 40, y: 80}]; currentSnakeVector = { x: 20, y: 0 }; snakeScoreCounter = 0; generateSnakeFoodLocation();
@@ -3333,17 +3345,30 @@ function generateAdminTableGrid() {
             if(dirVector==='UP' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:-20}; if(dirVector==='DOWN' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:20};
             if(dirVector==='LEFT' && currentSnakeVector.x===0) currentSnakeVector = {x:-20, y:0}; if(dirVector==='RIGHT' && currentSnakeVector.x===0) currentSnakeVector = {x:20, y:0};
         }
-
-       function finalizeFailedRun(failureMessage) { 
-         clearInterval(loopTimerInstance);
+// ===================================================================
+// 💥 UPGRADED: GAME OVER RUNTIME CONTROLLER (WITH INSTANT TRY AGAIN LINK)
+// ===================================================================
+function finalizeFailedRun(failureMessage) { 
+    clearInterval(loopTimerInstance);
     
-           // Alert block hatakar text message screen par print hoga
-           let statusMsg = document.getElementById('gameScreenStatusMsg');
-           statusMsg.innerText = failureMessage;
-           statusMsg.style.display = "block";
-           
-           document.getElementById('startBtn').style.display = "block"; 
-           document.getElementById('startBtn').innerText = "🔄 Try Campaign Attempt Again";
+    let statusMsg = document.getElementById('gameScreenStatusMsg');
+    if (statusMsg) {
+        statusMsg.innerHTML = `
+            <div style="color: #ff4d4d; font-size: 20px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                ${failureMessage}
+            </div>
+        `;
+        statusMsg.style.display = "block";
+    }
+    
+    // Configures the launch button matrix directly as a page-refresh proof instant reset link
+    let tryAgainBtn = document.getElementById('startBtn');
+    if (tryAgainBtn) {
+        tryAgainBtn.style.display = "block";
+        tryAgainBtn.innerText = "🔄 Try Campaign Attempt Again";
+        // Binds clean isolated target state machine execution sequence synchronously
+        tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
+    }
 }
         function removeDishRow(cIdx, iIdx) { menuCategories[cIdx].items.splice(iIdx, 1); saveAdminConfig(); populateAdminForms(); }
         function addDishToCategory(cIdx) { 
@@ -3560,11 +3585,42 @@ async function uploadMenuToCloud() {
         console.error("Critical Cloud Save Exception:", e); 
     }
 }
-        function initSpaceShooterGame() { 
-        currentLevelState = 1; spaceMoveDir = 0; spaceFrameTracker = 0; spaceTransitionCount = 0; 
-        pShipObj = { x: 140, y: 340, w: 40, h: 32, health: 5, maxHealth: 5 }; 
-        setupLevelParameters(); loopTimerInstance = setInterval(frameUpdateSpace, 20); 
-    }
+        // ===================================================================
+// 🚀 STATE RESET: INDEPENDENT SPACE SHOOTER CONTEXT LIFECYCLE INITIALIZER
+// ===================================================================
+function initSpaceShooterGame() { 
+    clearInterval(loopTimerInstance); // Hard safety boundary flush
+    currentLevelState = 1; 
+    spaceMoveDir = 0; 
+    spaceFrameTracker = 0; 
+    spaceTransitionCount = 0; 
+    
+    // Clear out residual elements arrays to avoid runtime collision memory leaks
+    spaceBullets = [];
+    enemyLasers = [];
+    powerUps = [];
+    
+    const sCanvas = document.getElementById('spaceCanvas');
+    pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 }; 
+    
+    setupLevelParameters(); 
+    loopTimerInstance = setInterval(frameUpdateSpace, 20); 
+}
+
+// ===================================================================
+// 🐦 STATE RESET: FLAPPY BIRD FLIGHT LIFE-CYCLE LIFECYCLE INITIALIZER
+// ===================================================================
+function initFlappyBirdGame() {
+    clearInterval(loopTimerInstance); // Hard safety boundary flush
+    const fCanvas = document.getElementById('flappyCanvas');
+    
+    fBird = { y: fCanvas.height / 2, velocity: 0, width: 22, height: 22 }; 
+    fPipes = [{ x: fCanvas.width, gapTop: 90, gapBottom: 210, registered: false }]; 
+    flappyScoreTracker = 0;
+    
+    fCanvas.onclick = () => fBird.velocity = -4.6; 
+    loopTimerInstance = setInterval(frameUpdateFlappy, 22);
+}
 
     // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
     function showOnScreenNotification(message, isError = false) {
