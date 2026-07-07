@@ -621,7 +621,7 @@ f
         </button>
     </div>
 </div>
-<div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;">
+<div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;"></div>
     <div class="modal-content" style="max-width:320px; width:90%; text-align:center; padding: 25px; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); box-sizing: border-box;">
         <h3 style="color: #2c3e50; margin-top: 0; text-align: center;">🎨 Table Theme Palette</h3>
         <p style="font-size:12px; color:#666; margin-top:-5px; text-align: center;">Choose structural identity color mapping fields:</p>
@@ -1037,7 +1037,9 @@ async function executeLiveBillingThermalPrint() {
 }
         
 
-     // ⚡ FIXED: Isolates cashier telemetry streams from adjacent tenant profiles via database filter hooks
+// ===================================================================
+// 📡 UPGRADED: REAL-TIME CASSA MONITOR PIPELINE ENGINE (AUTO-SYNC SYSTEM)
+// ===================================================================
 function initializeAdminRealtimeBillingTracker() {
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
     if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
@@ -1077,22 +1079,30 @@ function initializeAdminRealtimeBillingTracker() {
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
                                 let currentLocalKey = `${floor.floorName}_${t.id}`;
-                                if (currentLocalKey === innerTableToken) {
+                                if (currentLocalKey === innerTableToken || t.id === innerTableToken) {
                                     t.waiterBell = payload.new.waiter_bell || false;
+                                    
+                                    // 🔄 HIGH-PRIORITY REALTIME HANDSHAKE
                                     if (payload.new.payment_status === 'SUCCESS_PAID') {
-                                        t.state = 0; // Force empty state on payment completion
+                                        t.state = 0; // Instantly flags empty state architecture on successful UPI transaction
+                                        localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, 'SUCCESS_PAID');
                                     } else {
-                                        // 🍊 FIXED CAPTURE OPERATOR: Automatically turns table into empty state if bill rows array settles to 0
-                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
+                                        // Automatically locks occupied status (State 1) if live_bill contains items natively
+                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0;
+                                        if (t.state === 0) {
+                                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey);
+                                        }
                                     }
                                 }
                             });
                         });
+                        
+                        // Push changes synchronously to the system interface arrays
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                        generateAdminTableGrid(); // Syncs graphical matrix state layout fields
+                        queueDebouncedBillRender(); // Refresh cashier viewer data nodes
                     }
                 }
-                generateAdminTableGrid(); // Forces immediate layout visual synchronization
-                queueDebouncedBillRender();
             })
             .subscribe();
 
@@ -2150,7 +2160,6 @@ async function auditSelectedTableBillInvoiceLive() {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
         if (isUUID || hotelGlobalScopeID.includes("@")) {
-            // 1. Cloud table sessions registry mapping rows straight from cloud database
             const { data: sData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2158,7 +2167,6 @@ async function auditSelectedTableBillInvoiceLive() {
                 .maybeSingle();
             sessionData = sData;
 
-            // 2. Parallel kitchen preparation lines monitoring nodes lookup
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2186,13 +2194,11 @@ async function auditSelectedTableBillInvoiceLive() {
                 paymentStatusToken = sessionData.payment_status || 'PENDING';
             }
         } else {
-            // Offline localStorage cached data stream matrices tracking loop fallback
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
         }
 
-        // 🧠 AUTOMATIC FALLBACK: Agar cloud ledger khali hai par kitchen mein items hain, toh unhe math mein shamil karo!
         if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
             kitchenOrders.forEach(order => {
                 if (order.order_items) {
@@ -2218,20 +2224,17 @@ async function auditSelectedTableBillInvoiceLive() {
             });
         }
 
-        // Cashier dashboard color banner alerts router mapping tokens
+        // 🔥 REAL-TIME UPI NOTIFICATION OVERRIDE HUB ROUTER
         if(paymentStatusToken === 'SUCCESS_PAID') {
-            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+            paymentBanner.innerText = "✅ STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
         } else {
             paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
         }
 
         outputBox.innerHTML = ''; 
-        let subtotal = 0; 
-
         outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach(row => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0); 
-            subtotal += rowCost; 
             outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
         });
 
@@ -2269,10 +2272,6 @@ async function auditSelectedTableBillInvoiceLive() {
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
 
-        // ===================================================================
-        // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
-        // ===================================================================
-        // Database data processed natively through the single math engine pipeline
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
         if(taxBox) {
@@ -2288,9 +2287,9 @@ async function auditSelectedTableBillInvoiceLive() {
         grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
 
     } catch (err) { 
-        // 🛡️ SYNTAX SHIELD: Properly catching backend query exceptions inside engine context
         console.error("🚨 Admin Invoice Tracker Exception:", err); 
     }
+}
 }
 // ===================================================================
 // 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE (FIXED GLOBAL LEAK)
@@ -3036,59 +3035,18 @@ async function initApp() {
 }
         
 // ===================================================================
-// 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
+// 🧼 DEPRECATED: REPLACED WITH LIVE NATIVE SINGLE AUTOMATED REALTIME ENGINE
 // ===================================================================
-function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
-    let floor = floorData[floorIdx];
-    let tbl = floor.tables[tableIdx];
-    let compoundKey = `${floor.floorName}_${tbl.id}`;
-    
-    if (tbl.waiterBell) {
-        tbl.waiterBell = false;
-        showOnScreenNotification(`🔔 Waiter notification clear for Floor ${floor.floorName} Table ${tbl.id}`);
-    } else {
-        tbl.state = (tbl.state + 1) % 3;
-    }
-
-    currentActiveStylingTargetFloorIdx = floorIdx;
-    currentActiveStylingTargetTableIdx = tableIdx;
-
-    const colorModal = document.getElementById('tableColorPickerContextModal');
-    if (colorModal) {
-        document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "";
-        colorModal.style.display = 'flex';
-    }
-
-    saveAdminConfig();
-    generateAdminTableGrid();
-}
-           function commitCustomTableColorPreference() {
-    let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
-    
-    if(currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
-        // 1. Array ke andar naya color inject karo
-        floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
-        
-        // 2. Context overlay modal ko band karo
-        document.getElementById('tableColorPickerContextModal').style.display = 'none';
-        
-        // 3. Cloud aur local storage par sync save triggered karo
-        saveAdminConfig();
-        
-        // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
-        generateAdminTableGrid();
-        
-        showOnScreenNotification("🎨 Table theme design matrix updated live!");
-    }
-}
+function resolveTableAlertAndCycleState(floorIdx, tableIdx) { return; }
+function commitCustomTableColorPreference() { return; }
         // ⚡ FIXED: Completed the category filtration logic cleanly to block execution freezes
 function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
-     // ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
+// ===================================================================
+// 🏢 INTERACTIVE GRID MATRIX: UNIFIED REALTIME DYNAMIC PALETTE ENGINE
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid'); 
@@ -3099,33 +3057,36 @@ function generateAdminTableGrid() {
         let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
         
         floor.tables.forEach((tbl, tIdx) => {
-            let baseThemeColor = tbl.custom_color;
+            let baseThemeColor = 'var(--tbl-orange)'; // Default empty standard palette fallback
             let currentLabel = 'Empty';
-            let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
+            let compoundKey = `${floor.floorName}_${tbl.id}`;
             
+            // Strict dynamic state tracking matrices routing structure
             if(tbl.state === 0) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                baseThemeColor = 'var(--tbl-orange)';
                 currentLabel = 'Empty';
             } else if(tbl.state === 1) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                currentLabel = 'Full';
+                baseThemeColor = 'var(--tbl-green)';
+                currentLabel = '🟢 OCCUPIED';
             } else if(tbl.state === 2) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                baseThemeColor = 'var(--tbl-grey)';
                 currentLabel = 'Booked';
             }
             
-            // Scoped payment tracking prevents duplicate mapping bugs
-            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') { 
+            // Realtime Online UPI Payment Success Validation Badges Checker
+            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID' || tbl.state === 0 && localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + tbl.id) === 'SUCCESS_PAID') { 
                 baseThemeColor = '#2196f3'; 
-                currentLabel = '💰 Paid UPI'; 
+                currentLabel = '✅ PAID'; 
             }
             
             let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+            // 🔥 STYLES CLEANED: Legacy click modals dropped to preserve continuous standard dynamic state rendering
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor}; padding: 18px 4px 10px 4px;" onclick="clientCurrentActiveTable='${tbl.id}'; document.getElementById('adminBillingViewerTableSelect').value='${floor.floorName}_${tbl.id}'; auditSelectedTableBillInvoiceLive(); showOnScreenNotification('🎯 Swapped Monitor Context: Table ${tbl.id}');">
                 <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+                <div style="font-size:14px; font-weight:800; letter-spacing:0.5px; margin-bottom:2px;">${tbl.id}</div>
+                <span style="font-size:9px; font-weight:700; text-transform:uppercase; opacity:0.95; background:rgba(0,0,0,0.12); padding:2px 5px; border-radius:4px; display:inline-block; margin-top:2px;">${currentLabel}</span>
             </div>`;
         });
         
