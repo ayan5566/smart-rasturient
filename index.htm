@@ -252,40 +252,112 @@
        /* ================================================================= */
        /* 🎮 FULL-SCREEN ARCADE OVERRIDES & FLUID MAX-PREVIEW CANVAS CONTROLS */
        /* ================================================================= */
-        .game-box.fullscreen-arcade-active {
-        position: fixed !important;
-        top: 0 !important; left: 0 !important;
-        width: 100vw !important; height: 100vh !important;
-        background: #111424 !important; /* Premium dark background */
-        z-index: 99999 !important;
-        margin: 0 !important; padding: 20px !important;
-        box-sizing: border-box !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important; /* Centers everything cleanly */
+/* ================================================================= */
+/* 🎮 ULTIMATE FLUID ARCHITECTURE: FULL-SCREEN GAME VIEWPORT ENGINE   */
+/* ================================================================= */
+.game-box.fullscreen-arcade-active {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #0f111a !important; /* Pure uniform professional dark theme */
+    z-index: 99999 !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    box-sizing: border-box !important;
+    
+    /* Dynamic flex layout handles fluid scaling across any mobile/desktop screens */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-between !important; /* Blocks screen scrolling by locking layout */
+    overflow: hidden !important; /* Strictly strips browser white edges and bars */
 }
 
-  /* 🔥 🔥 THE FLUID ENGINE: Enforces the active canvas to scale symmetrically with viewport sizes */
-       .game-box.fullscreen-arcade-active canvas {
-       width: 100% !important;
-       max-width: 450px !important; /* Perfect desktop viewport width capping */
-       height: auto !important;
-       max-height: 60vh !important; /* Prevents overflow pushing buttons below fold */
-       display: block !important;
-       margin: 15px auto !important;
-       border-radius: 16px !important;
-       box-shadow: 0 12px 35px rgba(0,0,0,0.5) !important;
-       object-fit: contain !important; /* Maintains layout coordinates perfectly */
+/* 🎯 FLUID HEADER CONTROLS */
+.game-box.fullscreen-arcade-active h3 {
+    font-size: 16px !important;
+    margin: 2px 0 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
 }
 
-/* Controls structure re-balanced for full screen responsive matrices */
-      .game-box.fullscreen-arcade-active .control-pad, 
-      .game-box.fullscreen-arcade-active .snake-grid-pad {
-       margin-top: 10px !important;
-       margin-bottom: 5px !important;
-       width: 100% !important;
-       max-width: 320px !important;
+/* 🎯 FLUID TABS & BUTTONS BLOCK */
+.game-box.fullscreen-arcade-active .game-nav {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    gap: 4px !important;
+    padding: 3px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border-radius: 10px !important;
+    margin-bottom: 4px !important;
+}
+
+.game-box.fullscreen-arcade-active .game-nav button {
+    font-size: 11px !important;
+    padding: 6px 2px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+}
+
+/* 🎯 FLUID CANVAS INTERFACE FRAME */
+.game-box.fullscreen-arcade-active canvas {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    
+    /* Dynamic calculation limits to guarantee layout integrity */
+    max-width: 90vw !important;
+    max-height: 48vh !important; /* Hard constraint locks canvas height boundaries safely */
+    
+    aspect-ratio: 1 / 1 !important; /* Preserves pixel metrics mappings */
+    object-fit: contain !important;
+    margin: auto !important; /* Automatic alignment balancing */
+    border-radius: 14px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+}
+
+/* Specific aspect ratio handler for Space Shooter Canvas */
+.game-box.fullscreen-arcade-active #spaceCanvas {
+    aspect-ratio: 320 / 400 !important; 
+}
+/* Specific aspect ratio handler for Flappy Bird Canvas */
+.game-box.fullscreen-arcade-active #flappyCanvas {
+    aspect-ratio: 320 / 350 !important;
+}
+
+/* 🎯 FLUID ACTION & REWARD BUTTONS BAR */
+.game-box.fullscreen-arcade-active .action-btn,
+.game-box.fullscreen-arcade-active .order-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    padding: 10px !important;
+    font-size: 13px !important;
+    margin: 4px auto !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+}
+
+/* 🎯 ON-SCREEN JOYSTICK FOR MATRIX CONTROLS */
+.game-box.fullscreen-arcade-active .control-pad, 
+.game-box.fullscreen-arcade-active .snake-grid-pad {
+    display: flex !important;
+    margin: 4px auto !important;
+    width: 100% !important;
+    max-width: 260px !important;
+    gap: 6px !important;
+}
+
+.game-box.fullscreen-arcade-active .ctrl-btn {
+    padding: 10px !important;
+    font-size: 13px !important;
+}
+
+.game-box.fullscreen-arcade-active .snk-btn {
+    width: 50px !important;
+    height: 38px !important;
+    font-size: 14px !important;
 }
 
        #gameScreenStatusMsg {
