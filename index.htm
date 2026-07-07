@@ -3037,7 +3037,43 @@ async function initApp() {
 // ===================================================================
 // 🧼 DEPRECATED: REPLACED WITH LIVE NATIVE SINGLE AUTOMATED REALTIME ENGINE
 // ===================================================================
-function resolveTableAlertAndCycleState(floorIdx, tableIdx) { return; }
+// ===================================================================
+// 🚪 FIXED: INTERACTIVE TABLE CLICK MANAGER (OPENS PALETTE MODAL DIRECTLY)
+// ===================================================================
+function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
+    let floor = floorData[floorIdx];
+    let tbl = floor.tables[tableIdx];
+    let compoundKey = `${floor.floorName}_${tbl.id}`;
+    
+    // 1. Handle alert bells seamlessly without noisy page-top messages
+    if (tbl.waiterBell) {
+        tbl.waiterBell = false;
+    } else {
+        tbl.state = (tbl.state + 1) % 3;
+    }
+
+    currentActiveStylingTargetFloorIdx = floorIdx;
+    currentActiveStylingTargetTableIdx = tableIdx;
+
+    // 2. AUTOMATIC CASSA MAPPING: Context binds tightly to the master ledger viewer selection
+    clientCurrentActiveTable = tbl.id;
+    let adminViewerSelect = document.getElementById('adminBillingViewerTableSelect');
+    if (adminViewerSelect) {
+        adminViewerSelect.value = compoundKey;
+        auditSelectedTableBillInvoiceLive(); // Auto updates relational accounts math maps
+    }
+
+    // 3. 🔥 THE FIX: Top message notification block fully mita diya hai!
+    // Ab click hote hi direct Table Theme Palette ka modal window overlay open hoga screen par
+    const colorModal = document.getElementById('tableColorPickerContextModal');
+    if (colorModal) {
+        document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "";
+        colorModal.style.display = 'flex';
+    }
+
+    saveAdminConfig();
+    generateAdminTableGrid();
+}
 function commitCustomTableColorPreference() { return; }
         // ⚡ FIXED: Completed the category filtration logic cleanly to block execution freezes
 function filterCustomerViewCategoryTab(targetCategoryName) {
