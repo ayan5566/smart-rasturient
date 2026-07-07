@@ -1,4 +1,4 @@
-1<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -473,7 +473,7 @@ f
         <div style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">⚠️</div>
         
         <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRED</h2>
-        <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">YOUR RESTROFLOW PLAN IS IS EXPIRE .</p>
+        <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">Aapka RestroFlow workspace subscription pack samapt ho chuka hai.</p>
         
         <button class="action-btn" id="activatePlanTriggerBtn" onclick="revealSaaSPricingTiersMatrix()" style="background: var(--neon-green); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 6px 15px rgba(46,204,113,0.3); margin-bottom: 12px;">
             ⚡ ACTIVATE YOUR PLAN
@@ -487,7 +487,7 @@ f
             <span style="font-size: 13px; color: #475569;">📅 <b>Monthly Pack:</b></span>
             <span style="color: var(--neon-green); font-weight: 800; font-size: 16px;" id="paywallMonthlyPriceDisplay">₹499</span>
         </div>
-        <button class="action-btn" onclick="initializeHostedCheckout('monthly')" style="background: var(--neon-green); color: white; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💳 Pay Now</button>
+        <button class="action-btn" onclick="initializeHostedCheckout('monthly')" style="background: var(--neon-green); color: white; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💳 Pay Monthly Rate</button>
     </div>
     
     <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
@@ -495,7 +495,7 @@ f
             <span style="font-size: 13px; color: #475569;">👑 <b>Yearly Enterprise:</b></span>
             <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;" id="paywallYearlyPriceDisplay">₹4999</span>
         </div>
-        <button class="action-btn" onclick="initializeHostedCheckout('yearly')" style="background: var(--accent-gold); color: black; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💎 Pay Now</button>
+        <button class="action-btn" onclick="initializeHostedCheckout('yearly')" style="background: var(--accent-gold); color: black; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💎 Pay Yearly Rate</button>
     </div>
     
     <p style="font-size: 10px; color: #94a3b8; text-align: center; margin: 4px 0 0 0; font-weight: bold; letter-spacing: 0.3px;">🔒 Payment redirects are processed over secure 256-bit SSL nodes.</p>
@@ -621,17 +621,13 @@ f
         </button>
     </div>
 </div>
-<div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;" onclick="this.style.display='none'">
-    <div class="modal-content" onclick="event.stopPropagation()" style="max-width:320px; width:90%; text-align:center; padding: 25px; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); box-sizing: border-box;">
+<div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;">
+    <div class="modal-content" style="max-width:320px; width:90%; text-align:center; padding: 25px; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); box-sizing: border-box;">
         <h3 style="color: #2c3e50; margin-top: 0; text-align: center;">🎨 Table Theme Palette</h3>
         <p style="font-size:12px; color:#666; margin-top:-5px; text-align: center;">Choose structural identity color mapping fields:</p>
         
         <select id="ctxSelectedTableColorHexValue" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ccc; border-radius:8px; font-size:14px; background-color: #ffffff; color: #333;">
             <option value="">🍊 Dynamic State (Default)</option>
-            <option value="#9b59b6">🔮 Deep Royal Purple</option>
-            <option value="#3498db">💎 Premium Sapphire Blue</option>
-            <option value="#1abc9c">🌲 Turquoise Teal</option>
-            <option value="#34495e">🖤 Dark Slate Velvet</option>
         </select>
         
         <div style="display:flex; gap:10px; margin-top:15px;">
@@ -741,9 +737,9 @@ f
         <div id="adminMenuForm"></div>
         <button class="action-btn" onclick="addNewCategory()" style="background:#2980b9; color:white; margin-bottom:15px;">➕ Create New Category Section</button>
         
-        <button class="action-btn" onclick="triggerJustSaveConfig()" style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;"> 💾 Save Menu & Settings</button>
+        <button class="action-btn" onclick="triggerJustSaveConfig()" style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: 💾 Save Menu & Settings</button>
 
-        <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">🚪 Logout Dashboard</button>
+        <button class="action-btn" onclick="logoutAdmin()" style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
         
         <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()" style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
             👑 Founder Master Control
@@ -1037,9 +1033,7 @@ async function executeLiveBillingThermalPrint() {
 }
         
 
-// ===================================================================
-// 📡 UPGRADED: REAL-TIME CASSA MONITOR PIPELINE ENGINE (AUTO-SYNC SYSTEM)
-// ===================================================================
+     // ⚡ FIXED: Isolates cashier telemetry streams from adjacent tenant profiles via database filter hooks
 function initializeAdminRealtimeBillingTracker() {
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
     if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
@@ -1079,30 +1073,22 @@ function initializeAdminRealtimeBillingTracker() {
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
                                 let currentLocalKey = `${floor.floorName}_${t.id}`;
-                                if (currentLocalKey === innerTableToken || t.id === innerTableToken) {
+                                if (currentLocalKey === innerTableToken) {
                                     t.waiterBell = payload.new.waiter_bell || false;
-                                    
-                                    // 🔄 HIGH-PRIORITY REALTIME HANDSHAKE
                                     if (payload.new.payment_status === 'SUCCESS_PAID') {
-                                        t.state = 0; // Instantly flags empty state architecture on successful UPI transaction
-                                        localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, 'SUCCESS_PAID');
+                                        t.state = 0; // Force empty state on payment completion
                                     } else {
-                                        // Automatically locks occupied status (State 1) if live_bill contains items natively
-                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0;
-                                        if (t.state === 0) {
-                                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey);
-                                        }
+                                        // 🍊 FIXED CAPTURE OPERATOR: Automatically turns table into empty state if bill rows array settles to 0
+                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
                                     }
                                 }
                             });
                         });
-                        
-                        // Push changes synchronously to the system interface arrays
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-                        generateAdminTableGrid(); // Syncs graphical matrix state layout fields
-                        queueDebouncedBillRender(); // Refresh cashier viewer data nodes
                     }
                 }
+                generateAdminTableGrid(); // Forces immediate layout visual synchronization
+                queueDebouncedBillRender();
             })
             .subscribe();
 
@@ -2160,6 +2146,7 @@ async function auditSelectedTableBillInvoiceLive() {
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
         if (isUUID || hotelGlobalScopeID.includes("@")) {
+            // 1. Cloud table sessions registry mapping rows straight from cloud database
             const { data: sData } = await supabaseClient
                 .from('table_sessions')
                 .select('*')
@@ -2167,6 +2154,7 @@ async function auditSelectedTableBillInvoiceLive() {
                 .maybeSingle();
             sessionData = sData;
 
+            // 2. Parallel kitchen preparation lines monitoring nodes lookup
             const { data: kOrders, error: kOrdersErr } = await supabaseClient
                 .from('active_orders')
                 .select(`id, status, created_at`)
@@ -2194,11 +2182,13 @@ async function auditSelectedTableBillInvoiceLive() {
                 paymentStatusToken = sessionData.payment_status || 'PENDING';
             }
         } else {
+            // Offline localStorage cached data stream matrices tracking loop fallback
             targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
             targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
             paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
         }
 
+        // 🧠 AUTOMATIC FALLBACK: Agar cloud ledger khali hai par kitchen mein items hain, toh unhe math mein shamil karo!
         if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
             kitchenOrders.forEach(order => {
                 if (order.order_items) {
@@ -2224,17 +2214,20 @@ async function auditSelectedTableBillInvoiceLive() {
             });
         }
 
-        // 🔥 REAL-TIME UPI NOTIFICATION OVERRIDE HUB ROUTER
+        // Cashier dashboard color banner alerts router mapping tokens
         if(paymentStatusToken === 'SUCCESS_PAID') {
-            paymentBanner.innerText = "✅ STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
         } else {
             paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
         }
 
         outputBox.innerHTML = ''; 
+        let subtotal = 0; 
+
         outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
         targetBill.forEach(row => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0); 
+            subtotal += rowCost; 
             outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
         });
 
@@ -2272,6 +2265,10 @@ async function auditSelectedTableBillInvoiceLive() {
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
 
+        // ===================================================================
+        // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
+        // ===================================================================
+        // Database data processed natively through the single math engine pipeline
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
         if(taxBox) {
@@ -2287,10 +2284,10 @@ async function auditSelectedTableBillInvoiceLive() {
         grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
 
     } catch (err) { 
+        // 🛡️ SYNTAX SHIELD: Properly catching backend query exceptions inside engine context
         console.error("🚨 Admin Invoice Tracker Exception:", err); 
     }
 }
-
 // ===================================================================
 // 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE (FIXED GLOBAL LEAK)
 // ===================================================================
@@ -3035,19 +3032,16 @@ async function initApp() {
 }
         
 // ===================================================================
-// 🧼 DEPRECATED: REPLACED WITH LIVE NATIVE SINGLE AUTOMATED REALTIME ENGINE
-// ===================================================================
-// ===================================================================
-// 🚪 FIXED: INTERACTIVE TABLE CLICK MANAGER (OPENS PALETTE MODAL DIRECTLY)
+// 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
 // ===================================================================
 function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
     let floor = floorData[floorIdx];
     let tbl = floor.tables[tableIdx];
     let compoundKey = `${floor.floorName}_${tbl.id}`;
     
-    // 1. Handle alert bells seamlessly without noisy page-top messages
     if (tbl.waiterBell) {
         tbl.waiterBell = false;
+        showOnScreenNotification(`🔔 Waiter notification clear for Floor ${floor.floorName} Table ${tbl.id}`);
     } else {
         tbl.state = (tbl.state + 1) % 3;
     }
@@ -3055,16 +3049,6 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
     currentActiveStylingTargetFloorIdx = floorIdx;
     currentActiveStylingTargetTableIdx = tableIdx;
 
-    // 2. AUTOMATIC CASSA MAPPING: Context binds tightly to the master ledger viewer selection
-    clientCurrentActiveTable = tbl.id;
-    let adminViewerSelect = document.getElementById('adminBillingViewerTableSelect');
-    if (adminViewerSelect) {
-        adminViewerSelect.value = compoundKey;
-        auditSelectedTableBillInvoiceLive(); // Auto updates relational accounts math maps
-    }
-
-    // 3. 🔥 THE FIX: Top message notification block fully mita diya hai!
-    // Ab click hote hi direct Table Theme Palette ka modal window overlay open hoga screen par
     const colorModal = document.getElementById('tableColorPickerContextModal');
     if (colorModal) {
         document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "";
@@ -3074,15 +3058,33 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
     saveAdminConfig();
     generateAdminTableGrid();
 }
-function commitCustomTableColorPreference() { return; }
+           function commitCustomTableColorPreference() {
+    let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
+    
+    if(currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
+        // 1. Array ke andar naya color inject karo
+        floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
+        
+        // 2. Context overlay modal ko band karo
+        document.getElementById('tableColorPickerContextModal').style.display = 'none';
+        
+        // 3. Cloud aur local storage par sync save triggered karo
+        saveAdminConfig();
+        
+        // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
+        generateAdminTableGrid();
+        
+        showOnScreenNotification("🎨 Table theme design matrix updated live!");
+    }
+}
         // ⚡ FIXED: Completed the category filtration logic cleanly to block execution freezes
 function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
 
-// ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: UNIFIED REALTIME DYNAMIC PALETTE ENGINE
+     // ===================================================================
+// 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid'); 
@@ -3093,36 +3095,33 @@ function generateAdminTableGrid() {
         let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
         
         floor.tables.forEach((tbl, tIdx) => {
-            let baseThemeColor = 'var(--tbl-orange)'; // Default empty standard palette fallback
+            let baseThemeColor = tbl.custom_color;
             let currentLabel = 'Empty';
-            let compoundKey = `${floor.floorName}_${tbl.id}`;
+            let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
             
-            // Strict dynamic state tracking matrices routing structure
             if(tbl.state === 0) {
-                baseThemeColor = 'var(--tbl-orange)';
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
                 currentLabel = 'Empty';
             } else if(tbl.state === 1) {
-                baseThemeColor = 'var(--tbl-green)';
-                currentLabel = '🟢 OCCUPIED';
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                currentLabel = 'Full';
             } else if(tbl.state === 2) {
-                baseThemeColor = 'var(--tbl-grey)';
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
                 currentLabel = 'Booked';
             }
             
-            // Realtime Online UPI Payment Success Validation Badges Checker
-            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID' || tbl.state === 0 && localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + tbl.id) === 'SUCCESS_PAID') { 
+            // Scoped payment tracking prevents duplicate mapping bugs
+            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') { 
                 baseThemeColor = '#2196f3'; 
-                currentLabel = '✅ PAID'; 
+                currentLabel = '💰 Paid UPI'; 
             }
             
             let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            // 🔥 STYLES CLEANED: Legacy click modals dropped to preserve continuous standard dynamic state rendering
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor}; padding: 18px 4px 10px 4px;" onclick="clientCurrentActiveTable='${tbl.id}'; document.getElementById('adminBillingViewerTableSelect').value='${floor.floorName}_${tbl.id}'; auditSelectedTableBillInvoiceLive(); showOnScreenNotification('🎯 Swapped Monitor Context: Table ${tbl.id}');">
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
                 <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                <div style="font-size:14px; font-weight:800; letter-spacing:0.5px; margin-bottom:2px;">${tbl.id}</div>
-                <span style="font-size:9px; font-weight:700; text-transform:uppercase; opacity:0.95; background:rgba(0,0,0,0.12); padding:2px 5px; border-radius:4px; display:inline-block; margin-top:2px;">${currentLabel}</span>
+                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
         });
         
