@@ -810,53 +810,7 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-// ===================================================================
-// 🛡️ UX SHIELD V4: LEFT-CLICK PORTAL OPEN + BUTTON COPY MENU KILLED
-// ===================================================================
-(function enforcePerfectArcadeInputControls() {
-    // 1. 🔥 LEFT CLICK UNLOCKED: Single-click aur double-click par game automatic instantly respond karega.
-    // Par buttons ko long-press karne par jo blue highlight aur selection handles aate hain, unhe block karega.
-    document.addEventListener('selectstart', function(event) {
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-            return true; 
-        }
-        event.preventDefault();
-        return false;
-    });
 
-    // 2. 🔥 BUTTON TOUCH-HOLD PROTECTOR: Mobile par buttons ko dabakar rakhne par copy pop-up permanent block!
-    document.addEventListener('touchstart', function(event) {
-        // Inputs ko chhodkar baki pure buttons aur controllers par text menu block karega
-        if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
-            // Pointers check control checks
-            if (event.touches.length > 1) {
-                event.preventDefault(); // Multi-touch zoom freeze safeguards
-            }
-        }
-    }, { passive: true });
-
-    // 3. 🛑 INSPECT ELEMENT PROTECTION: Context menu (Right-click) locked rahega taaki inspect na khule
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
-    }, false);
-
-    // 4. 🛑 CODES INSPECT KEY SHORTCUTS LOCK: DevTools shortcuts shut down
-    document.addEventListener('keydown', function(event) {
-        if (event.ctrlKey && (event.key === 'c' || event.key === 'C' || 
-                              event.key === 'x' || event.key === 'X' || 
-                              event.key === 'v' || event.key === 'V' || 
-                              event.key === 'u' || event.key === 'U')) {
-            event.preventDefault();
-            return false;
-        }
-        if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'J' || event.key === 'j'))) {
-            event.preventDefault();
-            return false;
-        }
-    }, false);
-    
-    console.log("🔒 Security Spooler v4: Left-click enabled fluidly. Touch-hold copy menu permanently killed.");
-})();
         // 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
     try {
