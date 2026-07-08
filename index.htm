@@ -3308,97 +3308,192 @@ function frameUpdateFlappy() {
             spaceBullets = []; enemyLasers = []; powerUps = []; sShieldTimer = 0; sMultiTimer = 0;
         }
 
-        function frameUpdateSpace() {
-            spCtx.fillStyle = "#0c0d14"; spCtx.fillRect(0,0,320,400);
-            cosmicBackgroundStars.forEach(star => {
-                star.y += 0.9; if(star.y > 400) star.y = 0;
-                spCtx.fillStyle = `rgba(255,255,255, ${star.alpha})`; spCtx.fillRect(star.x, star.y, star.size, star.size);
-            });
-            if(spaceTransitionCount > 0) {
-                spaceTransitionCount--; spCtx.fillStyle = "#f1c40f"; spCtx.font = "bold 20px Segoe UI"; spCtx.textAlign = "center";
-                spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, 160, 180); spCtx.font = "12px Segoe UI"; spCtx.fillStyle = "white";
-                spCtx.fillText("Calibrating hyperdrive vectors sequence...", 160, 210); spCtx.textAlign = "start";
-                if(spaceTransitionCount === 0) setupLevelParameters(); return;
-            }
-            if(sShieldTimer > 0) sShieldTimer--; if(sMultiTimer > 0) sMultiTimer--; spaceFrameTracker++;
-            pShipObj.x += spaceMoveDir; if(pShipObj.x < 4) pShipObj.x = 4; if(pShipObj.x > 276) pShipObj.x = 276;
-            
-            spCtx.fillStyle = "#00d2d3"; spCtx.beginPath(); spCtx.moveTo(pShipObj.x + 20, pShipObj.y); spCtx.lineTo(pShipObj.x + pShipObj.w, pShipObj.y + pShipObj.h); spCtx.lineTo(pShipObj.x, pShipObj.y + pShipObj.h);
-            spCtx.closePath(); spCtx.fill(); spCtx.fillStyle = "white"; spCtx.fillRect(pShipObj.x + 18, pShipObj.y + 10, 4, 8);
+// ===================================================================
+// 🚀 FIXED: SPACE SHOOTER LIQUID PHYSICS BOUNDARIES ENGINE
+// ===================================================================
+function frameUpdateSpace() {
+    if (!spCanvasElement || !spCtx) return;
 
-            if(sShieldTimer > 0) { spCtx.strokeStyle = "#00bcd4"; spCtx.lineWidth = 2; spCtx.beginPath(); spCtx.arc(pShipObj.x+20, pShipObj.y+16, 28, 0, Math.PI*2); spCtx.stroke(); }
-            if(spaceFrameTracker % 13 === 0) {
-                if(sMultiTimer > 0) { spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}, {x: pShipObj.x+6, y: pShipObj.y, dx:-1.6}, {x: pShipObj.x+34, y: pShipObj.y, dx:1.6}); } 
-                else { spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}); }
-            }
-            alienInvaderObj.x += alienInvaderObj.dx; if(alienInvaderObj.x < 6 || alienInvaderObj.x > 314 - alienInvaderObj.w) alienInvaderObj.dx *= -1;
-            
-            if(alienInvaderObj.isBoss) { 
-                spCtx.fillStyle = "#5f27cd"; spCtx.beginPath(); spCtx.moveTo(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+alienInvaderObj.h); spCtx.lineTo(alienInvaderObj.x+alienInvaderObj.w, alienInvaderObj.y); spCtx.lineTo(alienInvaderObj.x, alienInvaderObj.y); spCtx.closePath(); spCtx.fill(); 
-                spCtx.fillStyle = "#ff007f"; spCtx.beginPath(); spCtx.arc(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+20, 14, 0, Math.PI*2); spCtx.fill(); 
-            } else { 
-                spCtx.fillStyle = "#ff6b6b"; spCtx.fillRect(alienInvaderObj.x, alienInvaderObj.y, alienInvaderObj.w, alienInvaderObj.h); 
-                spCtx.fillStyle = "black"; spCtx.fillRect(alienInvaderObj.x+6, alienInvaderObj.y+6, 6, 6); spCtx.fillRect(alienInvaderObj.x+30, alienInvaderObj.y+6, 6, 6);
-            }
-            let counterRate = alienInvaderObj.isBoss ? 20 : Math.max(14, 36 - (currentLevelState * 3));
-            if(spaceFrameTracker % counterRate === 0) {
-                if(alienInvaderObj.isBoss) { enemyLasers.push({x: alienInvaderObj.x+10, y: alienInvaderObj.y+alienInvaderObj.h, dx:-1}, {x: alienInvaderObj.x+alienInvaderObj.w-10, y: alienInvaderObj.y+alienInvaderObj.h, dx:1}); } 
-                else { enemyLasers.push({x: alienInvaderObj.x+alienInvaderObj.w/2, y: alienInvaderObj.y+alienInvaderObj.h, dx:0}); }
-            }
-            if(Math.random() < 0.005) powerUps.push({ x: Math.random()*260+20, y: 0, type: ['H','S','M'][Math.floor(Math.random()*3)] });
-            powerUps.forEach((pow, pi) => {
-                pow.y += 2.2; spCtx.fillStyle = pow.type=='H'?'#2ecc71':(pow.type=='S'?'#3498db':'#e67e22'); spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 7, 0, Math.PI*2); spCtx.fill();
-                if(pow.x > pShipObj.x && pow.x < pShipObj.x+pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y+pShipObj.h) {
-                    if(pow.type === 'H') pShipObj.health = Math.min(pShipObj.health+2, pShipObj.maxHealth); if(pow.type === 'S') sShieldTimer = 280; if(pow.type === 'M') sMultiTimer = 280; powerUps.splice(pi, 1);
-                }
-            });
-            spaceBullets.forEach((b, bi) => {
-                b.y -= 5.5; b.x += b.dx; spCtx.fillStyle = "#00ff00"; spCtx.fillRect(b.x, b.y, 3, 10);
-                if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
-                    spaceBullets.splice(bi, 1); alienInvaderObj.health--;
-                    if(alienInvaderObj.health <= 0) {
-                        if(currentLevelState === rules.spaceTar) triggerRewardCoupon(rules.spaceDisc);
-                        if(currentLevelState < 10) { currentLevelState++; spaceTransitionCount = 90; } else { finalizeFailedRun("🌌 GALACTIC WINNER COMPLETE!"); }
-                    }
-                }
-            });
-            enemyLasers.forEach((el, eli) => {
-                el.y += 4.5; el.x += el.dx || 0; spCtx.fillStyle = "#ff4d4d"; spCtx.fillRect(el.x, el.y, 3, 11);
-                if(el.x > pShipObj.x && el.x < pShipObj.x+pShipObj.w && el.y > pShipObj.y && el.y < pShipObj.y+pShipObj.h) {
-                    enemyLasers.splice(eli, 1); if(sShieldTimer <= 0) pShipObj.health--; if(pShipObj.health <= 0) finalizeFailedRun("💥 Spaceship Destroyed! Try Again.");
-                }
-            });
-            spCtx.fillStyle = "white"; spCtx.font = "bold 13px Segoe UI"; spCtx.fillText("STAGE: " + currentLevelState + "/10", 10, 22);
-            spCtx.fillStyle = pShipObj.health > 1 ? "#2ecc71" : "#e74c3c"; spCtx.fillText("HP: " + pShipObj.health + "/" + pShipObj.maxHealth, 240, 22);
+    // Clear dynamic screen buffer perfectly matching current device size
+    spCtx.fillStyle = "#0c0d14"; 
+    spCtx.fillRect(0, 0, spCanvasElement.width, spCanvasElement.height);
+    
+    cosmicBackgroundStars.forEach(star => {
+        star.y += 0.9; 
+        if(star.y > spCanvasElement.height) star.y = 0;
+        spCtx.fillStyle = `rgba(255,255,255, ${star.alpha})`; 
+        spCtx.fillRect(star.x, star.y, star.size, star.size);
+    });
+
+    if(spaceTransitionCount > 0) {
+        spaceTransitionCount--; 
+        spCtx.fillStyle = "#f1c40f"; 
+        spCtx.font = "bold 20px Segoe UI"; 
+        spCtx.textAlign = "center";
+        spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, spCanvasElement.width / 2, spCanvasElement.height / 2); 
+        spCtx.font = "12px Segoe UI"; 
+        spCtx.fillStyle = "white";
+        spCtx.fillText("Calibrating hyperdrive vectors sequence...", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30); 
+        spCtx.textAlign = "start";
+        if(spaceTransitionCount === 0) setupLevelParameters(); 
+        return;
+    }
+
+    if(sShieldTimer > 0) sShieldTimer--; 
+    if(sMultiTimer > 0) sMultiTimer--; 
+    spaceFrameTracker++;
+    
+    // 🔥 FIXED: Boundary check tied dynamically to canvas width rules
+    pShipObj.x += spaceMoveDir; 
+    if(pShipObj.x < 0) pShipObj.x = 0; 
+    if(pShipObj.x > spCanvasElement.width - pShipObj.w) pShipObj.x = spCanvasElement.width - pShipObj.w;
+    
+    // Draw Spaceship
+    spCtx.fillStyle = "#00d2d3"; 
+    spCtx.beginPath(); 
+    spCtx.moveTo(pShipObj.x + 20, pShipObj.y); 
+    spCtx.lineTo(pShipObj.x + pShipObj.w, pShipObj.y + pShipObj.h); 
+    spCtx.lineTo(pShipObj.x, pShipObj.y + pShipObj.h);
+    spCtx.closePath(); 
+    spCtx.fill(); 
+    spCtx.fillStyle = "white"; 
+    spCtx.fillRect(pShipObj.x + 18, pShipObj.y + 10, 4, 8);
+
+    if(sShieldTimer > 0) { 
+        spCtx.strokeStyle = "#00bcd4"; 
+        spCtx.lineWidth = 2; 
+        spCtx.beginPath(); 
+        spCtx.arc(pShipObj.x+20, pShipObj.y+16, 28, 0, Math.PI*2); 
+        spCtx.stroke(); 
+    }
+
+    if(spaceFrameTracker % 13 === 0) {
+        if(sMultiTimer > 0) { 
+            spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}, {x: pShipObj.x+6, y: pShipObj.y, dx:-1.6}, {x: pShipObj.x+34, y: pShipObj.y, dx:1.6}); 
+        } else { 
+            spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}); 
         }
+    }
 
-        function frameUpdateSnake() {
-            // Inside frameUpdateSnake, replace the head collision coordinate boundaries check line:
-            let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y  };
-            if(nextHead.x < 0 || nextHead.x >= snakeCanvasElement.width || nextHead.y < 20 || nextHead.y >= snakeCanvasElement.height) { 
-            finalizeFailedRun("Snake Hit Wall!"); 
+    // 🔥 FIXED: Alien bounces exactly at the screen borders width bounds natively
+    alienInvaderObj.x += alienInvaderObj.dx; 
+    if(alienInvaderObj.x < 0 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w) {
+        alienInvaderObj.dx *= -1;
+    }
+    
+    if(alienInvaderObj.isBoss) { 
+        spCtx.fillStyle = "#5f27cd"; spCtx.beginPath(); spCtx.moveTo(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+alienInvaderObj.h); spCtx.lineTo(alienInvaderObj.x+alienInvaderObj.w, alienInvaderObj.y); spCtx.lineTo(alienInvaderObj.x, alienInvaderObj.y); spCtx.closePath(); spCtx.fill(); 
+        spCtx.fillStyle = "#ff007f"; spCtx.beginPath(); spCtx.arc(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+20, 14, 0, Math.PI*2); spCtx.fill(); 
+    } else { 
+        spCtx.fillStyle = "#ff6b6b"; spCtx.fillRect(alienInvaderObj.x, alienInvaderObj.y, alienInvaderObj.w, alienInvaderObj.h); 
+        spCtx.fillStyle = "black"; spCtx.fillRect(alienInvaderObj.x+6, alienInvaderObj.y+6, 6, 6); spCtx.fillRect(alienInvaderObj.x+30, alienInvaderObj.y+6, 6, 6);
+    }
+
+    let counterRate = alienInvaderObj.isBoss ? 20 : Math.max(14, 36 - (currentLevelState * 3));
+    if(spaceFrameTracker % counterRate === 0) {
+        if(alienInvaderObj.isBoss) { 
+            enemyLasers.push({x: alienInvaderObj.x+10, y: alienInvaderObj.y+alienInvaderObj.h, dx:-1}, {x: alienInvaderObj.x+alienInvaderObj.w-10, y: alienInvaderObj.y+alienInvaderObj.h, dx:1}); 
+        } else { 
+            enemyLasers.push({x: alienInvaderObj.x+alienInvaderObj.w/2, y: alienInvaderObj.y+alienInvaderObj.h, dx:0}); 
+        }
+    }
+
+    if(Math.random() < 0.005) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: 0, type: ['H','S','M'][Math.floor(Math.random()*3)] });
+    
+    powerUps.forEach((pow, pi) => {
+        pow.y += 2.2; 
+        spCtx.fillStyle = pow.type=='H'?'#2ecc71':(pow.type=='S'?'#3498db':'#e67e22'); 
+        spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 7, 0, Math.PI*2); spCtx.fill();
+        if(pow.x > pShipObj.x && pow.x < pShipObj.x+pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y+pShipObj.h) {
+            if(pow.type === 'H') pShipObj.health = Math.min(pShipObj.health+2, pShipObj.maxHealth); 
+            if(pow.type === 'S') sShieldTimer = 280; 
+            if(pow.type === 'M') sMultiTimer = 280; 
+            powerUps.splice(pi, 1);
+        }
+    });
+
+    spaceBullets.forEach((b, bi) => {
+        b.y -= 5.5; b.x += b.dx; spCtx.fillStyle = "#00ff00"; spCtx.fillRect(b.x, b.y, 3, 10);
+        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Bullet range clean-up
+        if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
+            spaceBullets.splice(bi, 1); alienInvaderObj.health--;
+            if(alienInvaderObj.health <= 0) {
+                if(currentLevelState === rules.spaceTar) triggerRewardCoupon(rules.spaceDisc);
+                if(currentLevelState < 10) { currentLevelState++; spaceTransitionCount = 90; } else { finalizeFailedRun("🌌 GALACTIC WINNER COMPLETE!"); }
+            }
+        }
+    });
+
+    enemyLasers.forEach((el, eli) => {
+        el.y += 4.5; el.x += el.dx || 0; spCtx.fillStyle = "#ff4d4d"; spCtx.fillRect(el.x, el.y, 3, 11);
+        if(el.y > spCanvasElement.height) { enemyLasers.splice(eli, 1); return; }
+        if(el.x > pShipObj.x && el.x < pShipObj.x+pShipObj.w && el.y > pShipObj.y && el.y < pShipObj.y+pShipObj.h) {
+            enemyLasers.splice(eli, 1); 
+            if(sShieldTimer <= 0) pShipObj.health--; 
+            if(pShipObj.health <= 0) finalizeFailedRun("💥 Spaceship Destroyed! Try Again.");
+        }
+    });
+
+    spCtx.fillStyle = "white"; spCtx.font = "bold 13px Segoe UI"; 
+    spCtx.fillText("STAGE: " + currentLevelState + "/10", 10, 22);
+    spCtx.fillStyle = pShipObj.health > 1 ? "#2ecc71" : "#e74c3c"; 
+    spCtx.fillText("HP: " + pShipObj.health + "/" + pShipObj.maxHealth, spCanvasElement.width - 70, 22);
+}
+
+       // ===================================================================
+// 🐍 FIXED: CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC
+// ===================================================================
+function frameUpdateSnake() {
+    if (!snakeCanvasElement || !snCtx) return;
+
+    let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y };
+    
+    // 🔥 FIXED: Wall crash detection linked to live dynamic dimensions
+    if(nextHead.x < 0 || nextHead.x >= snakeCanvasElement.width || nextHead.y < 20 || nextHead.y >= snakeCanvasElement.height) { 
+        finalizeFailedRun("Snake Hit Wall!"); 
+        return; 
+    }
+    
+    for(let cell of snakeArr) { 
+        if(nextHead.x === cell.x && nextHead.y === cell.y) { 
+            finalizeFailedRun("Snake Crashed Self!"); 
             return; 
-            }
-            for(let cell of snakeArr) { if(nextHead.x === cell.x && nextHead.y === cell.y) { finalizeFailedRun("Snake Crashed Self!"); return; } }
-            snakeArr.unshift(nextHead);
-            if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
-                snakeScoreCounter++; generateSnakeFoodLocation(); if(snakeScoreCounter >= rules.snakeTar) triggerRewardCoupon(rules.snakeDisc);
-            } else { snakeArr.pop(); }
-            
-            snCtx.clearRect(0,0,320,320); snCtx.fillStyle = "rgba(0,0,0,0.3)"; snCtx.fillRect(0,0,320,22);
-            snCtx.fillStyle = "white"; snCtx.font = "12px Segoe UI"; snCtx.fillText("Score: " + snakeScoreCounter + " / " + rules.snakeTar, 12, 16);
-            snCtx.fillStyle = "#ff4d4d"; snCtx.beginPath(); snCtx.arc(snakeFoodUnit.x+10, snakeFoodUnit.y+10, 8, 0, Math.PI*2); snCtx.fill();
-            
-            snakeArr.forEach((bUnit, index) => { 
-                if(index === 0) {
-                    snCtx.fillStyle = "#00d2d3"; snCtx.fillRect(bUnit.x, bUnit.y, 19, 19); snCtx.fillStyle = "black"; 
-                    if(currentSnakeVector.x > 0) { snCtx.fillRect(bUnit.x+12, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+12, bUnit.y+13, 3, 3); }
-                    else if(currentSnakeVector.x < 0) { snCtx.fillRect(bUnit.x+4, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+4, bUnit.y+13, 3, 3); }
-                    else if(currentSnakeVector.y > 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+12, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+12, 3, 3); }
-                    else if(currentSnakeVector.y < 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+4, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+4, 3, 3); }
-                } else { snCtx.fillStyle = `rgb(16, ${175 - (index * 4)}, 135)`; snCtx.fillRect(bUnit.x+1, bUnit.y+1, 17, 17); }
-            });
+        } 
+    }
+    
+    snakeArr.unshift(nextHead);
+    if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
+        snakeScoreCounter++; 
+        generateSnakeFoodLocation(); 
+        if(snakeScoreCounter >= rules.snakeTar) triggerRewardCoupon(rules.snakeDisc);
+    } else { 
+        snakeArr.pop(); 
+    }
+    
+    snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
+    snCtx.fillStyle = "rgba(0,0,0,0.3)"; 
+    snCtx.fillRect(0, 0, snakeCanvasElement.width, 22);
+    
+    snCtx.fillStyle = "white"; snCtx.font = "12px Segoe UI"; 
+    snCtx.fillText("Score: " + snakeScoreCounter + " / " + rules.snakeTar, 12, 16);
+    
+    // Draw Apple
+    snCtx.fillStyle = "#ff4d4d"; snCtx.beginPath(); snCtx.arc(snakeFoodUnit.x+10, snakeFoodUnit.y+10, 8, 0, Math.PI*2); snCtx.fill();
+    
+    snakeArr.forEach((bUnit, index) => { 
+        if(index === 0) {
+            snCtx.fillStyle = "#00d2d3"; snCtx.fillRect(bUnit.x, bUnit.y, 19, 19); snCtx.fillStyle = "black"; 
+            if(currentSnakeVector.x > 0) { snCtx.fillRect(bUnit.x+12, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+12, bUnit.y+13, 3, 3); }
+            else if(currentSnakeVector.x < 0) { snCtx.fillRect(bUnit.x+4, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+4, bUnit.y+13, 3, 3); }
+            else if(currentSnakeVector.y > 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+12, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+12, 3, 3); }
+            else if(currentSnakeVector.y < 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+4, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+4, 3, 3); }
+        } else { 
+            snCtx.fillStyle = `rgb(16, ${175 - (index * 4)}, 135)`; snCtx.fillRect(bUnit.x+1, bUnit.y+1, 17, 17); 
         }
+    });
+}
+
+// 🔥 FIXED: Apple generation bounding boxes calculated from active viewport width ratios
 
         function setSnakeDirection(dirVector) {
             if(dirVector==='UP' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:-20}; if(dirVector==='DOWN' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:20};
