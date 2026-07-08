@@ -2069,6 +2069,44 @@ function switchGameMode(selectedTargetMode) {
 }
 
 // ===================================================================
+// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (STAGE CLEANER & SWEEPER)
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    activeGameMode = selectedTargetMode; 
+    
+    // 🧹 STAGE SFAI: Hard kill any active background frames animation tickers instantly
+    clearInterval(loopTimerInstance); 
+    
+    document.getElementById('flappyCanvas').style.display = 'none';
+    document.getElementById('spaceCanvas').style.display = 'none';
+    document.getElementById('snakeCanvas').style.display = 'none';
+    document.getElementById('couponDisplay').style.display = 'none';
+
+    document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
+    if(document.getElementById('nav'+selectedTargetMode)) {
+        document.getElementById('nav'+selectedTargetMode).classList.add('active');
+    }
+    
+    document.getElementById('mathGameSection').style.display = (selectedTargetMode==='MATH')?'block':'none';
+    document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
+    document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
+    
+    if(selectedTargetMode === 'MATH') {
+        document.getElementById('startBtn').style.display = 'none';
+        document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
+        document.getElementById('exitGameBtn').style.display = "none";
+        generateMathQuestion();
+    } else {
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
+        // Stage update code if already active
+        if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
+            startSelectedGame();
+        }
+    }
+}
+
+// ===================================================================
 // 🎮 FIXED MASTER ROUTER: RESIZES CANVAS & BOOTS ISOLATED SELECTION
 // ===================================================================
 function startSelectedGame() {
@@ -2078,7 +2116,7 @@ function startSelectedGame() {
     document.getElementById('couponDisplay').style.display = "none";
     document.getElementById('gameScreenStatusMsg').style.display = "none"; 
     
-    // Force reset layout viewports completely
+    // Clear previous drama entries from stage
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
@@ -2090,7 +2128,7 @@ function startSelectedGame() {
         document.getElementById('exitGameBtn').style.display = "block";
     }
 
-    // Dynamic scale width limits tracking computations
+    // Dynamic scale width limits based on active stage dimensions
     const maxBoundWidth = Math.min(window.innerWidth * 0.9, 450);
 
     if(activeGameMode === 'FLAPPY') { 
@@ -2108,7 +2146,7 @@ function startSelectedGame() {
         initSpaceShooterGame(); 
     }
     else if(activeGameMode === 'SNAKE') { 
-        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; // Stable 20px grid spacing match bounds
+        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; 
         const sCanvas = document.getElementById('snakeCanvas');
         sCanvas.width = alignedGridWidth;
         sCanvas.height = alignedGridWidth;
@@ -2118,10 +2156,10 @@ function startSelectedGame() {
 }
 
 // ===================================================================
-// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (WIPES ENGINE BUFFER CACHE)
+// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
 // ===================================================================
 function exitGameEngine() {
-    clearInterval(loopTimerInstance); // Hard safety block
+    clearInterval(loopTimerInstance); 
     
     document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
     document.getElementById('exitGameBtn').style.display = "none";
