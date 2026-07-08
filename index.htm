@@ -249,48 +249,106 @@
 
         .table-legend-bar { display: flex; gap: 6px; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; flex-wrap: wrap; }
         .legend-dot { padding: 4px 6px; border-radius: 4px; color: white; }
-       /* ================================================================= */
-       /* 🎮 FULL-SCREEN ARCADE OVERRIDES & FLUID MAX-PREVIEW CANVAS CONTROLS */
-       /* ================================================================= */
-       .game-box.fullscreen-arcade-active {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: #0f111a !important;
-            z-index: 99999;
-            margin: 0; padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .game-box.fullscreen-arcade-active canvas {
-            max-height: 55vh;
-            max-width: 100%;
-            width: auto;
-            display: block;
-        }
-        
-        /* Controls ko screen par stable rakhne ke liye */
-        .game-box.fullscreen-arcade-active .control-pad, 
-        .game-box.fullscreen-arcade-active .snake-grid-pad {
-            margin-top: auto;
-            margin-bottom: 15px;
-            width: 100%;
-            max-width: 320px;
-        }
-        
-        /* Naya on-screen status text style */
-        #gameScreenStatusMsg {
-            color: #ff4d4d;
-            font-weight: bold;
-            font-size: 18px;
-            margin: 10px 0;
-            text-shadow: 0px 2px 4px rgba(0,0,0,0.5);
-            display: none;
-        }    
+ /* ================================================================= */
+/* 🎮 MASTER FLUID ARCHITECTURE: SCREEN ADAPTIVE ARCADE FRAMEWORK    */
+/* ================================================================= */
+.game-box.fullscreen-arcade-active {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #0f111a !important; /* Premium unified arcade template background */
+    z-index: 99999 !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
+    
+    /* Enforces elements to distribute and fill the black screen symmetrically */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-around !important; /* Stretches the elements to eliminate empty screen voids */
+    overflow: hidden !important;
+}
+
+/* 🎯 ADAPTIVE CANVAS FLUID LAYER */
+.game-box.fullscreen-arcade-active canvas {
+    display: block !important;
+    width: 92vw !important; /* Sizzles fluidly across the device layout horizontally */
+    max-width: 520px !important; /* Optimizes the width limiters on wider monitor views */
+    height: auto !important;
+    max-height: 55vh !important; /* Rigid height guard locks framework limits safely */
+    border-radius: 20px !important;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.65) !important;
+    object-fit: contain !important;
+    margin: 8px auto !important;
+    background: #70c5ce; /* Standard backup canvas context baseline fallback color */
+}
+
+/* Overrides internal view targets explicitly */
+.game-box.fullscreen-arcade-active #spaceCanvas { background: #0c0d14 !important; }
+.game-box.fullscreen-arcade-active #snakeCanvas { background: #0f111a !important; }
+
+/* 🎯 RESPONSIVE HUD & NAVIGATION RE-BALANCING */
+.game-box.fullscreen-arcade-active .game-nav {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    padding: 5px !important;
+    border-radius: 12px !important;
+    margin-bottom: 5px !important;
+    box-sizing: border-box !important;
+}
+
+.game-box.fullscreen-arcade-active .game-nav button {
+    font-size: 13px !important;
+    padding: 10px 4px !important;
+    font-weight: 700 !important;
+}
+
+/* 🎯 RESPONSIVE CONTROLS & CONTROLLER MATRIX */
+.game-box.fullscreen-arcade-active .control-pad, 
+.game-box.fullscreen-arcade-active .snake-grid-pad {
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    gap: 8px !important;
+}
+
+.game-box.fullscreen-arcade-active .ctrl-btn {
+    padding: 14px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+}
+
+.game-box.fullscreen-arcade-active .snk-btn {
+    width: 68px !important;
+    height: 44px !important;
+    font-size: 16px !important;
+}
+
+/* 🎯 FLUID ACTION INTERFACE BUTTONS */
+.game-box.fullscreen-arcade-active .action-btn {
+    width: 100% !important;
+    max-width: 320px !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+}
+
+/* 🎯 ON-SCREEN STATUS INDICATORS ENGINE */
+#gameScreenStatusMsg {
+    color: #ff4d4d !important;
+    font-weight: 900 !important;
+    font-size: 22px !important;
+    margin: 6px 0 !important;
+    text-shadow: 0px 3px 6px rgba(0,0,0,0.6) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    text-align: center !important;
+}
     /* --- 📱 MOBILE RESPONSIVE & TOUCH FIXES MAP --- */
         body { 
             padding: 10px !important; 
