@@ -91,6 +91,26 @@
         margin-bottom: 15px !important;
         line-height: 1.4 !important;
     }
+    /* ================================================================= */
+/* 🔒 THE ANTI-COPY SHIELD: PERMANENT USER-EXPERIENCE LOCK SYSTEM     */
+/* ================================================================= */
+*, html, body {
+    /* Pure website se text selection aur highlighted blue-box ko permanent mita deta hai */
+    -webkit-touch-callout: none !important; /* iOS Safari link highlights */
+    -webkit-user-select: none !important;   /* Safari */
+    -khtml-user-select: none !important;     /* Konqueror HTML */
+    -moz-user-select: none !important;      /* Old Firefox */
+    -ms-user-select: none !important;       /* Internet Explorer/Edge */
+    user-select: none !important;           /* Standard modern browsers */
+}
+
+/* Fallback protection for input fields: Taaki customer input box mein numeric pins ya answer type kar sake */
+input, textarea {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
 
     /* ------------------------------------------------------------- */
     /* 🧾 ROUTE A: THERMAL RECEIPT ROLLOUT LAYOUT (UNTOUCHED & SAFE)  */
@@ -790,6 +810,36 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // ===================================================================
+// 🛡️ DEEP APPLICATION SECURITY GUARD: BLOCKS RIGHT-CLICK & SHORTCUTS
+// ===================================================================
+(function enforceIndestructibleUserExperienceGuard() {
+    // 1. Right Click Context Menu block karo (Inspecting protection)
+    document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+    }, false);
+
+    // 2. Keyboard Copy, Cut, Paste aur Source View channels block karo
+    document.addEventListener('keydown', function(event) {
+        // Blocks: Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+U (View Source), Ctrl+Shift+I (DevTools)
+        if (event.ctrlKey && (event.key === 'c' || event.key === 'C' || 
+                              event.key === 'x' || event.key === 'X' || 
+                              event.key === 'v' || event.key === 'V' || 
+                              event.key === 'u' || event.key === 'U')) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Android / Windows specialized DevTools shortcut key hooks override
+        if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'J' || event.key === 'j'))) {
+            event.preventDefault();
+            return false;
+        }
+    }, false);
+    
+    console.log("🔒 Security Spooler: Website anti-copy armor actively deployed.");
+})();
+        
         // 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
     try {
