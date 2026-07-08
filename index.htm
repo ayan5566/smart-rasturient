@@ -810,18 +810,13 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
- // ===================================================================
-// 🛡️ INDESTRUCTIBLE UX SHIELD V2: DOUBLE-CLICK & TOUCH-HOLD KILLER
 // ===================================================================
-(function enforceAbsoluteCopyLockSystem() {
-    // 1. Right Click Context Menu block karo
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
-    }, false);
-
-    // 2. 🔥 THE DOUBLE-CLICK & SELECTION LOCK: Galti se bhi double tap par blue highlight na aaye
+// 🛡️ UX SHIELD V3: LEFT-CLICK UNLOCKED & DEEP INSPECT FULLY LOCKED
+// ===================================================================
+(function enforceAbsoluteCopyAndInspectLockSystem() {
+    // 1. 🔥 LEFT CLICK UNLOCKED: Koi event listener block nahi hai single/double left click par.
+    // Par koi galti se bhi double tap ya text select karega toh blue-highlight text selection automatic block rahega.
     document.addEventListener('selectstart', function(event) {
-        // Sirf numeric input elements ke andar selection allow karega taaki quiz chal sake
         if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
             return true;
         }
@@ -829,15 +824,21 @@ f
         return false;
     });
 
-    // 3. Mobile screen par long-press (dabakar rakhne) par selection handles ko block karo
+    // 2. Mobile screen standard zoom control checks (Long-press handles bypass blocks)
     document.addEventListener('touchstart', function(event) {
         if (event.touches.length > 1) {
-            event.preventDefault(); // Multi-touch zoom control injection bypass check
+            event.preventDefault(); 
         }
     }, { passive: false });
 
-    // 4. Keyboard Copy, Cut, Paste aur Source View channels block karo
+    // 3. 🛑 INSPECT ELEMENT KILLER: Right Click Context Menu block rahega permanent
+    document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+    }, false);
+
+    // 4. 🛑 SHORTCUT INSPECT KILLER: Developer codes key chains ko block karo
     document.addEventListener('keydown', function(event) {
+        // Blocks: Ctrl+C (Copy), Ctrl+X (Cut), Ctrl+V (Paste), Ctrl+U (View Source)
         if (event.ctrlKey && (event.key === 'c' || event.key === 'C' || 
                               event.key === 'x' || event.key === 'X' || 
                               event.key === 'v' || event.key === 'V' || 
@@ -845,13 +846,15 @@ f
             event.preventDefault();
             return false;
         }
+        
+        // Blocks: F12, Ctrl+Shift+I, Ctrl+Shift+J (Strictly shuts down all Inspect shortcuts)
         if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'J' || event.key === 'j'))) {
             event.preventDefault();
             return false;
         }
     }, false);
     
-    console.log("🔒 Security Spooler v2: Double-click selection protection fully deployed.");
+    console.log("🔒 Security Spooler v3: Left-click enabled seamlessly. Inspect codes sealed.");
 })();
         
         // 🚪 FIXED: Secure Logout on Cancel
