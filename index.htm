@@ -250,55 +250,34 @@
         .table-legend-bar { display: flex; gap: 6px; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; flex-wrap: wrap; }
         .legend-dot { padding: 4px 6px; border-radius: 4px; color: white; }
 /* ================================================================= */
-/* 📱 MASTER ARCADE: AVERAGE MOBILE ENFORCED VIEWPORT ENGINE         */
+/* 🎮 FIXED ARCADE: FULLY FLUID & GAME-ISOLATED VIEWPORT ENGINE      */
 /* ================================================================= */
 .game-box.fullscreen-arcade-active {
     position: fixed !important;
     top: 0 !important; left: 0 !important;
     width: 100vw !important; 
     height: 100vh !important;
-    background: #090a0f !important; /* Deep dark void outer backdrop */
+    background: #0f111a !important; /* One uniform deep dark color across the whole screen */
     z-index: 99999 !important;
-    margin: 0 !important; padding: 0 !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    overflow: hidden !important;
-}
-
-/* 🔥 🔥 THE MOBILE FRAME SHIELD: Enforces an average smartphone viewport constraint */
-.game-box.fullscreen-arcade-active #gameWindow,
-.game-box.fullscreen-arcade-active > div:not(.game-nav) {
-    width: 100% !important;
-    max-width: 390px !important; /* Standard Average Premium Smartphone Breadth (e.g. iPhone / Galaxy Base) */
-    height: 100% !important;
-    max-height: 844px !important; /* Standard Average Smartphone Length */
-    background: #0f111a !important; /* Pure uniform inner stage look exactly like your images */
-    padding: 16px !important;
+    margin: 0 !important; padding: 16px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-between !important; /* Locks layout elements securely inside viewport folds */
-    position: relative !important;
-    box-shadow: 0 0 40px rgba(0,0,0,0.8) !important;
+    justify-content: flex-start !important; /* Stack elements naturally down the page */
+    gap: 12px !important;
+    overflow-y: auto !important; /* Allows breathing room on shorter phones */
 }
 
-/* 🎯 NAVIGATION TAB HEADER FIXED INSIDE MOBILE MATRIX */
+/* 🎯 TABS HEADER STRAP */
 .game-box.fullscreen-arcade-active .game-nav {
-    position: absolute !important;
-    top: 12px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
     display: flex !important;
-    width: calc(100% - 32px) !important;
-    max-width: 360px !important;
+    width: 100% !important;
+    max-width: 440px !important;
     gap: 4px !important;
     padding: 4px !important;
     background: rgba(255,255,255,0.06) !important;
     border-radius: 12px !important;
-    z-index: 100000 !important;
 }
 
 .game-box.fullscreen-arcade-active .game-nav button {
@@ -308,57 +287,38 @@
     white-space: nowrap !important;
 }
 
-/* 🎯 THE THEATRE STAGE: SHARP RES-LOCKED CANVAS LAYERS */
+/* 🎯 THE GRAPHICS STAGE (CANVAS SCALE PROTECTION) */
 .game-box.fullscreen-arcade-active canvas {
-    display: none; /* Controlled natively by your functional triggers script switches */
-    width: 320px !important;  /* Strictly locked back to your original un-distorted breadth! */
+    display: none; /* Controlled cleanly by script toggles */
+    width: 100% !important;
+    max-width: 340px !important; /* Locks width to a natural un-distorted scale */
     height: auto !important;  
-    max-height: 400px !important; /* Preserves exact pixel metrics constraints from your screenshots */
     border-radius: 14px !important;
     box-shadow: 0 8px 25px rgba(0,0,0,0.5) !important;
-    margin: auto !important;
-    object-fit: contain !important; /* Completely bars stretch matrices distortion bugs */
+    margin: 8px auto !important;
 }
 
-/* Specific length parameters matching your original configuration specifications precisely */
-.game-box.fullscreen-arcade-active #spaceCanvas { height: 400px !important; display: none; }
-.game-box.fullscreen-arcade-active #flappyCanvas { height: 350px !important; display: none; }
-.game-box.fullscreen-arcade-active #snakeCanvas { height: 320px !important; display: none; }
-
-/* 🎯 FIXED POSITION CONTROLS ON FOOTER MATRIX */
+/* 🎯 ISOLATED FOOTER MOBILE JOYSTICKS */
 .game-box.fullscreen-arcade-active .control-pad, 
 .game-box.fullscreen-arcade-active .snake-grid-pad {
-    display: flex !important;
-    margin-top: auto !important;
-    margin-bottom: 12px !important;
+    /* Hard override: Keeps display managed purely by switchGameMode script logic */
+    margin: 8px auto !important;
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 280px !important;
     gap: 8px !important;
-    z-index: 100001 !important;
 }
 
 .game-box.fullscreen-arcade-active .ctrl-btn { padding: 12px !important; font-size: 14px !important; border-radius: 10px !important; }
 .game-box.fullscreen-arcade-active .snk-btn { width: 56px !important; height: 42px !important; font-size: 16px !important; }
 
-/* 🎯 DISMISS & RESET LIFECYCLE ACTION CONTROL HOOKS */
+/* 🎯 ACTION LIFECYCLE CONTROLS BUTTONS */
 .game-box.fullscreen-arcade-active .action-btn {
     width: 100% !important;
-    max-width: 320px !important;
+    max-width: 340px !important;
     padding: 12px !important;
     font-size: 14px !important;
     border-radius: 10px !important;
-    z-index: 100001 !important;
-}
-
-/* 🎯 DYNAMIC RUNTIME GAME OVER TEXT ALERTS SCREEN */
-#gameScreenStatusMsg {
-    color: #ff4d4d !important;
-    font-weight: 900 !important;
-    font-size: 18px !important;
-    margin: 10px 0 !important;
-    text-shadow: 0px 2px 4px rgba(0,0,0,0.6) !important;
-    text-align: center !important;
-    text-transform: uppercase !important;
+    margin: 4px auto !important;
 }
     /* 📱 TABLETS & MOBILE SCREENS (Sizing shifts dynamically) */
     @media screen and (max-width: 767px) {
