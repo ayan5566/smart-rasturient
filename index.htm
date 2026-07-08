@@ -249,106 +249,101 @@
 
         .table-legend-bar { display: flex; gap: 6px; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; flex-wrap: wrap; }
         .legend-dot { padding: 4px 6px; border-radius: 4px; color: white; }
- /* ================================================================= */
-/* 🎮 MASTER FLUID ARCHITECTURE: SCREEN ADAPTIVE ARCADE FRAMEWORK    */
+/* ================================================================= */
+/* 🎮 ULTIMATE FLUID ARCHITECTURE: FULL-SCREEN GAME VIEWPORT ENGINE   */
 /* ================================================================= */
 .game-box.fullscreen-arcade-active {
     position: fixed !important;
     top: 0 !important; left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: #0f111a !important; /* Premium unified arcade template background */
+    background: #0f111a !important; /* Pure uniform professional dark theme */
     z-index: 99999 !important;
     margin: 0 !important;
-    padding: 24px !important;
+    padding: 12px !important;
     box-sizing: border-box !important;
     
-    /* Enforces elements to distribute and fill the black screen symmetrically */
+    /* Dynamic flex layout handles fluid scaling across any mobile/desktop screens */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-around !important; /* Stretches the elements to eliminate empty screen voids */
-    overflow: hidden !important;
+    justify-content: space-between !important; /* Blocks screen scrolling by locking layout */
+    overflow: hidden !important; /* Strictly strips browser white edges and bars */
 }
 
-/* 🎯 ADAPTIVE CANVAS FLUID LAYER */
-.game-box.fullscreen-arcade-active canvas {
-    display: block !important;
-    width: 92vw !important; /* Sizzles fluidly across the device layout horizontally */
-    max-width: 520px !important; /* Optimizes the width limiters on wider monitor views */
-    height: auto !important;
-    max-height: 55vh !important; /* Rigid height guard locks framework limits safely */
-    border-radius: 20px !important;
-    box-shadow: 0 15px 45px rgba(0,0,0,0.65) !important;
-    object-fit: contain !important;
-    margin: 8px auto !important;
-    background: #70c5ce; /* Standard backup canvas context baseline fallback color */
-}
-
-/* Overrides internal view targets explicitly */
-.game-box.fullscreen-arcade-active #spaceCanvas { background: #0c0d14 !important; }
-.game-box.fullscreen-arcade-active #snakeCanvas { background: #0f111a !important; }
-
-/* 🎯 RESPONSIVE HUD & NAVIGATION RE-BALANCING */
-.game-box.fullscreen-arcade-active .game-nav {
-    display: flex !important;
-    width: 100% !important;
-    max-width: 440px !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    padding: 5px !important;
-    border-radius: 12px !important;
-    margin-bottom: 5px !important;
-    box-sizing: border-box !important;
-}
-
-.game-box.fullscreen-arcade-active .game-nav button {
-    font-size: 13px !important;
-    padding: 10px 4px !important;
+/* 🎯 FLUID HEADER CONTROLS */
+.game-box.fullscreen-arcade-active h3 {
+    font-size: 16px !important;
+    margin: 2px 0 !important;
+    color: #fff !important;
     font-weight: 700 !important;
 }
 
-/* 🎯 RESPONSIVE CONTROLS & CONTROLLER MATRIX */
+/* 🎯 FLUID TABS & BUTTONS BLOCK */
+.game-box.fullscreen-arcade-active .game-nav {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    gap: 4px !important;
+    padding: 3px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border-radius: 10px !important;
+    margin-bottom: 4px !important;
+}
+
+.game-box.fullscreen-arcade-active .game-nav button {
+    font-size: 11px !important;
+    padding: 6px 2px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+}
+
+/* 🎯 FLUID CANVAS INTERFACE FRAME */
+.game-box.fullscreen-arcade-active canvas {
+    display: none; /* Hard rule: Closed by default, active router un-hides it */
+    width: auto !important;
+    height: auto !important;
+    
+    /* Dynamic calculation limits to guarantee layout integrity */
+    max-width: 90vw !important;
+    max-height: 48vh !important; /* Hard constraint locks canvas height boundaries safely */
+    
+    aspect-ratio: 1 / 1 !important; /* Preserves pixel metrics mappings */
+    object-fit: contain !important;
+    margin: auto !important; /* Automatic alignment balancing */
+    border-radius: 14px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+}
+
+/* Specific aspect ratio handler for Space Shooter Canvas */
+.game-box.fullscreen-arcade-active #spaceCanvas { aspect-ratio: 320 / 400 !important; }
+/* Specific aspect ratio handler for Flappy Bird Canvas */
+.game-box.fullscreen-arcade-active #flappyCanvas { aspect-ratio: 320 / 350 !important; }
+
+/* 🎯 FLUID ACTION & REWARD BUTTONS BAR */
+.game-box.fullscreen-arcade-active .action-btn,
+.game-box.fullscreen-arcade-active .order-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    padding: 10px !important;
+    font-size: 13px !important;
+    margin: 4px auto !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+}
+
+/* 🎯 ON-SCREEN JOYSTICK FOR MATRIX CONTROLS */
 .game-box.fullscreen-arcade-active .control-pad, 
 .game-box.fullscreen-arcade-active .snake-grid-pad {
-    margin-top: 5px !important;
-    margin-bottom: 5px !important;
+    display: flex !important;
+    margin: 4px auto !important;
     width: 100% !important;
-    max-width: 360px !important;
-    gap: 8px !important;
+    max-width: 260px !important;
+    gap: 6px !important;
 }
 
-.game-box.fullscreen-arcade-active .ctrl-btn {
-    padding: 14px !important;
-    font-size: 14px !important;
-    border-radius: 12px !important;
-}
-
-.game-box.fullscreen-arcade-active .snk-btn {
-    width: 68px !important;
-    height: 44px !important;
-    font-size: 16px !important;
-}
-
-/* 🎯 FLUID ACTION INTERFACE BUTTONS */
-.game-box.fullscreen-arcade-active .action-btn {
-    width: 100% !important;
-    max-width: 320px !important;
-    padding: 12px !important;
-    font-size: 14px !important;
-    border-radius: 12px !important;
-}
-
-/* 🎯 ON-SCREEN STATUS INDICATORS ENGINE */
-#gameScreenStatusMsg {
-    color: #ff4d4d !important;
-    font-weight: 900 !important;
-    font-size: 22px !important;
-    margin: 6px 0 !important;
-    text-shadow: 0px 3px 6px rgba(0,0,0,0.6) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    text-align: center !important;
-}
+.game-box.fullscreen-arcade-active .ctrl-btn { padding: 10px !important; font-size: 13px !important; }
+.game-box.fullscreen-arcade-active .snk-btn { width: 50px !important; height: 38px !important; font-size: 14px !important; }
     /* --- 📱 MOBILE RESPONSIVE & TOUCH FIXES MAP --- */
         body { 
             padding: 10px !important; 
@@ -2034,39 +2029,60 @@ async function executeAdminManualBillWipeSettlement() {
     }
 }
        
-        function switchGameMode(selectedTargetMode) {
-            activeGameMode = selectedTargetMode; clearInterval(loopTimerInstance);
-            document.getElementById('flappyCanvas').style.display = 'none';
-            document.getElementById('spaceCanvas').style.display = 'none';
-            document.getElementById('snakeCanvas').style.display = 'none';
-            document.getElementById('couponDisplay').style.display = 'none';
-
-            document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
-            if(document.getElementById('nav'+selectedTargetMode)) {
-                document.getElementById('nav'+selectedTargetMode).classList.add('active');
-            }
-            
-            document.getElementById('mathGameSection').style.display = (selectedTargetMode==='MATH')?'block':'none';
-            document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
-            document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
-            document.getElementById('startBtn').style.display = (selectedTargetMode==='MATH')?'none':'block';
-            document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
-        }
 // ===================================================================
-// 🎮 FIXED MASTER ROUTER: SEALS ALL CANVAS OVERLAPS & AUTOSCALES CORRECTLY
+// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WIPES ALL ACTIVE TIMERS)
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    activeGameMode = selectedTargetMode; 
+    
+    // 🛡️ THE OVERLAP SHIELD: Hard kill any active background frames animation tickers instantly
+    clearInterval(loopTimerInstance); 
+    
+    document.getElementById('flappyCanvas').style.display = 'none';
+    document.getElementById('spaceCanvas').style.display = 'none';
+    document.getElementById('snakeCanvas').style.display = 'none';
+    document.getElementById('couponDisplay').style.display = 'none';
+
+    document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
+    if(document.getElementById('nav'+selectedTargetMode)) {
+        document.getElementById('nav'+selectedTargetMode).classList.add('active');
+    }
+    
+    document.getElementById('mathGameSection').style.display = (selectedTargetMode==='MATH')?'block':'none';
+    document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
+    document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
+    
+    // Manage dynamic launch visibility controls states
+    if(selectedTargetMode === 'MATH') {
+        document.getElementById('startBtn').style.display = 'none';
+        document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
+        document.getElementById('exitGameBtn').style.display = "none";
+        generateMathQuestion();
+    } else {
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
+        // If already inside full screen mode container, sync dynamic dimensions immediately on tab shift
+        if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
+            startSelectedGame();
+        }
+    }
+}
+
+// ===================================================================
+// 🎮 FIXED MASTER ROUTER: RESIZES CANVAS & BOOTS ISOLATED SELECTION
 // ===================================================================
 function startSelectedGame() {
+    clearInterval(loopTimerInstance); // Hard wipe previous animation handles
+    
     document.getElementById('startBtn').style.display = "none";
     document.getElementById('couponDisplay').style.display = "none";
     document.getElementById('gameScreenStatusMsg').style.display = "none"; 
     
-    // 🛡️ THE SHIELD: Forces every canvas to turn off completely before booting active session
+    // Force reset layout viewports completely
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
     allGameCanvasIds.forEach(id => {
-        const targetCanvasElement = document.getElementById(id);
-        if (targetCanvasElement) {
-            targetCanvasElement.style.display = 'none'; // Strips residual visual overlaps cleanly
-        }
+        const targetElement = document.getElementById(id);
+        if (targetElement) targetElement.style.display = 'none';
     });
 
     if(activeGameMode !== 'MATH') {
@@ -2074,25 +2090,25 @@ function startSelectedGame() {
         document.getElementById('exitGameBtn').style.display = "block";
     }
 
-    // Dynamic scale computation layer configurations
+    // Dynamic scale width limits tracking computations
     const maxBoundWidth = Math.min(window.innerWidth * 0.9, 450);
 
     if(activeGameMode === 'FLAPPY') { 
         const fCanvas = document.getElementById('flappyCanvas');
         fCanvas.width = maxBoundWidth;
-        fCanvas.height = Math.min(window.innerHeight * 0.52, 350);
+        fCanvas.height = Math.min(window.innerHeight * 0.48, 350);
         fCanvas.style.display = 'block'; 
         initFlappyBirdGame(); 
     }
     else if(activeGameMode === 'SPACE') { 
         const sCanvas = document.getElementById('spaceCanvas');
         sCanvas.width = maxBoundWidth;
-        sCanvas.height = Math.min(window.innerHeight * 0.55, 400);
+        sCanvas.height = Math.min(window.innerHeight * 0.48, 400);
         sCanvas.style.display = 'block'; 
         initSpaceShooterGame(); 
     }
     else if(activeGameMode === 'SNAKE') { 
-        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; // Exact 20px cell alignments matching
+        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; // Stable 20px grid spacing match bounds
         const sCanvas = document.getElementById('snakeCanvas');
         sCanvas.width = alignedGridWidth;
         sCanvas.height = alignedGridWidth;
@@ -2100,11 +2116,12 @@ function startSelectedGame() {
         initSnakeGameLoop(); 
     }
 }
+
 // ===================================================================
-// 🧹 FIXED LIFECYCLE CLEANER: WIPES ALL GRAPHICAL LAYERS ON DISMISSAL
+// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (WIPES ENGINE BUFFER CACHE)
 // ===================================================================
 function exitGameEngine() {
-    clearInterval(loopTimerInstance); // Stops background ticks instantly
+    clearInterval(loopTimerInstance); // Hard safety block
     
     document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
     document.getElementById('exitGameBtn').style.display = "none";
@@ -2112,13 +2129,10 @@ function exitGameEngine() {
     document.getElementById('startBtn').innerText = "Launch Engine Run";
     document.getElementById('gameScreenStatusMsg').style.display = "none";
     
-    // Hard loop wipes all canvas visibilities on exit gesture
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
     allGameCanvasIds.forEach(id => {
-        const targetCanvasElement = document.getElementById(id);
-        if (targetCanvasElement) {
-            targetCanvasElement.style.display = 'none';
-        }
+        const targetElement = document.getElementById(id);
+        if (targetElement) targetElement.style.display = 'none';
     });
 }
 function generateMathQuestion() {
