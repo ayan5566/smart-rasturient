@@ -250,28 +250,26 @@
         .table-legend-bar { display: flex; gap: 6px; justify-content: space-between; font-size: 11px; font-weight: bold; margin-bottom: 15px; flex-wrap: wrap; }
         .legend-dot { padding: 4px 6px; border-radius: 4px; color: white; }
 /* ================================================================= */
-/* 🎮 ULTIMATE FLUID ARCHITECTURE: FULL-SCREEN GAME VIEWPORT ENGINE   */
+/* 🎮 MASTER ARCHITECTURE: SCREEN ADAPTIVE FLUID VIEWPORT CONTROLS   */
 /* ================================================================= */
 .game-box.fullscreen-arcade-active {
     position: fixed !important;
     top: 0 !important; left: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: #0f111a !important; /* Pure uniform professional dark theme */
+    background: #0f111a !important; /* Premium dark theme background */
     z-index: 99999 !important;
     margin: 0 !important;
-    padding: 12px !important;
+    padding: 14px !important;
     box-sizing: border-box !important;
-    
-    /* Dynamic flex layout handles fluid scaling across any mobile/desktop screens */
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: space-between !important; /* Blocks screen scrolling by locking layout */
-    overflow: hidden !important; /* Strictly strips browser white edges and bars */
+    justify-content: space-between !important; /* Spreads layout nodes symmetrically to fill voids */
+    overflow: hidden !important; /* Strips browser scrollbars and borders */
 }
 
-/* 🎯 FLUID HEADER CONTROLS */
+/* 🎯 ADAPTIVE HEADER TYPOGRAPHY */
 .game-box.fullscreen-arcade-active h3 {
     font-size: 16px !important;
     margin: 2px 0 !important;
@@ -279,11 +277,11 @@
     font-weight: 700 !important;
 }
 
-/* 🎯 FLUID TABS & BUTTONS BLOCK */
+/* 🎯 ADAPTIVE GAME SWITCH NAVIGATION INTERFACE TABS */
 .game-box.fullscreen-arcade-active .game-nav {
     display: flex !important;
     width: 100% !important;
-    max-width: 400px !important;
+    max-width: 420px !important;
     gap: 4px !important;
     padding: 3px !important;
     background: rgba(255,255,255,0.06) !important;
@@ -293,57 +291,61 @@
 
 .game-box.fullscreen-arcade-active .game-nav button {
     font-size: 11px !important;
-    padding: 6px 2px !important;
+    padding: 8px 4px !important;
     border-radius: 6px !important;
     white-space: nowrap !important;
 }
 
-/* 🎯 FLUID CANVAS INTERFACE FRAME */
+/* 🎯 THE THEATRE STAGE FLUID CANVAS COMPONENT */
 .game-box.fullscreen-arcade-active canvas {
-    display: none; /* Hard rule: Closed by default, active router un-hides it */
+    display: none; /* Hard constraint: closed by default, toggled via active logic */
     width: auto !important;
     height: auto !important;
-    
-    /* Dynamic calculation limits to guarantee layout integrity */
-    max-width: 90vw !important;
-    max-height: 48vh !important; /* Hard constraint locks canvas height boundaries safely */
-    
-    aspect-ratio: 1 / 1 !important; /* Preserves pixel metrics mappings */
+    max-width: 92vw !important;
+    max-height: 46vh !important; /* Strong guardrail stops elements overflow leaks */
+    aspect-ratio: 1 / 1 !important;
     object-fit: contain !important;
-    margin: auto !important; /* Automatic alignment balancing */
-    border-radius: 14px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    margin: auto !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.6) !important;
 }
 
-/* Specific aspect ratio handler for Space Shooter Canvas */
+/* Specific aspect ratio overrides to handle layout formats dimensions */
 .game-box.fullscreen-arcade-active #spaceCanvas { aspect-ratio: 320 / 400 !important; }
-/* Specific aspect ratio handler for Flappy Bird Canvas */
 .game-box.fullscreen-arcade-active #flappyCanvas { aspect-ratio: 320 / 350 !important; }
 
-/* 🎯 FLUID ACTION & REWARD BUTTONS BAR */
-.game-box.fullscreen-arcade-active .action-btn,
-.game-box.fullscreen-arcade-active .order-btn {
-    width: 100% !important;
-    max-width: 280px !important;
-    padding: 10px !important;
-    font-size: 13px !important;
-    margin: 4px auto !important;
-    border-radius: 10px !important;
-    box-sizing: border-box !important;
-}
-
-/* 🎯 ON-SCREEN JOYSTICK FOR MATRIX CONTROLS */
+/* 🎯 ADAPTIVE ON-SCREEN JOYSTICK FIELD PANELS */
 .game-box.fullscreen-arcade-active .control-pad, 
 .game-box.fullscreen-arcade-active .snake-grid-pad {
     display: flex !important;
     margin: 4px auto !important;
     width: 100% !important;
-    max-width: 260px !important;
+    max-width: 280px !important;
     gap: 6px !important;
 }
 
-.game-box.fullscreen-arcade-active .ctrl-btn { padding: 10px !important; font-size: 13px !important; }
-.game-box.fullscreen-arcade-active .snk-btn { width: 50px !important; height: 38px !important; font-size: 14px !important; }
+.game-box.fullscreen-arcade-active .ctrl-btn { padding: 12px !important; font-size: 13px !important; }
+.game-box.fullscreen-arcade-active .snk-btn { width: 52px !important; height: 40px !important; font-size: 15px !important; }
+
+/* 🎯 ADAPTIVE LIFECYCLE ACTION CONTROL HOOKS BUTTONS */
+.game-box.fullscreen-arcade-active .action-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    padding: 12px !important;
+    font-size: 13px !important;
+    margin: 4px auto !important;
+    border-radius: 10px !important;
+}
+
+#gameScreenStatusMsg {
+    color: #ff4d4d !important;
+    font-weight: 900 !important;
+    font-size: 20px !important;
+    margin: 4px 0 !important;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.6) !important;
+    text-align: center !important;
+}
+
     /* --- 📱 MOBILE RESPONSIVE & TOUCH FIXES MAP --- */
         body { 
             padding: 10px !important; 
