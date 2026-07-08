@@ -296,18 +296,21 @@
     white-space: nowrap !important;
 }
 
-/* 🎯 THE THEATRE STAGE FLUID CANVAS COMPONENT */
+/* ================================================================= */
+/* 🌊 DYNAMIC CANVAS LIQUID SURFACE OVERRIDES                        */
+/* ================================================================= */
 .game-box.fullscreen-arcade-active canvas {
-    display: none; /* Hard constraint: closed by default, toggled via active logic */
-    width: auto !important;
+    display: none;
+    /* CSS ab dynamic coordinates scale ko full capacity gherne ki azadi deta hai */
+    width: 100% !important;
+    max-width: 500px !important;
     height: auto !important;
-    max-width: 92vw !important;
-    max-height: 46vh !important; /* Strong guardrail stops elements overflow leaks */
-    aspect-ratio: 1 / 1 !important;
-    object-fit: contain !important;
+    max-height: 50vh !important;
+    
+    object-fit: fill !important; /* Forces the internal matrix grid to fill the entire container */
     margin: auto !important;
-    border-radius: 16px !important;
-    box-shadow: 0 12px 35px rgba(0,0,0,0.6) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.65) !important;
 }
 
 /* Specific aspect ratio overrides to handle layout formats dimensions */
@@ -2109,16 +2112,16 @@ function switchGameMode(selectedTargetMode) {
 }
 
 // ===================================================================
-// 🎮 FIXED MASTER ROUTER: RESIZES CANVAS & BOOTS ISOLATED SELECTION
+// 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
 // ===================================================================
 function startSelectedGame() {
-    clearInterval(loopTimerInstance); // Hard wipe previous animation handles
+    clearInterval(loopTimerInstance); // Hard reset previous animation loops
     
     document.getElementById('startBtn').style.display = "none";
     document.getElementById('couponDisplay').style.display = "none";
     document.getElementById('gameScreenStatusMsg').style.display = "none"; 
     
-    // Clear previous drama entries from stage
+    // Sabhi canvas ko completely reset karo taaki overlapping 100% khatam ho jaye
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
@@ -2130,33 +2133,36 @@ function startSelectedGame() {
         document.getElementById('exitGameBtn').style.display = "block";
     }
 
-    // Dynamic scale width limits based on active stage dimensions
-    const maxBoundWidth = Math.min(window.innerWidth * 0.9, 450);
+    // 💧 🔥 THE LIQUID COMPROLLER: Real screen space ke mutabik length aur breadth calculate karo
+    // Available width ka 95% breadth gherega, aur height ko screen space ke scaling par balance rakhega
+    let fluidBreadth = Math.min(window.innerWidth * 0.95, 500); 
+    let fluidLength = Math.min(window.innerHeight * 0.50, 450);
 
     if(activeGameMode === 'FLAPPY') { 
         const fCanvas = document.getElementById('flappyCanvas');
-        fCanvas.width = maxBoundWidth;
-        fCanvas.height = Math.min(window.innerHeight * 0.48, 350);
+        // Paani ki tarah structural elements coordinates ko mathematically scale karo
+        fCanvas.width = fluidBreadth;
+        fCanvas.height = fluidLength;
         fCanvas.style.display = 'block'; 
         initFlappyBirdGame(); 
     }
     else if(activeGameMode === 'SPACE') { 
         const sCanvas = document.getElementById('spaceCanvas');
-        sCanvas.width = maxBoundWidth;
-        sCanvas.height = Math.min(window.innerHeight * 0.48, 400);
+        sCanvas.width = fluidBreadth;
+        sCanvas.height = fluidLength;
         sCanvas.style.display = 'block'; 
         initSpaceShooterGame(); 
     }
     else if(activeGameMode === 'SNAKE') { 
-        const alignedGridWidth = Math.floor(maxBoundWidth / 20) * 20; 
+        // Snake game ke liye precise 20px matrix step coordinates matching framework lagao
+        let snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
         const sCanvas = document.getElementById('snakeCanvas');
-        sCanvas.width = alignedGridWidth;
-        sCanvas.height = alignedGridWidth;
+        sCanvas.width = snakeSquareSize;
+        sCanvas.height = snakeSquareSize;
         sCanvas.style.display = 'block'; 
         initSnakeGameLoop(); 
     }
 }
-
 // ===================================================================
 // 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
 // ===================================================================
