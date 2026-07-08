@@ -257,16 +257,15 @@
     top: 0 !important; left: 0 !important;
     width: 100vw !important; 
     height: 100vh !important;
-    background: #0f111a !important; /* One uniform deep dark color across the whole screen */
+    background: #0f111a !important; /* One solid color everywhere */
     z-index: 99999 !important;
-    margin: 0 !important; padding: 16px !important;
+    margin: 0 !important; padding: 12px !important;
     box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: flex-start !important; /* Stack elements naturally down the page */
-    gap: 12px !important;
-    overflow-y: auto !important; /* Allows breathing room on shorter phones */
+    justify-content: space-between !important;
+    overflow: hidden !important;
 }
 
 /* 🎯 TABS HEADER STRAP */
@@ -287,15 +286,17 @@
     white-space: nowrap !important;
 }
 
-/* 🎯 THE GRAPHICS STAGE (CANVAS SCALE PROTECTION) */
+/* 🎯 LIQUID FULL-WIDTH GRAPHICS STAGE */
 .game-box.fullscreen-arcade-active canvas {
-    display: none; /* Controlled cleanly by script toggles */
+    display: none;
     width: 100% !important;
-    max-width: 340px !important; /* Locks width to a natural un-distorted scale */
-    height: auto !important;  
-    border-radius: 14px !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5) !important;
-    margin: 8px auto !important;
+    max-width: 480px !important; /* Clean limit for larger tabs/desktops */
+    height: auto !important;
+    max-height: 52vh !important; /* Protects lower buttons layout spacing */
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    margin: auto !important;
+    object-fit: fill !important; /* Expands flawlessly across available width */
 }
 
 /* 🎯 ISOLATED FOOTER MOBILE JOYSTICKS */
@@ -2149,8 +2150,14 @@ function generateMathQuestion() {
             loopTimerInstance = setInterval(frameUpdateSnake, 120);
         }
 
-        function generateSnakeFoodLocation() { snakeFoodUnit = { x: Math.floor(Math.random()*15)*20, y: Math.floor(Math.random()*14+1)*20 }; }
-
+function generateSnakeFoodLocation() { 
+    let maxGridCols = Math.floor(snakeCanvasElement.width / 20);
+    let maxGridRows = Math.floor((snakeCanvasElement.height - 20) / 20);
+    snakeFoodUnit = { 
+        x: Math.floor(Math.random() * maxGridCols) * 20, 
+        y: Math.floor(Math.random() * maxGridRows + 1) * 20 
+    }; 
+}
       function executeTriggerNativeQRGenCardWindow(floorName, tableUnitID) {
     let qrCanvasFrame = document.getElementById('qrcodeCanvasOutputFrame'); if(!qrCanvasFrame) return; qrCanvasFrame.innerHTML = ''; 
     
@@ -3223,21 +3230,76 @@ function generateAdminTableGrid() {
     document.getElementById('customerView').style.display = 'block';
     renderCustomerMenu();
 }
-        function frameUpdateFlappy() {
-            flCtx.clearRect(0,0,320,360); fBird.velocity += 0.23; fBird.y += fBird.velocity;
-            flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
-            flCtx.fillStyle = "white"; flCtx.beginPath(); flCtx.arc(54, fBird.y-3, 4, 0, Math.PI*2); flCtx.fill();
-            flCtx.fillStyle = "black"; flCtx.beginPath(); flCtx.arc(55, fBird.y-3, 1.5, 0, Math.PI*2); flCtx.fill();
-            flCtx.fillStyle = "#e67e22"; flCtx.fillRect(58, fBird.y-1, 6, 4);
-            if(fBird.y > 350 || fBird.y < 0) { finalizeFailedRun("💥 Bird Crashed Floor!"); return; }
-            fPipes.forEach((p, idx) => {
-                p.x -= 2.2; flCtx.fillStyle = "#27ae60"; flCtx.fillRect(p.x, 0, 42, p.gapTop); flCtx.fillRect(p.x, p.gapBottom, 42, 360 - p.gapBottom);
-                if(p.x <= 165 && !p.registered) { p.registered = true; let nextTop = Math.random() * 110 + 40; fPipes.push({ x: 320, gapTop: nextTop, gapBottom: nextTop + 120, registered: false }); }
-                if(p.x < 61 && p.x + 42 > 39) { if(fBird.y - 11 < p.gapTop || fBird.y + 11 > p.gapBottom) { finalizeFailedRun("💥 Collision with Pipe!"); } }
-                if(p.x + 42 < 39 && p.registered === true && idx === 0) { flappyScoreTracker++; if(flappyScoreTracker >= rules.flappyTar) triggerRewardCoupon(rules.flappyDisc); fPipes.shift(); }
-            });
-            flCtx.fillStyle = "#2c3e50"; flCtx.font = "bold 15px Arial"; flCtx.fillText("Points: " + flappyScoreTracker, 15, 25);
+        // ===================================================================
+// 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (ZERO OVERLAP OVERLAY)
+// ===================================================================
+function frameUpdateFlappy() {
+    // 🛡️ Safe checks to ensure canvas context is active before rendering frames
+    if (!flappyCanvasElement || !flCtx) return;
+
+    // 💧 Dynamic stage clear bounds matching screen resolution natively
+    flCtx.clearRect(0, 0, flappyCanvasElement.width, flappyCanvasElement.height); 
+    
+    fBird.velocity += 0.23; 
+    fBird.y += fBird.velocity;
+    
+    // Draw Bird body (remains centered relative to horizontal coordinate X: 50)
+    flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
+    flCtx.fillStyle = "white"; flCtx.beginPath(); flCtx.arc(54, fBird.y-3, 4, 0, Math.PI*2); flCtx.fill();
+    flCtx.fillStyle = "black"; flCtx.beginPath(); flCtx.arc(55, fBird.y-3, 1.5, 0, Math.PI*2); flCtx.fill();
+    flCtx.fillStyle = "#e67e22"; flCtx.fillRect(58, fBird.y-1, 6, 4);
+    
+    // 🔥 FIXED: Floor crash limit bound to current physical height dynamically
+    if(fBird.y > flappyCanvasElement.height - 11 || fBird.y < 0) { 
+        finalizeFailedRun("💥 Bird Crashed Floor!"); 
+        return; 
+    }
+    
+    fPipes.forEach((p, idx) => {
+        p.x -= 2.2; 
+        flCtx.fillStyle = "#27ae60"; 
+        
+        // Draw Top Pipe
+        flCtx.fillRect(p.x, 0, 42, p.gapTop); 
+        
+        // 🔥 FIXED: Bottom Pipe length calculated automatically according to current screen height
+        flCtx.fillRect(p.x, p.gapBottom, 42, flappyCanvasElement.height - p.gapBottom);
+        
+        // 🔥 FIXED: Spawns next pipe exactly when the current one crosses the exact center of any mobile screen
+        if(p.x <= (flappyCanvasElement.width / 2) && !p.registered) { 
+            p.registered = true; 
+            // Calculate dynamic tops relative to available stage height boundaries
+            let nextTop = Math.random() * (flappyCanvasElement.height - 200) + 40; 
+            fPipes.push({ 
+                x: flappyCanvasElement.width, 
+                gapTop: nextTop, 
+                gapBottom: nextTop + 120, // Clean passable opening gap width
+                registered: false 
+            }); 
         }
+        
+        // Collision Detection coordinates rules updated natively
+        if(p.x < 61 && p.x + 42 > 39) { 
+            if(fBird.y - 11 < p.gapTop || fBird.y + 11 > p.gapBottom) { 
+                finalizeFailedRun("💥 Collision with Pipe!"); 
+            } 
+        }
+        
+        // Score trigger point rules updated
+        if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
+            flappyScoreTracker++; 
+            if(flappyScoreTracker >= rules.flappyTar) {
+                triggerRewardCoupon(rules.flappyDisc); 
+            }
+            fPipes.shift(); 
+        }
+    });
+    
+    // Dynamic text score positioning
+    flCtx.fillStyle = "#2c3e50"; 
+    flCtx.font = "bold 15px Arial"; 
+    flCtx.fillText("Points: " + flappyScoreTracker, 15, 25);
+}
 
         // --- RESTORED: DYNAMIC VECTOR SPACE SHOOTER CAMPAIGN MODULE ARCHITECTURE ---
         function setupLevelParameters() {
@@ -3311,8 +3373,12 @@ function generateAdminTableGrid() {
         }
 
         function frameUpdateSnake() {
-            let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y };
-            if(nextHead.x < 0 || nextHead.x >= 320 || nextHead.y < 20 || nextHead.y >= 320) { finalizeFailedRun("Snake Hit Wall!"); return; }
+            // Inside frameUpdateSnake, replace the head collision coordinate boundaries check line:
+            let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y  };
+            if(nextHead.x < 0 || nextHead.x >= snakeCanvasElement.width || nextHead.y < 20 || nextHead.y >= snakeCanvasElement.height) { 
+            finalizeFailedRun("Snake Hit Wall!"); 
+            return; 
+            }
             for(let cell of snakeArr) { if(nextHead.x === cell.x && nextHead.y === cell.y) { finalizeFailedRun("Snake Crashed Self!"); return; } }
             snakeArr.unshift(nextHead);
             if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
