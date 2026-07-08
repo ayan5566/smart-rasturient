@@ -91,25 +91,29 @@
         margin-bottom: 15px !important;
         line-height: 1.4 !important;
     }
-    /* ================================================================= */
-/* 🔒 THE ANTI-COPY SHIELD: PERMANENT USER-EXPERIENCE LOCK SYSTEM     */
+    
 /* ================================================================= */
-*, html, body {
-    /* Pure website se text selection aur highlighted blue-box ko permanent mita deta hai */
-    -webkit-touch-callout: none !important; /* iOS Safari link highlights */
+/* 🎮 FIX: BUTTON CLICK FULLY ACTIVE + MOBILE COPY POPUP KILLED      */
+/* ================================================================= */
+
+/* Game ke saare controller buttons par touch-hold selection block karo */
+.ctrl-btn, 
+.snk-btn, 
+.game-box .action-btn, 
+.game-box .game-nav button {
+    /* Left-click ekdam active rahega, par dabakar rakhne par copy menu nahi aayega */
+    -webkit-touch-callout: none !important; /* iOS Safari/Chrome long-press menu killer */
     -webkit-user-select: none !important;   /* Safari */
     -khtml-user-select: none !important;     /* Konqueror HTML */
     -moz-user-select: none !important;      /* Old Firefox */
     -ms-user-select: none !important;       /* Internet Explorer/Edge */
-    user-select: none !important;           /* Standard modern browsers */
-}
-
-/* Fallback protection for input fields: Taaki customer input box mein numeric pins ya answer type kar sake */
-input, textarea {
-    -webkit-user-select: text !important;
-    -moz-user-select: text !important;
-    -ms-user-select: text !important;
-    user-select: text !important;
+    user-select: none !important;           /* Modern Chrome, Opera, and Brave */
+    
+    /* Galti se click karte waqt jo blue ya grey box highlighted shadow aati hai, use hataye */
+    -webkit-tap-highlight-color: transparent !important; 
+    
+    /* Mobile standard touch controls tracking active layer pointers */
+    touch-action: manipulation !important;  
 }
 
     /* ------------------------------------------------------------- */
@@ -810,29 +814,7 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        /* ================================================================= */
-/* 🎮 FIX: BUTTON CLICK FULLY ACTIVE + MOBILE COPY POPUP KILLED      */
-/* ================================================================= */
 
-/* Game ke saare controller buttons par touch-hold selection block karo */
-.ctrl-btn, 
-.snk-btn, 
-.game-box .action-btn, 
-.game-box .game-nav button {
-    /* Left-click ekdam active rahega, par dabakar rakhne par copy menu nahi aayega */
-    -webkit-touch-callout: none !important; /* iOS Safari/Chrome long-press menu killer */
-    -webkit-user-select: none !important;   /* Safari */
-    -khtml-user-select: none !important;     /* Konqueror HTML */
-    -moz-user-select: none !important;      /* Old Firefox */
-    -ms-user-select: none !important;       /* Internet Explorer/Edge */
-    user-select: none !important;           /* Modern Chrome, Opera, and Brave */
-    
-    /* Galti se click karte waqt jo blue ya grey box highlighted shadow aati hai, use hataye */
-    -webkit-tap-highlight-color: transparent !important; 
-    
-    /* Mobile standard touch controls tracking active layer pointers */
-    touch-action: manipulation !important;  
-}
 
         // 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
