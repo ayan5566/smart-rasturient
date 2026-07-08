@@ -810,18 +810,34 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        // ===================================================================
-// 🛡️ DEEP APPLICATION SECURITY GUARD: BLOCKS RIGHT-CLICK & SHORTCUTS
+ // ===================================================================
+// 🛡️ INDESTRUCTIBLE UX SHIELD V2: DOUBLE-CLICK & TOUCH-HOLD KILLER
 // ===================================================================
-(function enforceIndestructibleUserExperienceGuard() {
-    // 1. Right Click Context Menu block karo (Inspecting protection)
+(function enforceAbsoluteCopyLockSystem() {
+    // 1. Right Click Context Menu block karo
     document.addEventListener('contextmenu', function(event) {
         event.preventDefault();
     }, false);
 
-    // 2. Keyboard Copy, Cut, Paste aur Source View channels block karo
+    // 2. 🔥 THE DOUBLE-CLICK & SELECTION LOCK: Galti se bhi double tap par blue highlight na aaye
+    document.addEventListener('selectstart', function(event) {
+        // Sirf numeric input elements ke andar selection allow karega taaki quiz chal sake
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return true;
+        }
+        event.preventDefault();
+        return false;
+    });
+
+    // 3. Mobile screen par long-press (dabakar rakhne) par selection handles ko block karo
+    document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+            event.preventDefault(); // Multi-touch zoom control injection bypass check
+        }
+    }, { passive: false });
+
+    // 4. Keyboard Copy, Cut, Paste aur Source View channels block karo
     document.addEventListener('keydown', function(event) {
-        // Blocks: Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+U (View Source), Ctrl+Shift+I (DevTools)
         if (event.ctrlKey && (event.key === 'c' || event.key === 'C' || 
                               event.key === 'x' || event.key === 'X' || 
                               event.key === 'v' || event.key === 'V' || 
@@ -829,15 +845,13 @@ f
             event.preventDefault();
             return false;
         }
-        
-        // Android / Windows specialized DevTools shortcut key hooks override
         if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && (event.key === 'I' || event.key === 'i' || event.key === 'J' || event.key === 'j'))) {
             event.preventDefault();
             return false;
         }
     }, false);
     
-    console.log("🔒 Security Spooler: Website anti-copy armor actively deployed.");
+    console.log("🔒 Security Spooler v2: Double-click selection protection fully deployed.");
 })();
         
         // 🚪 FIXED: Secure Logout on Cancel
