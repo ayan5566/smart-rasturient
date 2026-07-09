@@ -13,6 +13,28 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
+        /* ================================================================= */
+/* 🎮 CODES FIX: UNLOCKED LEFT-CLICK + KILLED DOUBLE-TAP HOLD COPY   */
+/* ================================================================= */
+.ctrl-btn, 
+.snk-btn, 
+.game-box .action-btn, 
+.game-box .game-nav button {
+    /* Left-click normal click ekdam active rahega */
+    -webkit-touch-callout: none !important; /* iOS aur Safari par tap-hold menu permanent band */
+    -webkit-user-select: none !important;   /* Chrome aur mobile view par text selection block */
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;      /* Firefox handles */
+    -ms-user-select: none !important;       /* Windows mobile IE/Edge framework */
+    user-select: none !important;           /* Standard modern Android/Brave/Blink systems */
+    
+    /* Galti se click-hold karte waqt aane wali grey/blue default highlight shadow ko hataye */
+    -webkit-tap-highlight-color: transparent !important; 
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+    
+    /* Mobile double-tap zoom behavior aur click delay defaults override */
+    touch-action: manipulation !important;  
+}
 /* ================================================================= */
 /* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PREVIEW) */
 /* ================================================================= */
@@ -814,8 +836,51 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+        // ===================================================================
+// 🛡️ UX SHIELD V5: STOPS TAP-HOLD & DOUBLE-TAP COPY IN ARCADE BUTTONS
+// ===================================================================
+(function enforcePerfectArcadeInputControls() {
+    // 1. Right Click / Context Menu ko global window frame par completely lock rakhein
+    document.addEventListener('contextmenu', function(event) {
+        event.preventDefault();
+    }, false);
 
+    // 2. Text Selection mechanism ko tightly locked rakho (Except inputs)
+    document.addEventListener('selectstart', function(event) {
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+            return true; 
+        }
+        event.preventDefault();
+        return false;
+    });
 
+    // 3. 🔥 HARD FIX: Buttons par long-press aur double-tap hold menu ko completely kill karo
+    const targetControlsContainer = document.getElementById('gameWindow');
+    if (targetControlsContainer) {
+        // Sirf game arcade area ke andar chal rahe events ko capture karega
+        targetControlsContainer.addEventListener('touchstart', function(event) {
+            const elTagName = event.target.tagName;
+            // Inputs ko chhod kar baaki controllers par long press zoom bypass trigger
+            if (elTagName !== 'INPUT' && elTagName !== 'TEXTAREA') {
+                if (event.touches.length > 1) {
+                    event.preventDefault(); // Blocks split multiple touch zoom logic crashes
+                }
+            }
+        }, { passive: true });
+
+        // Context menu popups tracking overrides for touch devices
+        targetControlsContainer.addEventListener('touchend', function(event) {
+            const clickedClass = event.target.className;
+            // Agar click hone wali cheez controller button ya nav tab button hai
+            if (clickedClass.includes('ctrl-btn') || clickedClass.includes('snk-btn') || clickedClass.includes('action-btn')) {
+                event.preventDefault(); // Browser ka default selection window bypass block
+                event.target.click();   /* 🔥 FORCE TRADITIONAL CLICK: Aapka original left click game code instantly fire ho jayega */
+            }
+        }, { passive: false }); // False allows strict call stack sequence over-writes
+    }
+    
+    console.log("🔒 Security Spooler v5: Double-tap hold copy matrix safely destroyed.");
+})();
         // 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
     try {
