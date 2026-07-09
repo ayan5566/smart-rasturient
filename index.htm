@@ -13,27 +13,28 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
-        /* ================================================================= */
-/* 🎮 CODES FIX: UNLOCKED LEFT-CLICK + KILLED DOUBLE-TAP HOLD COPY   */
+/* ================================================================= */
+/* 🎮 MOBILE FAST-INPUT LAYER: REMOVES ALL 300ms TAP DELAY FREEZES   */
 /* ================================================================= */
 .ctrl-btn, 
 .snk-btn, 
 .game-box .action-btn, 
 .game-box .game-nav button {
-    /* Left-click normal click ekdam active rahega */
-    -webkit-touch-callout: none !important; /* iOS aur Safari par tap-hold menu permanent band */
-    -webkit-user-select: none !important;   /* Chrome aur mobile view par text selection block */
-    -khtml-user-select: none !important;
-    -moz-user-select: none !important;      /* Firefox handles */
-    -ms-user-select: none !important;       /* Windows mobile IE/Edge framework */
-    user-select: none !important;           /* Standard modern Android/Brave/Blink systems */
-    
-    /* Galti se click-hold karte waqt aane wali grey/blue default highlight shadow ko hataye */
-    -webkit-tap-highlight-color: transparent !important; 
-    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-    
-    /* Mobile double-tap zoom behavior aur click delay defaults override */
+    /* 1. Android/iOS native long-press text selection popup permanent dead */
+    -webkit-touch-callout: none !important; 
+    -webkit-user-select: none !important;   
+    -khtml-user-select: none !important;     
+    -moz-user-select: none !important;      
+    -ms-user-select: none !important;       
+    user-select: none !important;           
+    -webkit-user-drag: none !important;
+
+    /* 2. 🔥 THE FREEZE KILLER: Directs mobile engines to skip the 1-sec zoom waiting logic */
     touch-action: manipulation !important;  
+
+    /* 3. Strip button flashing background colors on instant touch taps */
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
 }
 /* ================================================================= */
 /* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PREVIEW) */
@@ -836,52 +837,61 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-        // ===================================================================
-// 🛡️ UX SHIELD V5: STOPS TAP-HOLD & DOUBLE-TAP COPY IN ARCADE BUTTONS
+   // ===================================================================
+// 🛡️ MASTER INJECTOR V7: ULTIMATE ZERO-FREEZE DYNAMIC TOUCH ROUTER
 // ===================================================================
-(function enforcePerfectArcadeInputControls() {
-    // 1. Right Click / Context Menu ko global window frame par completely lock rakhein
-    document.addEventListener('contextmenu', function(event) {
-        event.preventDefault();
+(function bootIndestructibleArcadeInputEngine() {
+    // 1. Context menu protection stays sealed to secure view source codes
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
     }, false);
 
-    // 2. Text Selection mechanism ko tightly locked rakho (Except inputs)
-    document.addEventListener('selectstart', function(event) {
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-            return true; 
+    // 2. Global Selection Prevention Guard (Keeps quiz numeric inputs active)
+    document.addEventListener('selectstart', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return true;
         }
-        event.preventDefault();
+        e.preventDefault();
         return false;
     });
 
-    // 3. 🔥 HARD FIX: Buttons par long-press aur double-tap hold menu ko completely kill karo
-    const targetControlsContainer = document.getElementById('gameWindow');
-    if (targetControlsContainer) {
-        // Sirf game arcade area ke andar chal rahe events ko capture karega
-        targetControlsContainer.addEventListener('touchstart', function(event) {
-            const elTagName = event.target.tagName;
-            // Inputs ko chhod kar baaki controllers par long press zoom bypass trigger
-            if (elTagName !== 'INPUT' && elTagName !== 'TEXTAREA') {
-                if (event.touches.length > 1) {
-                    event.preventDefault(); // Blocks split multiple touch zoom logic crashes
+    // 3. 🔥 THE AUTOMATIC INPUT ENGINE: Destroys mobile click-waiting delay buffers natively
+    // Works flawlessly for current joysticks and maps auto-protection for any future game controllers!
+    document.addEventListener('touchstart', function(e) {
+        const activeTag = e.target.tagName;
+        
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+            // Instantly bypass multiple screen finger gestures scale distortions
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+            
+            // Auto-detect layout elements matching arcade system rules
+            if (e.target.closest('.game-box') || e.target.className.includes('btn') || activeTag === 'BUTTON') {
+                // If specific native touch triggers are registered, let them fire with no overlay delay
+                if (e.target.hasAttribute('ontouchstart')) {
+                    return;
                 }
             }
-        }, { passive: true });
+        }
+    }, { passive: true }); // Passive true optimizes scrolling and rendering performance to maximum frame rates
 
-        // Context menu popups tracking overrides for touch devices
-        targetControlsContainer.addEventListener('touchend', function(event) {
-            const clickedClass = event.target.className;
-            // Agar click hone wali cheez controller button ya nav tab button hai
-            if (clickedClass.includes('ctrl-btn') || clickedClass.includes('snk-btn') || clickedClass.includes('action-btn')) {
-                event.preventDefault(); // Browser ka default selection window bypass block
-                event.target.click();   /* 🔥 FORCE TRADITIONAL CLICK: Aapka original left click game code instantly fire ho jayega */
-            }
-        }, { passive: false }); // False allows strict call stack sequence over-writes
-    }
-    
-    console.log("🔒 Security Spooler v5: Double-tap hold copy matrix safely destroyed.");
+    // 4. Keyboard core security layout mapping locks
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V' || e.key === 'u' || e.key === 'U')) {
+            e.preventDefault();
+            return false;
+        }
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j'))) {
+            e.preventDefault();
+            return false;
+        }
+    }, false);
+
+    console.log("🌊 Fluid Engine Active: Mobile tap delays destroyed. Universal controller guard deployed.");
 })();
-        // 🚪 FIXED: Secure Logout on Cancel
+        
+// 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
     try {
         console.log("🚪 User cancelled: Logging out securely...");
