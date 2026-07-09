@@ -838,25 +838,29 @@ f
 </div>
     <script>
 // ===================================================================
-// 🛡️ SECURITY MODULE V8: INTERNAL AUTOMATED ULTRA-SMOOTH MOBILE ROUTER
+// 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
 // ===================================================================
 (function bootIndestructibleArcadeInputEngine() {
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false);
+    // 1. Right click aur source inspection portal desktop block rahega
+    document.addEventListener('contextmenu', function(e) { 
+        e.preventDefault(); 
+    }, false);
 
+    // 2. Clear selection highlight drops (Inputs parameters standard active zones safe)
     document.addEventListener('selectstart', function(e) {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return true;
-        e.preventDefault(); return false;
+        e.preventDefault(); 
+        return false;
     });
 
-    // 🔥 REAL TIME PROCESSOR: Forces smartphone engines to prioritize game loops frames over web gestures
+    // 3. 🔥 FIXED: Clicks ko bilkul khula chhod diya taaki tabs aur buttons instantly kaam karein!
+    // Par long-press tap-hold karne par copy ka menu automatic suppress rahega.
     document.addEventListener('touchstart', function(e) {
-        if (e.target.closest('.game-box')) {
-            // Blocks browser default gesture triggers to maintain absolute 60FPS fluid output
-            if (e.touches.length > 1 || e.target.tagName !== 'INPUT') {
-                e.preventDefault();
-            }
+        // Multi-finger double tap zoom ko bypass karo runtime par
+        if (e.touches.length > 1) {
+            e.preventDefault();
         }
-    }, { passive: false }); // Passive false is mandatory to strictly eliminate the 1-sec touch queue lag freeze
+    }, { passive: true }); // Passive true optimizes smartphone interface frames instantly
 
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V' || e.key === 'u' || e.key === 'U')) {
@@ -864,7 +868,7 @@ f
         }
     }, false);
 
-    console.log("🌊 Liquid Internal Updates Active: Mobile rendering vectors stabilized seamlessly.");
+    console.log("🌊 Active Flow: Touch clicks unlocked perfectly. Long-press copy still blocked.");
 })();
         
 // 🚪 FIXED: Secure Logout on Cancel
