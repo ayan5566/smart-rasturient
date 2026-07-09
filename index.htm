@@ -837,58 +837,34 @@ f
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
-   // ===================================================================
-// 🛡️ MASTER INJECTOR V7: ULTIMATE ZERO-FREEZE DYNAMIC TOUCH ROUTER
+// ===================================================================
+// 🛡️ SECURITY MODULE V8: INTERNAL AUTOMATED ULTRA-SMOOTH MOBILE ROUTER
 // ===================================================================
 (function bootIndestructibleArcadeInputEngine() {
-    // 1. Context menu protection stays sealed to secure view source codes
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
-    }, false);
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false);
 
-    // 2. Global Selection Prevention Guard (Keeps quiz numeric inputs active)
     document.addEventListener('selectstart', function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            return true;
-        }
-        e.preventDefault();
-        return false;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return true;
+        e.preventDefault(); return false;
     });
 
-    // 3. 🔥 THE AUTOMATIC INPUT ENGINE: Destroys mobile click-waiting delay buffers natively
-    // Works flawlessly for current joysticks and maps auto-protection for any future game controllers!
+    // 🔥 REAL TIME PROCESSOR: Forces smartphone engines to prioritize game loops frames over web gestures
     document.addEventListener('touchstart', function(e) {
-        const activeTag = e.target.tagName;
-        
-        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
-            // Instantly bypass multiple screen finger gestures scale distortions
-            if (e.touches.length > 1) {
+        if (e.target.closest('.game-box')) {
+            // Blocks browser default gesture triggers to maintain absolute 60FPS fluid output
+            if (e.touches.length > 1 || e.target.tagName !== 'INPUT') {
                 e.preventDefault();
             }
-            
-            // Auto-detect layout elements matching arcade system rules
-            if (e.target.closest('.game-box') || e.target.className.includes('btn') || activeTag === 'BUTTON') {
-                // If specific native touch triggers are registered, let them fire with no overlay delay
-                if (e.target.hasAttribute('ontouchstart')) {
-                    return;
-                }
-            }
         }
-    }, { passive: true }); // Passive true optimizes scrolling and rendering performance to maximum frame rates
+    }, { passive: false }); // Passive false is mandatory to strictly eliminate the 1-sec touch queue lag freeze
 
-    // 4. Keyboard core security layout mapping locks
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V' || e.key === 'u' || e.key === 'U')) {
-            e.preventDefault();
-            return false;
-        }
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j'))) {
-            e.preventDefault();
-            return false;
+            e.preventDefault(); return false;
         }
     }, false);
 
-    console.log("🌊 Fluid Engine Active: Mobile tap delays destroyed. Universal controller guard deployed.");
+    console.log("🌊 Liquid Internal Updates Active: Mobile rendering vectors stabilized seamlessly.");
 })();
         
 // 🚪 FIXED: Secure Logout on Cancel
@@ -2173,19 +2149,21 @@ function startSelectedGame() {
         if (targetElement) targetElement.style.display = 'none';
     });
 
+    // Toggle corresponding layout controller blocks dynamically
+    document.getElementById('spaceControls').style.display = (activeGameMode === 'SPACE') ? 'flex' : 'none';
+    document.getElementById('snakeControls').style.display = (activeGameMode === 'SNAKE') ? 'flex' : 'none';
+
     if(activeGameMode !== 'MATH') {
         document.querySelector('.game-box').classList.add('fullscreen-arcade-active');
         document.getElementById('exitGameBtn').style.display = "block";
     }
 
     // 💧 🔥 THE LIQUID COMPROLLER: Real screen space ke mutabik length aur breadth calculate karo
-    // Available width ka 95% breadth gherega, aur height ko screen space ke scaling par balance rakhega
     let fluidBreadth = Math.min(window.innerWidth * 0.95, 500); 
     let fluidLength = Math.min(window.innerHeight * 0.50, 450);
 
     if(activeGameMode === 'FLAPPY') { 
         const fCanvas = document.getElementById('flappyCanvas');
-        // Paani ki tarah structural elements coordinates ko mathematically scale karo
         fCanvas.width = fluidBreadth;
         fCanvas.height = fluidLength;
         fCanvas.style.display = 'block'; 
@@ -2199,7 +2177,6 @@ function startSelectedGame() {
         initSpaceShooterGame(); 
     }
     else if(activeGameMode === 'SNAKE') { 
-        // Snake game ke liye precise 20px matrix step coordinates matching framework lagao
         let snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
         const sCanvas = document.getElementById('snakeCanvas');
         sCanvas.width = snakeSquareSize;
@@ -3078,6 +3055,57 @@ function initializeCustomerRealtimeTracker() {
         .subscribe();
 }
 // ===================================================================
+// ⚡ INTERNAL DYNAMIC INJECTOR: ELIMINATES INTERNAL MOBILE INPUT LAG
+// ===================================================================
+function bindAirtightArcadeControls() {
+    const spaceLeftBtn = document.querySelector("#spaceControls button:first-child");
+    const spaceRightBtn = document.querySelector("#spaceControls button:last-child");
+
+    // 🚀 SPACE SHOOTER LEFT INPUT MECHANICS
+    if (spaceLeftBtn) {
+        spaceLeftBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault(); 
+            spaceMoveDir = -6;
+        }, { passive: false });
+
+        spaceLeftBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            spaceMoveDir = 0;
+        }, { passive: false });
+    }
+
+    // 🚀 SPACE SHOOTER RIGHT INPUT MECHANICS
+    if (spaceRightBtn) {
+        spaceRightBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault(); 
+            spaceMoveDir = 6;
+        }, { passive: false });
+
+        spaceRightBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            spaceMoveDir = 0;
+        }, { passive: false });
+    }
+
+    // 🐍 CLASSIC SNAKE DIRECTION CONTEXT INTERCEPTOR
+    document.querySelectorAll('.snk-btn').forEach(btn => {
+        if (btn) {
+            const clickAttr = btn.getAttribute('onclick');
+            if (clickAttr && clickAttr.includes('setSnakeDirection')) {
+                const directionToken = clickAttr.match(/'([^']+)'/)[1];
+
+                btn.addEventListener('touchstart', function(e) {
+                    e.preventDefault(); 
+                    setSnakeDirection(directionToken);
+                }, { passive: false });
+            }
+        }
+    });
+}
+
+// 🔥 INJECTOR HOOK TRAP: Bind arcade touch listeners right into your initialization flow
+bindAirtightArcadeControls();
+// ===================================================================
 // 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
 // ===================================================================
 async function initApp() {
@@ -3840,17 +3868,17 @@ async function uploadMenuToCloud() {
         console.error("Critical Cloud Save Exception:", e); 
     }
 }
-        // ===================================================================
-// 🚀 STATE RESET: INDEPENDENT SPACE SHOOTER CONTEXT LIFECYCLE INITIALIZER
-// ===================================================================
-function initSpaceShooterGame() { 
-    clearInterval(loopTimerInstance); // Hard safety boundary flush
+     function initSpaceShooterGame() { 
+    clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
     currentLevelState = 1; 
     spaceMoveDir = 0; 
     spaceFrameTracker = 0; 
     spaceTransitionCount = 0; 
     
-    // Clear out residual elements arrays to avoid runtime collision memory leaks
+    // Hard purge caching arrays to optimize mobile processor RAM load
+    spaceBullets.length = 0;
+    enemyLasers.length = 0;
+    powerUps.length = 0;
     spaceBullets = [];
     enemyLasers = [];
     powerUps = [];
@@ -3859,7 +3887,9 @@ function initSpaceShooterGame() {
     pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 }; 
     
     setupLevelParameters(); 
+    // Mapped precisely to 20ms cycles for constant frame rate deliveries
     loopTimerInstance = setInterval(frameUpdateSpace, 20); 
+ 
 }
 
 // ===================================================================
