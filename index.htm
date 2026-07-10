@@ -2226,14 +2226,14 @@ function generateMathQuestion() {
     if(val === evaluatedMathSolution) { 
         feedback.innerText = "🎉 Success!"; 
         feedback.style.color = "green"; 
-        // 🔥 FIXED: Direct targeted dynamic object sync mapping from admin dashboard
-        triggerRewardCoupon(parseInt(rules.math) || 0); 
+        // 🔥 FIXED: Connection tied strictly to the admin panel live math input variable
+        let mathRewardPercent = parseInt(rules.math) || 0;
+        triggerRewardCoupon(mathRewardPercent); 
     } else { 
         feedback.innerText = "❌ Incorrect!"; 
         feedback.style.color = "red"; 
     }
 }
-
 
         function initSnakeGameLoop() {
             snakeArr = [{x: 80, y: 80}, {x: 60, y: 80}, {x: 40, y: 80}]; currentSnakeVector = { x: 20, y: 0 }; snakeScoreCounter = 0; generateSnakeFoodLocation();
@@ -3426,16 +3426,19 @@ function frameUpdateFlappy() {
             } 
         }
         
-        // Score trigger point rules updated
         // Inside frameUpdateFlappy loops structure tracking targets:
-if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
-    flappyScoreTracker++; 
-    // 🔥 FIXED: Standard targets checks linked dynamically to variable configurations rules
-    if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
-        triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
-    }
-    fPipes.shift(); 
-}
+        if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
+            flappyScoreTracker++; 
+            
+            // 🔥 FIXED: Standard targets and discount claimed linked directly to active admin dashboard configuration variables
+            let requiredFlappyPoints = parseInt(rules.flappyTar) || 5;
+            let configuredFlappyDiscount = parseInt(rules.flappyDisc) || 0;
+
+            if(flappyScoreTracker >= requiredFlappyPoints) {
+                triggerRewardCoupon(configuredFlappyDiscount); 
+            }
+            fPipes.shift(); 
+        }
     });
     
     // Dynamic text score positioning
@@ -3557,15 +3560,17 @@ function frameUpdateSpace() {
 
     spaceBullets.forEach((b, bi) => {
         b.y -= 5.5; b.x += b.dx; spCtx.fillStyle = "#00ff00"; spCtx.fillRect(b.x, b.y, 3, 10);
-        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Bullet range clean-up
+        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } 
         if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
             spaceBullets.splice(bi, 1); alienInvaderObj.health--;
             
-            // Inside frameUpdateSpace -> spaceBullets.forEach tracking nodes:
             if(alienInvaderObj.health <= 0) {
-                // 🔥 FIXED: Clears tracking checks dynamically matching variables dashboards indices directly
-                if(currentLevelState === (parseInt(rules.spaceTar) || 3)) {
-                    triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
+                // 🔥 FIXED: Direct mapping connection to the dynamic space target stage and configuration discount matrix
+                let targetSpaceStage = parseInt(rules.spaceTar) || 3;
+                let configuredSpaceDiscount = parseInt(rules.spaceDisc) || 0;
+
+                if(currentLevelState === targetSpaceStage) {
+                    triggerRewardCoupon(configuredSpaceDiscount);
                 }
                 if(currentLevelState < 10) { 
                     currentLevelState++; 
@@ -3614,17 +3619,21 @@ function frameUpdateSnake() {
         } 
     }
     
-    // Inside frameUpdateSnake logic routing bounds:
-if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
-    snakeScoreCounter++; 
-    generateSnakeFoodLocation(); 
-    // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
-    if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
-        triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
+   // Inside frameUpdateSnake logic routing bounds:
+    if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
+        snakeScoreCounter++; 
+        generateSnakeFoodLocation(); 
+        
+        // 🔥 FIXED: Connected seamlessly with live variable inputs from your target ratios panel
+        let requiredSnakeApples = parseInt(rules.snakeTar) || 10;
+        let configuredSnakeDiscount = parseInt(rules.snakeDisc) || 0;
+
+        if(snakeScoreCounter >= requiredSnakeApples) {
+            triggerRewardCoupon(configuredSnakeDiscount);
+        }
+    } else { 
+        snakeArr.pop(); 
     }
-} else { 
-    snakeArr.pop(); 
-}
     
     
     snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
