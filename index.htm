@@ -2221,10 +2221,18 @@ function generateMathQuestion() {
     if (qElem) qElem.innerText = `📐 Solve: ${num1} ${op} ${num2} = ?`;
 }
         function verifyMathAnswer() {
-            let val = parseInt(document.getElementById('mathCustomerAnswer').value); let feedback = document.getElementById('mathStatus');
-            if(val === evaluatedMathSolution) { feedback.innerText = "🎉 Success!"; feedback.style.color = "green"; triggerRewardCoupon(rules.math); } 
-            else { feedback.innerText = "❌ Incorrect!"; feedback.style.color = "red"; }
-        }
+    let val = parseInt(document.getElementById('mathCustomerAnswer').value); 
+    let feedback = document.getElementById('mathStatus');
+    if(val === evaluatedMathSolution) { 
+        feedback.innerText = "🎉 Success!"; 
+        feedback.style.color = "green"; 
+        // 🔥 FIXED: Direct targeted dynamic object sync mapping from admin dashboard
+        triggerRewardCoupon(parseInt(rules.math) || 0); 
+    } else { 
+        feedback.innerText = "❌ Incorrect!"; 
+        feedback.style.color = "red"; 
+    }
+}
 
 
         function initSnakeGameLoop() {
@@ -3419,13 +3427,15 @@ function frameUpdateFlappy() {
         }
         
         // Score trigger point rules updated
-        if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
-            flappyScoreTracker++; 
-            if(flappyScoreTracker >= rules.flappyTar) {
-                triggerRewardCoupon(rules.flappyDisc); 
-            }
-            fPipes.shift(); 
-        }
+        // Inside frameUpdateFlappy loops structure tracking targets:
+if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
+    flappyScoreTracker++; 
+    // 🔥 FIXED: Standard targets checks linked dynamically to variable configurations rules
+    if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
+        triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
+    }
+    fPipes.shift(); 
+}
     });
     
     // Dynamic text score positioning
@@ -3550,9 +3560,19 @@ function frameUpdateSpace() {
         if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Bullet range clean-up
         if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
             spaceBullets.splice(bi, 1); alienInvaderObj.health--;
+            
+            // Inside frameUpdateSpace -> spaceBullets.forEach tracking nodes:
             if(alienInvaderObj.health <= 0) {
-                if(currentLevelState === rules.spaceTar) triggerRewardCoupon(rules.spaceDisc);
-                if(currentLevelState < 10) { currentLevelState++; spaceTransitionCount = 90; } else { finalizeFailedRun("🌌 GALACTIC WINNER COMPLETE!"); }
+                // 🔥 FIXED: Clears tracking checks dynamically matching variables dashboards indices directly
+                if(currentLevelState === (parseInt(rules.spaceTar) || 3)) {
+                    triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
+                }
+                if(currentLevelState < 10) { 
+                    currentLevelState++; 
+                    spaceTransitionCount = 90; 
+                } else { 
+                    finalizeFailedRun("🌌 GALACTIC WINNER COMPLETE!"); 
+                }
             }
         }
     });
@@ -3594,14 +3614,18 @@ function frameUpdateSnake() {
         } 
     }
     
-    snakeArr.unshift(nextHead);
-    if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
-        snakeScoreCounter++; 
-        generateSnakeFoodLocation(); 
-        if(snakeScoreCounter >= rules.snakeTar) triggerRewardCoupon(rules.snakeDisc);
-    } else { 
-        snakeArr.pop(); 
+    // Inside frameUpdateSnake logic routing bounds:
+if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
+    snakeScoreCounter++; 
+    generateSnakeFoodLocation(); 
+    // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
+    if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
+        triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
     }
+} else { 
+    snakeArr.pop(); 
+}
+    
     
     snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
     snCtx.fillStyle = "rgba(0,0,0,0.3)"; 
