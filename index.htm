@@ -13,7 +13,29 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
+/* ================================================================= */
+/* 🎮 MOBILE FAST-INPUT LAYER: REMOVES ALL 300ms TAP DELAY FREEZES   */
+/* ================================================================= */
+.ctrl-btn, 
+.snk-btn, 
+.game-box .action-btn, 
+.game-box .game-nav button {
+    /* 1. Android/iOS native long-press text selection popup permanent dead */
+    -webkit-touch-callout: none !important; 
+    -webkit-user-select: none !important;   
+    -khtml-user-select: none !important;     
+    -moz-user-select: none !important;      
+    -ms-user-select: none !important;       
+    user-select: none !important;           
+    -webkit-user-drag: none !important;
 
+    /* 2. 🔥 THE FREEZE KILLER: Directs mobile engines to skip the 1-sec zoom waiting logic */
+    touch-action: manipulation !important;  
+
+    /* 3. Strip button flashing background colors on instant touch taps */
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+}
 /* ================================================================= */
 /* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PREVIEW) */
 /* ================================================================= */
@@ -815,7 +837,39 @@
     <button class="action-btn" onclick="exitSuperAdminDashboardConsole()" style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
 </div>
     <script>
+// ===================================================================
+// 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
+// ===================================================================
+(function bootIndestructibleArcadeInputEngine() {
+    // 1. Right click aur source inspection portal desktop block rahega
+    document.addEventListener('contextmenu', function(e) { 
+        e.preventDefault(); 
+    }, false);
 
+    // 2. Clear selection highlight drops (Inputs parameters standard active zones safe)
+    document.addEventListener('selectstart', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return true;
+        e.preventDefault(); 
+        return false;
+    });
+
+    // 3. 🔥 FIXED: Clicks ko bilkul khula chhod diya taaki tabs aur buttons instantly kaam karein!
+    // Par long-press tap-hold karne par copy ka menu automatic suppress rahega.
+    document.addEventListener('touchstart', function(e) {
+        // Multi-finger double tap zoom ko bypass karo runtime par
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: true }); // Passive true optimizes smartphone interface frames instantly
+
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V' || e.key === 'u' || e.key === 'U')) {
+            e.preventDefault(); return false;
+        }
+    }, false);
+
+    console.log("🌊 Active Flow: Touch clicks unlocked perfectly. Long-press copy still blocked.");
+})();
         
 // 🚪 FIXED: Secure Logout on Cancel
 async function closePaywallAndExitToHub() {
@@ -2172,14 +2226,14 @@ function generateMathQuestion() {
     if(val === evaluatedMathSolution) { 
         feedback.innerText = "🎉 Success!"; 
         feedback.style.color = "green"; 
-        // 🔥 FIXED: Connection tied strictly to the admin panel live math input variable
-        let mathRewardPercent = parseInt(rules.math) || 0;
-        triggerRewardCoupon(mathRewardPercent); 
+        // 🔥 FIXED: Direct targeted dynamic object sync mapping from admin dashboard
+        triggerRewardCoupon(parseInt(rules.math) || 0); 
     } else { 
         feedback.innerText = "❌ Incorrect!"; 
         feedback.style.color = "red"; 
     }
 }
+
 
         function initSnakeGameLoop() {
             snakeArr = [{x: 80, y: 80}, {x: 60, y: 80}, {x: 40, y: 80}]; currentSnakeVector = { x: 20, y: 0 }; snakeScoreCounter = 0; generateSnakeFoodLocation();
@@ -2976,17 +3030,7 @@ function initializeCustomerRealtimeTracker() {
             console.log("🔔 Customer Core: Live table session modification captured!", payload);
             if (payload.new) {
                 localLiveRunningBill = payload.new.live_bill || [];
-                let incomingCloudDiscount = parseInt(payload.new.discount_claimed) || 0;
-                
-                // 🔥 THE HARD RESET SHIELD: Agar admin bill clear kare (discount = 0 aur bill khali), 
-                // toh memory se discount saaf karo taaki ghost discount wapas na aaye
-                if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
-                    maximumClaimedDisc = 0;
-                    localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
-                    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
-                } else {
-                    maximumClaimedDisc = incomingCloudDiscount;
-                }
+                maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
                 
                 localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
                 localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
@@ -2999,7 +3043,7 @@ function initializeCustomerRealtimeTracker() {
         })
         .subscribe();
 
-    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST, TAX, & TARGET VARIABLES SYNC)
+    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST & TAX SYNC WITH NO REFRESH)
     window.customerConfigChannel = supabaseClient
         .channel('customer-config-stream-node')
         .on('postgres_changes', {
@@ -3008,21 +3052,13 @@ function initializeCustomerRealtimeTracker() {
             table: 'hotel_config',
             filter: `id=eq.${hotelGlobalScopeID}`
         }, (payload) => {
-            console.log("🔔 Customer Tax & Game Engine: Realtime configuration update captured!", payload);
-            if (payload.new) {
-                // 1. Tax and GST configurations handling
-                if (payload.new.tax_data) {
-                    taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-                }
+            console.log("🔔 Customer Tax Engine: Realtime GST/Tax update captured from admin!", payload);
+            if (payload.new && payload.new.tax_data) {
+                // Admin se change hote hi customer phone ki memory mein sateek rate inject karo
+                taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
                 
-                // 2. 🔥 THE TARGET RATIOS FIX: Admin panel se target points badalte hi user phone ke variables live sync ho jayenge (No multi-device failure!)
-                if (payload.new.rules_data) {
-                    rules = typeof payload.new.rules_data === 'string' ? JSON.parse(payload.new.rules_data) : payload.new.rules_data;
-                    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-                }
-
-                // Bina refresh kiye calculated amounts ko screen par update karo
+                // Agar user bill modal khol kar baitha hai, toh bina refresh kiye calculation turant badal do
                 if (document.getElementById('invoiceBillModal').style.display === 'flex') {
                     renderLiveCalculatedBill();
                 }
@@ -3099,7 +3135,7 @@ async function initApp() {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
         
-        // 🔥 THE FINAL HANDSHAKE: Customer tracker instantly engaged to block legacy ghost discounts
+        // 🔥 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
         initializeCustomerRealtimeTracker(); 
     }
     try {
@@ -3138,10 +3174,10 @@ async function initApp() {
     }
 
     try {
-        // 🔥 🔥 THE FIXED CLOUD HANDSHAKE: Added 'rules_data' straight into the select query pipeline
+        // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' jadd diya hai taaki customer phone sahi tax uthaye
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data, hotel_name, tax_data, rules_data') 
+            .select('menu_data, hotel_name, tax_data') 
             .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
@@ -3161,16 +3197,10 @@ async function initApp() {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
             
-            // Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
+            // 🔥 🔥 THE REAL FIX: Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
             if (activeConfigRow.tax_data) {
                 taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
                 localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-            }
-
-            // 🔥 🔥 THE LIVE RATIOS FIX: Load latest target points & percentages instantly for scan users
-            if (activeConfigRow.rules_data) {
-                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
-                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
             }
             
             renderCustomerMenu(); 
@@ -3396,19 +3426,16 @@ function frameUpdateFlappy() {
             } 
         }
         
+        // Score trigger point rules updated
         // Inside frameUpdateFlappy loops structure tracking targets:
-        if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
-            flappyScoreTracker++; 
-            
-            // 🔥 FIXED: Standard targets and discount claimed linked directly to active admin dashboard configuration variables
-            let requiredFlappyPoints = parseInt(rules.flappyTar) || 5;
-            let configuredFlappyDiscount = parseInt(rules.flappyDisc) || 0;
-
-            if(flappyScoreTracker >= requiredFlappyPoints) {
-                triggerRewardCoupon(configuredFlappyDiscount); 
-            }
-            fPipes.shift(); 
-        }
+if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
+    flappyScoreTracker++; 
+    // 🔥 FIXED: Standard targets checks linked dynamically to variable configurations rules
+    if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
+        triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
+    }
+    fPipes.shift(); 
+}
     });
     
     // Dynamic text score positioning
@@ -3530,17 +3557,15 @@ function frameUpdateSpace() {
 
     spaceBullets.forEach((b, bi) => {
         b.y -= 5.5; b.x += b.dx; spCtx.fillStyle = "#00ff00"; spCtx.fillRect(b.x, b.y, 3, 10);
-        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } 
+        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Bullet range clean-up
         if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
             spaceBullets.splice(bi, 1); alienInvaderObj.health--;
             
+            // Inside frameUpdateSpace -> spaceBullets.forEach tracking nodes:
             if(alienInvaderObj.health <= 0) {
-                // 🔥 FIXED: Direct mapping connection to the dynamic space target stage and configuration discount matrix
-                let targetSpaceStage = parseInt(rules.spaceTar) || 3;
-                let configuredSpaceDiscount = parseInt(rules.spaceDisc) || 0;
-
-                if(currentLevelState === targetSpaceStage) {
-                    triggerRewardCoupon(configuredSpaceDiscount);
+                // 🔥 FIXED: Clears tracking checks dynamically matching variables dashboards indices directly
+                if(currentLevelState === (parseInt(rules.spaceTar) || 3)) {
+                    triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
                 }
                 if(currentLevelState < 10) { 
                     currentLevelState++; 
@@ -3568,16 +3593,12 @@ function frameUpdateSpace() {
     spCtx.fillText("HP: " + pShipObj.health + "/" + pShipObj.maxHealth, spCanvasElement.width - 70, 22);
 }
 
-// ===================================================================
-// 🐍 CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC (ANTI-CRASH)
+       // ===================================================================
+// 🐍 FIXED: CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC
 // ===================================================================
 function frameUpdateSnake() {
-    // 🛡️ CRITICAL GUARD SHIELD: Agar saamp abhi tak data array mein spawn nahi hua hai, toh crash hone se roko
-    if (!snakeCanvasElement || !snCtx || !snakeArr || snakeArr.length === 0) {
-        return; 
-    }
+    if (!snakeCanvasElement || !snCtx) return;
 
-    // Now absolute safe to read segment tracks coordinates natively
     let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y };
     
     // 🔥 FIXED: Wall crash detection linked to live dynamic dimensions
@@ -3593,26 +3614,25 @@ function frameUpdateSnake() {
         } 
     }
     
-    snakeArr.unshift(nextHead);
-    if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
-        snakeScoreCounter++; 
-        generateSnakeFoodLocation(); 
-        // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
-        if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
-            triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
-        }
-    } else { 
-        snakeArr.pop(); 
+    // Inside frameUpdateSnake logic routing bounds:
+if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
+    snakeScoreCounter++; 
+    generateSnakeFoodLocation(); 
+    // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
+    if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
+        triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
     }
+} else { 
+    snakeArr.pop(); 
+}
+    
     
     snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
     snCtx.fillStyle = "rgba(0,0,0,0.3)"; 
     snCtx.fillRect(0, 0, snakeCanvasElement.width, 22);
     
     snCtx.fillStyle = "white"; snCtx.font = "12px Segoe UI"; 
-    // Dynamic score text display matching ratios properties fold natively
-    let targetGoalMax = parseInt(rules.snakeTar) || 10;
-    snCtx.fillText("Score: " + snakeScoreCounter + " / " + targetGoalMax, 12, 16);
+    snCtx.fillText("Score: " + snakeScoreCounter + " / " + rules.snakeTar, 12, 16);
     
     // Draw Apple
     snCtx.fillStyle = "#ff4d4d"; snCtx.beginPath(); snCtx.arc(snakeFoodUnit.x+10, snakeFoodUnit.y+10, 8, 0, Math.PI*2); snCtx.fill();
@@ -3818,78 +3838,63 @@ function saveAdminConfig() {
 // ===================================================================
 // 📡 FIXED: UNIFIED CLOUD SYNC ENGINE (UPDATES MENU DATA & TAX CONFIG)
 // ===================================================================
-function initializeCustomerRealtimeTracker() {
-    if (window.customerSessionsChannel) supabaseClient.removeChannel(window.customerSessionsChannel);
-    if (window.customerConfigChannel) supabaseClient.removeChannel(window.customerConfigChannel);
+async function uploadMenuToCloud() {
+    const currentActiveSaveId = hotelGlobalScopeID;
+    const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
     
-    const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
-    console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
+    try {
+        console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
 
-    // [Block A]: Listen to live table sessions changes (Dishes, Status, Live Claims)
-    window.customerSessionsChannel = supabaseClient
-        .channel('customer-session-stream-node')
-        .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'table_sessions',
-            filter: `table_id=eq.${compositeTableKey}`
-        }, (payload) => {
-            console.log("🔔 Customer Core: Live table session modification captured!", payload);
-            if (payload.new) {
-                localLiveRunningBill = payload.new.live_bill || [];
-                let incomingCloudDiscount = parseInt(payload.new.discount_claimed) || 0;
-                
-                // 🔥 THE HARD RESET SHIELD: Agar admin bill clear kare (discount = 0 aur bill khali), 
-                // toh memory se discount saaf karo taaki ghost discount wapas na aaye
-                if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
-                    maximumClaimedDisc = 0;
-                    localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
-                    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
-                } else {
-                    maximumClaimedDisc = incomingCloudDiscount;
+        // 🔥 ANTI-BLOAT SHIELD: Database mein bhejne se pehle local array ko check karo
+        // Agar kisi item mein abhi bhi purana bada Base64 string bacha hai, toh use instant mita do
+        if (Array.isArray(menuCategories)) {
+            menuCategories.forEach(cat => {
+                if (cat && Array.isArray(cat.items)) {
+                    cat.items.forEach(item => {
+                        if (item && item.image && item.image.startsWith('data:image')) {
+                            console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
+                            item.image = ''; // Kachra string saaf kiya, ab yahan naya storage link aayega
+                        }
+                    });
                 }
-                
-                localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
-                localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
-                
-                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                    renderLiveCalculatedBill();
-                }
-                updateFrontEndClassificationLabels();
-            }
-        })
-        .subscribe();
+            });
+            // Local storage ko bhi ekdam clean aur fresh kar do
+            localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
+        }
 
-    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST, TAX, & TARGET VARIABLES SYNC)
-    window.customerConfigChannel = supabaseClient
-        .channel('customer-config-stream-node')
-        .on('postgres_changes', {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'hotel_config',
-            filter: `id=eq.${hotelGlobalScopeID}`
-        }, (payload) => {
-            console.log("🔔 Customer Tax & Game Engine: Realtime configuration update captured!", payload);
-            if (payload.new) {
-                // 1. Tax and GST configurations handling
-                if (payload.new.tax_data) {
-                    taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-                }
-                
-                // 2. 🔥 THE TARGET RATIOS FIX: Admin panel se target points badalte hi user phone ke variables live sync ho jayenge (No multi-device failure!)
-                if (payload.new.rules_data) {
-                    rules = typeof payload.new.rules_data === 'string' ? JSON.parse(payload.new.rules_data) : payload.new.rules_data;
-                    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-                }
+        // 1. Old configurations rows ko safe purge/delete karo conflict se bachne ke liye
+        const { error: deleteError } = await supabaseClient
+            .from('hotel_config')
+            .delete()
+            .eq('id', currentActiveSaveId);
 
-                // Bina refresh kiye calculated amounts ko screen par update karo
-                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                    renderLiveCalculatedBill();
-                }
-            }
-        })
-        .subscribe();
+        if (deleteError) {
+            console.error("🚨 Supabase Delete Phase Interrupted:", deleteError.message);
+        } else {
+            console.log("🗑️ Success: Old cloud rows cleared cleanly.");
+        }
+
+        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly 'tax_data' column ko inject karke insert karo
+        const { data, error: insertError } = await supabaseClient
+            .from('hotel_config')
+            .insert({ 
+                id: currentActiveSaveId, 
+                hotel_name: currentBrandName, 
+                menu_data: menuCategories,
+                tax_data: taxConfig // Synchronizes identical tax profiles straight onto the cloud structure!
+            })
+            .select(); 
+
+        if (insertError) {
+            console.error("🚨 Supabase Insert Phase Interrupted:", insertError.message);
+            showOnScreenNotification("❌ Cloud save failed!", true);
+        } else {
+            console.log(`🎉 Fresh configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
+            updateFrontEndClassificationLabels();
+        }
+    } catch(e) { 
+        console.error("Critical Cloud Save Exception:", e); 
+    }
 }
      function initSpaceShooterGame() { 
     clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
