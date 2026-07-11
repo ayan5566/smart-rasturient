@@ -3135,7 +3135,7 @@ async function initApp() {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
         
-        // 🔥 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
+        // 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
         initializeCustomerRealtimeTracker(); 
     }
     try {
@@ -3174,10 +3174,10 @@ async function initApp() {
     }
 
     try {
-        // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' jadd diya hai taaki customer phone sahi tax uthaye
+        // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' ke sath 'rules_data' jadd diya hai taaki customer phone cloud se game rules aur targets uthaye
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data, hotel_name, tax_data') 
+            .select('menu_data, hotel_name, tax_data, rules_data') 
             .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
@@ -3197,10 +3197,16 @@ async function initApp() {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
             
-            // 🔥 🔥 THE REAL FIX: Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
+            // Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
             if (activeConfigRow.tax_data) {
                 taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
                 localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            }
+
+            // 🔥 🔥 THE MULTI-DEVICE FIX: Cloud se target parameters object ko reads karke customer phone par live override karo
+            if (activeConfigRow.rules_data) {
+                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
+                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
             }
             
             renderCustomerMenu(); 
@@ -3224,7 +3230,17 @@ async function initApp() {
 
         if (sessionData) {
             localLiveRunningBill = sessionData.live_bill || [];
-            maximumClaimedDisc = sessionData.discount_claimed || 0;
+            let incomingCloudDiscount = parseInt(sessionData.discount_claimed) || 0;
+
+            // 🔥 🔥 THE GHOST DISCOUNT RESET SHIELD: Agar cloud ledger khali aur discount 0 hai (Bill manual cleared), toh zero memory force karo
+            if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
+                maximumClaimedDisc = 0;
+                localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
+                localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
+            } else {
+                maximumClaimedDisc = incomingCloudDiscount;
+            }
+
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
