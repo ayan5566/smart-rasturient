@@ -2962,8 +2962,9 @@ function initializeCustomerRealtimeTracker() {
     if (window.customerConfigChannel) supabaseClient.removeChannel(window.customerConfigChannel);
     
     const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
-    console.log("# WebSocket: Registering handshake node boundaries for:", compositeTableKey);
+    console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
 
+    // [Block A]: Listen to live table sessions changes (Dishes, Status, Live Claims)
     window.customerSessionsChannel = supabaseClient
         .channel('customer-session-stream-node')
         .on('postgres_changes', {
@@ -2972,12 +2973,13 @@ function initializeCustomerRealtimeTracker() {
             table: 'table_sessions',
             filter: `table_id=eq.${compositeTableKey}`
         }, (payload) => {
-            console.log("# Customer Core: Live table session modification captured!", payload);
+            console.log("🔔 Customer Core: Live table session modification captured!", payload);
             if (payload.new) {
                 localLiveRunningBill = payload.new.live_bill || [];
                 let incomingCloudDiscount = parseInt(payload.new.discount_claimed) || 0;
                 
-                // 🔥 🔥 THE HARD RESET SHIELD: If cloud settles to 0, force reset variable array memory states to kill the ghost discount
+                // 🔥 THE HARD RESET SHIELD: Agar admin bill clear kare (discount = 0 aur bill khali), 
+                // toh memory se discount saaf karo taaki ghost discount wapas na aaye
                 if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
                     maximumClaimedDisc = 0;
                     localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
@@ -2997,6 +2999,7 @@ function initializeCustomerRealtimeTracker() {
         })
         .subscribe();
 
+    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST, TAX, & TARGET VARIABLES SYNC)
     window.customerConfigChannel = supabaseClient
         .channel('customer-config-stream-node')
         .on('postgres_changes', {
@@ -3005,17 +3008,21 @@ function initializeCustomerRealtimeTracker() {
             table: 'hotel_config',
             filter: `id=eq.${hotelGlobalScopeID}`
         }, (payload) => {
-            console.log("# Customer Tax Engine: Realtime GST/Tax update captured inside pipeline!", payload);
-            if (payload.new && payload.new.tax_data) {
-                taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            console.log("🔔 Customer Tax & Game Engine: Realtime configuration update captured!", payload);
+            if (payload.new) {
+                // 1. Tax and GST configurations handling
+                if (payload.new.tax_data) {
+                    taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
+                    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+                }
                 
-                // 🔥 INTERACTIVE HANDSHAKE: Sync rules dynamically on the fly if admin modifies targets variables
+                // 2. 🔥 THE TARGET RATIOS FIX: Admin panel se target points badalte hi user phone ke variables live sync ho jayenge (No multi-device failure!)
                 if (payload.new.rules_data) {
                     rules = typeof payload.new.rules_data === 'string' ? JSON.parse(payload.new.rules_data) : payload.new.rules_data;
                     localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
                 }
 
+                // Bina refresh kiye calculated amounts ko screen par update karo
                 if (document.getElementById('invoiceBillModal').style.display === 'flex') {
                     renderLiveCalculatedBill();
                 }
@@ -3091,6 +3098,8 @@ async function initApp() {
     if (urlHotel) {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
+        
+        // 🔥 THE FINAL HANDSHAKE: Customer tracker instantly engaged to block legacy ghost discounts
         initializeCustomerRealtimeTracker(); 
     }
     try {
@@ -3129,9 +3138,10 @@ async function initApp() {
     }
 
     try {
+        // 🔥 🔥 THE FIXED CLOUD HANDSHAKE: Added 'rules_data' straight into the select query pipeline
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data, hotel_name, tax_data, rules_data') // 🔥 FETCH HOOK ADDED: rules_data explicitly fetched from cloud
+            .select('menu_data, hotel_name, tax_data, rules_data') 
             .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
@@ -3151,12 +3161,13 @@ async function initApp() {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
             
+            // Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
             if (activeConfigRow.tax_data) {
                 taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
                 localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
             }
 
-            // 🔥 🔥 THE FIX: Cloud configurations parameters assigned straight onto variables for scan users
+            // 🔥 🔥 THE LIVE RATIOS FIX: Load latest target points & percentages instantly for scan users
             if (activeConfigRow.rules_data) {
                 rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
                 localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
@@ -3807,60 +3818,78 @@ function saveAdminConfig() {
 // ===================================================================
 // 📡 FIXED: UNIFIED CLOUD SYNC ENGINE (UPDATES MENU DATA & TAX CONFIG)
 // ===================================================================
-async function uploadMenuToCloud() {
-    const currentActiveSaveId = hotelGlobalScopeID;
-    const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
+function initializeCustomerRealtimeTracker() {
+    if (window.customerSessionsChannel) supabaseClient.removeChannel(window.customerSessionsChannel);
+    if (window.customerConfigChannel) supabaseClient.removeChannel(window.customerConfigChannel);
     
-    try {
-        console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
+    const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
+    console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
 
-        if (Array.isArray(menuCategories)) {
-            menuCategories.forEach(cat => {
-                if (cat && Array.isArray(cat.items)) {
-                    cat.items.forEach(item => {
-                        if (item && item.image && item.image.startsWith('data:image')) {
-                            console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
-                            item.image = ''; 
-                        }
-                    });
+    // [Block A]: Listen to live table sessions changes (Dishes, Status, Live Claims)
+    window.customerSessionsChannel = supabaseClient
+        .channel('customer-session-stream-node')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'table_sessions',
+            filter: `table_id=eq.${compositeTableKey}`
+        }, (payload) => {
+            console.log("🔔 Customer Core: Live table session modification captured!", payload);
+            if (payload.new) {
+                localLiveRunningBill = payload.new.live_bill || [];
+                let incomingCloudDiscount = parseInt(payload.new.discount_claimed) || 0;
+                
+                // 🔥 THE HARD RESET SHIELD: Agar admin bill clear kare (discount = 0 aur bill khali), 
+                // toh memory se discount saaf karo taaki ghost discount wapas na aaye
+                if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
+                    maximumClaimedDisc = 0;
+                    localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
+                    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
+                } else {
+                    maximumClaimedDisc = incomingCloudDiscount;
                 }
-            });
-            localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
-        }
+                
+                localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
+                localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
+                
+                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
+                updateFrontEndClassificationLabels();
+            }
+        })
+        .subscribe();
 
-        const { error: deleteError } = await supabaseClient
-            .from('hotel_config')
-            .delete()
-            .eq('id', currentActiveSaveId);
+    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST, TAX, & TARGET VARIABLES SYNC)
+    window.customerConfigChannel = supabaseClient
+        .channel('customer-config-stream-node')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'hotel_config',
+            filter: `id=eq.${hotelGlobalScopeID}`
+        }, (payload) => {
+            console.log("🔔 Customer Tax & Game Engine: Realtime configuration update captured!", payload);
+            if (payload.new) {
+                // 1. Tax and GST configurations handling
+                if (payload.new.tax_data) {
+                    taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
+                    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+                }
+                
+                // 2. 🔥 THE TARGET RATIOS FIX: Admin panel se target points badalte hi user phone ke variables live sync ho jayenge (No multi-device failure!)
+                if (payload.new.rules_data) {
+                    rules = typeof payload.new.rules_data === 'string' ? JSON.parse(payload.new.rules_data) : payload.new.rules_data;
+                    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+                }
 
-        if (deleteError) {
-            console.error("🚨 Supabase Delete Phase Interrupted:", deleteError.message);
-        } else {
-            console.log("🗑️ Success: Old cloud rows cleared cleanly.");
-        }
-
-        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly rules_data column inject karke save karo
-        const { data, error: insertError } = await supabaseClient
-            .from('hotel_config')
-            .insert({ 
-                id: currentActiveSaveId, 
-                hotel_name: currentBrandName, 
-                menu_data: menuCategories,
-                tax_data: taxConfig,
-                rules_data: rules // 🔥 SYNC HOOK ADDED: Pushes game rules object straight onto cloud database!
-            })
-            .select(); 
-
-        if (insertError) {
-            console.error("🚨 Supabase Insert Phase Interrupted:", insertError.message);
-            showOnScreenNotification("❌ Cloud save failed!", true);
-        } else {
-            console.log(`🎉 Fresh configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
-            updateFrontEndClassificationLabels();
-        }
-    } catch(e) { 
-        console.error("Critical Cloud Save Exception:", e); 
-    }
+                // Bina refresh kiye calculated amounts ko screen par update karo
+                if (document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
+            }
+        })
+        .subscribe();
 }
      function initSpaceShooterGame() { 
     clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
