@@ -3544,12 +3544,16 @@ function frameUpdateSpace() {
     spCtx.fillText("HP: " + pShipObj.health + "/" + pShipObj.maxHealth, spCanvasElement.width - 70, 22);
 }
 
-       // ===================================================================
-// 🐍 FIXED: CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC
+// ===================================================================
+// 🐍 CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC (ANTI-CRASH)
 // ===================================================================
 function frameUpdateSnake() {
-    if (!snakeCanvasElement || !snCtx) return;
+    // 🛡️ CRITICAL GUARD SHIELD: Agar saamp abhi tak data array mein spawn nahi hua hai, toh crash hone se roko
+    if (!snakeCanvasElement || !snCtx || !snakeArr || snakeArr.length === 0) {
+        return; 
+    }
 
+    // Now absolute safe to read segment tracks coordinates natively
     let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y };
     
     // 🔥 FIXED: Wall crash detection linked to live dynamic dimensions
@@ -3565,29 +3569,26 @@ function frameUpdateSnake() {
         } 
     }
     
-   // Inside frameUpdateSnake logic routing bounds:
+    snakeArr.unshift(nextHead);
     if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
         snakeScoreCounter++; 
         generateSnakeFoodLocation(); 
-        
-        // 🔥 FIXED: Connected seamlessly with live variable inputs from your target ratios panel
-        let requiredSnakeApples = parseInt(rules.snakeTar) || 10;
-        let configuredSnakeDiscount = parseInt(rules.snakeDisc) || 0;
-
-        if(snakeScoreCounter >= requiredSnakeApples) {
-            triggerRewardCoupon(configuredSnakeDiscount);
+        // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
+        if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
+            triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
         }
     } else { 
         snakeArr.pop(); 
     }
-    
     
     snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
     snCtx.fillStyle = "rgba(0,0,0,0.3)"; 
     snCtx.fillRect(0, 0, snakeCanvasElement.width, 22);
     
     snCtx.fillStyle = "white"; snCtx.font = "12px Segoe UI"; 
-    snCtx.fillText("Score: " + snakeScoreCounter + " / " + rules.snakeTar, 12, 16);
+    // Dynamic score text display matching ratios properties fold natively
+    let targetGoalMax = parseInt(rules.snakeTar) || 10;
+    snCtx.fillText("Score: " + snakeScoreCounter + " / " + targetGoalMax, 12, 16);
     
     // Draw Apple
     snCtx.fillStyle = "#ff4d4d"; snCtx.beginPath(); snCtx.arc(snakeFoodUnit.x+10, snakeFoodUnit.y+10, 8, 0, Math.PI*2); snCtx.fill();
