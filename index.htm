@@ -2962,9 +2962,8 @@ function initializeCustomerRealtimeTracker() {
     if (window.customerConfigChannel) supabaseClient.removeChannel(window.customerConfigChannel);
     
     const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
-    console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
+    console.log("# WebSocket: Registering handshake node boundaries for:", compositeTableKey);
 
-    // [Block A]: Listen to live table sessions changes (Dishes, Status, Live Claims)
     window.customerSessionsChannel = supabaseClient
         .channel('customer-session-stream-node')
         .on('postgres_changes', {
@@ -2973,10 +2972,19 @@ function initializeCustomerRealtimeTracker() {
             table: 'table_sessions',
             filter: `table_id=eq.${compositeTableKey}`
         }, (payload) => {
-            console.log("🔔 Customer Core: Live table session modification captured!", payload);
+            console.log("# Customer Core: Live table session modification captured!", payload);
             if (payload.new) {
                 localLiveRunningBill = payload.new.live_bill || [];
-                maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
+                let incomingCloudDiscount = parseInt(payload.new.discount_claimed) || 0;
+                
+                // 🔥 🔥 THE HARD RESET SHIELD: If cloud settles to 0, force reset variable array memory states to kill the ghost discount
+                if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
+                    maximumClaimedDisc = 0;
+                    localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
+                    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
+                } else {
+                    maximumClaimedDisc = incomingCloudDiscount;
+                }
                 
                 localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
                 localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
@@ -2989,7 +2997,6 @@ function initializeCustomerRealtimeTracker() {
         })
         .subscribe();
 
-    // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST & TAX SYNC WITH NO REFRESH)
     window.customerConfigChannel = supabaseClient
         .channel('customer-config-stream-node')
         .on('postgres_changes', {
@@ -2998,13 +3005,17 @@ function initializeCustomerRealtimeTracker() {
             table: 'hotel_config',
             filter: `id=eq.${hotelGlobalScopeID}`
         }, (payload) => {
-            console.log("🔔 Customer Tax Engine: Realtime GST/Tax update captured from admin!", payload);
+            console.log("# Customer Tax Engine: Realtime GST/Tax update captured inside pipeline!", payload);
             if (payload.new && payload.new.tax_data) {
-                // Admin se change hote hi customer phone ki memory mein sateek rate inject karo
                 taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
                 localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
                 
-                // Agar user bill modal khol kar baitha hai, toh bina refresh kiye calculation turant badal do
+                // 🔥 INTERACTIVE HANDSHAKE: Sync rules dynamically on the fly if admin modifies targets variables
+                if (payload.new.rules_data) {
+                    rules = typeof payload.new.rules_data === 'string' ? JSON.parse(payload.new.rules_data) : payload.new.rules_data;
+                    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+                }
+
                 if (document.getElementById('invoiceBillModal').style.display === 'flex') {
                     renderLiveCalculatedBill();
                 }
@@ -3080,8 +3091,6 @@ async function initApp() {
     if (urlHotel) {
         hotelGlobalScopeID = urlHotel;
         console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
-        
-        // 🔥 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
         initializeCustomerRealtimeTracker(); 
     }
     try {
@@ -3120,10 +3129,9 @@ async function initApp() {
     }
 
     try {
-        // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' jadd diya hai taaki customer phone sahi tax uthaye
         const { data, error } = await supabaseClient
             .from('hotel_config')
-            .select('menu_data, hotel_name, tax_data') 
+            .select('menu_data, hotel_name, tax_data, rules_data') // 🔥 FETCH HOOK ADDED: rules_data explicitly fetched from cloud
             .eq('id', hotelGlobalScopeID) 
             .limit(1); 
 
@@ -3143,10 +3151,15 @@ async function initApp() {
                 localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
             
-            // 🔥 🔥 THE REAL FIX: Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
             if (activeConfigRow.tax_data) {
                 taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
                 localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            }
+
+            // 🔥 🔥 THE FIX: Cloud configurations parameters assigned straight onto variables for scan users
+            if (activeConfigRow.rules_data) {
+                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
+                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
             }
             
             renderCustomerMenu(); 
@@ -3801,24 +3814,20 @@ async function uploadMenuToCloud() {
     try {
         console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
 
-        // 🔥 ANTI-BLOAT SHIELD: Database mein bhejne se pehle local array ko check karo
-        // Agar kisi item mein abhi bhi purana bada Base64 string bacha hai, toh use instant mita do
         if (Array.isArray(menuCategories)) {
             menuCategories.forEach(cat => {
                 if (cat && Array.isArray(cat.items)) {
                     cat.items.forEach(item => {
                         if (item && item.image && item.image.startsWith('data:image')) {
                             console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
-                            item.image = ''; // Kachra string saaf kiya, ab yahan naya storage link aayega
+                            item.image = ''; 
                         }
                     });
                 }
             });
-            // Local storage ko bhi ekdam clean aur fresh kar do
             localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
         }
 
-        // 1. Old configurations rows ko safe purge/delete karo conflict se bachne ke liye
         const { error: deleteError } = await supabaseClient
             .from('hotel_config')
             .delete()
@@ -3830,14 +3839,15 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly 'tax_data' column ko inject karke insert karo
+        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly rules_data column inject karke save karo
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
                 menu_data: menuCategories,
-                tax_data: taxConfig // Synchronizes identical tax profiles straight onto the cloud structure!
+                tax_data: taxConfig,
+                rules_data: rules // 🔥 SYNC HOOK ADDED: Pushes game rules object straight onto cloud database!
             })
             .select(); 
 
