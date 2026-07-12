@@ -4052,22 +4052,35 @@ let activeKdsOrdersArray = [];
 let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
-// Audio notification setup for incoming fresh orders
+// ===================================================================
+// 🔊👨‍🍳 UPGRADED: ULTRA-LOUD KDS TICKET BEEP ALERT ENGINE
+// ===================================================================
 function triggerAudioBeepAlert() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
+        
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 587.33; // D5 Note
-        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        
+        // 🎵 Sound Type 'triangle' ya 'sawtooth' shor ke beech zyada teez sunai deta hai
+        oscillator.type = 'sawtooth'; 
+        
+        // 🎼 Frequency ko 880Hz (A5 Note) kiya hai jo kaafi sharp aur piercing hota hai
+        oscillator.frequency.value = 880.00; 
+        
+        // 🔥 🔥 THE FIX: Volume gain ko 0.15 se seedhe maximum hardware limit '1.0' kar diya hai
+        gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        
+        // Duration ko 0.35s se badha kar 0.50s kiya taaki aawaz lambi aur saaf sunai de
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.35);
-    } catch (e) { console.error("Audio engine context constraint:", e); }
+        oscillator.stop(audioCtx.currentTime + 0.50);
+        
+    } catch (e) { 
+        console.error("Audio engine context constraint:", e); 
+    }
 }
-
 // ⚡ FIXED: Unique channel namespacing separates realtime websocket frames completely at the protocol layers
 function launchKitchenDisplaySystemModule() {
     document.getElementById('adminDashboard').style.display = 'none';
