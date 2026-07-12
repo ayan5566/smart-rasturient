@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Restaurant App Ultra Pro Max</title>
+    <title>Hosted  by Restorflow</title>
 
     <!-- 🌐 SAAS ENGINE FIXED: Native vector inline URI guarantees 100% sharp professional tab logo display on any resolution screen -->
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
@@ -13,29 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     
     <style>
-/* ================================================================= */
-/* 🎮 MOBILE FAST-INPUT LAYER: REMOVES ALL 300ms TAP DELAY FREEZES   */
-/* ================================================================= */
-.ctrl-btn, 
-.snk-btn, 
-.game-box .action-btn, 
-.game-box .game-nav button {
-    /* 1. Android/iOS native long-press text selection popup permanent dead */
-    -webkit-touch-callout: none !important; 
-    -webkit-user-select: none !important;   
-    -khtml-user-select: none !important;     
-    -moz-user-select: none !important;      
-    -ms-user-select: none !important;       
-    user-select: none !important;           
-    -webkit-user-drag: none !important;
 
-    /* 2. 🔥 THE FREEZE KILLER: Directs mobile engines to skip the 1-sec zoom waiting logic */
-    touch-action: manipulation !important;  
-
-    /* 3. Strip button flashing background colors on instant touch taps */
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
-}
 /* ================================================================= */
 /* 🖨️ MASTER PRINT ISOLATION LAYER (NO MIXING / FIXED WHITE PREVIEW) */
 /* ================================================================= */
@@ -3861,7 +3839,7 @@ function saveAdminConfig() {
 }
  
 // ===================================================================
-// 📡 FIXED: UNIFIED CLOUD SYNC ENGINE (UPDATES MENU DATA & TAX CONFIG)
+// 📡 FIXED UNIFIED CLOUD SYNC ENGINE: TRANSMITS TARGET VALUES TO CLOUD
 // ===================================================================
 async function uploadMenuToCloud() {
     const currentActiveSaveId = hotelGlobalScopeID;
@@ -3871,14 +3849,13 @@ async function uploadMenuToCloud() {
         console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
 
         // 🔥 ANTI-BLOAT SHIELD: Database mein bhejne se pehle local array ko check karo
-        // Agar kisi item mein abhi bhi purana bada Base64 string bacha hai, toh use instant mita do
         if (Array.isArray(menuCategories)) {
             menuCategories.forEach(cat => {
                 if (cat && Array.isArray(cat.items)) {
                     cat.items.forEach(item => {
                         if (item && item.image && item.image.startsWith('data:image')) {
                             console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
-                            item.image = ''; // Kachra string saaf kiya, ab yahan naya storage link aayega
+                            item.image = ''; 
                         }
                     });
                 }
@@ -3899,14 +3876,15 @@ async function uploadMenuToCloud() {
             console.log("🗑️ Success: Old cloud rows cleared cleanly.");
         }
 
-        // 2. 🔥 🔥 THE INVERTER FIX: Fresh parameters ke sath strictly 'tax_data' column ko inject karke insert karo
+        // 2. 🔥 🔥 THE CORE PIPELINE FIX: Fresh menu, tax_data, AND the missing rules object uploaded together in the same insert payload row!
         const { data, error: insertError } = await supabaseClient
             .from('hotel_config')
             .insert({ 
                 id: currentActiveSaveId, 
                 hotel_name: currentBrandName, 
                 menu_data: menuCategories,
-                tax_data: taxConfig // Synchronizes identical tax profiles straight onto the cloud structure!
+                tax_data: taxConfig,
+                rules_data: rules // 🌟 THE FIX: Saves your custom target scores and percentages directly to the cloud rules_data column field!
             })
             .select(); 
 
