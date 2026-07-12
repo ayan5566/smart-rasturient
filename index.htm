@@ -2880,7 +2880,7 @@ function renderCustomerMenu() {
                             <input type="number" id="${qtyInputId}" value="1" min="1" max="20" readonly style="width: 45px; text-align: center; font-weight: bold; border: none; background: transparent; margin: 0; padding: 0; font-size: 16px; color: var(--dark-charcoal);">
                             <button onclick="modifyInputQtyCounter('${qtyInputId}', 1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">+</button>
                         </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')" style="margin-top: 4px;">🛒 Add to Order Link</button>
+                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')" style="margin-top: 4px;">🛒Order now</button>
                     </div>
                 </div>`;
         } catch (itemRenderError) {
