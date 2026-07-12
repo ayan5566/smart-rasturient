@@ -3758,14 +3758,15 @@ function addNewCategory() {
 // 🛡️ INDESTRUCTIBLE SUBSCRIPTION GATEKEEPER ENGINE (DOM ELEMENT ASSURANCE)
 // ===================================================================
 async function verifySubscriptionGatekeeper(ownerId) {
-    try {
+    try { // 🔥 FIXED: Added the missing try opening block
         console.log("🔍 Gatekeeper: Checking subscription parameters for UUID:", ownerId);
         
         const { data: subData, error } = await supabaseClient
-    .from('subscriptions')
-    .select('status, current_period_end, monthly_price, yearly_price')
-    .eq('id', ownerId) // ✅ Change 'user_id' to your actual primary key 'id'
-    .maybeSingle();
+            .from('subscriptions')
+            .select('status, current_period_end, monthly_price, yearly_price')
+            .eq('id', ownerId) // ✅ Change 'user_id' to your actual primary key 'id'
+            .maybeSingle();
+
         if (error) {
             console.error("🚨 Supabase Database Refusal Exception:", error.message);
             return false;
@@ -3780,8 +3781,12 @@ async function verifySubscriptionGatekeeper(ownerId) {
         if (!subData) {
             console.warn("⚠️ Alert: No subscription record existing inside cloud database for UUID:", ownerId);
             
-            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹0";
-            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹0";
+            // 🔥 SaaS Model: Default setup values apply synchronously instead of hardcoded 0
+            let fallbackM = dynamicGlobalSaaSDefaults.monthly;
+            let fallbackY = dynamicGlobalSaaSDefaults.yearly;
+
+            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + fallbackM;
+            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + fallbackY;
 
             // Safe dynamic element visibility switches
             if (adminDashboard) adminDashboard.style.display = 'none';
@@ -3789,7 +3794,6 @@ async function verifySubscriptionGatekeeper(ownerId) {
             if (paywallModal) {
                 paywallModal.style.display = 'flex';
             } else {
-                // Agar HTML missing hai, toh user ko alert dikhao taaki blank screen na dikhe
                 alert("⚠️ RestroFlow Billing Notice: Aapka account active nahi hai. Kripya naye Mobile ID se signup karein ya admin se contact karein!");
                 if (customerView) customerView.style.display = 'block';
             }
@@ -3799,6 +3803,7 @@ async function verifySubscriptionGatekeeper(ownerId) {
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // Agar plan expire ho chuka hai ya status active nahi hai
         if (subData.status !== 'active' || today > expiryDate) {
             // 🔥 SaaS Model Core: Calculate fallbacks inside verification nodes natively if database returns 0
             let mPrice = (parseInt(subData.monthly_price) === 0) ? dynamicGlobalSaaSDefaults.monthly : (subData.monthly_price || dynamicGlobalSaaSDefaults.monthly);
@@ -3819,23 +3824,9 @@ async function verifySubscriptionGatekeeper(ownerId) {
             return false;
         }
             
-            if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
-            if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
-
-            if (adminDashboard) adminDashboard.style.display = 'none';
-            if (customerView) customerView.style.display = 'none';
-            if (paywallModal) {
-                paywallModal.style.display = 'flex';
-            } else {
-                alert("🚨 Plan Expired! Workspace locked. Kripya pricing system se active karein.");
-                if (customerView) customerView.style.display = 'block';
-            }
-            
-            return false;
-        }
-
         return true; // Plan active hai, welcome to admin dashboard!
-    } catch (err) {
+
+    } catch (err) { // 🔥 FIXED: Scope bindings closed perfectly before catch statement
         console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
         return false;
     }
