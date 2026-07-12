@@ -459,24 +459,38 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="mobilePaymentSimulatorModal" onclick="this.style.display='none'">
-        <div class="modal-content" onclick="event.stopPropagation()" style="text-align:center;">
-            <h3>📱 UPI Mobile Payment Gateway</h3>
-            <p style="font-size:13px; color:#666;">Scan QR using PhonePe / GooglePay / Paytm Simulator</p>
-            
-            <div style="background:#f5f6fa; padding:8px; border-radius:10px; border:1px solid #ddd; margin-bottom:10px; text-align:left;">
-                <label style="font-size:11px; font-weight:bold; color:#555;">⚙️ Bring Personal Pay Asset Code Image:</label>
-                <input type="file" accept="image/*" onchange="processCustomPaymentQRUpload(event)" style="font-size:11px; width:100%; margin:4px 0;">
-                <button onclick="removeCustomPaymentQR()" style="background:var(--danger-red); border:none; color:white; border-radius:4px; font-size:10px; padding:3px 6px; cursor:pointer; width:100%; font-weight:bold; margin-top:2px;">🗑️ Remove Custom QR</button>
-            </div>
-
-            <div style="background:white; padding:10px; display:inline-block; margin:10px 0; border:1px solid #ccc;" id="paymentGatewayQRCodeOutputBox"></div>
-            <h2 style="color:var(--dark-charcoal); margin:5px 0;" id="paymentGatewayBillAmountDisplay">₹0</h2>
-            <div style="background:#eef9f5; color:#27ae60; padding:8px; border-radius:8px; font-size:12px; margin-bottom:15px; font-weight:bold;">🔒 Secure 256-bit Encrypted Transaction Node</div>
-            <button class="action-btn" onclick="executeSimulatedMobilePaymentSuccessSequence()" style="background:var(--neon-green); margin-bottom:6px;">📲 Confirm Payment Successful</button>
-            <button class="action-btn" onclick="document.getElementById('mobilePaymentSimulatorModal').style.display='none'" style="background:var(--danger-red);">Cancel Payment</button>
+    <!-- =================================================================== -->
+<!-- 📱 UPGRADED: NATIVE MOBILE UPI INTENT GATEWAY SIMULATOR -->
+<!-- =================================================================== -->
+<div class="modal-overlay" id="mobilePaymentSimulatorModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()" style="text-align:center; border-radius: 24px; padding: 30px 20px;">
+        <h3 style="margin-bottom: 5px;">📱 In-App Secure UPI Payment</h3>
+        <p style="font-size:12px; color:#7f8c8d; margin-top:0; margin-bottom: 20px;">Single-click direct bank-to-bank instant ledger transfer</p>
+        
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; margin-bottom: 20px;">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Net Payable Amount</span>
+            <h1 style="color: var(--neon-green); margin: 5px 0; font-size: 36px; font-weight: 900;" id="paymentGatewayBillAmountDisplay">₹0</h1>
+            <div style="font-size: 11px; color: var(--dark-charcoal); font-weight: 600; margin-top: 5px;" id="paymentGatewayTargetUpiLabel">Receiver: Loading UPI Identity...</div>
         </div>
+
+        <div style="background:#eef9f5; color:#270260; padding:10px; border-radius:10px; font-size:11px; margin-bottom:20px; font-weight:bold; border: 1px solid rgba(46,204,113,0.2);">
+            🔒 Encrypted P2P Protocol Node: 0% Platform Charges
+        </div>
+
+        <!-- 🔥 THE INTENT HANDSHAKE ACTION BUTTONS -->
+        <button class="action-btn" id="triggerUpiIntentMobileDirectBtn" onclick="executeNativeUpiIntentRoutingPipeline()" style="background: var(--dark-charcoal); color: white; margin-bottom: 10px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            ⚡ Open UPI Apps (GPay / PhonePe / Paytm)
+        </button>
+
+        <button class="action-btn" onclick="executeSimulatedMobilePaymentSuccessSequence()" style="background:var(--neon-green); margin-bottom:10px; font-size: 13px; padding: 10px;">
+            📲 Confirm Payment Verified (Paid Successfully)
+        </button>
+        
+        <button class="action-btn" onclick="document.getElementById('mobilePaymentSimulatorModal').style.display='none'" style="background:#7f8c8d; color: white; font-size: 13px; padding: 10px;">
+            Cancel Transaction
+        </button>
     </div>
+</div>
 
     <div class="modal-overlay" id="qrPrintPreviewModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
@@ -522,7 +536,7 @@
     <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13px; color: #475569;">👑 <b>Yearly Enterprise:</b></span>
-            <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;" id="paywallYearlyPriceDisplay">₹4999</span>
+            <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;" id="paywallYearlyPriceDisplay">₹5000</span>
         </div>
         <button class="action-btn" onclick="initializeHostedCheckout('yearly')" style="background: var(--accent-gold); color: black; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💎 Pay Yearly Rate</button>
     </div>
@@ -691,15 +705,14 @@
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
-        <h3>💳 Business Payment QR Management</h3>
-        <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
-            <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal);">Upload Custom Hotel UPI/Business QR Code Image:</p>
-            <div class="image-upload-container">
-                <div id="adminCustomQRPreviewBox" style="font-size:20px; width:45px; height:45px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; border-radius:6px; background:#eee;">🖼️</div>
-                <input type="file" accept="image/*" onchange="processCustomPaymentQRUpload(event)" style="font-size:11px; width:100%;">
-            </div>
-            <button class="action-btn" onclick="removeCustomPaymentQR()" style="background:var(--danger-red); margin-top:8px; padding:6px; font-size:11px; height: auto;">❌ Remove Custom Payment QR Image</button>
-        </div>
+        <!-- 💳 UPGRADED: SAAS OWNER NATIVE UPI ADDRESS CONFIGURATION -->
+<h3>💳 Financial Payout & UPI Management</h3>
+<div style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
+    <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal); margin-bottom: 5px;">Aapka Personal ya Business UPI Address (VPA):</p>
+    <p style="font-size: 11px; color: #7f8c8d; margin-top: 0; margin-bottom: 10px;">Customer ka payment bina kisi cut ke isi account par instantly received hoga.</p>
+    
+    <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis ya 98765xxxxx@ybl" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px;" oninput="saveAdminConfig();">
+</div>
 
         <h3>🏢 Interactive Floor & QR Table Grid System</h3>
         <div class="table-legend-bar">
@@ -1771,19 +1784,70 @@ function updateFrontEndClassificationLabels() {
     document.getElementById('discountSheetModal').style.display = 'flex';
 }
 
-        function openSmartMobilePaymentGatewayGateway() {
-            if(globalRunningInvoiceSumTotal <= 0) { alert("❌ Bill is Empty! Cannot trigger payment simulation."); return; }
-            let qrContainer = document.getElementById('paymentGatewayQRCodeOutputBox'); if(!qrContainer) return; qrContainer.innerHTML = ''; 
-            document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
+        // ===================================================================
+// 💳 BROADCAST ENGINE: OPEN SMART INTENT PAYMENTS LOGIC WINDOW
+// ===================================================================
+function openSmartMobilePaymentGatewayGateway() {
+    if(globalRunningInvoiceSumTotal <= 0) { 
+        alert("❌ Bill is Empty! Cannot trigger payment mapping."); 
+        return; 
+    }
+    
+    // UI displays and text nodes setup hooks
+    document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
+    
+    // Cloud storage database se owner ki live UPI ID lookup karo ya current storage fetch karo
+    let activeOwnerVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "merchant_inject_node@sbi";
+    
+    let labelElem = document.getElementById('paymentGatewayTargetUpiLabel');
+    if (labelElem) {
+        labelElem.innerText = `Receiver VPA: ${activeOwnerVpa}`;
+    }
+    
+    document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
+}
 
-            if(customPaymentQRData) {
-                qrContainer.innerHTML = `<img src="${customPaymentQRData}" style="width:140px; height:140px; object-fit:contain;">`;
-            } else {
-                let simulatedUPIIntentString = `upi://pay?pa=merchant_inject_node@sbi&pn=${encodeURIComponent(hotelGlobalScopeID)}&am=${globalRunningInvoiceSumTotal}&cu=INR`;
-                new QRCode(qrContainer, { text: simulatedUPIIntentString, width: 140, height: 140, colorDark : "#2c3e50", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
-            }
-            document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
-        }
+// ===================================================================
+// 🚀 NEW MODULE: DEEP-LINK NATIVE UPI INTENT STREAM ROUTER
+// ===================================================================
+function executeNativeUpiIntentRoutingPipeline() {
+    let activeOwnerVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "merchant_inject_node@sbi";
+    let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
+    
+    // 🔥 Standard NPCI UPI String Specification Architecture Blueprint
+    // am = Amount, cu = Currency, pn = Payee Name, pa = Payee Address (VPA)
+    let nativeUpiIntentString = `upi://pay?pa=${encodeURIComponent(activeOwnerVpa)}&pn=${encodeURIComponent(realBrandName)}&am=${globalRunningInvoiceSumTotal}&cu=INR&tn=${encodeURIComponent('RestroFlow Table ' + clientCurrentActiveTable)}`;
+    
+    console.log("🚀 Spooling Deep-Link Intent Matrix Router Node:", nativeUpiIntentString);
+    showOnScreenNotification("📲 Requesting device smartphone UPI node handles...", false);
+    
+    // Redirects browser control flow directly into active smartphone operating system apps slider
+    window.location.href = nativeUpiIntentString;
+}
+
+// ===================================================================
+// 💾 UPGRADED HOOK: INTEGRATE VPA STRING INSIDE SYSTEMS SAVE ARRAY
+// ===================================================================
+// Note: Apne existing function 'saveAdminConfig()' ke andar, jahan localStorages items push ho rahe hain,
+// wahan bas in 2 lines ko merge/ensure kar lena taaki input value crash na ho:
+let originalSaveConfigBackup = saveAdminConfig;
+saveAdminConfig = function() {
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    if (vpaInput) {
+        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
+    }
+    originalSaveConfigBackup();
+};
+
+// Same synchronization link inside forms populator mapping setup
+let originalPopulateAdminFormsBackup = populateAdminForms;
+populateAdminForms = function() {
+    originalPopulateAdminFormsBackup();
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    if (vpaInput) {
+        vpaInput.value = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
+    }
+};
        // ===================================================================
 // 👨‍🍳 FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
 // ===================================================================
