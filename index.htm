@@ -3817,14 +3817,17 @@ async function verifySubscriptionGatekeeper(ownerId) {
         return false;
     }
 }
-     // ⚡ FIXED: Multi-tenancy guard blocks client views from corrupting admin dataset states during transaction closures
+  // ===================================================================
+// ⚙️ GLOBAL RULES SAVER: LOCKS TARGET VARIABLES CROSS-DEVICE
+// ===================================================================
 function saveAdminConfig() {
     // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
     if (document.getElementById('adminDashboard').style.display !== 'block') {
-        console.log("🛡️ Shield Active: Prevented customer profile from overwriting global database row config variables.");
+        console.log("🛡️ Shield Active: Prevented customer profile from overwriting global dataset.");
         return;
     }
 
+    // 🎯 Capturing form values straight into the global rules state manager object
     rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
     rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
     rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
@@ -3844,14 +3847,16 @@ function saveAdminConfig() {
         taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
         taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
     }
+
+    // Atomic disk saves
     localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+    localStorage.setItem('gameRulesConfig', JSON.stringify(rules)); // 💾 Strictly locked into the system array matrix
     localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
     localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
     
     clearTimeout(configSaveTimeout);
     configSaveTimeout = setTimeout(() => {
-        uploadMenuToCloud();
+        uploadMenuToCloud(); // Triggers global cloud sync worker immediately
     }, 600);
 }
  
