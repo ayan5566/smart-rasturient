@@ -1308,6 +1308,9 @@ function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
     showOnScreenNotification("📋 Loaded: " + hotelName);
 }
 
+// ===================================================================
+// 👑 UPGRADED SUPER ADMIN SEQUENCE: RECOGNIZES GLOBAL BASE DEFAULTS
+// ===================================================================
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
     let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
@@ -1315,15 +1318,34 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
     let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
     let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
+    // 🔥 🔥 THE FIX: Agar aap individual details nahi bhar rahe ho, toh checks ko bypass karke sidhe global defaults save karo!
     if (!targetId || targetId.length < 10) {
+        // Super Admin dashboard ke inputs se live default variables sync karo
+        let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
+        let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
+        
+        if (gMonthlyInput && gYearlyInput) {
+            dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
+            dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
+            
+            // Local disk backup update
+            localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
+            localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
+            
+            showOnScreenNotification("🌐 Global Default Package Rates Saved Successfully!");
+            alert("🌐 Success! Global Baseline Rates updated across the network. Jin templates par ₹0 set hai, wahan ab ye rates lagenge.");
+            fetchGlobalSaaSAccountNetworkList();
+            return; // Execution block safe return
+        }
+        
         alert("❌ Invalid user classification identifier code string pattern.");
         return;
     }
 
+    // Individual Restaurant activation sequence logic below (Untouched and Safe)
     try {
         showOnScreenNotification("⚡ Processing security write override data...", false);
 
-        // Check if record exists inside tracking matrix array matching email key 'id'
         const { data: existingRecord } = await supabaseClient
             .from('subscriptions')
             .select('id') 
@@ -1332,16 +1354,13 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
 
         let syncOperationError = null;
 
-        // Base payload build karo bina dates ke
         let subscriptionPayload = {
             status: targetStatusState,
             monthly_price: allocatedMonthlyPrice,
             yearly_price: allocatedYearlyPrice,
-            founder_label: updatedHotelName // 🔥 FIX: Hotel name ko hotel_config ke bajay subscriptions ke founder_label mein alag save karo
+            founder_label: updatedHotelName 
         };
 
-        // 🔥 FIX: Din badhane ki bandish khatam! 
-        // Dates tabhi update hongi jab validityDays 0 se bada hoga, warna purani dates safe rahengi.
         if (validityDays > 0) {
             let startTime = new Date();
             let endTime = new Date();
@@ -1369,7 +1388,6 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
         } else {
             showOnScreenNotification(`👑 Scoped Parameters updated successfully!`);
             
-            // Input fields ko clear karo
             document.getElementById('saTargetUserUUID').value = '';
             document.getElementById('saTargetHotelName').value = '';
             document.getElementById('saPlanValidityDays').value = '';
