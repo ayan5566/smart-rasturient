@@ -700,13 +700,15 @@
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
+
 <h3>💳 Financial Payout & UPI Management</h3>
 <div style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
     <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal); margin-bottom: 5px;">Aapka Personal ya Business UPI Address (VPA):</p>
     <p style="font-size: 11px; color: #7f8c8d; margin-top: 0; margin-bottom: 10px;">Customer ka payment bina kisi cut ke isi account par instantly received hoga.</p>
     
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #f8fafc;" oninput="saveAdminConfig();" disabled>
+        <!-- 🔥 FIX: readonly aur onclick lagaya hai taaki field par direct click karne par bhi request trigger ho, bypass na ho -->
+        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #f8fafc;" oninput="saveAdminConfig();" onclick="handleDirectVpaClickShield()" readonly>
         
         <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--dark-charcoal); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 13px;">
             🔓 Request VPA Edit Permission
