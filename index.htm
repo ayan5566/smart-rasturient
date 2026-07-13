@@ -2954,7 +2954,7 @@ async function requestRemoteFounderVpaUnlockToken() {
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // Check if remote token is actively granted
+        // Check if remote token is actively granted on cloud
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
@@ -3000,17 +3000,17 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             alert("❌ Cloud Write Violation: " + error.message);
         } else {
             showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
-            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar 1 baar account edit kar sakte hain.`);
+            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar account edit kar sakte hain.`);
             fetchGlobalSaaSAccountNetworkList();
         }
     } catch(err) { console.error(err); }
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION SECURITY SECURITY WRAPPERS & SESSION BURNER
+// 🛡️ ANTI-COLLISION COIL ENGINE: SAFE WINDOW WRAPPERS
 // ===================================================================
 
-// 1. Safe Wrapper for triggerJustSaveConfig (Burn token on explicit save)
+// 1. Safe Wrapper for triggerJustSaveConfig (Burns token explicitly after explicit save)
 if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
     window.originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
     window.hasTriggerJustSaveConfigBackupBeenBound = true;
@@ -3019,10 +3019,10 @@ if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
         let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
         
-        // Purane main core save trigger ko execute karo
+        // Puraane main configuration parameters ko pehle save hone do
         await window.originalTriggerJustSaveConfigBackup();
         
-        // Token auto-consume lock setup
+        // Agar box khula thha aur save kiya, toh use wapas instant lock lagao aur cloud database reset karo
         if (vpaInput && vpaInput.disabled === false && vpaInput.value.trim() !== "") {
             vpaInput.disabled = true;
             vpaInput.style.background = "#f8fafc";
@@ -3033,20 +3033,20 @@ if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
             }
             
             try {
-                // Instant token destruction on save
+                // Save hote hi token hamesha ke liye bhun gaya aur lock ho gaya
                 await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
-                console.log("🔒 Security Core: Token burned successfully after save operation.");
+                console.log("🔒 Security Core: 1-Time authorization token burned after save.");
             } catch(e) { console.error(e); }
         }
     };
 }
 
-// 2. Safe Wrapper for populateAdminForms (Burns token instantly on refresh/load)
+// 2. Safe Wrapper for populateAdminForms (Pure silent UI enforcement)
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
     window.hasPopulateAdminFormsBackupBeenBound = true;
 
-    populateAdminForms = async function() {
+    populateAdminForms = function() {
         window.originalPopulateAdminFormsBackup();
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
         let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
@@ -3055,28 +3055,15 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
             let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             vpaInput.value = savedVpa;
             
-            // Default initial UI enforcement state
-            vpaInput.disabled = true;
-            vpaInput.style.background = "#f8fafc";
-            if (noticeLabel) {
-                noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
-                noticeLabel.style.color = "var(--danger-red)";
-            }
-
-            // 🔥 ANTI-REFRESH EXECUTOR: Re-login ya page reload hote hi token active chhut gaya ho toh auto-lock karo
-            try {
-                const { data: freshSub } = await supabaseClient
-                    .from('subscriptions')
-                    .select('founder_label')
-                    .eq('id', hotelGlobalScopeID)
-                    .maybeSingle();
-
-                if (freshSub && freshSub.founder_label === 'VPA_EDIT_GRANTED') {
-                    // Refresh bypass detect hote hi backend database security lock call trigger karo
-                    await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
-                    console.log("🛡️ Security Alert: Active token intercepted and burned on page reload/session sync.");
+            // Background loops ko trigger kiye bina UI ko strictly hidden disabled state par lock rakho
+            if (vpaInput.disabled !== false) {
+                vpaInput.disabled = true;
+                vpaInput.style.background = "#f8fafc";
+                if (noticeLabel) {
+                    noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
+                    noticeLabel.style.color = "var(--danger-red)";
                 }
-            } catch(ex) { console.error(ex); }
+            }
         }
     };
 }
