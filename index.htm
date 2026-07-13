@@ -2941,21 +2941,19 @@ function populateAdminForms() {
                 } else { alert("❌ Unknown QR Code Target!"); }
             }
         }
-        // ===================================================================
+// ===================================================================
 // 📡 CORE MODULE: REQUEST & CHECK REMOTE OVERRIDE TOKEN RIGHTS
 // ===================================================================
 async function requestRemoteFounderVpaUnlockToken() {
     try {
         showOnScreenNotification("📡 Syncing security protocols with RestroFlow cloud...", false);
         
-        // Database se is restaurant ki remote rights columns lookup karo
         const { data: subData } = await supabaseClient
             .from('subscriptions')
-            .select('founder_label, status') // founder_label column ka use hum temporary permission status tracking ke liye bhi route kar sakte hain
+            .select('founder_label, status')
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // 🧠 REMOTE HANDSHAKE CHECK: Agar founder_label par 'VPA_EDIT_GRANTED' token locked hai
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
@@ -2992,7 +2990,6 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
         
         let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
         
-        // Direct inject permission flag inside database table row arrays
         const { error } = await supabaseClient
             .from('subscriptions')
             .update({ founder_label: tokenFlag })
@@ -3009,54 +3006,62 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
 }
 
 // ===================================================================
-// 💾 SECURITY BLOCK AUTOMATIC AUTO-LOCK INJECTOR WRAPPER
+// 🛡️ ANTI-COLLISION SECURITY BLOCK: SAFE WINDOW WRAPPERS
 // ===================================================================
-// Jab malik settings save karega, toh VPA save hote hi cloud permission token automatic dubara lock ho jayega!
-let originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
-triggerJustSaveConfig = async function() {
-    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
-    
-    // Call normal save process architecture
-    await originalTriggerJustSaveConfigBackup();
-    
-    // 🔥 AUTO-CONSUME EXECUTOR: Agar field khuli thhi aur malik ne save dabaya, toh automatic token burn karke lock laga do
-    if (vpaInput && vpaInput.disabled === false && vpaInput.value.trim() !== "") {
-        vpaInput.disabled = true;
-        vpaInput.style.background = "#f8fafc";
-        
-        if (noticeLabel) {
-            noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
-            noticeLabel.style.color = "var(--danger-red)";
-        }
-        
-        try {
-            // Instant cloud call to consume the 1-time token back to locked state
-            await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
-            console.log("🔒 Security Core: 1-Time authorization token consumed and burned successfully.");
-        } catch(e) { console.error(e); }
-    }
-};
 
-// Sync interface elements population state loaders
-let originalPopulateAdminFormsBackup = populateAdminForms;
-populateAdminForms = function() {
-    originalPopulateAdminFormsBackup();
-    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
-    if (vpaInput) {
-        let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
-        vpaInput.value = savedVpa;
-        if (savedVpa.trim() !== "") {
+// 1. Safe Wrapper for triggerJustSaveConfig
+if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
+    window.originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
+    window.hasTriggerJustSaveConfigBackupBeenBound = true;
+
+    triggerJustSaveConfig = async function() {
+        let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+        let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+        
+        // Purane main core save trigger ko execute karo
+        await window.originalTriggerJustSaveConfigBackup();
+        
+        // Token auto-consume lock setup
+        if (vpaInput && vpaInput.disabled === false && vpaInput.value.trim() !== "") {
             vpaInput.disabled = true;
             vpaInput.style.background = "#f8fafc";
+            
             if (noticeLabel) {
                 noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
                 noticeLabel.style.color = "var(--danger-red)";
             }
+            
+            try {
+                await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
+                console.log("🔒 Security Core: 1-Time authorization token consumed and burned.");
+            } catch(e) { console.error(e); }
         }
-    }
-};
+    };
+}
+
+// 2. Safe Wrapper for populateAdminForms
+if (!window.hasPopulateAdminFormsBackupBeenBound) {
+    window.originalPopulateAdminFormsBackup = populateAdminForms;
+    window.hasPopulateAdminFormsBackupBeenBound = true;
+
+    populateAdminForms = function() {
+        window.originalPopulateAdminFormsBackup();
+        let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+        let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+        if (vpaInput) {
+            let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
+            vpaInput.value = savedVpa;
+            if (savedVpa.trim() !== "") {
+                vpaInput.disabled = true;
+                vpaInput.style.background = "#f8fafc";
+                if (noticeLabel) {
+                    noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
+                    noticeLabel.style.color = "var(--danger-red)";
+                }
+            }
+        }
+    };
+}
 // ===================================================================
 // 🍕 CUSTOMER MENU PAINTER ENGINE: WITH MOBILE-RESPONSIVE QUANTITY SELECTOR
 // ===================================================================
