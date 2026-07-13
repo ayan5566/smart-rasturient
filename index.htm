@@ -477,16 +477,11 @@
             🔒 Encrypted P2P Protocol Node: 0% Platform Charges
         </div>
 
-        <!-- 🔥 THE INTENT HANDSHAKE ACTION BUTTONS -->
-        <button class="action-btn" id="triggerUpiIntentMobileDirectBtn" onclick="executeNativeUpiIntentRoutingPipeline()" style="background: var(--dark-charcoal); color: white; margin-bottom: 10px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <button class="action-btn" id="triggerUpiIntentMobileDirectBtn" onclick="executeNativeUpiIntentRoutingPipeline()" style="background: var(--dark-charcoal); color: white; margin-bottom: 10px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 100%;">
             ⚡ Open UPI Apps (GPay / PhonePe / Paytm)
         </button>
-
-        <button class="action-btn" onclick="executeSimulatedMobilePaymentSuccessSequence()" style="background:var(--neon-green); margin-bottom:10px; font-size: 13px; padding: 10px;">
-            📲 Confirm Payment Verified (Paid Successfully)
-        </button>
         
-        <button class="action-btn" onclick="document.getElementById('mobilePaymentSimulatorModal').style.display='none'" style="background:#7f8c8d; color: white; font-size: 13px; padding: 10px;">
+        <button class="action-btn" onclick="document.getElementById('mobilePaymentSimulatorModal').style.display='none'" style="background:#7f8c8d; color: white; font-size: 13px; padding: 10px; width: 100%;">
             Cancel Transaction
         </button>
     </div>
@@ -1159,40 +1154,38 @@ function initializeAdminRealtimeBillingTracker() {
             .subscribe();
 
         window.billingSessionsChannel = supabaseClient
-            .channel('billing-sessions-stream')
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'table_sessions' 
-            }, (payload) => {
-                console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
+    .channel('billing-sessions-stream')
+    .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'table_sessions' 
+    }, (payload) => {
+        console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
+        
+        if (payload.new) {
+            const rawCloudTableId = payload.new.table_id;
+            if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
+                let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
                 
-                if (payload.new) {
-                    const rawCloudTableId = payload.new.table_id;
-                    if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
-                        let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
-                        
-                        floorData.forEach(floor => {
-                            floor.tables.forEach(t => {
-                                let currentLocalKey = `${floor.floorName}_${t.id}`;
-                                if (currentLocalKey === innerTableToken) {
-                                    t.waiterBell = payload.new.waiter_bell || false;
-                                    if (payload.new.payment_status === 'SUCCESS_PAID') {
-                                        t.state = 0; // Force empty state on payment completion
-                                    } else {
-                                        // 🍊 FIXED CAPTURE OPERATOR: Automatically turns table into empty state if bill rows array settles to 0
-                                        t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
-                                    }
-                                }
-                            });
-                        });
-                        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-                    }
-                }
-                generateAdminTableGrid(); // Forces immediate layout visual synchronization
-                queueDebouncedBillRender();
-            })
-            .subscribe();
+                floorData.forEach(floor => {
+                    floor.tables.forEach(t => {
+                        let currentLocalKey = `${floor.floorName}_${t.id}`;
+                        if (currentLocalKey === innerTableToken) {
+                            t.waiterBell = payload.new.waiter_bell || false;
+                            
+                            // 🔥 SILENT NOTIFICATION LAYER: Status sync karo, table state ko automatic 0 (delete) mat karo
+                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
+                            t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
+                        }
+                    });
+                });
+                localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            }
+        }
+        generateAdminTableGrid(); // Layout dashboard par instantly blink/status token inject karega
+        queueDebouncedBillRender();
+    })
+    .subscribe();
 
     } catch (realtimeErr) {
         console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
@@ -1785,7 +1778,7 @@ function updateFrontEndClassificationLabels() {
     document.getElementById('discountSheetModal').style.display = 'flex';
 }
 
-        // ===================================================================
+// ===================================================================
 // 💳 BROADCAST ENGINE: OPEN SMART INTENT PAYMENTS LOGIC WINDOW
 // ===================================================================
 function openSmartMobilePaymentGatewayGateway() {
@@ -1794,10 +1787,10 @@ function openSmartMobilePaymentGatewayGateway() {
         return; 
     }
     
-    // UI displays and text nodes setup hooks
+    // Live text node par net payable amount display push karo
     document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
     
-    // Cloud storage database se owner ki live UPI ID lookup karo ya current storage fetch karo
+    // Cloud storage database se owner ki live UPI ID lookup karo
     let activeOwnerVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "merchant_inject_node@sbi";
     
     let labelElem = document.getElementById('paymentGatewayTargetUpiLabel');
@@ -1807,7 +1800,6 @@ function openSmartMobilePaymentGatewayGateway() {
     
     document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
 }
-
 // ===================================================================
 // 🚀 NEW MODULE: DEEP-LINK NATIVE UPI INTENT STREAM ROUTER
 // ===================================================================
