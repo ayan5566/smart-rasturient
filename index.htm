@@ -895,7 +895,7 @@ async function closePaywallAndExitToHub() {
         location.reload();
     }
 }
-      // ===================================================================
+     // ===================================================================
 // 👑 UPGRADED PAYWALL: INJECTS GLOBAL BASE RATES INSTEAD OF 0 PRICING
 // ===================================================================
 async function revealSaaSPricingTiersMatrix() {
@@ -906,8 +906,9 @@ async function revealSaaSPricingTiersMatrix() {
             .eq('id', hotelGlobalScopeID) 
             .maybeSingle();
 
-        let finalMonthlyRate = 499;
-        let finalYearlyRate = 4999;
+        // 🔥 REFERENCE INTEGRATION: Baseline fallbacks are now securely read from global config objects
+        let finalMonthlyRate = dynamicGlobalSaaSDefaults.monthly || 499;
+        let finalYearlyRate = dynamicGlobalSaaSDefaults.yearly || 4999;
 
         if (subData) {
             // 🔥 SaaS Model Core: Agar user rate 0 hai, toh baseline defaults load karo, warna custom rate dikhao
