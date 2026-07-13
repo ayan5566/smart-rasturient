@@ -2954,6 +2954,7 @@ async function requestRemoteFounderVpaUnlockToken() {
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
+        // Check if remote token is actively granted
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
@@ -2964,10 +2965,10 @@ async function requestRemoteFounderVpaUnlockToken() {
                 vpaInput.focus();
                 
                 if (noticeLabel) {
-                    noticeLabel.innerText = "🟢 Status: 1-Time Remote Permission Granted! Fill VPA and save settings immediately.";
+                    noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Change VPA and Save NOW.";
                     noticeLabel.style.color = "var(--neon-green)";
                 }
-                showOnScreenNotification("🔓 Access Granted! Input field unlocked for exactly 1 edit.");
+                showOnScreenNotification("🔓 Access Granted! Field unlocked until next save or refresh.");
             }
         } else {
             alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
@@ -3006,10 +3007,10 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION SECURITY BLOCK: SAFE WINDOW WRAPPERS
+// 🛡️ ANTI-COLLISION SECURITY SECURITY WRAPPERS & SESSION BURNER
 // ===================================================================
 
-// 1. Safe Wrapper for triggerJustSaveConfig
+// 1. Safe Wrapper for triggerJustSaveConfig (Burn token on explicit save)
 if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
     window.originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
     window.hasTriggerJustSaveConfigBackupBeenBound = true;
@@ -3032,33 +3033,50 @@ if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
             }
             
             try {
+                // Instant token destruction on save
                 await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
-                console.log("🔒 Security Core: 1-Time authorization token consumed and burned.");
+                console.log("🔒 Security Core: Token burned successfully after save operation.");
             } catch(e) { console.error(e); }
         }
     };
 }
 
-// 2. Safe Wrapper for populateAdminForms
+// 2. Safe Wrapper for populateAdminForms (Burns token instantly on refresh/load)
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
     window.hasPopulateAdminFormsBackupBeenBound = true;
 
-    populateAdminForms = function() {
+    populateAdminForms = async function() {
         window.originalPopulateAdminFormsBackup();
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
         let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+        
         if (vpaInput) {
             let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             vpaInput.value = savedVpa;
-            if (savedVpa.trim() !== "") {
-                vpaInput.disabled = true;
-                vpaInput.style.background = "#f8fafc";
-                if (noticeLabel) {
-                    noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
-                    noticeLabel.style.color = "var(--danger-red)";
-                }
+            
+            // Default initial UI enforcement state
+            vpaInput.disabled = true;
+            vpaInput.style.background = "#f8fafc";
+            if (noticeLabel) {
+                noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
+                noticeLabel.style.color = "var(--danger-red)";
             }
+
+            // 🔥 ANTI-REFRESH EXECUTOR: Re-login ya page reload hote hi token active chhut gaya ho toh auto-lock karo
+            try {
+                const { data: freshSub } = await supabaseClient
+                    .from('subscriptions')
+                    .select('founder_label')
+                    .eq('id', hotelGlobalScopeID)
+                    .maybeSingle();
+
+                if (freshSub && freshSub.founder_label === 'VPA_EDIT_GRANTED') {
+                    // Refresh bypass detect hote hi backend database security lock call trigger karo
+                    await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
+                    console.log("🛡️ Security Alert: Active token intercepted and burned on page reload/session sync.");
+                }
+            } catch(ex) { console.error(ex); }
         }
     };
 }
