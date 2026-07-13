@@ -700,13 +700,19 @@
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
-        <!-- 💳 UPGRADED: SAAS OWNER NATIVE UPI ADDRESS CONFIGURATION -->
 <h3>💳 Financial Payout & UPI Management</h3>
 <div style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
     <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal); margin-bottom: 5px;">Aapka Personal ya Business UPI Address (VPA):</p>
     <p style="font-size: 11px; color: #7f8c8d; margin-top: 0; margin-bottom: 10px;">Customer ka payment bina kisi cut ke isi account par instantly received hoga.</p>
     
-    <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis ya 98765xxxxx@ybl" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px;" oninput="saveAdminConfig();">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #f8fafc;" oninput="saveAdminConfig();" disabled>
+        
+        <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--dark-charcoal); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 13px;">
+            🔓 Request VPA Edit Permission
+        </button>
+    </div>
+    <div id="vpaSecurityStatusNoticeLabel" style="font-size: 11px; font-weight: bold; color: var(--danger-red); margin-top: 8px; display: block;">🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.</div>
 </div>
 
         <h3>🏢 Interactive Floor & QR Table Grid System</h3>
@@ -828,6 +834,15 @@
                 <input type="number" id="saCustomYearlyRate" placeholder="e.g. 9999" style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
             </div>
         </div>
+        <div style="background: #0b0c10; border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-bottom: 15px; margin-top: 10px;">
+    <label style="font-size: 11px; font-weight: bold; color: #ffd700; display: block; margin-bottom: 6px;">🎯 VPA Remotely Modification Token Access Request Control:</label>
+    <button class="action-btn" onclick="executeRemoteVpaAccessGrantPipeline('granted')" style="background: #3498db; color: #fff; font-size: 12px; padding: 8px; margin-bottom: 6px; font-weight: 700; width: 100%;">
+        ✅ Grant 1-Time Edit Permission Token
+    </button>
+    <button class="action-btn" onclick="executeRemoteVpaAccessGrantPipeline('revoked')" style="background: #7f8c8d; color: #fff; font-size: 11px; padding: 6px; font-weight: bold; width: 100%;">
+        ❌ Force Revoke / Intercept Permission
+    </button>
+</div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('active')" style="background: var(--neon-green); color: #fff; flex: 1;">⚡ Activate / Renew Plan</button>
@@ -2719,7 +2734,7 @@ async function renderLiveCalculatedBill() {
         // ===================================================================
         // 🔌 CONNECTED TO INVERTER: CUSTOMER PANEL DISPLAY NODE
         // ===================================================================
-        // Inverter core se calculated data direct fetch karo bina double dynamic math ke
+        
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
@@ -2926,6 +2941,122 @@ function populateAdminForms() {
                 } else { alert("❌ Unknown QR Code Target!"); }
             }
         }
+        // ===================================================================
+// 📡 CORE MODULE: REQUEST & CHECK REMOTE OVERRIDE TOKEN RIGHTS
+// ===================================================================
+async function requestRemoteFounderVpaUnlockToken() {
+    try {
+        showOnScreenNotification("📡 Syncing security protocols with RestroFlow cloud...", false);
+        
+        // Database se is restaurant ki remote rights columns lookup karo
+        const { data: subData } = await supabaseClient
+            .from('subscriptions')
+            .select('founder_label, status') // founder_label column ka use hum temporary permission status tracking ke liye bhi route kar sakte hain
+            .eq('id', hotelGlobalScopeID)
+            .maybeSingle();
+
+        // 🧠 REMOTE HANDSHAKE CHECK: Agar founder_label par 'VPA_EDIT_GRANTED' token locked hai
+        if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
+            let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+            let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+            
+            if (vpaInput) {
+                vpaInput.disabled = false;
+                vpaInput.style.background = "#ffffff";
+                vpaInput.focus();
+                
+                if (noticeLabel) {
+                    noticeLabel.innerText = "🟢 Status: 1-Time Remote Permission Granted! Fill VPA and save settings immediately.";
+                    noticeLabel.style.color = "var(--neon-green)";
+                }
+                showOnScreenNotification("🔓 Access Granted! Input field unlocked for exactly 1 edit.");
+            }
+        } else {
+            alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
+        }
+    } catch(err) { console.error(err); }
+}
+
+// ===================================================================
+// 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
+// ===================================================================
+async function executeRemoteVpaAccessGrantPipeline(permissionState) {
+    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    if (!targetId || targetId.length < 10) {
+        alert("❌ Target Verification Error: Please select/click a valid restaurant account row from the network list first!");
+        return;
+    }
+
+    try {
+        showOnScreenNotification("⏳ Syncing remote authorization parameters...", false);
+        
+        let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
+        
+        // Direct inject permission flag inside database table row arrays
+        const { error } = await supabaseClient
+            .from('subscriptions')
+            .update({ founder_label: tokenFlag })
+            .eq('id', targetId);
+
+        if (error) {
+            alert("❌ Cloud Write Violation: " + error.message);
+        } else {
+            showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
+            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar 1 baar account edit kar sakte hain.`);
+            fetchGlobalSaaSAccountNetworkList();
+        }
+    } catch(err) { console.error(err); }
+}
+
+// ===================================================================
+// 💾 SECURITY BLOCK AUTOMATIC AUTO-LOCK INJECTOR WRAPPER
+// ===================================================================
+// Jab malik settings save karega, toh VPA save hote hi cloud permission token automatic dubara lock ho jayega!
+let originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
+triggerJustSaveConfig = async function() {
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+    
+    // Call normal save process architecture
+    await originalTriggerJustSaveConfigBackup();
+    
+    // 🔥 AUTO-CONSUME EXECUTOR: Agar field khuli thhi aur malik ne save dabaya, toh automatic token burn karke lock laga do
+    if (vpaInput && vpaInput.disabled === false && vpaInput.value.trim() !== "") {
+        vpaInput.disabled = true;
+        vpaInput.style.background = "#f8fafc";
+        
+        if (noticeLabel) {
+            noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
+            noticeLabel.style.color = "var(--danger-red)";
+        }
+        
+        try {
+            // Instant cloud call to consume the 1-time token back to locked state
+            await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
+            console.log("🔒 Security Core: 1-Time authorization token consumed and burned successfully.");
+        } catch(e) { console.error(e); }
+    }
+};
+
+// Sync interface elements population state loaders
+let originalPopulateAdminFormsBackup = populateAdminForms;
+populateAdminForms = function() {
+    originalPopulateAdminFormsBackup();
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+    if (vpaInput) {
+        let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
+        vpaInput.value = savedVpa;
+        if (savedVpa.trim() !== "") {
+            vpaInput.disabled = true;
+            vpaInput.style.background = "#f8fafc";
+            if (noticeLabel) {
+                noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
+                noticeLabel.style.color = "var(--danger-red)";
+            }
+        }
+    }
+};
 // ===================================================================
 // 🍕 CUSTOMER MENU PAINTER ENGINE: WITH MOBILE-RESPONSIVE QUANTITY SELECTOR
 // ===================================================================
