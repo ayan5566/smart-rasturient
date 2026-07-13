@@ -2948,13 +2948,14 @@ async function requestRemoteFounderVpaUnlockToken() {
     try {
         showOnScreenNotification("📡 Syncing security protocols with RestroFlow cloud...", false);
         
+        // Step 1: Cloud se live verification tokens lookup karo
         const { data: subData } = await supabaseClient
             .from('subscriptions')
             .select('founder_label, status')
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // Check if remote token is actively granted on cloud
+        // Step 2: Agar token 'GRANTED' milta hai, toh andar aane do
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
@@ -2965,12 +2966,26 @@ async function requestRemoteFounderVpaUnlockToken() {
                 vpaInput.focus();
                 
                 if (noticeLabel) {
-                    noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Change VPA and Save NOW.";
+                    noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and save settings immediately.";
                     noticeLabel.style.color = "var(--neon-green)";
                 }
-                showOnScreenNotification("🔓 Access Granted! Field unlocked until next save or refresh.");
+                showOnScreenNotification("🔓 Access Granted! Input field unlocked.");
             }
+
+            // 🔥 🔥 THE MASTER FIX: Permission milte hi, USI SECOND cloud par token ko permanent BURN (LOCK) kar do!
+            // Isse malik sirf abhi edit kar payega, dobara click karne par yeh block ho jayega.
+            try {
+                await supabaseClient
+                    .from('subscriptions')
+                    .update({ founder_label: 'VPA_EDIT_LOCKED' })
+                    .eq('id', hotelGlobalScopeID);
+                console.log("🔒 Security Core: 1-Time authorization token burned instantly upon button click.");
+            } catch (tokenBurnErr) {
+                console.error("Non-blocking token burn restriction:", tokenBurnErr.message);
+            }
+
         } else {
+            // Agar token pehle hi burn ho chuka hai ya locked hai
             alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
         }
     } catch(err) { console.error(err); }
@@ -3000,17 +3015,17 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             alert("❌ Cloud Write Violation: " + error.message);
         } else {
             showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
-            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar account edit kar sakte hain.`);
+            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar 1 baar account edit kar sakte hain.`);
             fetchGlobalSaaSAccountNetworkList();
         }
     } catch(err) { console.error(err); }
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION COIL ENGINE: SAFE WINDOW WRAPPERS
+// 🛡️ ANTI-COLLISION SECURITY BLOCK: SAFE WINDOW WRAPPERS
 // ===================================================================
 
-// 1. Safe Wrapper for triggerJustSaveConfig (Burns token explicitly after explicit save)
+// 1. Safe Wrapper for triggerJustSaveConfig (Forces lock layout boundaries)
 if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
     window.originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
     window.hasTriggerJustSaveConfigBackupBeenBound = true;
@@ -3019,11 +3034,11 @@ if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
         let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
         
-        // Puraane main configuration parameters ko pehle save hone do
+        // Purane main core save trigger ko execute karo
         await window.originalTriggerJustSaveConfigBackup();
         
-        // Agar box khula thha aur save kiya, toh use wapas instant lock lagao aur cloud database reset karo
-        if (vpaInput && vpaInput.disabled === false && vpaInput.value.trim() !== "") {
+        // Save hote hi field ko strictly wapas lock kar do UI par
+        if (vpaInput && vpaInput.disabled === false) {
             vpaInput.disabled = true;
             vpaInput.style.background = "#f8fafc";
             
@@ -3031,17 +3046,12 @@ if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
                 noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
                 noticeLabel.style.color = "var(--danger-red)";
             }
-            
-            try {
-                // Save hote hi token hamesha ke liye bhun gaya aur lock ho gaya
-                await supabaseClient.from('subscriptions').update({ founder_label: 'VPA_EDIT_LOCKED' }).eq('id', hotelGlobalScopeID);
-                console.log("🔒 Security Core: 1-Time authorization token burned after save.");
-            } catch(e) { console.error(e); }
+            showOnScreenNotification("🔒 VPA changes securely saved and locked.");
         }
     };
 }
 
-// 2. Safe Wrapper for populateAdminForms (Pure silent UI enforcement)
+// 2. Safe Wrapper for populateAdminForms (UI Enforcement)
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
     window.hasPopulateAdminFormsBackupBeenBound = true;
@@ -3055,7 +3065,7 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
             let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             vpaInput.value = savedVpa;
             
-            // Background loops ko trigger kiye bina UI ko strictly hidden disabled state par lock rakho
+            // UI defaults initialization protection layout
             if (vpaInput.disabled !== false) {
                 vpaInput.disabled = true;
                 vpaInput.style.background = "#f8fafc";
