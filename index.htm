@@ -2946,53 +2946,68 @@ function populateAdminForms() {
 async function requestRemoteFounderVpaUnlockToken() {
     let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
     let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
 
-    // 💥 STEP 3 & 4: Agar user ne already field kholi hui thi aur dobara click kiya -> Matlab SAVE & DISAPPEAR kerna hai
-    if (vpaContainer && vpaContainer.style.display === 'block' && vpaInput && vpaInput.value.trim() !== "") {
-        showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
-        
-        // Local state validation saves trigger
-        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
-        
-        // Master Save configuration matrix trigger call
-        if (typeof triggerJustSaveConfig === "function") {
-            await triggerJustSaveConfig();
+    if (!vpaContainer) {
+        console.error("❌ Error: secHotelVpaOperationalContainer DOM element not found!");
+        return;
+    }
+
+    // 💥 STEP 3 & 4: Agar dabba pehle se khula hai, toh is click par SAVE & DISAPPEAR kerna hai
+    if (vpaContainer.style.display === 'block') {
+        if (!vpaInput || vpaInput.value.trim() === "") {
+            alert("⚠️ Please enter a valid UPI VPA Address before saving!");
+            return;
         }
 
-        // 🔥 STEP 4: Section vanished/disappear instantly from screen display blocks
+        showOnScreenNotification("实时 💾 Saving VPA parameters and locking section...", false);
+        
+        // Local state save
+        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
+        
+        // Global config sync calls
+        if (typeof saveAdminConfig === "function") saveAdminConfig();
+        if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
+
+        // 🔥 STEP 4: Section screen se instantly gayab (disappear)
         vpaContainer.style.display = 'none';
         
         try {
-            // Immediate cloud token destruction handshake execution
+            // Cloud token burn logic
             await supabaseClient
                 .from('subscriptions')
                 .update({ founder_label: 'VPA_EDIT_LOCKED' })
                 .eq('id', hotelGlobalScopeID);
-            console.log("🔒 Security Core: 1-Time token burned and consumed successfully.");
+            console.log("🔒 Security Core: Token consumed and burned successfully.");
         } catch (err) { console.error(err); }
 
         alert("🗑️ Success! VPA Saved and configuration panel disappeared from screen securely.");
-        return; // Safe code block break exit
+        return; 
     }
 
-    // 💥 STEP 1 & 2: Agar panel hidden thha, toh pehle cloud checklist verify karo aur open karo
+    // 💥 STEP 1 & 2: Agar dabba band thha, toh cloud check karke screen par show karo
     try {
-        showOnScreenNotification("📡 Verifying Master HQ Authorization Tokens...", false);
+        showOnScreenNotification("📡 Syncing tokens with RestroFlow Cloud...", false);
         
         const { data: subData } = await supabaseClient
             .from('subscriptions')
-            .select('founder_label, status')
+            .select('founder_label')
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
+        // STEP 5: Restart matching validations rules
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
-            if (vpaContainer) {
-                // Section becomes visible to open and fill data inputs arrays
-                vpaContainer.style.display = 'block'; 
-                if (vpaInput) vpaInput.focus();
-                showOnScreenNotification("🔓 Access Granted! VPA panel is now visible to edit.");
+            vpaContainer.style.display = 'block'; // Section show ho jayega
+            if (vpaInput) {
+                vpaInput.removeAttribute('disabled');
+                vpaInput.removeAttribute('readonly');
+                vpaInput.focus();
             }
+            if (noticeLabel) {
+                noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click button to save.";
+                noticeLabel.style.color = "var(--neon-green)";
+            }
+            showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
         } else {
             alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
         }
@@ -3000,7 +3015,7 @@ async function requestRemoteFounderVpaUnlockToken() {
 }
 
 // ===================================================================
-// 👑 FOUNDER COMMAND: EXECUTE REMOTE VPA ACCESS GRANT PIPELINE
+// 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
 // ===================================================================
 async function executeRemoteVpaAccessGrantPipeline(permissionState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
@@ -3022,7 +3037,7 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             alert("❌ Cloud Write Violation: " + error.message);
         } else {
             showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
-            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ke dashboard par VPA editing interface ab step-by-step unlock ho jayega.`);
+            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request VPA Edit Permission' button daba kar account edit kar sakte hain.`);
             fetchGlobalSaaSAccountNetworkList();
         }
     } catch(err) { console.error(err); }
@@ -3039,15 +3054,20 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
         window.originalPopulateAdminFormsBackup();
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
         let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
+        let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
         
         if (vpaInput) {
             let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             vpaInput.value = savedVpa;
-            
-            // 🔥 STRICT DISAPPEAR RULE: Dashboard load hotey hi hamesha dabba pehle gayab (hidden) rahega
-            if (vpaContainer) {
-                vpaContainer.style.display = 'none';
-            }
+        }
+
+        // 🔥 CRITICAL PROTECTION FIX: Initial baseline load par section hamesha screen se hidden (gayab) rahega
+        if (vpaContainer) {
+            vpaContainer.style.display = 'none';
+        }
+        if (noticeLabel) {
+            noticeLabel.innerText = "🔒 Status: Hidden & Locked by RestroFlow HQ.";
+            noticeLabel.style.color = "var(--danger-red)";
         }
     };
 }
