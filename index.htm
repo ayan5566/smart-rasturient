@@ -93,29 +93,6 @@
         line-height: 1.4 !important;
     }
     
-/* ================================================================= */
-/* 🎮 FIX: BUTTON CLICK FULLY ACTIVE + MOBILE COPY POPUP KILLED      */
-/* ================================================================= */
-
-/* Game ke saare controller buttons par touch-hold selection block karo */
-.ctrl-btn, 
-.snk-btn, 
-.game-box .action-btn, 
-.game-box .game-nav button {
-    /* Left-click ekdam active rahega, par dabakar rakhne par copy menu nahi aayega */
-    -webkit-touch-callout: none !important; /* iOS Safari/Chrome long-press menu killer */
-    -webkit-user-select: none !important;   /* Safari */
-    -khtml-user-select: none !important;     /* Konqueror HTML */
-    -moz-user-select: none !important;      /* Old Firefox */
-    -ms-user-select: none !important;       /* Internet Explorer/Edge */
-    user-select: none !important;           /* Modern Chrome, Opera, and Brave */
-    
-    /* Galti se click karte waqt jo blue ya grey box highlighted shadow aati hai, use hataye */
-    -webkit-tap-highlight-color: transparent !important; 
-    
-    /* Mobile standard touch controls tracking active layer pointers */
-    touch-action: manipulation !important;  
-}
 
     /* ------------------------------------------------------------- */
     /* 🧾 ROUTE A: THERMAL RECEIPT ROLLOUT LAYOUT (UNTOUCHED & SAFE)  */
@@ -2953,7 +2930,7 @@ async function requestRemoteFounderVpaUnlockToken() {
         return;
     }
 
-    // 💥 STEP 3 & 4: Agar dabba pehle se khula hai, toh is click par SAVE & DISAPPEAR kerna hai
+    // 💥 STEP 3 & 4: Agar dabba pehle se screen par open hai, toh is click par SAVE & DISAPPEAR kerna hai
     if (vpaContainer.style.display === 'block') {
         if (!vpaInput || vpaInput.value.trim() === "") {
             alert("⚠️ Please enter a valid UPI VPA Address before saving!");
@@ -2962,10 +2939,10 @@ async function requestRemoteFounderVpaUnlockToken() {
 
         showOnScreenNotification("实时 💾 Saving VPA parameters and locking section...", false);
         
-        // Local state save
+        // Local state validation saves trigger
         localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
         
-        // Global config sync calls
+        // Global config database sync calls
         if (typeof saveAdminConfig === "function") saveAdminConfig();
         if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
 
@@ -2973,7 +2950,7 @@ async function requestRemoteFounderVpaUnlockToken() {
         vpaContainer.style.display = 'none';
         
         try {
-            // Cloud token burn logic
+            // Cloud token burn database mutation layer
             await supabaseClient
                 .from('subscriptions')
                 .update({ founder_label: 'VPA_EDIT_LOCKED' })
@@ -2995,9 +2972,11 @@ async function requestRemoteFounderVpaUnlockToken() {
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // STEP 5: Restart matching validations rules
+        // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
-            vpaContainer.style.display = 'block'; // Section show ho jayega
+            vpaContainer.style.styleWithJS = "block"; // Safe tracking variable
+            vpaContainer.style.display = 'block'; // 🔥 Core visibility trigger: Dabba samne laye!
+            
             if (vpaInput) {
                 vpaInput.removeAttribute('disabled');
                 vpaInput.removeAttribute('readonly');
@@ -3044,7 +3023,7 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES
+// 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (REPAIRED FIX)
 // ===================================================================
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
@@ -3061,13 +3040,13 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
             vpaInput.value = savedVpa;
         }
 
-        // 🔥 CRITICAL PROTECTION FIX: Initial baseline load par section hamesha screen se hidden (gayab) rahega
-        if (vpaContainer) {
+        // 🔥 THE FIXED CRITICAL GUARD: Dabba strictly tabhi hidden hoga jab uski state open active 'block' NA HO!
+        if (vpaContainer && vpaContainer.style.display !== 'block') {
             vpaContainer.style.display = 'none';
-        }
-        if (noticeLabel) {
-            noticeLabel.innerText = "🔒 Status: Hidden & Locked by RestroFlow HQ.";
-            noticeLabel.style.color = "var(--danger-red)";
+            if (noticeLabel) {
+                noticeLabel.innerText = "🔒 Status: Hidden & Locked by RestroFlow HQ.";
+                noticeLabel.style.color = "var(--danger-red)";
+            }
         }
     };
 }
