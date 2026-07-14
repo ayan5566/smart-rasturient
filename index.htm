@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hosted  by Restorflow</title>
+    <title>Hosted by Restorflow</title>
 
     <!-- 🌐 SAAS ENGINE FIXED: Native vector inline URI guarantees 100% sharp professional tab logo display on any resolution screen -->
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
@@ -701,22 +701,19 @@
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
 
-<h3>💳 Financial Payout & UPI Management</h3>
-<div style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
-    <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal); margin-bottom: 5px;">Aapka Personal ya Business UPI Address (VPA):</p>
+<div id="secHotelVpaOperationalContainer" style="display: none; background: white; padding: 15px; border-radius: 14px; border: 1px solid #ccc; margin-bottom: 20px; text-align: left;">
+    <h3 style="text-align: left; margin-bottom: 5px;">💳 Financial Payout & UPI Management</h3>
     <p style="font-size: 11px; color: #7f8c8d; margin-top: 0; margin-bottom: 10px;">Customer ka payment bina kisi cut ke isi account par instantly received hoga.</p>
     
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <!-- 🔥 FIX: readonly aur onclick lagaya hai taaki field par direct click karne par bhi request trigger ho, bypass na ho -->
-        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #f8fafc;" oninput="saveAdminConfig();" onclick="handleDirectVpaClickShield()" readonly>
+        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #ffffff;" oninput="saveAdminConfig();">
         
         <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--dark-charcoal); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 13px;">
-            🔓 Request VPA Edit Permission
+            ⚡ Save & Lock VPA
         </button>
     </div>
-    <div id="vpaSecurityStatusNoticeLabel" style="font-size: 11px; font-weight: bold; color: var(--danger-red); margin-top: 8px; display: block;">🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.</div>
+    <div id="vpaSecurityStatusNoticeLabel" style="font-size: 11px; font-weight: bold; color: var(--neon-green); margin-top: 8px; display: block;">🟢 Status: Temporary Authorization Window Active.</div>
 </div>
-
         <h3>🏢 Interactive Floor & QR Table Grid System</h3>
         <div class="table-legend-bar">
             <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
@@ -2944,57 +2941,66 @@ function populateAdminForms() {
             }
         }
 // ===================================================================
-// 📡 CORE MODULE: REQUEST & CHECK REMOTE OVERRIDE TOKEN RIGHTS
+// 📡 STEPS 1-4 ENGINE: REQUEST OVERRIDE, AUTO-SAVE, AND DISAPPEAR CONTAINER
 // ===================================================================
 async function requestRemoteFounderVpaUnlockToken() {
-    try {
-        showOnScreenNotification("📡 Syncing security protocols with RestroFlow cloud...", false);
+    let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+
+    // 💥 STEP 3 & 4: Agar user ne already field kholi hui thi aur dobara click kiya -> Matlab SAVE & DISAPPEAR kerna hai
+    if (vpaContainer && vpaContainer.style.display === 'block' && vpaInput && vpaInput.value.trim() !== "") {
+        showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
         
-        // Step 1: Cloud se live verification tokens lookup karo
+        // Local state validation saves trigger
+        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
+        
+        // Master Save configuration matrix trigger call
+        if (typeof triggerJustSaveConfig === "function") {
+            await triggerJustSaveConfig();
+        }
+
+        // 🔥 STEP 4: Section vanished/disappear instantly from screen display blocks
+        vpaContainer.style.display = 'none';
+        
+        try {
+            // Immediate cloud token destruction handshake execution
+            await supabaseClient
+                .from('subscriptions')
+                .update({ founder_label: 'VPA_EDIT_LOCKED' })
+                .eq('id', hotelGlobalScopeID);
+            console.log("🔒 Security Core: 1-Time token burned and consumed successfully.");
+        } catch (err) { console.error(err); }
+
+        alert("🗑️ Success! VPA Saved and configuration panel disappeared from screen securely.");
+        return; // Safe code block break exit
+    }
+
+    // 💥 STEP 1 & 2: Agar panel hidden thha, toh pehle cloud checklist verify karo aur open karo
+    try {
+        showOnScreenNotification("📡 Verifying Master HQ Authorization Tokens...", false);
+        
         const { data: subData } = await supabaseClient
             .from('subscriptions')
             .select('founder_label, status')
             .eq('id', hotelGlobalScopeID)
             .maybeSingle();
 
-        // Step 2: Agar token 'GRANTED' milta hai, toh andar aane do
+        // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
         if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
-            let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-            let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
-            
-            if (vpaInput) {
-                vpaInput.disabled = false;
-                vpaInput.style.background = "#ffffff";
-                vpaInput.focus();
-                
-                if (noticeLabel) {
-                    noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and save settings immediately.";
-                    noticeLabel.style.color = "var(--neon-green)";
-                }
-                showOnScreenNotification("🔓 Access Granted! Input field unlocked.");
+            if (vpaContainer) {
+                // Section becomes visible to open and fill data inputs arrays
+                vpaContainer.style.display = 'block'; 
+                if (vpaInput) vpaInput.focus();
+                showOnScreenNotification("🔓 Access Granted! VPA panel is now visible to edit.");
             }
-
-            // 🔥 🔥 THE MASTER FIX: Permission milte hi, USI SECOND cloud par token ko permanent BURN (LOCK) kar do!
-            // Isse malik sirf abhi edit kar payega, dobara click karne par yeh block ho jayega.
-            try {
-                await supabaseClient
-                    .from('subscriptions')
-                    .update({ founder_label: 'VPA_EDIT_LOCKED' })
-                    .eq('id', hotelGlobalScopeID);
-                console.log("🔒 Security Core: 1-Time authorization token burned instantly upon button click.");
-            } catch (tokenBurnErr) {
-                console.error("Non-blocking token burn restriction:", tokenBurnErr.message);
-            }
-
         } else {
-            // Agar token pehle hi burn ho chuka hai ya locked hai
             alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
         }
     } catch(err) { console.error(err); }
 }
 
 // ===================================================================
-// 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
+// 👑 FOUNDER COMMAND: EXECUTE REMOTE VPA ACCESS GRANT PIPELINE
 // ===================================================================
 async function executeRemoteVpaAccessGrantPipeline(permissionState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
@@ -3005,7 +3011,6 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
 
     try {
         showOnScreenNotification("⏳ Syncing remote authorization parameters...", false);
-        
         let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
         
         const { error } = await supabaseClient
@@ -3017,43 +3022,15 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             alert("❌ Cloud Write Violation: " + error.message);
         } else {
             showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
-            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request Permission' button daba kar 1 baar account edit kar sakte hain.`);
+            alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ke dashboard par VPA editing interface ab step-by-step unlock ho jayega.`);
             fetchGlobalSaaSAccountNetworkList();
         }
     } catch(err) { console.error(err); }
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION SECURITY BLOCK: SAFE WINDOW WRAPPERS
+// 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES
 // ===================================================================
-
-// 1. Safe Wrapper for triggerJustSaveConfig (Forces lock layout boundaries)
-if (!window.hasTriggerJustSaveConfigBackupBeenBound) {
-    window.originalTriggerJustSaveConfigBackup = triggerJustSaveConfig;
-    window.hasTriggerJustSaveConfigBackupBeenBound = true;
-
-    triggerJustSaveConfig = async function() {
-        let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-        let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
-        
-        // Purane main core save trigger ko execute karo
-        await window.originalTriggerJustSaveConfigBackup();
-        
-        // Save hote hi field ko strictly wapas lock kar do UI par
-        if (vpaInput && vpaInput.disabled === false) {
-            vpaInput.disabled = true;
-            vpaInput.style.background = "#f8fafc";
-            
-            if (noticeLabel) {
-                noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
-                noticeLabel.style.color = "var(--danger-red)";
-            }
-            showOnScreenNotification("🔒 VPA changes securely saved and locked.");
-        }
-    };
-}
-
-// 2. Safe Wrapper for populateAdminForms (UI Enforcement)
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
     window.hasPopulateAdminFormsBackupBeenBound = true;
@@ -3061,20 +3038,15 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
     populateAdminForms = function() {
         window.originalPopulateAdminFormsBackup();
         let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-        let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+        let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
         
         if (vpaInput) {
             let savedVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             vpaInput.value = savedVpa;
             
-            // UI defaults initialization protection layout
-            if (vpaInput.disabled !== false) {
-                vpaInput.disabled = true;
-                vpaInput.style.background = "#f8fafc";
-                if (noticeLabel) {
-                    noticeLabel.innerText = "🔒 Status: Locked by RestroFlow HQ. Contact admin to modify keys.";
-                    noticeLabel.style.color = "var(--danger-red)";
-                }
+            // 🔥 STRICT DISAPPEAR RULE: Dashboard load hotey hi hamesha dabba pehle gayab (hidden) rahega
+            if (vpaContainer) {
+                vpaContainer.style.display = 'none';
             }
         }
     };
