@@ -678,18 +678,26 @@
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant" oninput="saveAdminConfig();">        </div>
 
 
-<div id="secHotelVpaOperationalContainer" style="display: none; background: white; padding: 15px; border-radius: 14px; border: 1px solid #ccc; margin-bottom: 20px; text-align: left;">
-    <h3 style="text-align: left; margin-bottom: 5px;">💳 Financial Payout & UPI Management</h3>
-    <p style="font-size: 11px; color: #7f8c8d; margin-top: 0; margin-bottom: 10px;">Customer ka payment bina kisi cut ke isi account par instantly received hoga.</p>
+<<div style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
     
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 12px; margin: 0; flex: 1; background: #ffffff;" oninput="saveAdminConfig();">
-        
-        <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--dark-charcoal); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; font-size: 13px;">
-            ⚡ Save & Lock VPA
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="font-weight: bold; color: var(--dark-charcoal);">💳 Bank Payout UPI Configuration:</span>
+        <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--dark-charcoal); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px;">
+            🔓 Request VPA Edit Permission
         </button>
     </div>
-    <div id="vpaSecurityStatusNoticeLabel" style="font-size: 11px; font-weight: bold; color: var(--neon-green); margin-top: 8px; display: block;">🟢 Status: Temporary Authorization Window Active.</div>
+
+    <div id="secHotelVpaOperationalContainer" style="display: none; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed #cbd5e1; margin-top: 10px;">
+        <p style="margin-top:0; font-weight:bold; color:var(--dark-charcoal); margin-bottom: 5px; font-size: 12px;">Enter New UPI Address (VPA):</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="text" id="cfgHotelTargetVpaAddressField" placeholder="e.g. restaurantowner@okaxis" style="font-weight: bold; color: var(--dark-charcoal); border: 2px solid #e2e8f0; padding: 10px; margin: 0; flex: 1; background: #ffffff;" oninput="saveAdminConfig();">
+            
+            <button onclick="requestRemoteFounderVpaUnlockToken()" style="background: var(--neon-green); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px;">
+                💾 Save & Lock
+            </button>
+        </div>
+        <div id="vpaSecurityStatusNoticeLabel" style="font-size: 11px; font-weight: bold; color: var(--danger-red); margin-top: 6px; display: block;">🔒 Status: Hidden & Locked by RestroFlow HQ.</div>
+    </div>
 </div>
         <h3>🏢 Interactive Floor & QR Table Grid System</h3>
         <div class="table-legend-bar">
@@ -3023,7 +3031,7 @@ async function executeRemoteVpaAccessGrantPipeline(permissionState) {
 }
 
 // ===================================================================
-// 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (REPAIRED FIX)
+// 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (AIRTIGHT UPDATED)
 // ===================================================================
 if (!window.hasPopulateAdminFormsBackupBeenBound) {
     window.originalPopulateAdminFormsBackup = populateAdminForms;
@@ -3040,7 +3048,7 @@ if (!window.hasPopulateAdminFormsBackupBeenBound) {
             vpaInput.value = savedVpa;
         }
 
-        // 🔥 THE FIXED CRITICAL GUARD: Dabba strictly tabhi hidden hoga jab uski state open active 'block' NA HO!
+        // Jab tak dabba 'block' state mein active na ho, tab tak use lock aur hide rakho
         if (vpaContainer && vpaContainer.style.display !== 'block') {
             vpaContainer.style.display = 'none';
             if (noticeLabel) {
