@@ -450,8 +450,8 @@
             <div style="font-size: 11px; color: var(--dark-charcoal); font-weight: 600; margin-top: 5px;" id="paymentGatewayTargetUpiLabel">Receiver: Loading UPI Identity...</div>
         </div>
 
-        <div style="background:#eef9f5; color:#270260; padding:10px; border-radius:10px; font-size:11px; margin-bottom:20px; font-weight:bold; border: 1px solid rgba(46,204,113,0.2);">
-            🔒 Encrypted P2P Protocol Node: 0% Platform Charges
+        <div id="customerPaymentLoadingStatusEngine" style="background:#eef9f5; color:#27ae60; padding:12px; border-radius:12px; font-size:12px; margin-bottom:20px; font-weight:bold; border: 1px solid rgba(46,204,113,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
+            🔒 Secure Connection Active. Waiting for bank gateway signal...
         </div>
 
         <button class="action-btn" id="triggerUpiIntentMobileDirectBtn" onclick="executeNativeUpiIntentRoutingPipeline()" style="background: var(--dark-charcoal); color: white; margin-bottom: 10px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 100%;">
@@ -708,6 +708,13 @@
         </div>
         <div id="adminTableLayoutGrid"></div>
         <button class="action-btn" onclick="addNewFloor()" style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
+    <div style="background: #15171e; border: 1px dashed #ffd700; padding: 12px; border-radius: 10px; margin-bottom: 10px; margin-top: 10px; text-align: left;">
+    <span style="font-size: 10px; font-weight: bold; color: #ffd700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">⚡ Bank Webhook Sandbox Simulator Terminal:</span>
+    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">Bina real business account ke, is selected table par fake 'SUCCESS_PAID' ka signal bhejein:</p>
+    <button onclick="simulateInboundBankWebhookSignal()" style="background: linear-gradient(135deg, #ffd700, #ffa500); color: #000; font-size: 11px; font-weight: bold; padding: 8px; border: none; border-radius: 6px; width: 100%; cursor: pointer;">
+        🚀 Inject Fake 'SUCCESS_PAID' Bank Webhook Signal
+    </button>
+</div>
         
         <h3>📊 Live Customer Billing Tracker Map</h3>
         <div style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
@@ -4455,6 +4462,88 @@ function renderKdsInterfaceMatrix() {
         `;
     });
 }
+        // ===================================================================
+// 📡 CORE SECURITY ENGINE: LIVE WEBHOOK REAL-TIME REALM LISTENER
+// ===================================================================
+// Yeh function customer panel ko bina page refresh kiye batayega ki bank se paisa aa gaya hai
+function upgradeCustomerSideRealtimePaymentListener(compositeTableKey) {
+    if (window.customerPaymentStateChannel) supabaseClient.removeChannel(window.customerPaymentStateChannel);
+
+    window.customerPaymentStateChannel = supabaseClient
+        .channel('customer-payment-status-node')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'table_sessions',
+            filter: `table_id=eq.${compositeTableKey}`
+        }, (payload) => {
+            console.log("📡 Payment Watcher: Row modification detected!", payload);
+            
+            if (payload.new && payload.new.payment_status === 'SUCCESS_PAID') {
+                let statusLoader = document.getElementById('customerPaymentLoadingStatusEngine');
+                let payIntentBtn = document.getElementById('triggerUpiIntentMobileDirectBtn');
+                
+                if (statusLoader) {
+                    statusLoader.innerText = "🎉 PAYMENT VERIFIED BY BANK OVER REALM NODES!";
+                    statusLoader.style.background = "#eef9f5";
+                    statusLoader.style.color = "#2ecc71";
+                    statusLoader.style.border = "1px solid #2ecc71";
+                }
+                if (payIntentBtn) payIntentBtn.style.display = "none"; // Hide button once paid
+
+                showOnScreenNotification("💰 Payment verified by Bank! Thank you.");
+                
+                // 3 second baad automatic screen clear clear out settings
+                setTimeout(() => {
+                    document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
+                    document.getElementById('invoiceBillModal').style.display = 'none';
+                    if (typeof renderLiveCalculatedBill === "function") renderLiveCalculatedBill();
+                }, 3000);
+            }
+        })
+        .subscribe();
+}
+
+// ===================================================================
+// 🧪 SANDBOX DEVELOPER PIPELINE: SIMULATE BANK WEBHOOK SIGNALS
+// ===================================================================
+async function simulateInboundBankWebhookSignal() {
+    let selectElement = document.getElementById('adminBillingViewerTableSelect');
+    if (!selectElement || !selectElement.value) {
+        alert("❌ Error: Please select a valid table to target the fake webhook signal!");
+        return;
+    }
+    
+    let targetTable = selectElement.value;
+    const compositeTableKey = `${hotelGlobalScopeID}_${targetTable}`;
+    
+    showOnScreenNotification("⏳ Spooling secure mock transaction packet link...", false);
+
+    try {
+        // 🔥 BANK WEBHOOK SIMULATION CORE: Direct row manipulation mimicry
+        // Yeh theek wahi parameters database mein badlega jo ek real bank server webhook karta hai
+        const { error } = await supabaseClient
+            .from('table_sessions')
+            .update({ payment_status: 'SUCCESS_PAID' })
+            .eq('table_id', compositeTableKey);
+
+        if (error) {
+            alert("❌ Sandbox Simulation Write Violation: " + error.message);
+        } else {
+            showOnScreenNotification("🚀 Bank Webhook Payload Injected! Status changed to SUCCESS_PAID.");
+            console.log(`📡 Mock Webhook Node: Sent secure success callback matrix for ${compositeTableKey}`);
+        }
+    } catch (err) { console.error(err); }
+}
+
+// Wrapper to hook listener securely right inside checkout launch window overlay
+let originalOpenSmartMobilePaymentGatewayBackup = openSmartMobilePaymentGatewayGateway;
+openSmartMobilePaymentGatewayGateway = function() {
+    originalOpenSmartMobilePaymentGatewayBackup();
+    const currentTableCompositeKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
+    // Boot up real-time listener state tracking layers for the customer popup
+    upgradeCustomerSideRealtimePaymentListener(currentTableCompositeKey);
+};
 
 async function updateKdsTicketState(orderId, nextStatusState) {
     await supabaseClient.from('active_orders').update({ status: nextStatusState }).eq('id', orderId);
