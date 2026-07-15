@@ -1144,7 +1144,7 @@ function initializeAdminRealtimeBillingTracker() {
     if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
     if (window.billingSessionsChannel) supabaseClient.removeChannel(window.billingSessionsChannel);
 
-    console.log("📡 RestroFlow Engine: Booting Isolated Realtime Webstream Grid Tracker...");
+    console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
     try {
         window.billingOrdersChannel = supabaseClient
@@ -1155,6 +1155,7 @@ function initializeAdminRealtimeBillingTracker() {
                 table: 'active_orders',
                 filter: 'hotel_id=eq.' + hotelGlobalScopeID
             }, () => {
+                console.log("🔔 Tracker Trigger: Active order state mutation captured!");
                 fetchActiveKitchenOrdersQueue();
                 queueDebouncedBillRender(); 
             })
@@ -1167,28 +1168,25 @@ function initializeAdminRealtimeBillingTracker() {
                 schema: 'public', 
                 table: 'table_sessions' 
             }, (payload) => {
-                console.log("🔔 GRID ENGINE: Realtime mutation captured!", payload);
+                console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
                 
                 if (payload.new) {
                     const rawCloudTableId = payload.new.table_id;
                     if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
-                        // Extract absolute clean table ID (e.g., "T1")
                         let cleanDbTableId = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
                         
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
-                                // 🔥 PARSER INTERCEPTOR FIX: Local compound name string standard sync architecture match karo
-                                let compoundKeyStr = `${floor.floorName}_${t.id}`;
+                                let currentLocalKey = `${floor.floorName}_${t.id}`;
                                 
-                                if (t.id === cleanDbTableId || compoundKeyStr === cleanDbTableId) {
+                                // Parse absolute key standard mappings
+                                if (t.id === cleanDbTableId || currentLocalKey === cleanDbTableId) {
                                     t.waiterBell = payload.new.waiter_bell || false;
                                     
-                                    // Local mapping persistent registers load
+                                    localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
                                     localStorage.setItem('payment_status_map_' + t.id, payload.new.payment_status || 'PENDING');
-                                    localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKeyStr, payload.new.payment_status || 'PENDING');
-                                    localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id, payload.new.payment_status || 'PENDING');
                                     
-                                    // State router evaluation logic layers
+                                    // 🔥 SHART 2: Agar payload SUCCESS_PAID hai toh database tracking ko preserve karke local view synchronizations active rakho
                                     t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
                                 }
                             });
@@ -1196,7 +1194,7 @@ function initializeAdminRealtimeBillingTracker() {
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
                 }
-                if (typeof generateAdminTableGrid === "function") generateAdminTableGrid(); // Forces instant color shift
+                generateAdminTableGrid(); // Redraws layout graphical parameters seamlessly inside milliseconds
                 queueDebouncedBillRender();
             })
             .subscribe();
@@ -1908,9 +1906,10 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
 // ===================================================================
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
+    // Read validated integer quantity bounds natively
     let parsedItemQty = parseInt(customQty) || 1;
     
-    // Cloud format clean matching extract karo (e.g., "Ground Dining Hall_T1" -> "T1")
+    // Cloud parsing key handler standardizer (e.g., "Ground Dining Hall_T1" -> "T1")
     let cleanTableTargetId = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
     
     try {
@@ -1923,6 +1922,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
         let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
 
+        // Anti Double-Counting Block
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
         if (matchingRecord) {
@@ -1931,19 +1931,18 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
         }
         
-        localStorage.setItem('bill_map_' + cleanTableTargetId, JSON.stringify(targetTableBill));
         localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + cleanTableTargetId, JSON.stringify(targetTableBill));
         
         if (cleanTableTargetId === clientCurrentActiveTable || activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
         }
-
-        // 🔥 STEP 2 FIX: Local engine floorData matrix layout ko instantly 1 (Green / Full) set karo
+        
+        // 🔥 SHART 1: Koi order aaye toh table instantly Green (State 1) ho jaye
         floorData.forEach(floor => {
             if (floor && floor.tables) {
                 floor.tables.forEach(t => {
                     if (t.id === cleanTableTargetId || t.id === activeTableId) {
-                        t.state = 1; // Direct state change to Green
+                        t.state = 1; // Direct update inside state standard matrix maps
                     }
                 });
             }
@@ -2107,11 +2106,10 @@ async function executeAdminManualBillWipeSettlement() {
         try {
             let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
 
-            // Purge frontend local cache strings layers
+            // 🔥 STEP 1: PURGE LOCALFRONT STORAGE KEYS
             localStorage.removeItem('bill_map_' + cleanTableId);
             localStorage.removeItem('discount_map_' + cleanTableId);
             localStorage.removeItem('payment_status_map_' + cleanTableId);
-            
             localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
             localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
@@ -2132,10 +2130,10 @@ async function executeAdminManualBillWipeSettlement() {
                 if(badge) badge.innerText = "0%";
             }
 
-            // Sync empty ledger to database layers instantly
+            // 🔥 STEP 2: HARD WRITE EMPTY LEDGER MATRIX TO SUPABASE
             await syncLiveSessionToSupabase(cleanTableId, [], 0, false, 'PENDING');
 
-            // Purge kitchen prep queues rows matches
+            // STEP 3: DELETE ALL KITCHEN TICKETS CONSTRAINTS
             const { data: ordersToClear } = await supabaseClient
                 .from('active_orders')
                 .select('id')
@@ -2148,12 +2146,12 @@ async function executeAdminManualBillWipeSettlement() {
                 await supabaseClient.from('active_orders').delete().in('id', orderIds);
             }
 
-            // 🔥 STEP 4 FIX: Reset floorData layout state back to 0 (Orange Empty State)
+            // 🔥 SHART 3: When click on clear -> Reset floor area mapping back to 0 (Orange / Empty Table)
             floorData.forEach(floor => { 
                 floor.tables.forEach(t => { 
                     let currentCompoundKey = `${floor.floorName}_${t.id}`;
                     if(t.id === cleanTableId || t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) { 
-                        t.state = 0; // Wapas static empty Orange status map
+                        t.state = 0; // Wapas pathar ki lakkeer standard empty status state
                         t.waiterBell = false; 
                         delete t.custom_color; 
                         
@@ -2163,13 +2161,14 @@ async function executeAdminManualBillWipeSettlement() {
                 }); 
             });
             
+            // STEP 5: ATOMIC BALANCING AND REDRAW VISUAL MAPS
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
             saveAdminConfig(); 
-            generateAdminTableGrid(); // Visual redraw mapping instantly
+            generateAdminTableGrid(); // Graphical re-rendering layer updates instantly
             auditSelectedTableBillInvoiceLive();
             
             showOnScreenNotification(`🧹 Table ${cleanTableId} has been fully reset to Orange Empty State!`, false);
-            alert(`🧹 Success! Table session and status completely wiped back to Orange.`);
+            alert(`🧹 Success! Table session and discounts completely wiped back to Orange.`);
 
         } catch (err) {
             console.error("🚨 CRITICAL CORE WIPEOUT FAILURE:", err);
