@@ -1160,38 +1160,53 @@ function initializeAdminRealtimeBillingTracker() {
             .subscribe();
 
         window.billingSessionsChannel = supabaseClient
-    .channel('billing-sessions-stream')
-    .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'table_sessions' 
-    }, (payload) => {
-        console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
-        
-        if (payload.new) {
-            const rawCloudTableId = payload.new.table_id;
-            if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
-                let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
+            .channel('billing-sessions-stream')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'table_sessions' 
+            }, (payload) => {
+                console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
                 
-                floorData.forEach(floor => {
-                    floor.tables.forEach(t => {
-                        let currentLocalKey = `${floor.floorName}_${t.id}`;
-                        if (currentLocalKey === innerTableToken) {
-                            t.waiterBell = payload.new.waiter_bell || false;
-                            
-                            // 🔥 SILENT NOTIFICATION LAYER: Status sync karo, table state ko automatic 0 (delete) mat karo
-                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
-                            t.state = (payload.new.live_bill && payload.new.live_bill.length > 0) ? 1 : 0; 
-                        }
-                    });
-                });
-                localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-            }
-        }
-        generateAdminTableGrid(); // Layout dashboard par instantly blink/status token inject karega
-        queueDebouncedBillRender();
-    })
-    .subscribe();
+                if (payload.new) {
+                    const rawCloudTableId = payload.new.table_id;
+                    if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
+                        let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
+                        
+                        // 🔥 LIVE STREAM KDS INTEGRATION: Bina refresh kiye pure network par state sync hogi
+                        floorData.forEach(floor => {
+                            floor.tables.forEach(t => {
+                                let currentLocalKey = `${floor.floorName}_${t.id}`;
+                                
+                                if (t.id === innerTableToken || currentLocalKey === innerTableToken) {
+                                    t.waiterBell = payload.new.waiter_bell || false;
+                                    
+                                    // Save payment status natively
+                                    localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
+                                    
+                                    // LIVE MATRIX CHECK: Agar bill khali hai (Clear hua) toh 0 (Orange), agar items hain toh 1 (Green)
+                                    if (payload.new.live_bill && payload.new.live_bill.length > 0) {
+                                        t.state = 1; // Instant Green without refresh
+                                    } else {
+                                        t.state = 0; // Instant Orange without refresh
+                                        delete t.custom_color;
+                                    }
+                                }
+                            });
+                        });
+                        
+                        // Local storage refresh aur immediate visual redraw bina lag ke
+                        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                    }
+                }
+                
+                // 🔥 KDS dynamic redraw trigger: Yeh aapki screen par turant color change dikhayega
+                if (typeof generateAdminTableGrid === "function") {
+                    generateAdminTableGrid(); 
+                }
+                queueDebouncedBillRender();
+            })
+            .subscribe();
 
     } catch (realtimeErr) {
         console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
