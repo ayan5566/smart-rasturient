@@ -1915,11 +1915,14 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
     // Read validated integer quantity bounds natively
     let parsedItemQty = parseInt(customQty) || 1;
     
+    // 🔥 CORE MATRIX FIX: Agar target ID mein floor name shamil ho (e.g. "Ground Dining Hall_T1"), toh clean Table ID extract karo (e.g. "T1")
+    let cleanTableTargetId = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
+    
     try {
         const { data: cloudSession } = await supabaseClient
             .from('table_sessions')
             .select('live_bill, discount_claimed')
-            .eq('table_id', `${hotelGlobalScopeID}_${activeTableId}`)
+            .eq('table_id', `${hotelGlobalScopeID}_${cleanTableTargetId}`)
             .maybeSingle();
 
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
@@ -1929,30 +1932,38 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
         if (matchingRecord) {
-            // FIXED: Direct summation of selected counter variable value layers (No row duplications!)
             matchingRecord.qty += parsedItemQty; 
         } else { 
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
         }
         
+        // Dono paths par local cache sync maintain rakho
+        localStorage.setItem('bill_map_' + cleanTableTargetId, JSON.stringify(targetTableBill));
+        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + cleanTableTargetId, JSON.stringify(targetTableBill));
         localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + activeTableId, JSON.stringify(targetTableBill));
         
-        if (activeTableId === clientCurrentActiveTable) {
+        if (cleanTableTargetId === clientCurrentActiveTable || activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
         }
         
-        // 🔥 UPDATE: Jaise hi order push hoga, table status bina refresh ke instantly Green (State 1) ho jayega
+        // 🔥 REALTIME VISUAL FIX: Instant Green State Activation
         floorData.forEach(floor => {
             if (floor && floor.tables) {
                 floor.tables.forEach(t => {
-                    if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
-                        t.state = 1; // Instant Full / Green State
+                    // Agar simple ID match ho ya fir full compound key match ho
+                    if (t.id === cleanTableTargetId || t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
+                        t.state = 1; // Instant Full / Green State over local memory maps
                     }
                 });
             }
         });
+        
         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-        if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
+        
+        // Screen layout ko bina page reloads ke usi milli-second mein redraw karo
+        if (typeof generateAdminTableGrid === "function") {
+            generateAdminTableGrid();
+        }
 
         if (document.getElementById('adminDashboard').style.display === 'block') {
             auditSelectedTableBillInvoiceLive();
@@ -1961,9 +1972,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
         maximumClaimedDisc = finalDiscountToPush; 
 
-        await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
-        // Sends quantity packet cleanly straight onto the kitchen tracker streams
-        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, parsedItemQty);
+        // Supabase database pipelines logic executions
+        await syncLiveSessionToSupabase(cleanTableTargetId, targetTableBill, finalDiscountToPush, false, 'PENDING');
+        await dispatchKdsTicketDirectly(cleanTableTargetId, dishName, selectedSize, parsedItemQty);
 
     } catch (err) {
         console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
