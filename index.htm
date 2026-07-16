@@ -1914,7 +1914,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
         if (matchingRecord) {
-            // 🔥 FIXED: Direct summation of selected counter variable value layers (No row duplications!)
+            // FIXED: Direct summation of selected counter variable value layers (No row duplications!)
             matchingRecord.qty += parsedItemQty; 
         } else { 
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
@@ -1926,6 +1926,19 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             localLiveRunningBill = targetTableBill;
         }
         
+        // 🔥 UPDATE: Jaise hi order push hoga, table status bina refresh ke instantly Green (State 1) ho jayega
+        floorData.forEach(floor => {
+            if (floor && floor.tables) {
+                floor.tables.forEach(t => {
+                    if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
+                        t.state = 1; // Instant Full / Green State
+                    }
+                });
+            }
+        });
+        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+        if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
+
         if (document.getElementById('adminDashboard').style.display === 'block') {
             auditSelectedTableBillInvoiceLive();
         }
@@ -2070,7 +2083,7 @@ function renderAnalyticsDashboard() {
 // ===================================================================
 // 📊 FIXED: ADMIN BILL SETTLEMENT MASTER (WIPES DISHES, PRICES & DISCOUNTS)
 // ===================================================================
-async function executeAdminManualBillWipeSettlement() {
+ async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
     if(!activeOwnerAuditTable) {
@@ -2081,7 +2094,7 @@ async function executeAdminManualBillWipeSettlement() {
     if(confirm(`⚠️ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
         
         try {
-            // 🔥 STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY (INCLUDING DISCOUNTS)
+            // STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY (INCLUDING DISCOUNTS)
             localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
             localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
@@ -2091,7 +2104,7 @@ async function executeAdminManualBillWipeSettlement() {
             localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             
-            // 🔥 THE FIX: Agar wahi table active hai toh global discount state aur UI badge ko 0% karo
+            // Agar wahi table active hai toh global discount state aur UI badge ko 0% karo
             let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
             if(activeOwnerAuditTable === clientCurrentActiveTable || cleanTableId === clientCurrentActiveTable) {
                 localLiveRunningBill = [];
@@ -2103,8 +2116,7 @@ async function executeAdminManualBillWipeSettlement() {
                 if(badge) badge.innerText = "0%";
             }
 
-            // 🔥 STEP 2: HARD WRITE EMPTY MATRIX & 0% DISCOUNT DIRECTLY TO CLOUD
-            // Teesra parameter '0' bheja hai taaki Supabase mein bhi discount 0 ho jaye
+            // STEP 2: HARD WRITE EMPTY MATRIX & 0% DISCOUNT DIRECTLY TO CLOUD
             await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
 
             // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN TO PRESERVE DB SPACE
@@ -2120,16 +2132,18 @@ async function executeAdminManualBillWipeSettlement() {
                 await supabaseClient.from('active_orders').delete().in('id', orderIds);
             }
 
-            // STEP 4: RESET FLOOR AREA GRAPHICAL STATE MATRIX TO EMPTY (STATE 0)
+            // 🔥 UPDATE: Clear Table karte hi table instantly wapas Orange (State 0 / Empty) ho jaye
             floorData.forEach(floor => { 
-                floor.tables.forEach(t => { 
-                    let currentCompoundKey = `${floor.floorName}_${t.id}`;
-                    if(t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) { 
-                        t.state = 0; // Wapas Orange (Empty) state mein badlo
-                        t.waiterBell = false; 
-                        delete t.custom_color; 
-                    } 
-                }); 
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => { 
+                        let currentCompoundKey = `${floor.floorName}_${t.id}`;
+                        if(t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) { 
+                            t.state = 0; // Reset inside matrix mapping back to Orange
+                            t.waiterBell = false; 
+                            delete t.custom_color; 
+                        } 
+                    }); 
+                }
             });
             
             // STEP 5: ATOMIC ENGINE RE-BALANCING & RE-RENDERING
