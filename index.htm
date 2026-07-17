@@ -1136,7 +1136,9 @@ async function executeLiveBillingThermalPrint() {
 }
         
 
-     // ⚡ FIXED: Isolates cashier telemetry streams from adjacent tenant profiles via database filter hooks
+// ===================================================================
+// 📡 FIXED REALTIME TRACKER: STRICT MULTI-FLOOR MATCHING ENGINE
+// ===================================================================
 function initializeAdminRealtimeBillingTracker() {
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
     if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
@@ -1176,19 +1178,33 @@ function initializeAdminRealtimeBillingTracker() {
                         // 🔥 LIVE STREAM KDS INTEGRATION: Bina refresh kiye pure network par state sync hogi
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
-                                let currentLocalKey = `${floor.floorName}_${t.id}`;
+                                // Strings ko trim karo taaki spaces ka koi jhanjhat na rahe
+                                let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                                let cleanToken = innerTableToken.trim();
                                 
-                                if (t.id === innerTableToken || currentLocalKey === innerTableToken) {
+                                // 🔥 CRITICAL FIX: Agar compound link perfectly match ho, ya split karke floor aur table dono sahi hon!
+                                let isTargetTable = false;
+                                if (currentLocalKey === cleanToken || t.id === cleanToken) {
+                                    isTargetTable = true;
+                                } else if (cleanToken.includes('_')) {
+                                    let parts = cleanToken.split('_');
+                                    if (parts[0].trim() === floor.floorName.trim() && parts[1].trim() === t.id.trim()) {
+                                        isTargetTable = true;
+                                    }
+                                }
+
+                                if (isTargetTable) {
+                                    // PRESERVED FEATURE: Purana waiter bell signal waisa ka waisa hi kaam karega
                                     t.waiterBell = payload.new.waiter_bell || false;
                                     
-                                    // Save payment status natively
+                                    // PRESERVED FEATURE: Purana payment status map untouched hai
                                     localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
                                     
                                     // LIVE MATRIX CHECK: Agar bill khali hai (Clear hua) toh 0 (Orange), agar items hain toh 1 (Green)
                                     if (payload.new.live_bill && payload.new.live_bill.length > 0) {
-                                        t.state = 1; // Instant Green without refresh
+                                        t.state = 1; // Instant Green without refresh!
                                     } else {
-                                        t.state = 0; // Instant Orange without refresh
+                                        t.state = 0; // Instant Orange without refresh!
                                         delete t.custom_color;
                                     }
                                 }
