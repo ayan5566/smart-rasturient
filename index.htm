@@ -2090,11 +2090,10 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
 }
         
 // ===================================================================
-// 🧾 REALTIME INSTANT INBOUND ORDER FLOW (AIRTIGHT COMPATIBLE)
+// 🧾 REALTIME INSTANT INBOUND ORDER FLOW (DUPLICATE TICKET FIXED)
 // ===================================================================
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
-    // Read validated integer quantity bounds natively
     let parsedItemQty = parseInt(customQty) || 1;
     
     try {
@@ -2107,11 +2106,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
         let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
 
-        // Anti Double-Counting Block: Checks if same recipe size already allocated to table stack
         let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
         
         if (matchingRecord) {
-            // 🔥 FIXED: Direct summation of selected counter variable value layers (No row duplications!)
             matchingRecord.qty += parsedItemQty; 
         } else { 
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
@@ -2123,14 +2120,12 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             localLiveRunningBill = targetTableBill;
         }
 
-        // 🔥 🔥 THE FIX: Sync locally inside floorData state before database transactions execute!
         if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
-                        // Strict validation matching both direct and compound key structures
                         if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
-                            t.state = 1; // Direct state allocation to 1 (Green/Full)
+                            t.state = 1; 
                         }
                     });
                 }
@@ -2138,7 +2133,6 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
 
-        // Trigger on-screen grid visual matrix changes immediately in a split second
         if (typeof generateAdminTableGrid === "function") {
             generateAdminTableGrid();
         }
@@ -2150,9 +2144,8 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
         maximumClaimedDisc = finalDiscountToPush; 
 
+        // 🔥 ONLY ONE CHANNEL SYNC: Database session sync chalega jo backend trigger ko manage karega
         await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
-        // Sends quantity packet cleanly straight onto the kitchen tracker streams
-        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, parsedItemQty);
 
     } catch (err) {
         console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
