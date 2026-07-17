@@ -1433,15 +1433,65 @@ function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
 }
-    let activeGameMode = 'MATH';
-    let realtimeRenderTimeout = null; 
-    let loopTimerInstance = null;
-    let customerActiveCategoryName = "";
-    let configSaveTimeout = null;// ⚡ FIXED: Debounce timer to prevent rapid typing crashes
-    let isAuthPortalInSignUpMode = false; // 🔒 FIXED ReferenceError: Top-level auth view flag mapping initialized
-        // 🔥 CRITICAL GLOBAL FIX: Poore script ke top par ise declare karo taaki ReferenceError kabhi na aaye
+  // =================================================================
+// ⚙️ INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED ORDER)
+// =================================================================
+let activeGameMode = 'MATH';
+let realtimeRenderTimeout = null; 
+let loopTimerInstance = null;
+let customerActiveCategoryName = "";
+let configSaveTimeout = null;
+let isAuthPortalInSignUpMode = false; 
+
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
-        // 🔥 FIX: Variable ka naam badal kar supabaseClient rakhein taaki shadow error na aaye
+
+// 🔥 CRITICAL LIFECYCLE FIX: hotelGlobalScopeID ko sabse pehle declare karo taaki neeche koi error na aaye
+let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+
+// Email scope identifier safety validation rules
+if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
+    hotelGlobalScopeID = "Default_HQ_Arena";
+    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+}
+
+let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+let dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
+
+let fallbackMenu = [
+    { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
+    { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+];
+let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
+
+// Scoped configurations arrays bindings
+let menuCategories = fallbackMenu;
+try {
+    let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
+    if(localMenuRawData) {
+        let parsedMenu = JSON.parse(localMenuRawData);
+        if(Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
+    }
+} catch(e) { console.log("Local menu parsing fallback active:", e); }
+
+let floorData = defaultFloors;
+try {
+    let localTablesRawData = localStorage.getItem('restaurantFloors');
+    if(localTablesRawData) {
+        let parsedFloors = JSON.parse(localTablesRawData);
+        if(Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
+    }
+} catch(e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
+
+let taxConfig = defaultTaxes;
+try {
+    let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
+    if(localTaxRawData) {
+        let parsedTax = JSON.parse(localTaxRawData);
+        if(parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
+    }
+} catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+        
 const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real URL daalein
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";         // Apni real Key daalein
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
