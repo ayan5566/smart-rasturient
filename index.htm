@@ -1137,7 +1137,7 @@ async function executeLiveBillingThermalPrint() {
         
 
 // ===================================================================
-// 📡 FIXED REALTIME TRACKER: STRICT MULTI-FLOOR MATCHING ENGINE
+// 📡 FIXED REALTIME TRACKER: ZERO-DELAY MULTI-FLOOR LIVE RE-RENDER
 // ===================================================================
 function initializeAdminRealtimeBillingTracker() {
     if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
@@ -1175,14 +1175,12 @@ function initializeAdminRealtimeBillingTracker() {
                     if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
                         let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
                         
-                        // 🔥 LIVE STREAM KDS INTEGRATION: Bina refresh kiye pure network par state sync hogi
+                        // Local floor array layout structures parsing loops
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
-                                // Strings ko trim karo taaki spaces ka koi jhanjhat na rahe
                                 let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
                                 let cleanToken = innerTableToken.trim();
                                 
-                                // 🔥 CRITICAL FIX: Agar compound link perfectly match ho, ya split karke floor aur table dono sahi hon!
                                 let isTargetTable = false;
                                 if (currentLocalKey === cleanToken || t.id === cleanToken) {
                                     isTargetTable = true;
@@ -1194,30 +1192,31 @@ function initializeAdminRealtimeBillingTracker() {
                                 }
 
                                 if (isTargetTable) {
-                                    // PRESERVED FEATURE: Purana waiter bell signal waisa ka waisa hi kaam karega
+                                    // PRESERVED CODES: Waiter bell logs mapping logic
                                     t.waiterBell = payload.new.waiter_bell || false;
                                     
-                                    // PRESERVED FEATURE: Purana payment status map untouched hai
+                                    // PRESERVED CODES: Local disk payment indicators array settings
                                     localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
                                     
-                                    // LIVE MATRIX CHECK: Agar bill khali hai (Clear hua) toh 0 (Orange), agar items hain toh 1 (Green)
+                                    // 🔥 MATRIX SWITCH: Live change matrix parameters instantly inside the loop!
                                     if (payload.new.live_bill && payload.new.live_bill.length > 0) {
-                                        t.state = 1; // Instant Green without refresh!
+                                        t.state = 1; // Instant dynamic Full state allocations (Green)
                                     } else {
-                                        t.state = 0; // Instant Orange without refresh!
+                                        t.state = 0; // Reset parameter map (Orange)
                                         delete t.custom_color;
                                     }
                                 }
                             });
                         });
                         
-                        // Local storage refresh aur immediate visual redraw bina lag ke
+                        // Local storage sync backup memory update
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
                 }
                 
-                // 🔥 KDS dynamic redraw trigger: Yeh aapki screen par turant color change dikhayega
+                // 🔥 🔥 THE LIVE VISUAL TRIGGER: Jaise hi cloud se data aaye, pure grid ko usi millisecond mein redraw karo!
                 if (typeof generateAdminTableGrid === "function") {
+                    console.log("🚀 Live Render Hook: Redrawing admin table grid colors instantly...");
                     generateAdminTableGrid(); 
                 }
                 queueDebouncedBillRender();
