@@ -1910,6 +1910,9 @@ async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
     }
 }
         
+// ===================================================================
+// 🧾 REALTIME INSTANT INBOUND ORDER FLOW (AIRTIGHT COMPATIBLE)
+// ===================================================================
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
     let activeTableId = targetTableOverride || clientCurrentActiveTable;
     // Read validated integer quantity bounds natively
@@ -1939,6 +1942,26 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         
         if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
+        }
+
+        // 🔥 🔥 THE FIX: Sync locally inside floorData state before database transactions execute!
+        if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
+            floorData.forEach(floor => {
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => {
+                        // Strict validation matching both direct and compound key structures
+                        if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
+                            t.state = 1; // Direct state allocation to 1 (Green/Full)
+                        }
+                    });
+                }
+            });
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+        }
+
+        // Trigger on-screen grid visual matrix changes immediately in a split second
+        if (typeof generateAdminTableGrid === "function") {
+            generateAdminTableGrid();
         }
         
         if (document.getElementById('adminDashboard').style.display === 'block') {
