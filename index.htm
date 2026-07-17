@@ -1538,26 +1538,36 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
     }
 }
 // =================================================================
-// ⚙️ GLOBAL RULES STATE (Surgically Aligned & Order Corrected)
+// ⚙️ GLOBAL RULES STATE (Indestructible Safe-Guard Version)
 // =================================================================
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null; 
 
-// 🛡️ [Step 1] hotelGlobalScopeID ko sabse pehle initialize kiya taaki niche use hone par error na aaye
-let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+// 🛡️ FIX 1: hotelGlobalScopeID redeclaration shield (window check)
+if (typeof window.hotelGlobalScopeID === 'undefined') {
+    window.hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+}
+// Local reference shortcut for clean backward compatibility
+var hotelGlobalScopeID = window.hotelGlobalScopeID;
 
 if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
     hotelGlobalScopeID = "Default_HQ_Arena";
+    window.hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
 
-// 🛡️ [Step 2] 'let' keyword ko pehli baar yahan use kiya hai, pure code mein ab dobara 'let rules' nahi aayega
-let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+// 🛡️ FIX 2: rules redeclaration shield (window check)
+if (typeof window.rules === 'undefined') {
+    window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+}
+var rules = window.rules;
 
-let dynamicGlobalSaaSDefaults = {
-    monthly: 499,   
-    yearly: 4999
-};
+// 🛡️ FIX 3: dynamicGlobalSaaSDefaults double-counting block
+if (typeof window.dynamicGlobalSaaSDefaults === 'undefined') {
+    window.dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
+}
+var dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
 
+// Core fallback setups
 let fallbackMenu = [
     { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
     { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
@@ -1565,9 +1575,9 @@ let fallbackMenu = [
 let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
 let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
+// Data arrays extraction with error tracking isolation
 let menuCategories = fallbackMenu;
 try {
-    // Ab hotelGlobalScopeID upar defined hai, toh yeh line perfect chalegi aur live bill show karegi
     let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if(localMenuRawData) {
         let parsedMenu = JSON.parse(localMenuRawData);
