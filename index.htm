@@ -1251,22 +1251,76 @@ function refreshActiveBillingUI(liveSessionData) {
     }
 }
 
-// 🔥 CLONED BLIND TRIGGER: The Debounce Engine
+// ===================================================================
+// 🔄 REALTIME LIVE DEBOUNCE ENGINE: AUTO-PULLS CLOUD STATES WITHOUT REFRESH
+// ===================================================================
 function queueDebouncedBillRender() {
     clearTimeout(realtimeRenderTimeout);
-    realtimeRenderTimeout = setTimeout(() => {
+    realtimeRenderTimeout = setTimeout(async () => {
+        console.log("⚡ Auto-Refreshing Live Billing Dashboard & Table Grid...");
+        
+        // 1. Selected table ka live invoice tracker box refresh karo
         const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
         if (currentSelectedTable && currentSelectedTable.value) {
-            console.log("⚡ Auto-Refreshing Live Billing Dashboard...");
-            // Database se automatically bina user interaction ke naya data fetch karega
-            auditSelectedTableBillInvoiceLive(); 
+            await auditSelectedTableBillInvoiceLive(); 
         }
-        generateAdminTableGrid();
+
+        // 2. 🔥 🔥 THE LIVE INJECTION TRIGGER: Bina page refresh kiye, piche se saari tables ka state direct pull karo
+        try {
+            const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
+                .from('table_sessions')
+                .select('*');
+
+            if (!sessionFetchErr && globalCloudSessions && Array.isArray(globalCloudSessions)) {
+                floorData.forEach(floor => {
+                    if (floor && floor.tables) {
+                        floor.tables.forEach(t => {
+                            let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                            
+                            // Map row with unique target table key structures
+                            let targetCloudRow = globalCloudSessions.find(s => 
+                                s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` || 
+                                s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`
+                            );
+                            
+                            if (targetCloudRow) {
+                                t.waiterBell = targetCloudRow.waiter_bell || false;
+                                
+                                if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
+                                    localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
+                                } else {
+                                    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
+                                    
+                                    // Live state update layers: Agar items hain toh Green (1), warna Orange (0)
+                                    let serverBillPayload = targetCloudRow.live_bill || [];
+                                    t.state = (serverBillPayload.length > 0) ? 1 : 0;
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // Trigger reactive reference state refresh inside JavaScript engine
+                if (typeof window.floorData !== 'undefined') {
+                    window.floorData = [...floorData];
+                }
+                floorData = [...floorData];
+
+                // Local storage memory update backup
+                localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            }
+        } catch (cloudErr) {
+            console.log("Error auto-syncing table grid states:", cloudErr);
+        }
+
+        // 3. Fresh array ke saath grid matric design ko screen par redraw karo
+        if (typeof generateAdminTableGrid === "function") {
+            generateAdminTableGrid();
+        }
     }, 400); // 400ms setup window to let relational rows settle securely
 }
 
-
-         // =================================================================
+// =================================================================
 // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
 // =================================================================
 
