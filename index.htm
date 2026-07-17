@@ -4338,15 +4338,24 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊👨‍🍳 ULTRA-LOUD 3-SECOND HIGH-PITCH SIREN ENGINE FOR KDS
+// 🔊👨‍🍳 AUDIO ALERTS SIREN: CHROME AUTOPLAY POLICY COMPLIANT
 // ===================================================================
 function triggerAudioBeepAlert() {
     try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
         
-        // Kitchen ke heavy shor ko kaatne ke liye hum 3 chote loud pulses banayenge 3 seconds ke andar
+        const audioCtx = new AudioContextClass();
+        
+        // 🔒 CHROME SAFETY GUARD: Agar user gesture se pehle call ho, toh web audio context suspend/stop kar do
+        if (audioCtx.state === 'suspended') {
+            console.warn("🔒 Audio context is suspended. User must tap on dashboard first to activate alarm.");
+            return; // 3-timer continuous warnings drop here!
+        }
+        
+        // 🎼 Siren pulses generate tabhi honge jab context completely user interactive 'running' ho
         for (let i = 0; i < 3; i++) {
-            const startTime = audioCtx.currentTime + (i * 1.0); // Har 1 second ke gap par pulse bajega
+            const startTime = audioCtx.currentTime + (i * 1.0);
             
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -4354,20 +4363,16 @@ function triggerAudioBeepAlert() {
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
-            // 🎼 B5 Note (987.77Hz) + Sawtooth wave combo: Yeh pure kitchen noise ko cheer deta hai
             oscillator.type = 'sawtooth'; 
             oscillator.frequency.value = 987.77; 
             
-            // 🔥 VOLUME MAX: Hardware ki maximum 100% capacity level '1.0' par set locked hai
             gainNode.gain.setValueAtTime(1.0, startTime);
             
-            // Har pulse 0.6 second tak bajega, phir 0.4 second ka silence (is se ek teez alarm loop banta hai)
             oscillator.start(startTime);
             oscillator.stop(startTime + 0.6);
         }
-        
     } catch (e) { 
-        console.error("Audio engine context constraint:", e); 
+        console.error("Audio engine constraint caught safely:", e); 
     }
 }
 // ⚡ FIXED: Unique channel namespacing separates realtime websocket frames completely at the protocol layers
