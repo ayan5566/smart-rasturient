@@ -1209,6 +1209,12 @@ function initializeAdminRealtimeBillingTracker() {
                             });
                         });
                         
+                        // 🔥 🔥 MUTATION FORCE TRIGGER: Reference copy mechanics ensure the UI detects changes instantly!
+                        if (typeof window.floorData !== 'undefined') {
+                            window.floorData = [...floorData];
+                        }
+                        floorData = [...floorData];
+
                         // Local storage sync backup memory update
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
