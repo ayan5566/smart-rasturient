@@ -1433,8 +1433,8 @@ function exitSuperAdminDashboardConsole() {
     document.getElementById('superAdminDashboard').style.display = 'none';
     document.getElementById('customerView').style.display = 'block';
 }
-  // =================================================================
-// ⚙️ INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED ORDER)
+ // =================================================================
+// ⚙️ UNIFIED INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED)
 // =================================================================
 let activeGameMode = 'MATH';
 let realtimeRenderTimeout = null; 
@@ -1445,17 +1445,22 @@ let isAuthPortalInSignUpMode = false;
 
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
 
-// 🔥 CRITICAL LIFECYCLE FIX: hotelGlobalScopeID ko sabse pehle declare karo taaki neeche koi error na aaye
+// 🛡️ LEVEL 1: hotelGlobalScopeID ko sabse pehle birth (initialize) do taaki niche use hone par crash na ho
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 
-// Email scope identifier safety validation rules
+// Email identity scope verification rules
 if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
     hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
 
+// 🛡️ LEVEL 2: Pure global scope mein 'let rules' sirf EK BAAR declare hoga (Duplicate conflict fixed)
 let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
-let dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
+
+let dynamicGlobalSaaSDefaults = {
+    monthly: 499,   
+    yearly: 4999
+};
 
 let fallbackMenu = [
     { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
@@ -1464,9 +1469,10 @@ let fallbackMenu = [
 let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
 let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
-// Scoped configurations arrays bindings
+// 🛡️ LEVEL 3: Core Configurations arrays data streams retrieval bindings
 let menuCategories = fallbackMenu;
 try {
+    // Ab hotelGlobalScopeID upar defined hai, toh bina reference error ke local storage data perfectly inject hoga
     let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if(localMenuRawData) {
         let parsedMenu = JSON.parse(localMenuRawData);
@@ -1491,6 +1497,8 @@ try {
         if(parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
     }
 } catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+        
+let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
         
 const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; // Apni real URL daalein
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";         // Apni real Key daalein
