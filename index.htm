@@ -1915,14 +1915,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
     // Read validated integer quantity bounds natively
     let parsedItemQty = parseInt(customQty) || 1;
     
-    // Core structural mapping format extractor (e.g., "Ground Dining Hall_T1" -> "T1")
-    let cleanTableTargetId = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
-    
     try {
         const { data: cloudSession } = await supabaseClient
             .from('table_sessions')
             .select('live_bill, discount_claimed')
-            .eq('table_id', `${hotelGlobalScopeID}_${cleanTableTargetId}`)
+            .eq('table_id', `${hotelGlobalScopeID}_${activeTableId}`)
             .maybeSingle();
 
         let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
@@ -1938,30 +1935,27 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty }); 
         }
         
-        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + cleanTableTargetId, JSON.stringify(targetTableBill));
-        localStorage.setItem('bill_map_' + cleanTableTargetId, JSON.stringify(targetTableBill));
+        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + activeTableId, JSON.stringify(targetTableBill));
         
-        if (cleanTableTargetId === clientCurrentActiveTable || activeTableId === clientCurrentActiveTable) {
+        if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
         }
 
-        // 🔥 🔥 INTERNAL FIX: Jaise hi order confirm ho, local UI grid state ko instantly 1 (Green/Full) karo
+        // 🔥 EXTRA NEW FEATURE ADDED SAFELY: Bina purana feature chhede, table state ko instantly 1 (Green/Full) karke locally render karo
         if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
-                        // Agar clean ID match ho ya full compound key match ho
-                        if (t.id === cleanTableTargetId || t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
-                            t.state = 1; // Set status inside local state map dynamically to Green/Full
+                        if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
+                            t.state = 1; // Instant Full Green State Trigger
                         }
                     });
                 }
             });
-            // Update local memory snapshot safely
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
 
-        // 🔥 🔥 UI VISUAL DRAW TRIGGER: Grid matrix layout ko bina delay ke usi millisecond mein redraw karo
+        // Real-time table grid refresh hook trigger inside your framework
         if (typeof generateAdminTableGrid === "function") {
             generateAdminTableGrid();
         }
@@ -1973,10 +1967,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
         maximumClaimedDisc = finalDiscountToPush; 
 
-        // Transmit secure packet tracking parameters to remote database channels
-        await syncLiveSessionToSupabase(cleanTableTargetId, targetTableBill, finalDiscountToPush, false, 'PENDING');
+        await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
         // Sends quantity packet cleanly straight onto the kitchen tracker streams
-        await dispatchKdsTicketDirectly(cleanTableTargetId, dishName, selectedSize, parsedItemQty);
+        await dispatchKdsTicketDirectly(activeTableId, dishName, selectedSize, parsedItemQty);
 
     } catch (err) {
         console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
