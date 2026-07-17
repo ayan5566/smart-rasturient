@@ -1940,25 +1940,6 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
         }
-
-        // 🔥 EXTRA NEW FEATURE ADDED SAFELY: Bina purana feature chhede, table state ko instantly 1 (Green/Full) karke locally render karo
-        if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
-            floorData.forEach(floor => {
-                if (floor && floor.tables) {
-                    floor.tables.forEach(t => {
-                        if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
-                            t.state = 1; // Instant Full Green State Trigger
-                        }
-                    });
-                }
-            });
-            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-        }
-
-        // Real-time table grid refresh hook trigger inside your framework
-        if (typeof generateAdminTableGrid === "function") {
-            generateAdminTableGrid();
-        }
         
         if (document.getElementById('adminDashboard').style.display === 'block') {
             auditSelectedTableBillInvoiceLive();
