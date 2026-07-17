@@ -1530,14 +1530,23 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
     }
 }
 // =================================================================
-// ⚙️ GLOBAL RULES STATE (Bilkul safe aur untouched)
+// ⚙️ GLOBAL RULES STATE (Surgically Aligned & Order Corrected)
 // =================================================================
-window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null; // 🔥 REFERENCE ERROR PERMANENT FIX
+window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null; 
 
+// 🛡️ [Step 1] hotelGlobalScopeID ko sabse pehle initialize kiya taaki niche use hone par error na aaye
+let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+
+if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
+    hotelGlobalScopeID = "Default_HQ_Arena";
+    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+}
+
+// 🛡️ [Step 2] 'let' keyword ko pehli baar yahan use kiya hai, pure code mein ab dobara 'let rules' nahi aayega
 let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
-        // 🔥 SaaS Model Rule: Global baseline dynamic price mapping fallbacks
+
 let dynamicGlobalSaaSDefaults = {
-    monthly: 499,   // Agar owner record zero ya khali hai toh naye restaurant ko ye dikhega
+    monthly: 499,   
     yearly: 4999
 };
 
@@ -1548,10 +1557,9 @@ let fallbackMenu = [
 let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
 let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
-// ⚡ SAAS CORE FIXED: Account-wise scoped initialization prevents empty screen flash before cloud sync
 let menuCategories = fallbackMenu;
 try {
-    // Current logged-in user ke ID ke hisab se local storage se instantly data uthao
+    // Ab hotelGlobalScopeID upar defined hai, toh yeh line perfect chalegi aur live bill show karegi
     let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
     if(localMenuRawData) {
         let parsedMenu = JSON.parse(localMenuRawData);
@@ -1578,14 +1586,6 @@ try {
         if(parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
     }
 } catch(e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
-
-let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-
-// 🛡️ EMAIL IDENTITY GLOBAL GUARD (UUID Reference completely deleted)
-if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
-    hotelGlobalScopeID = "Default_HQ_Arena";
-    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
-}
         
 let customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 
