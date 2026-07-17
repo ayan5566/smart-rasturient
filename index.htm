@@ -2159,7 +2159,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         showOnScreenNotification("❌ Cloud transmission broken!", true);
     }
 }
-// ✅ REPAIRED: Customer Click Router converted to Asynchronous
+// ===================================================================
+// 🛒 CUSTOMER ORDER COMMIT PIPELINE (WITH SECTION PREFIX FOR KDS)
+// ===================================================================
 async function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFieldId) {
     let selectorNode = document.getElementById(priceDomId).parentElement.nextElementSibling;
     let size = selectorNode.getAttribute('data-selected-size');
@@ -2169,16 +2171,34 @@ async function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFiel
     let qtySelectorElement = document.getElementById(qtyInputFieldId);
     let selectedQuantityToken = qtySelectorElement ? (parseInt(qtySelectorElement.value) || 1) : 1;
     
+    let cIdx = selectorNode.getAttribute('data-c');
+    let iIdx = selectorNode.getAttribute('data-i'); 
+    
     if (!size) {
-        let cIdx = selectorNode.getAttribute('data-c');
-        let iIdx = selectorNode.getAttribute('data-i'); 
         let bluePrint = menuCategories[cIdx].items[iIdx];
         size = bluePrint.mActive && bluePrint.m > 0 ? 'm' : (bluePrint.sActive && bluePrint.s > 0 ? 's' : 'l'); 
         price = bluePrint[size];
     }
     
-    // 🔥 FIXED: Passes selected dynamic integer quantity straight to the core billing thread pool
+    // 🔥 🔥 THE KDS SECTION PREFIX FIX: URL parameters se floor/section ka naam uthao
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentFloorName = urlParams.get('floor') ? urlParams.get('floor').trim() : "";
+    
+    let cleanTableId = clientCurrentActiveTable;
+    // Agar clientCurrentActiveTable mein pehle se floor name juda hai, toh use saaf karke table ID nikalte hain
+    if (clientCurrentActiveTable.includes('_')) {
+        cleanTableId = clientCurrentActiveTable.split('_')[1];
+    }
+
+    // 🎯 If floor name available hai, toh kitchen ke liye format "section-T1" banao, warna sirf "T1" rehte do
+    let kdsFormattedTableIdentity = currentFloorName ? `${currentFloorName}-${cleanTableId}` : cleanTableId;
+    
+    // Core billing matrix mein original table token hi jayega bina chhede
     await appendDishToBillInvoice(dishName, size, price, null, selectedQuantityToken);
+    
+    // 🔥 KDS Tracker Stream par ab section-prefix ke sath sateek data packet cleanly transmit hoga!
+    await dispatchKdsTicketDirectly(kdsFormattedTableIdentity, dishName, size, selectedQuantityToken);
+    
     showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] × ${selectedQuantityToken} directly to your bill!`);
     
     // UI Reset Rule: Resets the selector display back onto standard baseline node layer 1 after commit link triggers
