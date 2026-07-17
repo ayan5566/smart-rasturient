@@ -3602,47 +3602,55 @@ async function initApp() {
         }
     } catch (err) { console.error(err); }
 
+    // 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
     try {
-        const { data: sessionData } = await supabaseClient
+        const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
             .from('table_sessions')
-            .select('*')
-            .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
-            .maybeSingle();
+            .select('*');
 
-        if (sessionData) {
-            localLiveRunningBill = sessionData.live_bill || [];
-            let incomingCloudDiscount = parseInt(sessionData.discount_claimed) || 0;
-
-            // 🔥 🔥 THE GHOST DISCOUNT RESET SHIELD: Agar cloud ledger khali aur discount 0 hai (Bill manual cleared), toh zero memory force karo
-            if (incomingCloudDiscount === 0 && localLiveRunningBill.length === 0) {
-                maximumClaimedDisc = 0;
-                localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
-                localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
-            } else {
-                maximumClaimedDisc = incomingCloudDiscount;
-            }
-
+        if (!sessionFetchErr && globalCloudSessions && Array.isArray(globalCloudSessions)) {
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
-                        let currentCompoundKey = `${floor.floorName}_${t.id}`;
-                        if (currentCompoundKey === clientCurrentActiveTable) {
-                            t.waiterBell = sessionData.waiter_bell || false;
-                            if (sessionData.payment_status === 'SUCCESS_PAID') {
+                        let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                        
+                        // Cloud map lookup scanning table strings natively
+                        let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` || s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`);
+                        
+                        if (targetCloudRow) {
+                            t.waiterBell = targetCloudRow.waiter_bell || false;
+                            
+                            if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
                                 localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
                             } else {
                                 localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
-                                t.state = localLiveRunningBill.length > 0 ? 1 : 0;
+                                
+                                // 🔥 MULTI-FLOOR OVERRIDE LAYER: Agar cloud bill data records empty nahi hain, toh state 1 (Green), warna 0 (Orange)
+                                let serverBillPayload = targetCloudRow.live_bill || [];
+                                t.state = (serverBillPayload.length > 0) ? 1 : 0;
+                            }
+
+                            // Active view synchronization parameters context allocation logic
+                            if (currentCompoundKey === clientCurrentActiveTable || t.id.trim() === clientCurrentActiveTable) {
+                                localLiveRunningBill = targetCloudRow.live_bill || [];
+                                maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
+                                
+                                // Ghost reset mechanism for cleared tables
+                                if (maximumClaimedDisc === 0 && localLiveRunningBill.length === 0) {
+                                    localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
+                                    localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
+                                }
                             }
                         }
                     });
                 }
             });
-        } else {
-            localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-            maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+            // Update local memory footprint to synchronize with visual tables grid renders
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
-    } catch(e) { console.log(e); }
+    } catch(cloudInitErr) { 
+        console.log("Cloud matrix recovery fallback logs:", cloudInitErr); 
+    }
 
     cosmicBackgroundStars = [];
     for(let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
