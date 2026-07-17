@@ -3650,6 +3650,13 @@ async function initApp() {
                     });
                 }
             });
+
+            // 🔥 🔥 THE BOOT MUTATION RE-TRIGGER HOOK: Force matrix copy mapping arrays
+            if (typeof window.floorData !== 'undefined') {
+                window.floorData = [...floorData];
+            }
+            floorData = [...floorData];
+
             // Update local memory footprint to synchronize with visual tables grid renders
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
