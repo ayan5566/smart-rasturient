@@ -1538,58 +1538,60 @@ async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, pa
     }
 }
 // =================================================================
-// ⚙️ GLOBAL RULES & ARRAYS STATE (Final Safe-Guard Version)
+// ⚙️ GLOBAL RULES & ARRAYS STATE (Absolute Zero-Conflict Version)
 // =================================================================
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null; 
 
-// 🛡️ FIX 1: hotelGlobalScopeID redeclaration shield (window check)
+// 🛡️ FIX 1: Bina kisi var/let/const ke seedhe window par register karo
 if (typeof window.hotelGlobalScopeID === 'undefined') {
     window.hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 }
-var hotelGlobalScopeID = window.hotelGlobalScopeID;
 
-if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
-    hotelGlobalScopeID = "Default_HQ_Arena";
+// 🔥 CRITICAL CHANGE: Global execution scope clash hatane ke liye hamesha window property use hogi
+if (window.hotelGlobalScopeID !== "Default_HQ_Arena" && window.hotelGlobalScopeID.length < 5) {
     window.hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
 
-// 🛡️ FIX 2: rules redeclaration shield (window check)
+// purane code se compatibility ke liye bina var/let ke direct assign karo (agar pehle let se defined hai toh crash nahi karega)
+hotelGlobalScopeID = window.hotelGlobalScopeID;
+
+// 🛡️ FIX 2: rules redeclaration shield
 if (typeof window.rules === 'undefined') {
     window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
 }
-var rules = window.rules;
+rules = window.rules;
 
 // 🛡️ FIX 3: dynamicGlobalSaaSDefaults double-counting block
 if (typeof window.dynamicGlobalSaaSDefaults === 'undefined') {
     window.dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
 }
-var dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
+dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
 
-// 🛡️ FIX 4: Core fallback setups converted to safe window properties
+// 🛡️ FIX 4: Core fallback setups
 if (typeof window.fallbackMenu === 'undefined') {
     window.fallbackMenu = [
         { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
         { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
     ];
 }
-var fallbackMenu = window.fallbackMenu;
+fallbackMenu = window.fallbackMenu;
 
 if (typeof window.defaultFloors === 'undefined') {
     window.defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
 }
-var defaultFloors = window.defaultFloors;
+defaultFloors = window.defaultFloors;
 
 if (typeof window.defaultTaxes === 'undefined') {
     window.defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 }
-var defaultTaxes = window.defaultTaxes;
+defaultTaxes = window.defaultTaxes;
 
-// 🛡️ FIX 5: Main running states wrapped with window state checks
+// 🛡️ FIX 5: Main running states
 if (typeof window.menuCategories === 'undefined') {
     window.menuCategories = fallbackMenu;
 }
-var menuCategories = window.menuCategories;
+menuCategories = window.menuCategories;
 
 try {
     let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
@@ -1607,7 +1609,7 @@ try {
 if (typeof window.floorData === 'undefined') {
     window.floorData = defaultFloors;
 }
-var floorData = window.floorData;
+floorData = window.floorData;
 
 try {
     let localTablesRawData = localStorage.getItem('restaurantFloors');
@@ -1623,7 +1625,7 @@ try {
 if (typeof window.taxConfig === 'undefined') {
     window.taxConfig = defaultTaxes;
 }
-var taxConfig = window.taxConfig;
+taxConfig = window.taxConfig;
 
 try {
     let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
@@ -1639,7 +1641,7 @@ try {
 if (typeof window.customPaymentQRData === 'undefined') {
     window.customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
 }
-var customPaymentQRData = window.customPaymentQRData;
+customPaymentQRData = window.customPaymentQRData;
 
 // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
 let clientCurrentActiveTable = "T1";
