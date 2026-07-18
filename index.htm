@@ -554,7 +554,6 @@
         <div class="game-box">
             <h3>🎮 Play & Claim Discounts Automatically</h3>
             <div class="game-nav">
-                <button id="navMATH" class="active" onclick="switchGameMode('MATH')">📐 Math Quiz</button>
                 <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">🐦 Flappy Bird</button>
                 <button id="navSPACE" onclick="switchGameMode('SPACE')">🚀 Space Shoot</button>
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
@@ -564,13 +563,7 @@
             <div id="gameWindow">
                 <div id="gameScreenStatusMsg"></div>
                 <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
-                
-                <div id="mathGameSection">  
-                    <h2 id="mathQuestion" style="background:#f4f1ea; padding:10px; border-radius:8px;"></h2>
-                    <input type="number" id="mathCustomerAnswer" placeholder="Type answer...">
-                    <button class="action-btn" onclick="verifyMathAnswer()" style="background: var(--dark-charcoal);">Submit Answer</button>
-                    <div id="mathStatus" style="font-weight:bold; margin-top:8px;"></div>
-                </div>
+
 
                 <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
                 <canvas id="spaceCanvas" width="320" height="400" style="background:#0c0d14;"></canvas>
@@ -761,7 +754,6 @@
         
         <h3>🎮 Target Variables & Value Ratios</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; line-height:1.8;">
-            Math Offer Percentage (%): <input type="number" id="cfgMathDisc" oninput="saveAdminConfig()"><br>
             Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
             Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
             Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
@@ -1535,7 +1527,7 @@ if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) 
 }
 
 // 🛡️ LEVEL 2: Pure global scope mein 'let rules' sirf EK BAAR declare hoga (Duplicate conflict fixed)
-let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
 
 let dynamicGlobalSaaSDefaults = {
     monthly: 499,   
@@ -1975,7 +1967,7 @@ function updateFrontEndClassificationLabels() {
     
     // Yahan rules load karo
     overlay.innerHTML = `
-        <li>📐 <b>Math Quiz Challenge:</b> Solve calculation = <b>${rules.math}% Code Coin</b></li>
+       
         <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar} points = <b>${rules.flappyDisc}% Code Coin</b></li>
         <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar} = <b>${rules.spaceDisc}% Code Coin</b></li>
         <li>🐍 <b>Classic Snake Game:</b> Secure ${rules.snakeTar} apples = <b>${rules.snakeDisc}% Code Coin</b></li>
@@ -2384,44 +2376,6 @@ function renderAnalyticsDashboard() {
     }
 }
        
-// ===================================================================
-// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WIPES ALL ACTIVE TIMERS)
-// ===================================================================
-function switchGameMode(selectedTargetMode) {
-    activeGameMode = selectedTargetMode; 
-    
-    // 🛡️ THE OVERLAP SHIELD: Hard kill any active background frames animation tickers instantly
-    clearInterval(loopTimerInstance); 
-    
-    document.getElementById('flappyCanvas').style.display = 'none';
-    document.getElementById('spaceCanvas').style.display = 'none';
-    document.getElementById('snakeCanvas').style.display = 'none';
-    document.getElementById('couponDisplay').style.display = 'none';
-
-    document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
-    if(document.getElementById('nav'+selectedTargetMode)) {
-        document.getElementById('nav'+selectedTargetMode).classList.add('active');
-    }
-    
-    document.getElementById('mathGameSection').style.display = (selectedTargetMode==='MATH')?'block':'none';
-    document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
-    document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
-    
-    // Manage dynamic launch visibility controls states
-    if(selectedTargetMode === 'MATH') {
-        document.getElementById('startBtn').style.display = 'none';
-        document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
-        document.getElementById('exitGameBtn').style.display = "none";
-        generateMathQuestion();
-    } else {
-        document.getElementById('startBtn').style.display = 'block';
-        document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
-        // If already inside full screen mode container, sync dynamic dimensions immediately on tab shift
-        if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
-            startSelectedGame();
-        }
-    }
-}
 
 // ===================================================================
 // 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (STAGE CLEANER & SWEEPER)
@@ -2446,11 +2400,7 @@ function switchGameMode(selectedTargetMode) {
     document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
     document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
     
-    if(selectedTargetMode === 'MATH') {
-        document.getElementById('startBtn').style.display = 'none';
-        document.querySelector('.game-box').classList.remove('fullscreen-arcade-active');
-        document.getElementById('exitGameBtn').style.display = "none";
-        generateMathQuestion();
+    
     } else {
         document.getElementById('startBtn').style.display = 'block';
         document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
@@ -2532,33 +2482,6 @@ function exitGameEngine() {
         if (targetElement) targetElement.style.display = 'none';
     });
 }
-function generateMathQuestion() {
-    let num1 = Math.floor(Math.random() * 10) + 1;
-    let num2 = Math.floor(Math.random() * 10) + 1;
-    let operators = ['+', '-', '*'];
-    let op = operators[Math.floor(Math.random() * operators.length)];
-    
-    if (op === '+') evaluatedMathSolution = num1 + num2;
-    else if (op === '-') evaluatedMathSolution = num1 - num2;
-    else if (op === '*') evaluatedMathSolution = num1 * num2;
-    
-    let qElem = document.getElementById('mathQuestion');
-    if (qElem) qElem.innerText = `📐 Solve: ${num1} ${op} ${num2} = ?`;
-}
-        function verifyMathAnswer() {
-    let val = parseInt(document.getElementById('mathCustomerAnswer').value); 
-    let feedback = document.getElementById('mathStatus');
-    if(val === evaluatedMathSolution) { 
-        feedback.innerText = "🎉 Success!"; 
-        feedback.style.color = "green"; 
-        // 🔥 FIXED: Direct targeted dynamic object sync mapping from admin dashboard
-        triggerRewardCoupon(parseInt(rules.math) || 0); 
-    } else { 
-        feedback.innerText = "❌ Incorrect!"; 
-        feedback.style.color = "red"; 
-    }
-}
-
 
         function initSnakeGameLoop() {
             snakeArr = [{x: 80, y: 80}, {x: 60, y: 80}, {x: 40, y: 80}]; currentSnakeVector = { x: 20, y: 0 }; snakeScoreCounter = 0; generateSnakeFoodLocation();
@@ -3094,7 +3017,6 @@ function syncWaiterSizeDropdownOptions() {
 // 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH IN-STOCK MANAGEMENT ENGINE)
 // ===================================================================
 function populateAdminForms() {
-    document.getElementById('cfgMathDisc').value = rules.math;
     document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
     document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
     document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
@@ -3741,7 +3663,6 @@ async function initApp() {
 
     try {
         renderCustomerMenu(); 
-        generateMathQuestion(); 
         generateAdminTableGrid(); 
         updateFrontEndClassificationLabels(); 
         setupGlobalKeyboardBindings(); 
@@ -4307,7 +4228,7 @@ function saveAdminConfig() {
     }
 
     // 🎯 Capturing form values straight into the global rules state manager object
-    rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
+    
     rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
     rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
     rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
@@ -4319,7 +4240,6 @@ function saveAdminConfig() {
     localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); 
     
     if(document.getElementById('cfgTaxCGSTActive')) {
-        taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked; 
         taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
         taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
         taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
@@ -4475,7 +4395,6 @@ async function triggerJustSaveConfig() {
     }
     
     // Inline state capture updates all relational global state boundaries instantly
-    rules.math = parseInt(document.getElementById('cfgMathDisc').value) || 0;
     rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
     rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
     rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
