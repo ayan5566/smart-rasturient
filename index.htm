@@ -3916,47 +3916,55 @@ function frameUpdateBrickBreaker() {
 
 // 2️⃣ GAME INITIALIZER ROUTER: Placed below the frame definition to guarantee seamless mapping
 function initBrickBreakerGame() {
-    clearInterval(loopTimerInstance); // Hard reset previous animation loops
+    clearInterval(loopTimerInstance); 
     const bCanvas = document.getElementById('brickCanvas');
     brCtx = bCanvas.getContext('2d');
     
     brickScoreCounter = 0;
     brickPaddleDir = 0;
     
-    // Physical Baseline objects allocation
-    bPaddle = { x: (bCanvas.width / 2) - 40, y: bCanvas.height - 30, w: 80, h: 12 };
-    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 50, r: 7, dx: 3, dy: -3 };
+    // Paddle aur Ball baseline setup
+    bPaddle = { x: (bCanvas.width / 2) - 45, y: bCanvas.height - 30, w: 90, h: 12 };
+    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 50, r: 6, dx: 3, dy: -3.5 };
     
-    // CREATIVE MAP LAYER: 0 = Empty Space, 1 = Bun (Orange), 2 = Cheese (Gold), 3 = Patty (Brown)
+    // 🍔 HIGH-DENSITY PIXEL ART: Blocks ka size half karke detailed layout banaya hai!
+    // 0 = Khali Space, 1 = Bun/Castle Top (Orange/Red), 2 = Cheese (Gold), 3 = Patty/Base (Brown)
     const burgerPixelArtLayout = [
-        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-        [0, 3, 3, 3, 3, 3, 3, 3, 3, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+        [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+        [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]
     ];
     
     activeBricksArray = [];
     let rRows = burgerPixelArtLayout.length;
-    let cCols = burgerPixelArtLayout[0].length;
-    let paddingWidth = 4;
+    let cCols = burgerPixelArtLayout[0].length; // Columns badhakar 16 kar diye (Double density)
+    
+    let paddingWidth = 2; // Blocks ke bich ka gap bhi kam kiya taaki tight packing ho
+    // Canvas ki width ke hisab se block ka size automatic calculate aur half ho jayega
     let calcBrickW = Math.floor((bCanvas.width - (paddingWidth * (cCols + 1))) / cCols);
-    let calcBrickH = 16;
+    let calcBrickH = 9; // Height ko 16 se ghata kar 9 kar diya (Aadha size)
     
     for(let r = 0; r < rRows; r++) {
         for(let c = 0; c < cCols; c++) {
             let brickType = burgerPixelArtLayout[r][c];
             if(brickType > 0) {
                 let bX = (c * (calcBrickW + paddingWidth)) + paddingWidth;
-                let bY = (r * (calcBrickH + paddingWidth)) + 45; 
+                let bY = (r * (calcBrickH + paddingWidth)) + 45; // Top HUD ke neeche spacing
+                
+                // Color mapping for pixel aesthetics
                 let bColor = brickType === 1 ? '#e67e22' : (brickType === 2 ? '#f1c40f' : '#8b4513');
                 activeBricksArray.push({ x: bX, y: bY, w: calcBrickW, h: calcBrickH, color: bColor, status: 1 });
             }
         }
     }
     
-    // Keyboard Event Interceptors for Desktop testing nodes
+    // Keyboard Setup (Desktop testing ke liye)
     window.addEventListener('keydown', (e) => {
         if(activeGameMode === 'BRICK') {
             if(e.key === 'ArrowLeft') brickPaddleDir = -7;
@@ -3969,7 +3977,6 @@ function initBrickBreakerGame() {
         }
     });
 
-    // Spools the interval ticking engine cleanly now that definition is confirmed in global scope
     loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); 
 }
 // ===================================================================
