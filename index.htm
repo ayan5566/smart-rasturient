@@ -2378,7 +2378,7 @@ function renderAnalyticsDashboard() {
        
 
 // ===================================================================
-// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (STAGE CLEANER & SWEEPER)
+// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (MATH-QUIZ PURGED & FIXED)
 // ===================================================================
 function switchGameMode(selectedTargetMode) {
     activeGameMode = selectedTargetMode; 
@@ -2386,31 +2386,31 @@ function switchGameMode(selectedTargetMode) {
     // 🧹 STAGE SFAI: Hard kill any active background frames animation tickers instantly
     clearInterval(loopTimerInstance); 
     
+    // Sabhi canvas aur elements ko shuruat mein hide karo
     document.getElementById('flappyCanvas').style.display = 'none';
     document.getElementById('spaceCanvas').style.display = 'none';
     document.getElementById('snakeCanvas').style.display = 'none';
     document.getElementById('couponDisplay').style.display = 'none';
 
+    // Tabs ki active class update karo
     document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
-    if(document.getElementById('nav'+selectedTargetMode)) {
-        document.getElementById('nav'+selectedTargetMode).classList.add('active');
+    if(document.getElementById('nav' + selectedTargetMode)) {
+        document.getElementById('nav' + selectedTargetMode).classList.add('active');
     }
     
-    document.getElementById('mathGameSection').style.display = (selectedTargetMode==='MATH')?'block':'none';
-    document.getElementById('spaceControls').style.display = (selectedTargetMode==='SPACE')?'flex':'none';
-    document.getElementById('snakeControls').style.display = (selectedTargetMode==='SNAKE')?'flex':'none';
+    // Mobile controls ko target game ke hisab se set karo
+    document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
+    document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
     
+    // 🔥 FIXED: Broken else block hataya, ab baki games ke liye engine direct launch ready rahega
+    document.getElementById('startBtn').style.display = 'block';
+    document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
     
-    } else {
-        document.getElementById('startBtn').style.display = 'block';
-        document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
-        // Stage update code if already active
-        if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
-            startSelectedGame();
-        }
+    // Stage update code if already active in fullscreen modal layout
+    if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
+        startSelectedGame();
     }
 }
-
 // ===================================================================
 // 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
 // ===================================================================
