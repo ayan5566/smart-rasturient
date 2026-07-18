@@ -2478,13 +2478,18 @@ function startSelectedGame() {
         fCanvas.style.display = 'block'; 
         initFlappyBirdGame(); 
     }
-        else if(activeGameMode === 'BRICK') { 
-         const bCanvas = document.getElementById('brickCanvas');
-         bCanvas.width = fluidBreadth;
-         bCanvas.height = fluidLength;
-         bCanvas.style.display = 'block'; 
+       else if(activeGameMode === 'BRICK') { 
+    const bCanvas = document.getElementById('brickCanvas');
+    bCanvas.width = fluidBreadth;
+    bCanvas.height = fluidLength;
+    bCanvas.style.display = 'block'; 
+    
+    // Global references reset karo taaki frame render hone me lag na ho
+    brickCanvasElement = bCanvas;
+    brCtx = bCanvas.getContext('2d');
+    
     initBrickBreakerGame(); 
-   }
+}
     else if(activeGameMode === 'SPACE') { 
         const sCanvas = document.getElementById('spaceCanvas');
         sCanvas.width = fluidBreadth;
@@ -3880,81 +3885,7 @@ function initBrickBreakerGame() {
     loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); // Locked at ~60fps smooth rendering
 }
 
-function frameUpdateBrickBreaker() {
-    if (!brickCanvasElement || !brCtx) return;
-    
-    brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
-    
-    // Draw Space Stars Background Pattern
-    brCtx.fillStyle = '#0a0b10';
-    brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
-    
-    // Move Paddle & Check screen boundaries natively
-    bPaddle.x += brickPaddleDir;
-    if(bPaddle.x < 0) bPaddle.x = 0;
-    if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
-    
-    // Draw Paddle Capsule
-    brCtx.fillStyle = '#00d2d3';
-    brCtx.beginPath();
-    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6);
-    brCtx.fill();
-    
-    // Ball Physics Vector Calculations
-    bBall.x += bBall.dx;
-    bBall.y += bBall.dy;
-    
-    // Wall Collisions
-    if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) bBall.dx *= -1;
-    if(bBall.y - bBall.r < 25) bBall.dy *= -1; // Top ceiling collision safe boundary
-    
-    // Paddle Bounce Handshake Intersection
-    if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
-        if(bBall.dy > 0) {
-            // DX Ball Angle Reflection Hack: Ball paddle ke jis side lagti h angle wahi shift hota h
-            let hitPointRelative = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
-            bBall.dx = hitPointRelative * 4.5;
-            bBall.dy *= -1;
-        }
-    }
-    
-    // Bottom Crash (Game Over)
-    if(bBall.y + bBall.r > brickCanvasElement.height) {
-        finalizeFailedRun("💥 Ball Dropped! Try Again.");
-        return;
-    }
-    
-    // Render Blocks Grid Matrix & Collision Checks
-    activeBricksArray.forEach(br => {
-        if(br.status === 1) {
-            brCtx.fillStyle = br.color;
-            brCtx.beginPath();
-            brCtx.roundRect(br.x, br.y, br.w, br.h, 3);
-            brCtx.fill();
-            
-            // Ball inside brick tracking coordinates parameters
-            if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
-                br.status = 0;
-                bBall.dy *= -1;
-                brickScoreCounter++;
-                
-                // Live tracking trigger configurations rules checkpoint
-                let targetMaxGoal = parseInt(rules.brickTar) || 15;
-                if(brickScoreCounter >= targetMaxGoal) {
-                    triggerRewardCoupon(parseInt(rules.brickDisc) || 0);
-                }
-            }
-        }
-    });
-    
-    // Top HUD Score Ribbon Render
-    brCtx.fillStyle = "rgba(255,255,255,0.06)";
-    brCtx.fillRect(0, 0, brickCanvasElement.width, 25);
-    brCtx.fillStyle = "white";
-    brCtx.font = "bold 12px Segoe UI";
-    let currentLimitTarget = parseInt(rules.brickTar) || 15;
-    brCtx.fillText(`🍔 Blocks Pureed: ${brickScoreCounter} / ${currentLimitTarget}`, 12, 17);
-}
+
 // ===================================================================
 // 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (ZERO OVERLAP OVERLAY)
 // ===================================================================
