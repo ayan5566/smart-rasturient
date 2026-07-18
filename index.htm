@@ -1140,9 +1140,20 @@ async function executeLiveBillingThermalPrint() {
 // 📡 FIXED REALTIME TRACKER: ZERO-DELAY MULTI-FLOOR LIVE RE-RENDER
 // ===================================================================
 function initializeAdminRealtimeBillingTracker() {
-    if (window.billingOrdersChannel) supabaseClient.removeChannel(window.billingOrdersChannel);
-    if (window.billingItemsChannel) supabaseClient.removeChannel(window.billingItemsChannel);
-    if (window.billingSessionsChannel) supabaseClient.removeChannel(window.billingSessionsChannel);
+    // 🛡️ WEBSOCKET SHIELD: Abort error se bachne ke liye safe removal pattern
+    try {
+        if (window.billingOrdersChannel && typeof supabaseClient.removeChannel === 'function') {
+            supabaseClient.removeChannel(window.billingOrdersChannel).catch(() => {});
+        }
+        if (window.billingItemsChannel && typeof supabaseClient.removeChannel === 'function') {
+            supabaseClient.removeChannel(window.billingItemsChannel).catch(() => {});
+        }
+        if (window.billingSessionsChannel && typeof supabaseClient.removeChannel === 'function') {
+            supabaseClient.removeChannel(window.billingSessionsChannel).catch(() => {});
+        }
+    } catch (wsTearDownErr) {
+        console.log("⏳ WebSocket pending connection gracefully managed.");
+    }
 
     console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
@@ -1157,9 +1168,11 @@ function initializeAdminRealtimeBillingTracker() {
             }, () => {
                 console.log("🔔 Tracker Trigger: Active order state mutation captured!");
                 fetchActiveKitchenOrdersQueue();
-                queueDebouncedBillRender(); 
+                if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender(); 
             })
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') console.log("✅ Orders Realtime Channel Sync Successful!");
+            });
 
         window.billingSessionsChannel = supabaseClient
             .channel('billing-sessions-stream')
@@ -1175,7 +1188,6 @@ function initializeAdminRealtimeBillingTracker() {
                     if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
                         let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
                         
-                        // Local floor array layout structures parsing loops
                         floorData.forEach(floor => {
                             floor.tables.forEach(t => {
                                 let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
@@ -1192,42 +1204,35 @@ function initializeAdminRealtimeBillingTracker() {
                                 }
 
                                 if (isTargetTable) {
-                                    // PRESERVED CODES: Waiter bell logs mapping logic
                                     t.waiterBell = payload.new.waiter_bell || false;
-                                    
-                                    // PRESERVED CODES: Local disk payment indicators array settings
                                     localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
                                     
-                                    // 🔥 MATRIX SWITCH: Live change matrix parameters instantly inside the loop!
                                     if (payload.new.live_bill && payload.new.live_bill.length > 0) {
-                                        t.state = 1; // Instant dynamic Full state allocations (Green)
+                                        t.state = 1; 
                                     } else {
-                                        t.state = 0; // Reset parameter map (Orange)
+                                        t.state = 0; 
                                         delete t.custom_color;
                                     }
                                 }
                             });
                         });
                         
-                        // 🔥 🔥 MUTATION FORCE TRIGGER: Reference copy mechanics ensure the UI detects changes instantly!
                         if (typeof window.floorData !== 'undefined') {
                             window.floorData = [...floorData];
                         }
                         floorData = [...floorData];
-
-                        // Local storage sync backup memory update
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
                 }
                 
-                // 🔥 🔥 THE LIVE VISUAL TRIGGER: Jaise hi cloud se data aaye, pure grid ko usi millisecond mein redraw karo!
                 if (typeof generateAdminTableGrid === "function") {
-                    console.log("🚀 Live Render Hook: Redrawing admin table grid colors instantly...");
                     generateAdminTableGrid(); 
                 }
-                queueDebouncedBillRender();
+                if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
             })
-            .subscribe();
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') console.log("✅ Sessions Realtime Channel Sync Successful!");
+            });
 
     } catch (realtimeErr) {
         console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
