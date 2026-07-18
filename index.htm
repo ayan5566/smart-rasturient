@@ -554,6 +554,7 @@
         <div class="game-box">
             <h3>🎮 Play & Claim Discounts Automatically</h3>
             <div class="game-nav">
+                <button id="navBRICK" onclick="switchGameMode('BRICK')">🧱 Brick Breaker</button>
                 <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">🐦 Flappy Bird</button>
                 <button id="navSPACE" onclick="switchGameMode('SPACE')">🚀 Space Shoot</button>
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">🐍 Classic Snake</button>
@@ -568,6 +569,13 @@
                 <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
                 <canvas id="spaceCanvas" width="320" height="400" style="background:#0c0d14;"></canvas>
                 <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
+                <canvas id="brickCanvas" width="320" height="380" style="background:#0a0b10;"></canvas>
+
+<!-- Mobile Controls Pad for Brick Breaker -->
+<div class="control-pad" id="brickControls">
+    <button class="ctrl-btn" onmousedown="brickPaddleDir=-7" onmouseup="brickPaddleDir=0" ontouchstart="brickPaddleDir=-7" ontouchend="brickPaddleDir=0">◀ Left</button>
+    <button class="ctrl-btn" onmousedown="brickPaddleDir=7" onmouseup="brickPaddleDir=0" ontouchstart="brickPaddleDir=7" ontouchend="brickPaddleDir=0">Right ▶</button>
+</div>
 
                 <div class="control-pad" id="spaceControls">
                     <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0" ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
@@ -754,6 +762,7 @@
         
         <h3>🎮 Target Variables & Value Ratios</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; line-height:1.8;">
+            Brick Target Blocks: <input type="number" id="cfgBrickTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgBrickDisc" oninput="saveAdminConfig()"><br>
             Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
             Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
             Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
@@ -1508,7 +1517,7 @@ function exitSuperAdminDashboardConsole() {
  // =================================================================
 // ⚙️ UNIFIED INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED)
 // =================================================================
-let activeGameMode = 'MATH';
+let activeGameMode = 'FLAPPY'; // Math hatne ke baad FLAPPY default mode hai
 let realtimeRenderTimeout = null; 
 let loopTimerInstance = null;
 let customerActiveCategoryName = "";
@@ -1517,23 +1526,42 @@ let isAuthPortalInSignUpMode = false;
 
 window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
 
-// 🛡️ LEVEL 1: hotelGlobalScopeID ko sabse pehle birth (initialize) do taaki niche use hone par crash na ho
+// LEVEL 1: hotelGlobalScopeID initialization
 let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 
-// Email identity scope verification rules
 if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
     hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
 
-// 🛡️ LEVEL 2: Pure global scope mein 'let rules' sirf EK BAAR declare hoga (Duplicate conflict fixed)
-let rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+// 🛡️ LEVEL 2: RULES REDECLARATION SHIELD (🧱 BRICK BREAKER ADDED HERE!)
+if (typeof window.rules === 'undefined') {
+    window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { 
+        flappyTar: 5, 
+        flappyDisc: 10, 
+        spaceTar: 3, 
+        spaceDisc: 15, 
+        snakeTar: 10, 
+        snakeDisc: 12, 
+        brickTar: 15,    // ⚡ Brick breaker target blocks
+        brickDisc: 8     // ⚡ Brick breaker discount %
+    };
+}
+rules = window.rules;
 
+// 🧱 BRICK BREAKER PHYSICS MECHANICS POINTERS (ADDED HERE!)
+let brickCanvasElement = document.getElementById('brickCanvas');
+let brCtx = brickCanvasElement ? brickCanvasElement.getContext('2d') : null;
+let brickPaddleDir = 0, brickScoreCounter = 0;
+let bBall = {}, bPaddle = {}, activeBricksArray = [];
+
+// Baseline SaaS packages defaults
 let dynamicGlobalSaaSDefaults = {
     monthly: 499,   
     yearly: 4999
 };
 
+// ... Iske neeche aapka baki ka code (fallbackMenu, defaultFloors, etc.) jaisa hai waisa hi rahega
 let fallbackMenu = [
     { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
     { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
@@ -2378,7 +2406,7 @@ function renderAnalyticsDashboard() {
        
 
 // ===================================================================
-// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (MATH-QUIZ PURGED & FIXED)
+// 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WITH BRICK CONTROLS INTEGRATED)
 // ===================================================================
 function switchGameMode(selectedTargetMode) {
     activeGameMode = selectedTargetMode; 
@@ -2390,6 +2418,7 @@ function switchGameMode(selectedTargetMode) {
     document.getElementById('flappyCanvas').style.display = 'none';
     document.getElementById('spaceCanvas').style.display = 'none';
     document.getElementById('snakeCanvas').style.display = 'none';
+    document.getElementById('brickCanvas').style.display = 'none'; // Clear brick canvas
     document.getElementById('couponDisplay').style.display = 'none';
 
     // Tabs ki active class update karo
@@ -2398,11 +2427,12 @@ function switchGameMode(selectedTargetMode) {
         document.getElementById('nav' + selectedTargetMode).classList.add('active');
     }
     
-    // Mobile controls ko target game ke hisab se set karo
+    // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain
     document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
     document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
+    document.getElementById('brickControls').style.display = (selectedTargetMode === 'BRICK') ? 'flex' : 'none'; 
     
-    // 🔥 FIXED: Broken else block hataya, ab baki games ke liye engine direct launch ready rahega
+    // Baki games ke liye engine direct launch ready rahega
     document.getElementById('startBtn').style.display = 'block';
     document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
     
@@ -2448,6 +2478,13 @@ function startSelectedGame() {
         fCanvas.style.display = 'block'; 
         initFlappyBirdGame(); 
     }
+        else if(activeGameMode === 'BRICK') { 
+         const bCanvas = document.getElementById('brickCanvas');
+         bCanvas.width = fluidBreadth;
+         bCanvas.height = fluidLength;
+         bCanvas.style.display = 'block'; 
+    initBrickBreakerGame(); 
+   }
     else if(activeGameMode === 'SPACE') { 
         const sCanvas = document.getElementById('spaceCanvas');
         sCanvas.width = fluidBreadth;
@@ -3017,6 +3054,8 @@ function syncWaiterSizeDropdownOptions() {
 // 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH IN-STOCK MANAGEMENT ENGINE)
 // ===================================================================
 function populateAdminForms() {
+    document.getElementById('cfgBrickTar').value = rules.brickTar || 15;
+    document.getElementById('cfgBrickDisc').value = rules.brickDisc || 0;
     document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
     document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
     document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
@@ -3782,6 +3821,141 @@ function generateAdminTableGrid() {
     renderCustomerMenu();
 }
         // ===================================================================
+// 🧱 ATARI DX-BALL CLONE: CREATIVE FOOD PIXEL-ART ENGINE
+// ===================================================================
+function initBrickBreakerGame() {
+    clearInterval(loopTimerInstance);
+    const bCanvas = document.getElementById('brickCanvas');
+    brCtx = bCanvas.getContext('2d');
+    
+    brickScoreCounter = 0;
+    brickPaddleDir = 0;
+    
+    // Physical Baseline objects allocation
+    bPaddle = { x: (bCanvas.width / 2) - 40, y: bCanvas.height - 30, w: 80, h: 12 };
+    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 50, r: 7, dx: 3, dy: -3 };
+    
+    // CREATIVE MAP LAYER: 0 = Empty Space, 1 = Bun (Orange), 2 = Cheese (Gold), 3 = Patty (Brown)
+    const burgerPixelArtLayout = [
+        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+        [0, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+    ];
+    
+    activeBricksArray = [];
+    let rRows = burgerPixelArtLayout.length;
+    let cCols = burgerPixelArtLayout[0].length;
+    let paddingWidth = 4;
+    let calcBrickW = Math.floor((bCanvas.width - (paddingWidth * (cCols + 1))) / cCols);
+    let calcBrickH = 16;
+    
+    for(let r = 0; r < rRows; r++) {
+        for(let c = 0; c < cCols; c++) {
+            let brickType = burgerPixelArtLayout[r][c];
+            if(brickType > 0) {
+                let bX = (c * (calcBrickW + paddingWidth)) + paddingWidth;
+                let bY = (r * (calcBrickH + paddingWidth)) + 45; // Spacing from score banner top
+                let bColor = brickType === 1 ? '#e67e22' : (brickType === 2 ? '#f1c40f' : '#8b4513');
+                activeBricksArray.push({ x: bX, y: bY, w: calcBrickW, h: calcBrickH, color: bColor, status: 1 });
+            }
+        }
+    }
+    
+    // Keyboard Event Interceptors for Desktop testing nodes
+    window.addEventListener('keydown', (e) => {
+        if(activeGameMode === 'BRICK') {
+            if(e.key === 'ArrowLeft') brickPaddleDir = -7;
+            if(e.key === 'ArrowRight') brickPaddleDir = 7;
+        }
+    });
+    window.addEventListener('keyup', (e) => {
+        if(activeGameMode === 'BRICK') {
+            if((e.key === 'ArrowLeft' && brickPaddleDir < 0) || (e.key === 'ArrowRight' && brickPaddleDir > 0)) brickPaddleDir = 0;
+        }
+    });
+
+    loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); // Locked at ~60fps smooth rendering
+}
+
+function frameUpdateBrickBreaker() {
+    if (!brickCanvasElement || !brCtx) return;
+    
+    brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+    
+    // Draw Space Stars Background Pattern
+    brCtx.fillStyle = '#0a0b10';
+    brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+    
+    // Move Paddle & Check screen boundaries natively
+    bPaddle.x += brickPaddleDir;
+    if(bPaddle.x < 0) bPaddle.x = 0;
+    if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
+    
+    // Draw Paddle Capsule
+    brCtx.fillStyle = '#00d2d3';
+    brCtx.beginPath();
+    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6);
+    brCtx.fill();
+    
+    // Ball Physics Vector Calculations
+    bBall.x += bBall.dx;
+    bBall.y += bBall.dy;
+    
+    // Wall Collisions
+    if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) bBall.dx *= -1;
+    if(bBall.y - bBall.r < 25) bBall.dy *= -1; // Top ceiling collision safe boundary
+    
+    // Paddle Bounce Handshake Intersection
+    if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
+        if(bBall.dy > 0) {
+            // DX Ball Angle Reflection Hack: Ball paddle ke jis side lagti h angle wahi shift hota h
+            let hitPointRelative = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
+            bBall.dx = hitPointRelative * 4.5;
+            bBall.dy *= -1;
+        }
+    }
+    
+    // Bottom Crash (Game Over)
+    if(bBall.y + bBall.r > brickCanvasElement.height) {
+        finalizeFailedRun("💥 Ball Dropped! Try Again.");
+        return;
+    }
+    
+    // Render Blocks Grid Matrix & Collision Checks
+    activeBricksArray.forEach(br => {
+        if(br.status === 1) {
+            brCtx.fillStyle = br.color;
+            brCtx.beginPath();
+            brCtx.roundRect(br.x, br.y, br.w, br.h, 3);
+            brCtx.fill();
+            
+            // Ball inside brick tracking coordinates parameters
+            if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
+                br.status = 0;
+                bBall.dy *= -1;
+                brickScoreCounter++;
+                
+                // Live tracking trigger configurations rules checkpoint
+                let targetMaxGoal = parseInt(rules.brickTar) || 15;
+                if(brickScoreCounter >= targetMaxGoal) {
+                    triggerRewardCoupon(parseInt(rules.brickDisc) || 0);
+                }
+            }
+        }
+    });
+    
+    // Top HUD Score Ribbon Render
+    brCtx.fillStyle = "rgba(255,255,255,0.06)";
+    brCtx.fillRect(0, 0, brickCanvasElement.width, 25);
+    brCtx.fillStyle = "white";
+    brCtx.font = "bold 12px Segoe UI";
+    let currentLimitTarget = parseInt(rules.brickTar) || 15;
+    brCtx.fillText(`🍔 Blocks Pureed: ${brickScoreCounter} / ${currentLimitTarget}`, 12, 17);
+}
+// ===================================================================
 // 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (ZERO OVERLAP OVERLAY)
 // ===================================================================
 function frameUpdateFlappy() {
@@ -4228,7 +4402,8 @@ function saveAdminConfig() {
     }
 
     // 🎯 Capturing form values straight into the global rules state manager object
-    
+    rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 15;
+    rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 0;
     rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
     rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
     rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
