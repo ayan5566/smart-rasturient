@@ -3826,95 +3826,190 @@ function generateAdminTableGrid() {
     renderCustomerMenu();
 }
 // ===================================================================
-// 🧱 ATARI DX-BALL CLONE: SEQUENTIAL MECHANICAL SYSTEM ENGINES
+// 🧱 GOOGLE-STYLE ARCHITECTURE: RETRO BRICK BREAKER ENGINE (UPGRADED)
 // ===================================================================
 
-// 1️⃣ CORE GAME LOOP FRAME: Defined first so JavaScript engine registers it globally
+// Global Dynamic Entities Arrays
+let activeDropsArray = [];
+let gameHeartsRemaining = 3;
+
+// 1️⃣ CORE ENGINE RUN TICKER: Updates & Renders Graphics Matrix Frame
 function frameUpdateBrickBreaker() {
-    // RE-MAP POINTERS: Safe-guard to capture DOM metrics on every single frame tick
     if (!brickCanvasElement) brickCanvasElement = document.getElementById('brickCanvas');
     if (!brickCanvasElement) return;
     if (!brCtx) brCtx = brickCanvasElement.getContext('2d');
     
-    // Clear dynamic screen buffer perfectly matching current device size
+    // Clear screen buffer safely
     brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
     
-    // Draw Space Stars Background Pattern
-    brCtx.fillStyle = '#0a0b10';
+    // Smooth Galactic Dark Blue Canvas Theme
+    brCtx.fillStyle = '#2c304d';
     brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
     
-    // Move Paddle & Check screen boundaries natively
+    // Process Paddle Movement Vector
     bPaddle.x += brickPaddleDir;
     if(bPaddle.x < 0) bPaddle.x = 0;
     if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
     
-    // Draw Paddle Capsule
-    brCtx.fillStyle = '#00d2d3';
+    // Draw Curved White Modern Paddle Layout
+    brCtx.fillStyle = '#ffffff';
     brCtx.beginPath();
     brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6);
     brCtx.fill();
     
-    // Ball Physics Vector Calculations
+    // Calculate Core Ball Vectors 
     bBall.x += bBall.dx;
     bBall.y += bBall.dy;
     
-    // DRAW THE VISIBLE BALL CAPSULE
-    brCtx.fillStyle = '#ffffff'; 
+    // Draw Clean White Metallic Ball Sphere
+    brCtx.fillStyle = '#ffffff';
     brCtx.beginPath();
     brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2);
     brCtx.fill();
     brCtx.closePath();
     
-    // Wall Collisions
+    // Boundary Vector Bounces
     if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) bBall.dx *= -1;
-    if(bBall.y - bBall.r < 25) bBall.dy *= -1; 
+    if(bBall.y - bBall.r < 40) bBall.dy *= -1; // Top HUD Protection Barrier
     
-    // Paddle Bounce Handshake Intersection
+    // Paddle Interaction Collision Hook
     if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
         if(bBall.dy > 0) {
-            let hitPointRelative = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
-            bBall.dx = hitPointRelative * 4.5;
+            let relativeFactor = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
+            bBall.dx = relativeFactor * 4.5;
             bBall.dy *= -1;
         }
     }
     
-    // Bottom Crash (Game Over)
+    // Ball Fall (Lose Heart / Game Over Check)
     if(bBall.y + bBall.r > brickCanvasElement.height) {
-        finalizeFailedRun("💥 Ball Dropped! Try Again.");
-        return;
+        gameHeartsRemaining--;
+        if(gameHeartsRemaining > 0) {
+            // Soft Reset: Ball paddle par wapas set karke continue karo
+            bBall.x = bPaddle.x + bPaddle.w / 2;
+            bBall.y = bPaddle.y - 15;
+            bBall.dx = 3;
+            bBall.dy = -3.5;
+        } else {
+            finalizeFailedRun("💥 All Hearts Shattered! Try Again.");
+            return;
+        }
     }
     
-    // Render Blocks Grid Matrix & Collision Checks
+    // 🎁 ENGINE A: PROCESS DROPPING POWER-UPS MATRIX
+    activeDropsArray.forEach((drop, dIndex) => {
+        drop.y += 2.5; // Gravity pull speed
+        
+        // Draw Dynamic Neon Colors for Powerups (+ Sign)
+        brCtx.fillStyle = drop.type === 'GROW' ? '#ff4d4d' : '#2ecc71';
+        brCtx.beginPath();
+        brCtx.arc(drop.x, drop.y, 8, 0, Math.PI * 2);
+        brCtx.fill();
+        
+        // Cross Symbol Overlay inside the falling node
+        brCtx.fillStyle = '#ffffff';
+        brCtx.font = "bold 12px Arial";
+        brCtx.textAlign = "center";
+        brCtx.fillText("+", drop.x, drop.y + 4);
+        
+        // Catch Powerup Event (Collision with Paddle)
+        if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
+            if(drop.type === 'GROW') {
+                bPaddle.w = 130; // Extend paddle width temporarily
+                setTimeout(() => { bPaddle.w = 90; }, 8000); // 8 Sec cool-down duration
+            } else if(drop.type === 'BALL') {
+                bBall.r = 10; // Boost ball scaling for easy target strikes
+                setTimeout(() => { bBall.r = 6; }, 8000);
+            }
+            activeDropsArray.splice(dIndex, 1);
+        }
+        
+        // Out of bounds cleanup loop
+        if(drop.y > brickCanvasElement.height) activeDropsArray.splice(dIndex, 1);
+    });
+    
+    // 🧱 ENGINE B: RENDER BRICKS GRID & DETECT MOLECULAR COLLISONS
     activeBricksArray.forEach(br => {
-        if(br.status === 1) {
+        if(br.status > 0) {
+            if(br.special === 'HIDDEN') {
+                // Dashed Boundary Box Pattern representing invisible structural zones
+                brCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+                brCtx.lineWidth = 1.5;
+                brCtx.setLineDash([3, 2]);
+                brCtx.strokeRect(br.x, br.y, br.w, br.h);
+                brCtx.setLineDash([]); // Reset line engine settings
+                return; // Normal physics bypass till exposed
+            }
+            
+            // Standard Fill Render Pipeline
             brCtx.fillStyle = br.color;
             brCtx.beginPath();
             brCtx.roundRect(br.x, br.y, br.w, br.h, 3);
             brCtx.fill();
             
+            // TNT Text overlay rendering structure inside dynamic grids
+            if(br.special === 'TNT') {
+                brCtx.fillStyle = 'rgba(0,0,0,0.6)';
+                brCtx.font = "9px Arial";
+                brCtx.textAlign = "center";
+                brCtx.fillText("TNT", br.x + (br.w / 2), br.y + 8);
+            }
+            
+            // Physics Contact Logic
             if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
-                br.status = 0;
                 bBall.dy *= -1;
-                brickScoreCounter++;
                 
-                let targetMaxGoal = parseInt(rules.brickTar) || 15;
-                if(brickScoreCounter >= targetMaxGoal) {
+                if(br.special === 'TNT') {
+                    // Trigger Chain Explosion Chain reaction to eliminate surrounding rows
+                    activeBricksArray.forEach(subBr => {
+                        let distanceX = Math.abs(subBr.x - br.x);
+                        let distanceY = Math.abs(subBr.y - br.y);
+                        if(distanceX < 45 && distanceY < 25 && subBr.status === 1) {
+                            subBr.status = 0;
+                            brickScoreCounter += 25; // Bonus computation points
+                        }
+                    });
+                } else {
+                    br.status = 0;
+                    brickScoreCounter += 10;
+                }
+                
+                // 🎲 Dynamic Drop Engine: 20% chances to prompt core upgrade matrix drops
+                if(Math.random() < 0.25) {
+                    let typeAllocated = Math.random() > 0.5 ? 'GROW' : 'BALL';
+                    activeDropsArray.push({ x: br.x + (br.w / 2), y: br.y, type: typeAllocated });
+                }
+                
+                // Live tracking validation checking rule limits
+                let targetGoal = parseInt(rules.brickTar) || 15;
+                if(brickScoreCounter >= (targetGoal * 10)) {
                     triggerRewardCoupon(parseInt(rules.brickDisc) || 0);
                 }
             }
         }
     });
     
-    // Top HUD Score Ribbon Render
-    brCtx.fillStyle = "rgba(255,255,255,0.06)";
-    brCtx.fillRect(0, 0, brickCanvasElement.width, 25);
-    brCtx.fillStyle = "white";
-    brCtx.font = "bold 12px Segoe UI";
-    let currentLimitTarget = parseInt(rules.brickTar) || 15;
-    brCtx.fillText(`🍔 Blocks Pureed: ${brickScoreCounter} / ${currentLimitTarget}`, 12, 17);
+    // ⚙️ ENGINE C: RENDER HIGH FIDELITY TOP HUD DATA BAR (HEARTS & SCORE MATRIX)
+    brCtx.fillStyle = "#1e223b";
+    brCtx.fillRect(0, 0, brickCanvasElement.width, 40);
+    
+    // Render Hearts Circle Layout Nodes
+    for(let h = 0; h < 3; h++) {
+        brCtx.fillStyle = h < gameHeartsRemaining ? '#ff4d4d' : 'rgba(255,255,255,0.15)';
+        brCtx.beginPath();
+        brCtx.arc(25 + (h * 16), 20, 5, 0, Math.PI * 2);
+        brCtx.fill();
+    }
+    
+    // Score string rendering
+    brCtx.fillStyle = "#ffffff";
+    brCtx.font = "bold 14px monospace";
+    brCtx.textAlign = "right";
+    let standardizedScoreString = String(brickScoreCounter).padStart(5, '0');
+    brCtx.fillText(standardizedScoreString, brickCanvasElement.width - 20, 24);
 }
 
-// 2️⃣ GAME INITIALIZER ROUTER: Placed below the frame definition to guarantee seamless mapping
+// 2️⃣ SYSTEM INITIALIZATION CONTEXT: Setup High-Density Blocks Map Grid
 function initBrickBreakerGame() {
     clearInterval(loopTimerInstance); 
     const bCanvas = document.getElementById('brickCanvas');
@@ -3922,49 +4017,47 @@ function initBrickBreakerGame() {
     
     brickScoreCounter = 0;
     brickPaddleDir = 0;
+    gameHeartsRemaining = 3; 
+    activeDropsArray = [];
     
-    // Paddle aur Ball baseline setup
-    bPaddle = { x: (bCanvas.width / 2) - 45, y: bCanvas.height - 30, w: 90, h: 12 };
-    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 50, r: 6, dx: 3, dy: -3.5 };
+    bPaddle = { x: (bCanvas.width / 2) - 45, y: bCanvas.height - 35, w: 90, h: 10 };
+    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 55, r: 6, dx: 3.5, dy: -3.5 };
     
-    // 🍔 HIGH-DENSITY PIXEL ART: Blocks ka size half karke detailed layout banaya hai!
-    // 0 = Khali Space, 1 = Bun/Castle Top (Orange/Red), 2 = Cheese (Gold), 3 = Patty/Base (Brown)
-    const burgerPixelArtLayout = [
-        [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-        [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
-        [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
-        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-        [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]
+    // High Density Row Mapping matching the exact reference screenshots uploaded
+    // 1=Blue, 2=Red, 3=Yellow, 4=Green, H=Hidden, T=TNT Block Layout Matrix
+    const classicRetroMapGrid = [
+        ['1','1','1','1','1','1','1','H','1','1','1','1'],
+        ['2','2','T','2','2','2','2','2','2','2','2','2'],
+        ['3','3','3','3','3','3','3','3','T','3','3','3'],
+        ['4','4','4','4','4','4','4','4','4','4','4','4']
     ];
     
     activeBricksArray = [];
-    let rRows = burgerPixelArtLayout.length;
-    let cCols = burgerPixelArtLayout[0].length; // Columns badhakar 16 kar diye (Double density)
-    
-    let paddingWidth = 2; // Blocks ke bich ka gap bhi kam kiya taaki tight packing ho
-    // Canvas ki width ke hisab se block ka size automatic calculate aur half ho jayega
+    let rRows = classicRetroMapGrid.length;
+    let cCols = classicRetroMapGrid[0].length;
+    let paddingWidth = 3;
     let calcBrickW = Math.floor((bCanvas.width - (paddingWidth * (cCols + 1))) / cCols);
-    let calcBrickH = 9; // Height ko 16 se ghata kar 9 kar diya (Aadha size)
+    let calcBrickH = 14;
+    
+    const colorDictionary = { '1': '#4facfe', '2': '#ff4b5c', '3': '#ffcc00', '4': '#1dd1a1' };
     
     for(let r = 0; r < rRows; r++) {
         for(let c = 0; c < cCols; c++) {
-            let brickType = burgerPixelArtLayout[r][c];
-            if(brickType > 0) {
-                let bX = (c * (calcBrickW + paddingWidth)) + paddingWidth;
-                let bY = (r * (calcBrickH + paddingWidth)) + 45; // Top HUD ke neeche spacing
-                
-                // Color mapping for pixel aesthetics
-                let bColor = brickType === 1 ? '#e67e22' : (brickType === 2 ? '#f1c40f' : '#8b4513');
-                activeBricksArray.push({ x: bX, y: bY, w: calcBrickW, h: calcBrickH, color: bColor, status: 1 });
-            }
+            let itemKey = classicRetroMapGrid[r][c];
+            let bX = (c * (calcBrickW + paddingWidth)) + paddingWidth;
+            let bY = (r * (calcBrickH + paddingWidth)) + 65; // Spacing layout offset top
+            
+            let isSpecialNode = itemKey === 'H' ? 'HIDDEN' : (itemKey === 'T' ? 'TNT' : 'NONE');
+            let assignedColor = isSpecialNode === 'TNT' ? '#e67e22' : (colorDictionary[itemKey] || '#ffffff');
+            
+            activeBricksArray.push({
+                x: bX, y: bY, w: calcBrickW, h: calcBrickH,
+                color: assignedColor, special: isSpecialNode, status: 1
+            });
         }
     }
     
-    // Keyboard Setup (Desktop testing ke liye)
+    // Register Global Desktop Interceptors Event Nodes safely
     window.addEventListener('keydown', (e) => {
         if(activeGameMode === 'BRICK') {
             if(e.key === 'ArrowLeft') brickPaddleDir = -7;
