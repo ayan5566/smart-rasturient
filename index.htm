@@ -4957,6 +4957,153 @@ async function closePaywallAndExitToHub() {
     document.getElementById('customerView').style.display = 'block';
     renderCustomerMenu();
 }
+        // ===================================================================
+// 🧱 ATARI DX-BALL CLONE: SEQUENTIAL MECHANICAL SYSTEM ENGINES
+// ===================================================================
+
+// 1️⃣ CORE GAME LOOP FRAME: Defined first so JavaScript engine registers it globally
+function frameUpdateBrickBreaker() {
+    // RE-MAP POINTERS: Safe-guard to capture DOM metrics on every single frame tick
+    if (!brickCanvasElement) brickCanvasElement = document.getElementById('brickCanvas');
+    if (!brickCanvasElement) return;
+    if (!brCtx) brCtx = brickCanvasElement.getContext('2d');
+    
+    // Clear dynamic screen buffer perfectly matching current device size
+    brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+    
+    // Draw Space Stars Background Pattern
+    brCtx.fillStyle = '#0a0b10';
+    brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+    
+    // Move Paddle & Check screen boundaries natively
+    bPaddle.x += brickPaddleDir;
+    if(bPaddle.x < 0) bPaddle.x = 0;
+    if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
+    
+    // Draw Paddle Capsule
+    brCtx.fillStyle = '#00d2d3';
+    brCtx.beginPath();
+    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6);
+    brCtx.fill();
+    
+    // Ball Physics Vector Calculations
+    bBall.x += bBall.dx;
+    bBall.y += bBall.dy;
+    
+    // DRAW THE VISIBLE BALL CAPSULE
+    brCtx.fillStyle = '#ffffff'; 
+    brCtx.beginPath();
+    brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2);
+    brCtx.fill();
+    brCtx.closePath();
+    
+    // Wall Collisions
+    if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) bBall.dx *= -1;
+    if(bBall.y - bBall.r < 25) bBall.dy *= -1; 
+    
+    // Paddle Bounce Handshake Intersection
+    if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
+        if(bBall.dy > 0) {
+            let hitPointRelative = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
+            bBall.dx = hitPointRelative * 4.5;
+            bBall.dy *= -1;
+        }
+    }
+    
+    // Bottom Crash (Game Over)
+    if(bBall.y + bBall.r > brickCanvasElement.height) {
+        finalizeFailedRun("💥 Ball Dropped! Try Again.");
+        return;
+    }
+    
+    // Render Blocks Grid Matrix & Collision Checks
+    activeBricksArray.forEach(br => {
+        if(br.status === 1) {
+            brCtx.fillStyle = br.color;
+            brCtx.beginPath();
+            brCtx.roundRect(br.x, br.y, br.w, br.h, 3);
+            brCtx.fill();
+            
+            if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
+                br.status = 0;
+                bBall.dy *= -1;
+                brickScoreCounter++;
+                
+                let targetMaxGoal = parseInt(rules.brickTar) || 15;
+                if(brickScoreCounter >= targetMaxGoal) {
+                    triggerRewardCoupon(parseInt(rules.brickDisc) || 0);
+                }
+            }
+        }
+    });
+    
+    // Top HUD Score Ribbon Render
+    brCtx.fillStyle = "rgba(255,255,255,0.06)";
+    brCtx.fillRect(0, 0, brickCanvasElement.width, 25);
+    brCtx.fillStyle = "white";
+    brCtx.font = "bold 12px Segoe UI";
+    let currentLimitTarget = parseInt(rules.brickTar) || 15;
+    brCtx.fillText(`🍔 Blocks Pureed: ${brickScoreCounter} / ${currentLimitTarget}`, 12, 17);
+}
+
+// 2️⃣ GAME INITIALIZER ROUTER: Placed below the frame definition to guarantee seamless mapping
+function initBrickBreakerGame() {
+    clearInterval(loopTimerInstance); // Hard reset previous animation loops
+    const bCanvas = document.getElementById('brickCanvas');
+    brCtx = bCanvas.getContext('2d');
+    
+    brickScoreCounter = 0;
+    brickPaddleDir = 0;
+    
+    // Physical Baseline objects allocation
+    bPaddle = { x: (bCanvas.width / 2) - 40, y: bCanvas.height - 30, w: 80, h: 12 };
+    bBall = { x: bCanvas.width / 2, y: bCanvas.height - 50, r: 7, dx: 3, dy: -3 };
+    
+    // CREATIVE MAP LAYER: 0 = Empty Space, 1 = Bun (Orange), 2 = Cheese (Gold), 3 = Patty (Brown)
+    const burgerPixelArtLayout = [
+        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+        [0, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+        [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+    ];
+    
+    activeBricksArray = [];
+    let rRows = burgerPixelArtLayout.length;
+    let cCols = burgerPixelArtLayout[0].length;
+    let paddingWidth = 4;
+    let calcBrickW = Math.floor((bCanvas.width - (paddingWidth * (cCols + 1))) / cCols);
+    let calcBrickH = 16;
+    
+    for(let r = 0; r < rRows; r++) {
+        for(let c = 0; c < cCols; c++) {
+            let brickType = burgerPixelArtLayout[r][c];
+            if(brickType > 0) {
+                let bX = (c * (calcBrickW + paddingWidth)) + paddingWidth;
+                let bY = (r * (calcBrickH + paddingWidth)) + 45; 
+                let bColor = brickType === 1 ? '#e67e22' : (brickType === 2 ? '#f1c40f' : '#8b4513');
+                activeBricksArray.push({ x: bX, y: bY, w: calcBrickW, h: calcBrickH, color: bColor, status: 1 });
+            }
+        }
+    }
+    
+    // Keyboard Event Interceptors for Desktop testing nodes
+    window.addEventListener('keydown', (e) => {
+        if(activeGameMode === 'BRICK') {
+            if(e.key === 'ArrowLeft') brickPaddleDir = -7;
+            if(e.key === 'ArrowRight') brickPaddleDir = 7;
+        }
+    });
+    window.addEventListener('keyup', (e) => {
+        if(activeGameMode === 'BRICK') {
+            if((e.key === 'ArrowLeft' && brickPaddleDir < 0) || (e.key === 'ArrowRight' && brickPaddleDir > 0)) brickPaddleDir = 0;
+        }
+    });
+
+    // Spools the interval ticking engine cleanly now that definition is confirmed in global scope
+    loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); 
+}
 
 initApp();
 </script>
