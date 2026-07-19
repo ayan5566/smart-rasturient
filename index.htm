@@ -4299,19 +4299,28 @@ function frameUpdateBrickBreaker() {
         isSuperBallActive = false;
     }
     
+    // 🏆 STAGE EXPANSION TRIGGER: Space Shooter style single target discount link
     if (remainingActiveBricksCount === 0 && isBallLaunched) {
         clearInterval(loopTimerInstance);
-        isBallLaunched = false; 
+        isBallLaunched = false; // Next level guard reset
         
+        // Check: Agar player admin ke set kiye hue target level par pahunch gaya hai
+        if (currentActiveLevelIndex === (parseInt(rules.brickTar) || 15)) {
+            if (typeof triggerRewardCoupon === 'function') {
+                // Target level hit hote hi admin panel ka set kiya hua poora discount ek baar me de do
+                let earnedPercent = parseInt(rules.brickDisc) || 0;
+                triggerRewardCoupon(earnedPercent);
+                console.log(`🎯 Target Level ${rules.brickTar} Cleared! Applied ${earnedPercent}% discount.`);
+            }
+        }
+        
+        // Next level load karne ka progression loop
         if (currentActiveLevelIndex < 5) {
             currentActiveLevelIndex++;
             initBrickBreakerGame();
         } else {
             currentActiveLevelIndex = 1; 
-            if (typeof triggerRewardCoupon === 'function') {
-                triggerRewardCoupon(parseInt(rules.brickDisc) || 0);
-            }
-            alert(`🎉 VICTORY! You conquered Pack ${currentSelectedPackName}! Invoice Coupon Applied.`);
+            alert(`🎉 VICTORY! You conquered Pack ${currentSelectedPackName}!`);
             if (typeof switchGameMode === 'function') switchGameMode('FLAPPY');
         }
         return;
