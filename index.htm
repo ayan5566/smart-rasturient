@@ -760,14 +760,20 @@
             <label><input type="checkbox" id="cfgTaxServiceActive" onchange="saveAdminConfig()"> Enable Service Charge (%)</label> <input type="number" id="cfgTaxServiceRate" style="width:65px; padding:4px;" oninput="saveAdminConfig()">
         </div>
         
-        <h3>🎮 Target Variables & Value Ratios</h3>
-        <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; line-height:1.8;">
-            Brick Target Blocks: <input type="number" id="cfgBrickTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgBrickDisc" oninput="saveAdminConfig()"><br>
-            Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
-            Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
-            Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
-        </div>
-
+        
+<h3>🎮 Target Variables & Value Ratios</h3>
+<div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; line-wrap:normal; line-height:1.8;">
+    <b>🧱 Brick Breaker Level Discounts (%):</b><br>
+    Lv1: <input type="number" id="cfgBrickLv1" style="width:50px; padding:4px;" oninput="saveAdminConfig()">% | 
+    Lv2: <input type="number" id="cfgBrickLv2" style="width:50px; padding:4px;" oninput="saveAdminConfig()">% | 
+    Lv3: <input type="number" id="cfgBrickLv3" style="width:50px; padding:4px;" oninput="saveAdminConfig()">% | 
+    Lv4: <input type="number" id="cfgBrickLv4" style="width:50px; padding:4px;" oninput="saveAdminConfig()">% | 
+    Lv5: <input type="number" id="cfgBrickLv5" style="width:50px; padding:4px;" oninput="saveAdminConfig()">%<br>
+    <hr style="border:0; border-top:1px dashed #ccc; margin:8px 0;">
+    Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
+    Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
+    Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
+</div>
         <h3>📋 Item Master Setup (Photos & Checkboxes)</h3>
         <div id="adminMenuForm"></div>
         <button class="action-btn" onclick="addNewCategory()" style="background:#2980b9; color:white; margin-bottom:15px;">➕ Create New Category Section</button>
