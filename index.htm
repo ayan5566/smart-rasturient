@@ -552,8 +552,7 @@
         <div id="menuContainer"></div>
         
         <div class="game-box">
-            <h3>🎮 Play & Claim Discounts Automatically</h3>
-            <div class="game-nav">
+         <div class="game-nav">
     <button id="navBRICK" onclick="switchGameMode('BRICK')">
         <span style="font-size: 26px;">🧱</span>
         <span>Bricks</span>
@@ -570,8 +569,11 @@
         <span style="font-size: 26px;">🐍</span>
         <span>Snake</span>
     </button>
+    <button id="navTOWER" onclick="switchGameMode('TOWER')">
+        <span style="font-size: 26px;">🏢</span>
+        <span>Tower</span>
+    </button>
 </div>
-
             <div id="gameWindow">
                 <div id="gameScreenStatusMsg"></div>
                 <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()" style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌ Quit Game</button>
@@ -778,6 +780,7 @@
     Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
     Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
     Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
+    Tower Clear Target Level: <input type="number" id="cfgTowerTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgTowerDisc" oninput="saveAdminConfig()"><br>
 </div>
         <h3>📋 Item Master Setup (Photos & Checkboxes)</h3>
         <div id="adminMenuForm"></div>
@@ -1669,7 +1672,10 @@ hotelGlobalScopeID = window.hotelGlobalScopeID;
 
 // 🛡️ FIX 2: rules redeclaration shield
 if (typeof window.rules === 'undefined') {
-    window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { math: 5, flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12 };
+    window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || { 
+        flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12, brickTar: 3, brickDisc: 8,
+        towerTar: 3, towerDisc: 15 // Seeded baseline default rules
+    };
 }
 rules = window.rules;
 
@@ -3078,6 +3084,8 @@ function populateAdminForms() {
     document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
     document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
     document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
+    document.getElementById('cfgTowerTar').value = rules.towerTar || 3;
+    document.getElementById('cfgTowerDisc').value = rules.towerDisc || 0;
     
     document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
     document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
@@ -3835,6 +3843,207 @@ function generateAdminTableGrid() {
     await supabaseClient.auth.signOut();
     document.getElementById('customerView').style.display = 'block';
     renderCustomerMenu();
+}
+// ===================================================================
+// 🏢 TOWER BLOXX GAME ENGINE: VARIABLE ACCURATE COLLISION ENGINE
+// ===================================================================
+
+let towerCanvasElement = document.getElementById('towerCanvas');
+let twCtx = towerCanvasElement ? towerCanvasElement.getContext('2d') : null;
+let towerScoreCounter = 0;
+let currentTowerLevelState = 1;
+let isTowerBlockDropping = false;
+let towerCameraOffsetOffsetY = 0;
+let towerVisualVibrationScaleX = 0;
+
+function initTowerBloxxGame() {
+    clearInterval(loopTimerInstance);
+    if(!towerCanvasElement) towerCanvasElement = document.getElementById('towerCanvas');
+    if(!twCtx) twCtx = towerCanvasElement.getContext('2d');
+    
+    // Engine states tracking parameters reset resets
+    towerScoreCounter = 0;
+    currentTowerLevelState = 1;
+    isTowerBlockDropping = false;
+    towerCameraOffsetOffsetY = 0;
+    towerVisualVibrationScaleX = 0;
+    activeTowerBlocksArray = [];
+    
+    // Level parameter calculations base variables scaling settings
+    let targetSpeedOffset = 2.0 + (currentTowerLevelState * 0.6);
+    
+    // Baseline anchor floor layer initialization
+    activeTowerBlocksArray.push({
+        x: (towerCanvasElement.width / 2) - 30,
+        y: towerCanvasElement.height - 40,
+        w: 60, h: 30, color: '#2c3e50'
+    });
+    
+    // Dynamic swinging crane hook setup configurations
+    currentSwingingBlock = {
+        x: 0, y: 75, w: 50, h: 26,
+        angle: 0, speed: targetSpeedOffset,
+        color: '#ffd700'
+    };
+    
+    // Mobile tap touch interaction overlay capture mapping pointer
+    towerCanvasElement.onclick = (e) => {
+        e.preventDefault();
+        if(!isTowerBlockDropping && activeGameMode === 'TOWER') {
+            isTowerBlockDropping = true;
+            currentSwingingBlock.dropSpeedY = 6.5; // Steady dropping physics speed vector
+        }
+    };
+    
+    loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
+}
+
+function frameUpdateTowerBloxx() {
+    if (!towerCanvasElement || !twCtx) return;
+    
+    // Visual processing stage cleaning pipeline
+    twCtx.clearRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
+    
+    // Sky gradient dynamic backgrounds rendering loop styles
+    twCtx.fillStyle = '#70c5ce';
+    twCtx.fillRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
+    
+    // Visual background city shapes landscape graphics
+    twCtx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    twCtx.fillRect(30, 220, 50, 180);
+    twCtx.fillRect(110, 160, 75, 240);
+    twCtx.fillRect(230, 250, 60, 150);
+    
+    // Apply camera offsets shifts smoothly for tall buildings rendering matrix mapping
+    twCtx.save();
+    twCtx.translate(towerVisualVibrationScaleX, towerCameraOffsetOffsetY);
+    
+    if (towerVisualVibrationScaleX !== 0) {
+        towerVisualVibrationScaleX *= -0.8; // Decrement oscillations factors
+        if (Math.abs(towerVisualVibrationScaleX) < 0.2) towerVisualVibrationScaleX = 0;
+    }
+    
+    // Render the active tower pieces sequence arrays data streams
+    activeTowerBlocksArray.forEach(block => {
+        twCtx.fillStyle = block.color;
+        twCtx.beginPath();
+        twCtx.roundRect(block.x, block.y, block.w, block.h, 4);
+        twCtx.fill();
+        
+        // Window segments grid decoration styles rendering code
+        twCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        twCtx.fillRect(block.x + 8, block.y + 6, 8, 14);
+        twCtx.fillRect(block.x + block.w - 16, block.y + 6, 8, 14);
+    });
+    
+    twCtx.restore(); // Clear structural camera transformations frames
+    
+    // Crane rope string calculation geometry mapping coordinates layout styles
+    twCtx.strokeStyle = '#333333';
+    twCtx.lineWidth = 2.5;
+    twCtx.beginPath();
+    twCtx.moveTo(towerCanvasElement.width / 2, 0);
+    
+    if (!isTowerBlockDropping) {
+        // Horizontal oscillatory trigonometry calculation loops
+        currentSwingingBlock.angle += currentSwingingBlock.speed * 0.015;
+        let rangeExtentX = (towerCanvasElement.width / 2) - (currentSwingingBlock.w / 2);
+        currentSwingingBlock.x = (towerCanvasElement.width / 2 - currentSwingingBlock.w / 2) + Math.sin(currentSwingingBlock.angle) * rangeExtentX;
+        
+        twCtx.lineTo(currentSwingingBlock.x + (currentSwingingBlock.w / 2), currentSwingingBlock.y);
+        twCtx.stroke();
+        
+        // Draw the active swinging block parameters
+        twCtx.fillStyle = currentSwingingBlock.color;
+        twCtx.beginPath();
+        twCtx.roundRect(currentSwingingBlock.x, currentSwingingBlock.y, currentSwingingBlock.w, currentSwingingBlock.h, 4);
+        twCtx.fill();
+    } else {
+        // Fall down velocity increments translation
+        currentSwingingBlock.y += currentSwingingBlock.dropSpeedY;
+        
+        // Render the isolated free-falling container card block data
+        twCtx.fillStyle = currentSwingingBlock.color;
+        twCtx.beginPath();
+        twCtx.roundRect(currentSwingingBlock.x, currentSwingingBlock.y - towerCameraOffsetOffsetY, currentSwingingBlock.w, currentSwingingBlock.h, 4);
+        twCtx.fill();
+        
+        let surfaceAnchorBaseBlock = activeTowerBlocksArray[activeTowerBlocksArray.length - 1];
+        let structuralTargetLandingY = surfaceAnchorBaseBlock.y;
+        
+        // Collision Detection intersection boundary parameters framework check logic
+        if ((currentSwingingBlock.y + currentSwingingBlock.h - towerCameraOffsetOffsetY) >= structuralTargetLandingY) {
+            isTowerBlockDropping = false;
+            let blockContactX = currentSwingingBlock.x;
+            
+            let structuralOffsetErrorX = Math.abs(blockContactX - surfaceAnchorBaseBlock.x);
+            let maximumAllowableMarginWidth = surfaceAnchorBaseBlock.w * 0.70; // 70% stack balance boundary parameters rules limits
+            
+            if (structuralOffsetErrorX <= maximumAllowableMarginWidth) {
+                // Stack landing captured successfully sequence
+                towerScoreCounter++;
+                
+                // Color spectrum shifts loop based on altitude stack height parameters
+                const blockSpectrumColors = ['#f39c12', '#9b59b6', '#e74c3c', '#3498db', '#1abc9c'];
+                let chosenColorHex = blockSpectrumColors[towerScoreCounter % blockSpectrumColors.length];
+                
+                activeTowerBlocksArray.push({
+                    x: blockContactX,
+                    y: structuralTargetLandingY - currentSwingingBlock.h,
+                    w: currentSwingingBlock.w,
+                    h: currentSwingingBlock.h,
+                    color: chosenColorHex
+                });
+                
+                // Camera scroll mechanics adjustment shift layer
+                if (activeTowerBlocksArray.length > 4) {
+                    towerCameraOffsetOffsetY += currentSwingingBlock.h;
+                }
+                
+                // Milestone discount check link aligned straight onto Space Shooter rules system specifications
+                if (currentTowerLevelState === (parseInt(rules.towerTar) || 3)) {
+                    if (typeof triggerRewardCoupon === 'function') {
+                        let earnedPercent = parseInt(rules.towerDisc) || 0;
+                        triggerRewardCoupon(earnedPercent);
+                        console.log(`🏢 Tower Level ${currentTowerLevelState} Cleared! Applied ${earnedPercent}% Coupon.`);
+                    }
+                }
+                
+                // Level scale progression mapping blocks context loop router
+                if (towerScoreCounter % 3 === 0) { // Every 3 accurate landings upgrades level difficulty values
+                    if (currentTowerLevelState < 5) {
+                        currentTowerLevelState++;
+                        showOnScreenNotification(`🏢 Level Up! Advanced to Tower Level ${currentTowerLevelState}`);
+                    } else {
+                        clearInterval(loopTimerInstance);
+                        alert("👑 GRAND VICTORY! You built the ultimate skyscrapers complex!");
+                        if (typeof switchGameMode === 'function') switchGameMode('FLAPPY');
+                        return;
+                    }
+                }
+                
+                // Reset fresh dangling block configurations values data maps array
+                let currentLevelSpeedOffset = 2.0 + (currentTowerLevelState * 0.6);
+                currentSwingingBlock.y = 75;
+                currentSwingingBlock.speed = currentLevelSpeedOffset;
+                currentSwingingBlock.angle = Math.random() * Math.PI;
+                
+            } else {
+                // Collision alignment collapse crash logic execution pipeline path
+                towerVisualVibrationScaleX = 14; // Triggers structural shaking effect simulation
+                setTimeout(() => {
+                    finalizeFailedRun("💥 Tower Collapsed! Stack alignment balance failure.");
+                }, 300);
+                return;
+            }
+        }
+    }
+    
+    // Realtime scoreboard dashboard metric layout overlays
+    twCtx.fillStyle = '#2c3e50';
+    twCtx.font = 'bold 13px Segoe UI';
+    twCtx.textAlign = 'left';
+    twCtx.fillText(`Lv.${currentTowerLevelState} | Stack: ${towerScoreCounter}`, 15, 25);
 }
 // ===================================================================
 // 🧱 RESTROFLOW ADVANCED ENGINE: FIXED-PHYSICS MULTI-COLOR ARCADE MATRIX
@@ -4813,7 +5022,8 @@ function saveAdminConfig() {
     rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
     rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
     rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
-    
+    rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
+    rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 0;
     let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
     localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); 
     
