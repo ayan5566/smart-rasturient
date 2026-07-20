@@ -2523,6 +2523,18 @@ function startSelectedGame() {
         initSnakeGameLoop(); 
     }
 }
+        else if(activeGameMode === 'TOWER') { 
+    const tCanvas = document.getElementById('towerCanvas');
+    tCanvas.width = fluidBreadth; // <-- Check karo ye lines missing toh nahi hain
+    tCanvas.height = fluidLength;
+    tCanvas.style.display = 'block'; 
+    
+    // Global references load
+    towerCanvasElement = tCanvas;
+    twCtx = tCanvas.getContext('2d');
+    
+    initTowerBloxxGame(); 
+}
 // ===================================================================
 // 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
 // ===================================================================
