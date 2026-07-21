@@ -3858,7 +3858,7 @@ function generateAdminTableGrid() {
     renderCustomerMenu();
 }
 // ===================================================================
-// 🏢 TOWER BLOXX GAME ENGINE: VARIABLE ACCURATE COLLISION ENGINE
+// 🏢 VISUALLY UPGRADED TOWER BLOXX ENGINE (50-FLOOR SPACE PROGRESSION)
 // ===================================================================
 
 let towerCanvasElement = document.getElementById('towerCanvas');
@@ -3868,6 +3868,12 @@ let currentTowerLevelState = 1;
 let isTowerBlockDropping = false;
 let towerCameraOffsetOffsetY = 0;
 let towerVisualVibrationScaleX = 0;
+
+// 🎨 VISUAL ENGINE VFX & PARTICLES STORAGE
+let towerParticlesArray = [];
+let towerStarsArray = [];
+let towerCloudsArray = [];
+let shootingStarState = null;
 
 function initTowerBloxxGame() {
     clearInterval(loopTimerInstance);
@@ -3880,26 +3886,57 @@ function initTowerBloxxGame() {
     towerCameraOffsetOffsetY = 0;
     towerVisualVibrationScaleX = 0;
     activeTowerBlocksArray = [];
+    towerParticlesArray = [];
     
-    // Baseline anchor floor
+    // Generate background stars for high altitude / space
+    towerStarsArray = [];
+    for (let i = 0; i < 50; i++) {
+        towerStarsArray.push({
+            x: Math.random() * towerCanvasElement.width,
+            y: Math.random() * towerCanvasElement.height,
+            size: Math.random() * 2 + 0.5,
+            alpha: Math.random(),
+            twinkleSpeed: 0.02 + Math.random() * 0.03
+        });
+    }
+
+    // Generate floating clouds
+    towerCloudsArray = [];
+    for (let i = 0; i < 6; i++) {
+        towerCloudsArray.push({
+            x: Math.random() * towerCanvasElement.width,
+            y: Math.random() * (towerCanvasElement.height * 0.6),
+            speed: 0.2 + Math.random() * 0.3,
+            radius: 18 + Math.random() * 14
+        });
+    }
+
+    // 🧱 SQUARE BLOCK DIMENSIONS (Sleek Modern Skyscraper Proportions)
+    let squareBlockWidth = 42;
+    let squareBlockHeight = 42;
+
+    // Baseline Anchor Floor (Resting directly on the ground foundation)
     activeTowerBlocksArray.push({
-        x: (towerCanvasElement.width / 2) - 30,
-        y: towerCanvasElement.height - 40,
-        w: 60, h: 30, color: '#2c3e50'
+        x: (towerCanvasElement.width / 2) - (squareBlockWidth / 2),
+        y: towerCanvasElement.height - squareBlockHeight - 15, // Anchored on foundation
+        w: squareBlockWidth, 
+        h: squareBlockHeight, 
+        color: '#2c3e50'
     });
     
-    // ⛓️ PERMANENT PENDULUM SWING CONFIGURATION
-    let chainLength = 110; 
-    let swingSpeed = 0.03 + (currentTowerLevelState * 0.008); // Steady speed per level
+    // ⛓️ PERMANENT PENDULUM SWING CONFIGURATION (PHYSICS UNTOUCHED)
+    let chainLength = 100; 
+    let swingSpeed = 0.03 + (currentTowerLevelState * 0.008);
     
     currentSwingingBlock = {
-        pivotX: towerCanvasElement.width / 2, // Center anchor point
+        pivotX: towerCanvasElement.width / 2,
         pivotY: 0,
         length: chainLength,
-        maxAngle: Math.PI / 3.5,             // Maximum swing angle arc (around 50 deg)
-        swingTimer: 0,                      // Time accumulator for continuous movement
+        maxAngle: Math.PI / 3.5,
+        swingTimer: 0,
         speed: swingSpeed,
-        w: 50, h: 26,
+        w: squareBlockWidth, 
+        h: squareBlockHeight,
         x: 0, y: 0,
         color: '#ffd700'
     };
@@ -3909,7 +3946,6 @@ function initTowerBloxxGame() {
         e.preventDefault();
         if (!isTowerBlockDropping && activeGameMode === 'TOWER') {
             isTowerBlockDropping = true;
-            // Calculate starting release position from current pendulum position
             currentSwingingBlock.dropX = currentSwingingBlock.x;
             currentSwingingBlock.dropY = currentSwingingBlock.y;
             currentSwingingBlock.dropSpeedY = 6.5;
@@ -3918,20 +3954,210 @@ function initTowerBloxxGame() {
     
     loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
 }
+
+// 🌆 HELPER: 50-FLOOR CONTINUOUS ATMOSPHERE & ENVIRONMENT RENDERER
+function render50FloorAtmosphere(floorCount) {
+    let w = towerCanvasElement.width;
+    let h = towerCanvasElement.height;
+    
+    // Smooth progress mapping scaled over 50 floors (0.0 = Ground, 1.0 = Space)
+    let progress = Math.min(floorCount / 50, 1.0);
+    
+    let grad = twCtx.createLinearGradient(0, 0, 0, h);
+
+    if (progress < 0.20) {
+        // Floors 1-10: Bright Day Sky -> Light Blue Gradient
+        let factor = progress / 0.20;
+        grad.addColorStop(0, interpolateColor('#70c5ce', '#3a7bd5', factor));
+        grad.addColorStop(1, interpolateColor('#e0f7fa', '#a1c4fd', factor));
+    } else if (progress < 0.40) {
+        // Floors 11-20: Deep Azure -> Soft Sunset Horizon
+        let factor = (progress - 0.20) / 0.20;
+        grad.addColorStop(0, interpolateColor('#3a7bd5', '#1e3c72', factor));
+        grad.addColorStop(1, interpolateColor('#a1c4fd', '#fbc2eb', factor));
+    } else if (progress < 0.60) {
+        // Floors 21-30: High Atmosphere / Twilight Sky
+        let factor = (progress - 0.40) / 0.20;
+        grad.addColorStop(0, interpolateColor('#1e3c72', '#0f2027', factor));
+        grad.addColorStop(1, interpolateColor('#fbc2eb', '#2a5298', factor));
+    } else if (progress < 0.80) {
+        // Floors 31-40: Deep Night / Upper Stratosphere
+        let factor = (progress - 0.60) / 0.20;
+        grad.addColorStop(0, interpolateColor('#0f2027', '#050515', factor));
+        grad.addColorStop(1, interpolateColor('#2a5298', '#101025', factor));
+    } else {
+        // Floors 41-50: Deep Space & Cosmic Nebula
+        let factor = (progress - 0.80) / 0.20;
+        grad.addColorStop(0, interpolateColor('#050515', '#000000', factor));
+        grad.addColorStop(1, interpolateColor('#101025', '#080010', factor));
+    }
+
+    twCtx.fillStyle = grad;
+    twCtx.fillRect(0, 0, w, h);
+
+    // Render Stars (Fades in progressively from floor 20 onwards)
+    if (progress > 0.35) {
+        let globalStarAlpha = Math.min((progress - 0.35) / 0.35, 1.0);
+        twCtx.save();
+        towerStarsArray.forEach(star => {
+            star.alpha += star.twinkleSpeed;
+            let currentAlpha = (Math.sin(star.alpha) + 1) / 2 * globalStarAlpha;
+            twCtx.fillStyle = `rgba(255, 255, 255, ${currentAlpha})`;
+            twCtx.beginPath();
+            twCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            twCtx.fill();
+        });
+
+        // Shooting Stars in Near-Space (Floors 30-50)
+        if (progress > 0.6) {
+            if (!shootingStarState && Math.random() < 0.012) {
+                shootingStarState = {
+                    x: Math.random() * w,
+                    y: Math.random() * (h * 0.4),
+                    len: 30 + Math.random() * 40,
+                    speed: 8 + Math.random() * 4,
+                    alpha: 1.0
+                };
+            }
+            if (shootingStarState) {
+                twCtx.strokeStyle = `rgba(255, 255, 255, ${shootingStarState.alpha})`;
+                twCtx.lineWidth = 1.5;
+                twCtx.beginPath();
+                twCtx.moveTo(shootingStarState.x, shootingStarState.y);
+                twCtx.lineTo(shootingStarState.x - shootingStarState.len, shootingStarState.y + shootingStarState.len);
+                twCtx.stroke();
+
+                shootingStarState.x += shootingStarState.speed;
+                shootingStarState.y += shootingStarState.speed;
+                shootingStarState.alpha -= 0.03;
+                if (shootingStarState.alpha <= 0) shootingStarState = null;
+            }
+        }
+        twCtx.restore();
+    }
+
+    // Ground Foundation & Parallax Skyline (Fades out seamlessly as tower grows)
+    let parallaxOffsetY = towerCameraOffsetOffsetY * 0.25;
+    
+    if (progress < 0.45) {
+        let groundAlpha = 1.0 - (progress / 0.45);
+        twCtx.save();
+        twCtx.globalAlpha = groundAlpha;
+
+        // Background City Buildings
+        twCtx.fillStyle = 'rgba(30, 41, 59, 0.4)';
+        twCtx.fillRect(20, 240 + parallaxOffsetY, 45, 160);
+        twCtx.fillRect(90, 190 + parallaxOffsetY, 65, 210);
+        twCtx.fillRect(210, 270 + parallaxOffsetY, 55, 130);
+
+        // Ground Grass & Concrete Pedestal Foundation
+        let groundY = h - 15 + parallaxOffsetY;
+        
+        // Concrete Base
+        twCtx.fillStyle = '#7f8c8d';
+        twCtx.fillRect(0, groundY - 5, w, 20);
+        
+        // Grass Layer
+        twCtx.fillStyle = '#27ae60';
+        twCtx.fillRect(0, groundY - 10, w, 6);
+        
+        twCtx.restore();
+    }
+
+    // Moving Clouds at Mid-Altitudes (Floors 10-35)
+    if (progress > 0.15 && progress < 0.75) {
+        twCtx.save();
+        let cloudAlpha = 0.3 * (1 - Math.abs(progress - 0.45) * 2);
+        twCtx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, cloudAlpha)})`;
+        towerCloudsArray.forEach(cloud => {
+            cloud.x += cloud.speed;
+            if (cloud.x - cloud.radius > w) cloud.x = -cloud.radius;
+            twCtx.beginPath();
+            twCtx.arc(cloud.x, cloud.y + (towerCameraOffsetOffsetY * 0.1), cloud.radius, 0, Math.PI * 2);
+            twCtx.arc(cloud.x + 15, cloud.y - 8 + (towerCameraOffsetOffsetY * 0.1), cloud.radius * 0.8, 0, Math.PI * 2);
+            twCtx.fill();
+        });
+        twCtx.restore();
+    }
+}
+
+// 🏢 HELPER: STYLIZED SQUARE BUILDING FLOOR RENDERER
+function drawStylizedSquareBlock(x, y, w, h, hexColor) {
+    twCtx.save();
+    
+    // Soft Drop Shadow
+    twCtx.shadowColor = 'rgba(0, 0, 0, 0.22)';
+    twCtx.shadowBlur = 5;
+    twCtx.shadowOffsetY = 2;
+
+    // Metallic Gradient
+    let blockGrad = twCtx.createLinearGradient(x, y, x, y + h);
+    blockGrad.addColorStop(0, lightenColor(hexColor, 22));
+    blockGrad.addColorStop(0.5, hexColor);
+    blockGrad.addColorStop(1, darkenColor(hexColor, 18));
+
+    twCtx.fillStyle = blockGrad;
+    twCtx.beginPath();
+    twCtx.roundRect(x, y, w, h, 4);
+    twCtx.fill();
+
+    twCtx.shadowBlur = 0;
+    twCtx.shadowOffsetY = 0;
+
+    // Metallic Border Highlight
+    twCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    twCtx.lineWidth = 1;
+    twCtx.beginPath();
+    twCtx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 4);
+    twCtx.stroke();
+
+    // Glass Reflection
+    let glassGrad = twCtx.createLinearGradient(x, y, x + w, y + h);
+    glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+    glassGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+    glassGrad.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
+    twCtx.fillStyle = glassGrad;
+    twCtx.beginPath();
+    twCtx.roundRect(x, y, w, h / 2, [4, 4, 0, 0]);
+    twCtx.fill();
+
+    // Illuminated Windows (Symmetrical Square Grid)
+    twCtx.fillStyle = '#fffae6';
+    let winSize = 7, winGap = 5;
+    let startX = x + 8, startY = y + 8;
+    
+    // 2x2 Window Matrix
+    twCtx.fillRect(startX, startY, winSize, winSize);
+    twCtx.fillRect(startX + winSize + winGap + 6, startY, winSize, winSize);
+    twCtx.fillRect(startX, startY + winSize + winGap, winSize, winSize);
+    twCtx.fillRect(startX + winSize + winGap + 6, startY + winSize + winGap, winSize, winSize);
+
+    twCtx.restore();
+}
+
+// 💥 HELPER: LANDING DUST PARTICLES
+function createLandingDustParticles(x, y) {
+    for (let i = 0; i < 10; i++) {
+        towerParticlesArray.push({
+            x: x + Math.random() * 40,
+            y: y,
+            vx: (Math.random() - 0.5) * 3.5,
+            vy: -Math.random() * 2 - 0.5,
+            size: Math.random() * 3 + 1,
+            alpha: 1.0
+        });
+    }
+}
+
 function frameUpdateTowerBloxx() {
     if (!towerCanvasElement || !twCtx) return;
     
     twCtx.clearRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
     
-    // Sky background & City skyline
-    twCtx.fillStyle = '#70c5ce';
-    twCtx.fillRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
-    twCtx.fillStyle = 'rgba(255, 255, 255, 0.12)';
-    twCtx.fillRect(30, 220, 50, 180);
-    twCtx.fillRect(110, 160, 75, 240);
-    twCtx.fillRect(230, 250, 60, 150);
+    // 1. Render 50-Floor Smooth Environment Progression
+    render50FloorAtmosphere(towerScoreCounter);
     
-    // Camera scroll & vibration effects
+    // 2. Camera Viewport & Screen Shake Matrix
     twCtx.save();
     twCtx.translate(towerVisualVibrationScaleX, towerCameraOffsetOffsetY);
     
@@ -3940,63 +4166,64 @@ function frameUpdateTowerBloxx() {
         if (Math.abs(towerVisualVibrationScaleX) < 0.2) towerVisualVibrationScaleX = 0;
     }
     
-    // Render placed tower blocks
+    // 3. Render Placed Tower Blocks
     activeTowerBlocksArray.forEach(block => {
-        twCtx.fillStyle = block.color;
-        twCtx.beginPath();
-        twCtx.roundRect(block.x, block.y, block.w, block.h, 4);
-        twCtx.fill();
-        
-        twCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        twCtx.fillRect(block.x + 8, block.y + 6, 8, 14);
-        twCtx.fillRect(block.x + block.w - 16, block.y + 6, 8, 14);
+        drawStylizedSquareBlock(block.x, block.y, block.w, block.h, block.color);
     });
+
+    // 4. Update and Render Dust Particles
+    for (let i = towerParticlesArray.length - 1; i >= 0; i--) {
+        let p = towerParticlesArray[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.04;
+        if (p.alpha <= 0) {
+            towerParticlesArray.splice(i, 1);
+            continue;
+        }
+        twCtx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+        twCtx.beginPath();
+        twCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        twCtx.fill();
+    }
     
     twCtx.restore();
     
-    // ⛓️ INFINITE NON-STOPPING PENDULUM SWING LOGIC
+    // 5. ⛓️ INFINITE PENDULUM SWING LOGIC (PHYSICS UNTOUCHED)
     if (!isTowerBlockDropping) {
-        // Continuous Trigonometric Oscillation (Kabhi nahi rukega)
         currentSwingingBlock.swingTimer += currentSwingingBlock.speed;
         currentSwingingBlock.angle = Math.sin(currentSwingingBlock.swingTimer) * currentSwingingBlock.maxAngle;
         
-        // Exact Arc Swing Path Coordinates
         currentSwingingBlock.x = currentSwingingBlock.pivotX + Math.sin(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.w / 2);
         currentSwingingBlock.y = currentSwingingBlock.pivotY + Math.cos(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.h / 2);
         
-        // Draw Swinging Chain (Joint Links)
         let chainAnchorX = currentSwingingBlock.pivotX;
         let chainAnchorY = currentSwingingBlock.pivotY;
         let blockCenterX = currentSwingingBlock.x + (currentSwingingBlock.w / 2);
         let blockCenterY = currentSwingingBlock.y;
         
-        twCtx.strokeStyle = '#2c3e50';
-        twCtx.lineWidth = 3;
+        // Draw Metallic Crane Rope
+        twCtx.strokeStyle = '#34495e';
+        twCtx.lineWidth = 2.5;
         twCtx.beginPath();
         twCtx.moveTo(chainAnchorX, chainAnchorY);
         twCtx.lineTo(blockCenterX, blockCenterY);
         twCtx.stroke();
         
-        // Draw Chain Joint Ring
+        // Hook Ring
         twCtx.fillStyle = '#f1c40f';
         twCtx.beginPath();
         twCtx.arc(blockCenterX, blockCenterY, 4, 0, Math.PI * 2);
         twCtx.fill();
         
-        // Draw Swinging Block
-        twCtx.fillStyle = currentSwingingBlock.color;
-        twCtx.beginPath();
-        twCtx.roundRect(currentSwingingBlock.x, currentSwingingBlock.y, currentSwingingBlock.w, currentSwingingBlock.h, 4);
-        twCtx.fill();
+        // Draw Current Swinging Square Block
+        drawStylizedSquareBlock(currentSwingingBlock.x, currentSwingingBlock.y, currentSwingingBlock.w, currentSwingingBlock.h, currentSwingingBlock.color);
         
     } else {
-        // ⛓️ FREE FALL DROP LOGIC
+        // 6. ⛓️ FREE FALL DROP & COLLISION LOGIC (PHYSICS UNTOUCHED)
         currentSwingingBlock.dropY += currentSwingingBlock.dropSpeedY;
         
-        twCtx.fillStyle = currentSwingingBlock.color;
-        twCtx.beginPath();
-        twCtx.roundRect(currentSwingingBlock.dropX, currentSwingingBlock.dropY - towerCameraOffsetOffsetY, currentSwingingBlock.w, currentSwingingBlock.h, 4);
-        twCtx.fill();
+        drawStylizedSquareBlock(currentSwingingBlock.dropX, currentSwingingBlock.dropY - towerCameraOffsetOffsetY, currentSwingingBlock.w, currentSwingingBlock.h, currentSwingingBlock.color);
         
         let surfaceAnchorBaseBlock = activeTowerBlocksArray[activeTowerBlocksArray.length - 1];
         let structuralTargetLandingY = surfaceAnchorBaseBlock.y;
@@ -4012,7 +4239,10 @@ function frameUpdateTowerBloxx() {
             if (structuralOffsetErrorX <= maximumAllowableMarginWidth) {
                 // Successful Stack
                 towerScoreCounter++;
-                const blockSpectrumColors = ['#f39c12', '#9b59b6', '#e74c3c', '#3498db', '#1abc9c'];
+                towerVisualVibrationScaleX = 2.5; // Smooth camera landing bump
+                createLandingDustParticles(blockContactX, structuralTargetLandingY - towerCameraOffsetOffsetY);
+
+                const blockSpectrumColors = ['#f39c12', '#9b59b6', '#e74c3c', '#3498db', '#1abc9c', '#e67e22'];
                 let chosenColorHex = blockSpectrumColors[towerScoreCounter % blockSpectrumColors.length];
                 
                 activeTowerBlocksArray.push({
@@ -4049,7 +4279,7 @@ function frameUpdateTowerBloxx() {
                 }
 
                 // Reset Swinging Block for next turn
-                currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2; // Random phase start
+                currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2;
                 currentSwingingBlock.speed = 0.03 + (currentTowerLevelState * 0.008);
                 
             } else {
@@ -4063,11 +4293,49 @@ function frameUpdateTowerBloxx() {
         }
     }
     
-    // Score HUD Display
-    twCtx.fillStyle = '#2c3e50';
-    twCtx.font = 'bold 13px Segoe UI';
+    // 7. Glassmorphism HUD Display
+    twCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    twCtx.beginPath();
+    twCtx.roundRect(10, 10, 140, 26, 6);
+    twCtx.fill();
+    
+    twCtx.fillStyle = '#1e293b';
+    twCtx.font = 'bold 12px Segoe UI, sans-serif';
     twCtx.textAlign = 'left';
-    twCtx.fillText(`Lv.${currentTowerLevelState} | Stack: ${towerScoreCounter}`, 15, 25);
+    twCtx.fillText(`Lv.${currentTowerLevelState} | Stack: ${towerScoreCounter}`, 18, 27);
+}
+
+// 🎨 UTILITY COLOR UTILITIES FOR DYNAMIC GRADIENTS
+function interpolateColor(color1, color2, factor) {
+    let c1 = hexToRgb(color1);
+    let c2 = hexToRgb(color2);
+    let r = Math.round(c1.r + factor * (c2.r - c1.r));
+    let g = Math.round(c1.g + factor * (c2.g - c1.g));
+    let b = Math.round(c1.b + factor * (c2.b - c1.b));
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+    let num = parseInt(hex, 16);
+    return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function lightenColor(color, percent) {
+    let rgb = hexToRgb(color);
+    let r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * (percent / 100)));
+    let g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * (percent / 100)));
+    let b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * (percent / 100)));
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+function darkenColor(color, percent) {
+    let rgb = hexToRgb(color);
+    let r = Math.max(0, Math.floor(rgb.r * (1 - percent / 100)));
+    let g = Math.max(0, Math.floor(rgb.g * (1 - percent / 100)));
+    let b = Math.max(0, Math.floor(rgb.b * (1 - percent / 100)));
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
 // ===================================================================
