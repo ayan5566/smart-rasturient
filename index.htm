@@ -3871,10 +3871,9 @@ let towerVisualVibrationScaleX = 0;
 
 function initTowerBloxxGame() {
     clearInterval(loopTimerInstance);
-    if(!towerCanvasElement) towerCanvasElement = document.getElementById('towerCanvas');
-    if(!twCtx) twCtx = towerCanvasElement.getContext('2d');
+    if (!towerCanvasElement) towerCanvasElement = document.getElementById('towerCanvas');
+    if (!twCtx) twCtx = towerCanvasElement.getContext('2d');
     
-    // Engine states tracking parameters reset resets
     towerScoreCounter = 0;
     currentTowerLevelState = 1;
     isTowerBlockDropping = false;
@@ -3882,121 +3881,141 @@ function initTowerBloxxGame() {
     towerVisualVibrationScaleX = 0;
     activeTowerBlocksArray = [];
     
-    // Level parameter calculations base variables scaling settings
-    let targetSpeedOffset = 2.0 + (currentTowerLevelState * 0.6);
-    
-    // Baseline anchor floor layer initialization
+    // Baseline anchor floor
     activeTowerBlocksArray.push({
         x: (towerCanvasElement.width / 2) - 30,
         y: towerCanvasElement.height - 40,
         w: 60, h: 30, color: '#2c3e50'
     });
     
-    // Dynamic swinging crane hook setup configurations
+    // ⛓️ PENDULUM SWING CONFIGURATION
+    let chainLength = 110; 
+    let swingSpeed = 0.02 + (currentTowerLevelState * 0.005);
+    
     currentSwingingBlock = {
-        x: 0, y: 75, w: 50, h: 26,
-        angle: 0, speed: targetSpeedOffset,
+        pivotX: towerCanvasElement.width / 2, // Anchor point at top center
+        pivotY: 0,
+        length: chainLength,
+        angle: Math.PI / 4,                  // Initial angle (45 degrees)
+        angleVelocity: 0,
+        angleAccel: 0,
+        maxAngle: Math.PI / 3,               // Swing range constraint
+        speed: swingSpeed,
+        w: 50, h: 26,
+        x: 0, y: 0,
         color: '#ffd700'
     };
     
-    // Mobile tap touch interaction overlay capture mapping pointer
+    // Mobile / Desktop Click Interaction
     towerCanvasElement.onclick = (e) => {
         e.preventDefault();
-        if(!isTowerBlockDropping && activeGameMode === 'TOWER') {
+        if (!isTowerBlockDropping && activeGameMode === 'TOWER') {
             isTowerBlockDropping = true;
-            currentSwingingBlock.dropSpeedY = 6.5; // Steady dropping physics speed vector
+            // Calculate starting release position from current pendulum position
+            currentSwingingBlock.dropX = currentSwingingBlock.x;
+            currentSwingingBlock.dropY = currentSwingingBlock.y;
+            currentSwingingBlock.dropSpeedY = 6.5;
         }
     };
     
     loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
 }
-
 function frameUpdateTowerBloxx() {
     if (!towerCanvasElement || !twCtx) return;
     
-    // Visual processing stage cleaning pipeline
     twCtx.clearRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
     
-    // Sky gradient dynamic backgrounds rendering loop styles
+    // Sky background & City skyline
     twCtx.fillStyle = '#70c5ce';
     twCtx.fillRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
-    
-    // Visual background city shapes landscape graphics
     twCtx.fillStyle = 'rgba(255, 255, 255, 0.12)';
     twCtx.fillRect(30, 220, 50, 180);
     twCtx.fillRect(110, 160, 75, 240);
     twCtx.fillRect(230, 250, 60, 150);
     
-    // Apply camera offsets shifts smoothly for tall buildings rendering matrix mapping
+    // Camera scroll & vibration effects
     twCtx.save();
     twCtx.translate(towerVisualVibrationScaleX, towerCameraOffsetOffsetY);
     
     if (towerVisualVibrationScaleX !== 0) {
-        towerVisualVibrationScaleX *= -0.8; // Decrement oscillations factors
+        towerVisualVibrationScaleX *= -0.8;
         if (Math.abs(towerVisualVibrationScaleX) < 0.2) towerVisualVibrationScaleX = 0;
     }
     
-    // Render the active tower pieces sequence arrays data streams
+    // Render placed tower blocks
     activeTowerBlocksArray.forEach(block => {
         twCtx.fillStyle = block.color;
         twCtx.beginPath();
         twCtx.roundRect(block.x, block.y, block.w, block.h, 4);
         twCtx.fill();
         
-        // Window segments grid decoration styles rendering code
         twCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
         twCtx.fillRect(block.x + 8, block.y + 6, 8, 14);
         twCtx.fillRect(block.x + block.w - 16, block.y + 6, 8, 14);
     });
     
-    twCtx.restore(); // Clear structural camera transformations frames
+    twCtx.restore();
     
-    // Crane rope string calculation geometry mapping coordinates layout styles
-    twCtx.strokeStyle = '#333333';
-    twCtx.lineWidth = 2.5;
-    twCtx.beginPath();
-    twCtx.moveTo(towerCanvasElement.width / 2, 0);
-    
+    // ⛓️ PENDULUM MATHEMATICS AND SWING LOGIC
     if (!isTowerBlockDropping) {
-        // Horizontal oscillatory trigonometry calculation loops
-        currentSwingingBlock.angle += currentSwingingBlock.speed * 0.015;
-        let rangeExtentX = (towerCanvasElement.width / 2) - (currentSwingingBlock.w / 2);
-        currentSwingingBlock.x = (towerCanvasElement.width / 2 - currentSwingingBlock.w / 2) + Math.sin(currentSwingingBlock.angle) * rangeExtentX;
+        // Calculate physics acceleration based on gravity & current angle
+        currentSwingingBlock.angleAccel = -1 * (0.005) * Math.sin(currentSwingingBlock.angle);
+        currentSwingingBlock.angleVelocity += currentSwingingBlock.angleAccel;
+        currentSwingingBlock.angle += currentSwingingBlock.angleVelocity * (currentSwingingBlock.speed * 40);
+        currentSwingingBlock.angleVelocity *= 0.99; // Slight air resistance damping
         
-        twCtx.lineTo(currentSwingingBlock.x + (currentSwingingBlock.w / 2), currentSwingingBlock.y);
+        // Trigonometric coordinate mapping (Arc Swing Path)
+        currentSwingingBlock.x = currentSwingingBlock.pivotX + Math.sin(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.w / 2);
+        currentSwingingBlock.y = currentSwingingBlock.pivotY + Math.cos(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.h / 2);
+        
+        // Draw Swinging Chain (Joint Links)
+        let chainAnchorX = currentSwingingBlock.pivotX;
+        let chainAnchorY = currentSwingingBlock.pivotY;
+        let blockCenterX = currentSwingingBlock.x + (currentSwingingBlock.w / 2);
+        let blockCenterY = currentSwingingBlock.y;
+        
+        twCtx.strokeStyle = '#2c3e50';
+        twCtx.lineWidth = 3;
+        twCtx.beginPath();
+        twCtx.moveTo(chainAnchorX, chainAnchorY);
+        twCtx.lineTo(blockCenterX, blockCenterY);
         twCtx.stroke();
         
-        // Draw the active swinging block parameters
+        // Draw Chain Joint Ring
+        twCtx.fillStyle = '#f1c40f';
+        twCtx.beginPath();
+        twCtx.arc(blockCenterX, blockCenterY, 4, 0, Math.PI * 2);
+        twCtx.fill();
+        
+        // Draw Swinging Block
         twCtx.fillStyle = currentSwingingBlock.color;
         twCtx.beginPath();
         twCtx.roundRect(currentSwingingBlock.x, currentSwingingBlock.y, currentSwingingBlock.w, currentSwingingBlock.h, 4);
         twCtx.fill();
-    } else {
-        // Fall down velocity increments translation
-        currentSwingingBlock.y += currentSwingingBlock.dropSpeedY;
         
-        // Render the isolated free-falling container card block data
+    } else {
+        // ⛓️ FREE FALL DROP LOGIC
+        currentSwingingBlock.dropY += currentSwingingBlock.dropSpeedY;
+        
         twCtx.fillStyle = currentSwingingBlock.color;
         twCtx.beginPath();
-        twCtx.roundRect(currentSwingingBlock.x, currentSwingingBlock.y - towerCameraOffsetOffsetY, currentSwingingBlock.w, currentSwingingBlock.h, 4);
+        twCtx.roundRect(currentSwingingBlock.dropX, currentSwingingBlock.dropY - towerCameraOffsetOffsetY, currentSwingingBlock.w, currentSwingingBlock.h, 4);
         twCtx.fill();
         
         let surfaceAnchorBaseBlock = activeTowerBlocksArray[activeTowerBlocksArray.length - 1];
         let structuralTargetLandingY = surfaceAnchorBaseBlock.y;
         
-        // Collision Detection intersection boundary parameters framework check logic
-        if ((currentSwingingBlock.y + currentSwingingBlock.h - towerCameraOffsetOffsetY) >= structuralTargetLandingY) {
+        // Collision / Landing Check
+        if ((currentSwingingBlock.dropY + currentSwingingBlock.h - towerCameraOffsetOffsetY) >= structuralTargetLandingY) {
             isTowerBlockDropping = false;
-            let blockContactX = currentSwingingBlock.x;
+            let blockContactX = currentSwingingBlock.dropX;
             
             let structuralOffsetErrorX = Math.abs(blockContactX - surfaceAnchorBaseBlock.x);
-            let maximumAllowableMarginWidth = surfaceAnchorBaseBlock.w * 0.70; // 70% stack balance boundary parameters rules limits
+            let maximumAllowableMarginWidth = surfaceAnchorBaseBlock.w * 0.70;
             
             if (structuralOffsetErrorX <= maximumAllowableMarginWidth) {
-                // Stack landing captured successfully sequence
+                // Successful Stack
                 towerScoreCounter++;
-                
-                // Color spectrum shifts loop based on altitude stack height parameters
                 const blockSpectrumColors = ['#f39c12', '#9b59b6', '#e74c3c', '#3498db', '#1abc9c'];
                 let chosenColorHex = blockSpectrumColors[towerScoreCounter % blockSpectrumColors.length];
                 
@@ -4008,22 +4027,20 @@ function frameUpdateTowerBloxx() {
                     color: chosenColorHex
                 });
                 
-                // Camera scroll mechanics adjustment shift layer
                 if (activeTowerBlocksArray.length > 4) {
                     towerCameraOffsetOffsetY += currentSwingingBlock.h;
                 }
                 
-                // Milestone discount check link aligned straight onto Space Shooter rules system specifications
+                // Discount Check
                 if (currentTowerLevelState === (parseInt(rules.towerTar) || 3)) {
                     if (typeof triggerRewardCoupon === 'function') {
                         let earnedPercent = parseInt(rules.towerDisc) || 0;
                         triggerRewardCoupon(earnedPercent);
-                        console.log(`🏢 Tower Level ${currentTowerLevelState} Cleared! Applied ${earnedPercent}% Coupon.`);
                     }
                 }
                 
-                // Level scale progression mapping blocks context loop router
-                if (towerScoreCounter % 3 === 0) { // Every 3 accurate landings upgrades level difficulty values
+                // Level Up Progression
+                if (towerScoreCounter % 3 === 0) {
                     if (currentTowerLevelState < 5) {
                         currentTowerLevelState++;
                         showOnScreenNotification(`🏢 Level Up! Advanced to Tower Level ${currentTowerLevelState}`);
@@ -4035,15 +4052,14 @@ function frameUpdateTowerBloxx() {
                     }
                 }
                 
-                // Reset fresh dangling block configurations values data maps array
-                let currentLevelSpeedOffset = 2.0 + (currentTowerLevelState * 0.6);
-                currentSwingingBlock.y = 75;
-                currentSwingingBlock.speed = currentLevelSpeedOffset;
-                currentSwingingBlock.angle = Math.random() * Math.PI;
+                // Reset Pendulum for next block
+                currentSwingingBlock.angle = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4);
+                currentSwingingBlock.angleVelocity = 0;
+                currentSwingingBlock.speed = 0.02 + (currentTowerLevelState * 0.005);
                 
             } else {
-                // Collision alignment collapse crash logic execution pipeline path
-                towerVisualVibrationScaleX = 14; // Triggers structural shaking effect simulation
+                // Collapse / Crash Logic
+                towerVisualVibrationScaleX = 14;
                 setTimeout(() => {
                     finalizeFailedRun("💥 Tower Collapsed! Stack alignment balance failure.");
                 }, 300);
@@ -4052,7 +4068,7 @@ function frameUpdateTowerBloxx() {
         }
     }
     
-    // Realtime scoreboard dashboard metric layout overlays
+    // Score HUD Display
     twCtx.fillStyle = '#2c3e50';
     twCtx.font = 'bold 13px Segoe UI';
     twCtx.textAlign = 'left';
