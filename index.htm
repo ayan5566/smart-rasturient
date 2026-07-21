@@ -586,10 +586,10 @@
                 <canvas id="brickCanvas" width="320" height="380" style="background:#0a0b10;"></canvas>
                 <canvas id="towerCanvas" width="320" height="400"></canvas> <!-- 🔥 BASELINE FIX: Sirf ye naya tag add karna hai -->
 
-<!-- Mobile Controls Pad for Brick Breaker -->
+<!-- Mobile Controls Pad for Brick Breaker (Optimized) -->
 <div class="control-pad" id="brickControls">
-    <button class="ctrl-btn" onmousedown="brickPaddleDir=-7" onmouseup="brickPaddleDir=0" ontouchstart="brickPaddleDir=-7" ontouchend="brickPaddleDir=0">◀ Left</button>
-    <button class="ctrl-btn" onmousedown="brickPaddleDir=7" onmouseup="brickPaddleDir=0" ontouchstart="brickPaddleDir=7" ontouchend="brickPaddleDir=0">Right ▶</button>
+    <button class="ctrl-btn" id="brickLeftBtn">◀ Left</button>
+    <button class="ctrl-btn" id="brickRightBtn">Right ▶</button>
 </div>
 
                 <div class="control-pad" id="spaceControls">
@@ -3523,54 +3523,74 @@ function initializeCustomerRealtimeTracker() {
         .subscribe();
 }
 // ===================================================================
-// ⚡ INTERNAL DYNAMIC INJECTOR: ELIMINATES INTERNAL MOBILE INPUT LAG
+// ⚡ HIGH-PERFORMANCE ARCADE INPUT ENGINE (ZERO-FREEZE TOUCH HANDLER)
 // ===================================================================
+let isBrickControlsBound = false;
+
 function bindAirtightArcadeControls() {
+    // 🧱 BRICK BREAKER ULTRA-FAST INPUT BINDINGS
+    const brickLeftBtn = document.getElementById('brickLeftBtn');
+    const brickRightBtn = document.getElementById('brickRightBtn');
+
+    const bindTouchEvents = (element, dirValue) => {
+        if (!element) return;
+
+        // Prevent ghost clicks and touch emulation lag on Android
+        const handleStart = (e) => {
+            if (e.cancelable) e.preventDefault();
+            brickPaddleDir = dirValue;
+        };
+
+        const handleEnd = (e) => {
+            if (e.cancelable) e.preventDefault();
+            if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) {
+                brickPaddleDir = 0;
+            }
+        };
+
+        element.addEventListener('touchstart', handleStart, { passive: false });
+        element.addEventListener('touchend', handleEnd, { passive: false });
+        element.addEventListener('touchcancel', handleEnd, { passive: false });
+        
+        element.addEventListener('mousedown', (e) => { brickPaddleDir = dirValue; });
+        element.addEventListener('mouseup', (e) => { 
+            if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+        });
+        element.addEventListener('mouseleave', (e) => { 
+            if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+        });
+    };
+
+    if (brickLeftBtn) bindTouchEvents(brickLeftBtn, -7);
+    if (brickRightBtn) bindTouchEvents(brickRightBtn, 7);
+
+    // 🚀 SPACE SHOOTER CONTROLS
     const spaceLeftBtn = document.querySelector("#spaceControls button:first-child");
     const spaceRightBtn = document.querySelector("#spaceControls button:last-child");
 
-    // 🚀 SPACE SHOOTER LEFT INPUT MECHANICS
     if (spaceLeftBtn) {
-        spaceLeftBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault(); 
-            spaceMoveDir = -6;
-        }, { passive: false });
-
-        spaceLeftBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            spaceMoveDir = 0;
-        }, { passive: false });
+        spaceLeftBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = -6; }, { passive: false });
+        spaceLeftBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
     }
-
-    // 🚀 SPACE SHOOTER RIGHT INPUT MECHANICS
     if (spaceRightBtn) {
-        spaceRightBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault(); 
-            spaceMoveDir = 6;
-        }, { passive: false });
-
-        spaceRightBtn.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            spaceMoveDir = 0;
-        }, { passive: false });
+        spaceRightBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 6; }, { passive: false });
+        spaceRightBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
     }
 
-    // 🐍 CLASSIC SNAKE DIRECTION CONTEXT INTERCEPTOR
+    // 🐍 SNAKE CONTROLS
     document.querySelectorAll('.snk-btn').forEach(btn => {
         if (btn) {
             const clickAttr = btn.getAttribute('onclick');
             if (clickAttr && clickAttr.includes('setSnakeDirection')) {
                 const directionToken = clickAttr.match(/'([^']+)'/)[1];
-
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault(); 
+                btn.addEventListener('touchstart', (e) => {
+                    if (e.cancelable) e.preventDefault();
                     setSnakeDirection(directionToken);
                 }, { passive: false });
             }
         }
     });
 }
-
 // 🔥 INJECTOR HOOK TRAP: Bind arcade touch listeners right into your initialization flow
 bindAirtightArcadeControls();
 // ===================================================================
@@ -4824,7 +4844,8 @@ let totalBrickPacksDataMatrix = {
     }
 };
 
-// 1️⃣ INITIALIZER CONTEXT: Setup High-Precision Grid Dimensions
+let isBrickKeyboardBound = false;
+
 function initBrickBreakerGame() {
     clearInterval(loopTimerInstance);
     const bCanvas = document.getElementById('brickCanvas');
@@ -4879,32 +4900,37 @@ function initBrickBreakerGame() {
         }
     }
     
-    window.addEventListener('keydown', (e) => {
-        if(activeGameMode === 'BRICK') {
-            if(e.key === 'ArrowLeft') brickPaddleDir = -7;
-            if(e.key === 'ArrowRight') brickPaddleDir = 7;
-        }
-    });
-    window.addEventListener('keyup', (e) => {
-        if(activeGameMode === 'BRICK') {
-            if((e.key === 'ArrowLeft' && brickPaddleDir < 0) || (e.key === 'ArrowRight' && brickPaddleDir > 0)) brickPaddleDir = 0;
-        }
-    });
+    // Bind Keyboard Listeners ONCE only to prevent duplicate handler memory leaks
+    if (!isBrickKeyboardBound) {
+        window.addEventListener('keydown', (e) => {
+            if(activeGameMode === 'BRICK') {
+                if(e.key === 'ArrowLeft') brickPaddleDir = -7;
+                if(e.key === 'ArrowRight') brickPaddleDir = 7;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if(activeGameMode === 'BRICK') {
+                if((e.key === 'ArrowLeft' && brickPaddleDir < 0) || (e.key === 'ArrowRight' && brickPaddleDir > 0)) brickPaddleDir = 0;
+            }
+        });
+        isBrickKeyboardBound = true;
+    }
 
     loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); 
 }
-
-// 2️⃣ CORE ENGINE TICK ENGINE: Performs Physics Loops & Anti-Trap Checks
+        
+// 2️⃣ HIGH-PERFORMANCE RENDER TICK ENGINE (60 FPS STABLE)
 function frameUpdateBrickBreaker() {
     if (!brickCanvasElement) brickCanvasElement = document.getElementById('brickCanvas');
-    if (!brickCanvasElement) return;
-    if (!brCtx) brCtx = brickCanvasElement.getContext('2d');
+    if (!brickCanvasElement || !brCtx) return;
     
     brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
     
+    // Background
     brCtx.fillStyle = '#0f111a';
     brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
     
+    // Subtle background grid
     brCtx.strokeStyle = 'rgba(0, 210, 211, 0.04)';
     brCtx.lineWidth = 1;
     let gridSpacer = 16; 
@@ -4915,10 +4941,12 @@ function frameUpdateBrickBreaker() {
         brCtx.beginPath(); brCtx.moveTo(0, y); brCtx.lineTo(brickCanvasElement.width, y); brCtx.stroke();
     }
     
+    // Paddle movement
     bPaddle.x += brickPaddleDir;
     if(bPaddle.x < 0) bPaddle.x = 0;
     if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
     
+    // Ball launch tracking
     if (!isBallLaunched) {
         if (brickPaddleDir !== 0) {
             isBallLaunched = true;
@@ -4933,46 +4961,46 @@ function frameUpdateBrickBreaker() {
         bBall.y += bBall.dy;
     }
     
+    // Draw Paddle (GPU Shadow applied ONLY when active to save GPU cycles)
     brCtx.fillStyle = '#ffffff';
-    brCtx.shadowColor = '#00d2d3';
-    brCtx.shadowBlur = isSuperBallActive ? 12 : 4;
-    brCtx.beginPath(); brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6); brCtx.fill();
-    brCtx.shadowBlur = 0;
+    if (isSuperBallActive) {
+        brCtx.shadowColor = '#00d2d3';
+        brCtx.shadowBlur = 12;
+    }
+    brCtx.beginPath(); 
+    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6); 
+    brCtx.fill();
+    if (isSuperBallActive) {
+        brCtx.shadowBlur = 0;
+    }
     
+    // Draw Ball
     brCtx.fillStyle = isSuperBallActive ? '#00d2d3' : '#ffffff';
-    brCtx.beginPath(); brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2); brCtx.fill(); brCtx.closePath();
+    brCtx.beginPath(); 
+    brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2); 
+    brCtx.fill(); 
     
-    // 🧱 ANTI-TRAP WALL BOUNCE PHYSICS (FIXED: Prevents Infinite Vertical Loop)
+    // Wall bounce logic
     if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) {
         bBall.dx *= -1;
-        // Agar ball wall par seedhi fas jaye ($dx$ zero ke close ho), toh thoda horizontal push do
-        if(Math.abs(bBall.dx) < 0.5) {
-            bBall.dx = bBall.dx < 0 ? -1.5 : 1.5;
-        }
+        if(Math.abs(bBall.dx) < 0.5) bBall.dx = bBall.dx < 0 ? -1.5 : 1.5;
     }
     if(bBall.y - bBall.r < 40) {
         bBall.dy *= -1;
-        // Anti-locking nudge: De-linearize vertical locks upon top ceiling contact
-        if(Math.abs(bBall.dx) < 0.3) {
-            bBall.dx = Math.random() > 0.5 ? 1.0 : -1.0;
-        }
+        if(Math.abs(bBall.dx) < 0.3) bBall.dx = Math.random() > 0.5 ? 1.0 : -1.0;
     }
     
-    // Paddle Contacts
+    // Paddle contact logic
     if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
         if(bBall.dy > 0) {
             let relativeFactor = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
-            // Dynamic Reflection Vector calculation based on contact offset
             bBall.dx = relativeFactor * (bBall.baseSpeed + 1.2);
             bBall.dy = -Math.abs(bBall.baseSpeed);
-            
-            // Core Fallback safety: ensures ball never rebounds strictly at 90 degrees
-            if(Math.abs(bBall.dx) < 0.2) {
-                bBall.dx = relativeFactor < 0 ? -0.8 : 0.8;
-            }
+            if(Math.abs(bBall.dx) < 0.2) bBall.dx = relativeFactor < 0 ? -0.8 : 0.8;
         }
     }
     
+    // Life lost check
     if(bBall.y + bBall.r > brickCanvasElement.height) {
         gameHeartsRemaining--;
         isBallLaunched = false;
@@ -4984,23 +5012,30 @@ function frameUpdateBrickBreaker() {
         }
     }
     
-    activeDropsArray.forEach((drop, dIndex) => {
+    // Optimized Drops Processing (Reverse Loop to prevent GC spikes)
+    for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
+        let drop = activeDropsArray[dIndex];
         drop.y += 2.5;
         brCtx.fillStyle = drop.type === 'GROW' ? '#ff4d4d' : '#2ecc71';
         brCtx.beginPath(); brCtx.arc(drop.x, drop.y, 8, 0, Math.PI * 2); brCtx.fill();
-        brCtx.fillStyle = '#ffffff'; brCtx.font = "bold 12px Arial"; brCtx.textAlign = "center";
+        
+        brCtx.fillStyle = '#ffffff'; 
+        brCtx.font = "bold 12px Arial"; 
+        brCtx.textAlign = "center";
         brCtx.fillText("+", drop.x, drop.y + 4);
         
         if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
             if(drop.type === 'GROW') { bPaddle.w = 130; setTimeout(() => { bPaddle.w = 90; }, 8000); }
             else if(drop.type === 'BALL') { bBall.r = 10; setTimeout(() => { bBall.r = 6; }, 8000); }
             activeDropsArray.splice(dIndex, 1);
+        } else if(drop.y > brickCanvasElement.height) {
+            activeDropsArray.splice(dIndex, 1);
         }
-        if(drop.y > brickCanvasElement.height) activeDropsArray.splice(dIndex, 1);
-    });
+    }
     
     let remainingActiveBricksCount = 0;
     
+    // Brick Collision and Drawing
     activeBricksArray.forEach(br => {
         if(br.status > 0) {
             if (br.special !== 'HIDDEN') remainingActiveBricksCount++;
@@ -5013,10 +5048,14 @@ function frameUpdateBrickBreaker() {
             }
             
             brCtx.fillStyle = br.color;
-            brCtx.beginPath(); brCtx.roundRect(br.x, br.y, br.w, br.h, 3); brCtx.fill();
+            brCtx.beginPath(); 
+            brCtx.roundRect(br.x, br.y, br.w, br.h, 3); 
+            brCtx.fill();
             
             if(br.special === 'TNT') {
-                brCtx.fillStyle = 'rgba(0,0,0,0.6)'; brCtx.font = "9px Arial"; brCtx.textAlign = "center";
+                brCtx.fillStyle = 'rgba(0,0,0,0.6)'; 
+                brCtx.font = "9px Arial"; 
+                brCtx.textAlign = "center";
                 brCtx.fillText("TNT", br.x + (br.w / 2), br.y + 9);
             }
             
@@ -5059,21 +5098,18 @@ function frameUpdateBrickBreaker() {
         isSuperBallActive = false;
     }
     
-   // 🏆 STAGE EXPANSION TRIGGER: Space Shooter Style Target Level Check
+    // Stage clearance verification
     if (remainingActiveBricksCount === 0 && isBallLaunched) {
         clearInterval(loopTimerInstance);
-        isBallLaunched = false; // Guard safety reset
+        isBallLaunched = false; 
         
-        // Agar clear kiya hua level, admin ke set kiye hue brickTar level se match karta hai
         if (currentActiveLevelIndex === (parseInt(rules.brickTar) || 3)) {
             if (typeof triggerRewardCoupon === 'function') {
                 let earnedPercent = parseInt(rules.brickDisc) || 0;
                 triggerRewardCoupon(earnedPercent);
-                console.log(`🎯 Target Level ${rules.brickTar} Hit! Applied ${earnedPercent}% discount.`);
             }
         }
         
-        // Progression to next stage
         if (currentActiveLevelIndex < 5) {
             currentActiveLevelIndex++;
             initBrickBreakerGame();
@@ -5085,6 +5121,7 @@ function frameUpdateBrickBreaker() {
         return;
     }
     
+    // HUD Header Display Rendering
     brCtx.fillStyle = "#16192b";
     brCtx.fillRect(0, 0, brickCanvasElement.width, 40);
     
