@@ -3888,18 +3888,16 @@ function initTowerBloxxGame() {
         w: 60, h: 30, color: '#2c3e50'
     });
     
-    // ⛓️ PENDULUM SWING CONFIGURATION
+    // ⛓️ PERMANENT PENDULUM SWING CONFIGURATION
     let chainLength = 110; 
-    let swingSpeed = 0.02 + (currentTowerLevelState * 0.005);
+    let swingSpeed = 0.03 + (currentTowerLevelState * 0.008); // Steady speed per level
     
     currentSwingingBlock = {
-        pivotX: towerCanvasElement.width / 2, // Anchor point at top center
+        pivotX: towerCanvasElement.width / 2, // Center anchor point
         pivotY: 0,
         length: chainLength,
-        angle: Math.PI / 4,                  // Initial angle (45 degrees)
-        angleVelocity: 0,
-        angleAccel: 0,
-        maxAngle: Math.PI / 3,               // Swing range constraint
+        maxAngle: Math.PI / 3.5,             // Maximum swing angle arc (around 50 deg)
+        swingTimer: 0,                      // Time accumulator for continuous movement
         speed: swingSpeed,
         w: 50, h: 26,
         x: 0, y: 0,
@@ -3956,15 +3954,13 @@ function frameUpdateTowerBloxx() {
     
     twCtx.restore();
     
-    // ⛓️ PENDULUM MATHEMATICS AND SWING LOGIC
+    // ⛓️ INFINITE NON-STOPPING PENDULUM SWING LOGIC
     if (!isTowerBlockDropping) {
-        // Calculate physics acceleration based on gravity & current angle
-        currentSwingingBlock.angleAccel = -1 * (0.005) * Math.sin(currentSwingingBlock.angle);
-        currentSwingingBlock.angleVelocity += currentSwingingBlock.angleAccel;
-        currentSwingingBlock.angle += currentSwingingBlock.angleVelocity * (currentSwingingBlock.speed * 40);
-        currentSwingingBlock.angleVelocity *= 0.99; // Slight air resistance damping
+        // Continuous Trigonometric Oscillation (Kabhi nahi rukega)
+        currentSwingingBlock.swingTimer += currentSwingingBlock.speed;
+        currentSwingingBlock.angle = Math.sin(currentSwingingBlock.swingTimer) * currentSwingingBlock.maxAngle;
         
-        // Trigonometric coordinate mapping (Arc Swing Path)
+        // Exact Arc Swing Path Coordinates
         currentSwingingBlock.x = currentSwingingBlock.pivotX + Math.sin(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.w / 2);
         currentSwingingBlock.y = currentSwingingBlock.pivotY + Math.cos(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.h / 2);
         
@@ -4051,11 +4047,10 @@ function frameUpdateTowerBloxx() {
                         return;
                     }
                 }
-                
-                // Reset Pendulum for next block
-                currentSwingingBlock.angle = (Math.random() > 0.5 ? 1 : -1) * (Math.PI / 4);
-                currentSwingingBlock.angleVelocity = 0;
-                currentSwingingBlock.speed = 0.02 + (currentTowerLevelState * 0.005);
+
+                // Reset Swinging Block for next turn
+                currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2; // Random phase start
+                currentSwingingBlock.speed = 0.03 + (currentTowerLevelState * 0.008);
                 
             } else {
                 // Collapse / Crash Logic
@@ -4074,6 +4069,7 @@ function frameUpdateTowerBloxx() {
     twCtx.textAlign = 'left';
     twCtx.fillText(`Lv.${currentTowerLevelState} | Stack: ${towerScoreCounter}`, 15, 25);
 }
+
 // ===================================================================
 // 🧱 RESTROFLOW ADVANCED ENGINE: FIXED-PHYSICS MULTI-COLOR ARCADE MATRIX
 // ===================================================================
