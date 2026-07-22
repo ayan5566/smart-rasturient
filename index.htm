@@ -5871,58 +5871,59 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 AUTOPLAY-SAFE AUDIO CONTEXT & UNLOCKER ENGINE
+// 🔊 AUTOPLAY-SAFE LAZY AUDIO CONTEXT ENGINE
 // ===================================================================
 let globalAudioCtx = null;
+window.hasUserInteracted = false;
 
-// 1. Safe Getter: Jab tak user click na kare, AudioContext banega hi nahi
+// 1. Safe Getter: Yeh kabhi bhi 'new AudioContext()' NAYA nahi banayega agar gesture na hua ho.
 function getAudioContext() {
-    if (!globalAudioCtx && (window.hasUserInteracted || false)) {
-        try {
-            globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.log("AudioContext initialization waiting for user interaction.");
-        }
-    }
     return globalAudioCtx;
 }
 
-// 2. User ke PEELE Touch/Click par audio context unlock hoga
+// 2. User ke PEELE Touch/Click ya Dropdown interaction par AudioContext BANEGA aur UNLOCK hoga
 const unlockAudioOnGesture = () => {
     window.hasUserInteracted = true;
     
+    // Instance tabhi banega jab real human gesture record ho chuka ho
     if (!globalAudioCtx) {
-        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        try {
+            globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log("AudioContext pending user gesture.");
+        }
     }
 
     if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
         globalAudioCtx.resume().then(() => {
-            console.log("🔊 Audio Context successfully unlocked!");
+            console.log("🔊 Audio Context unlocked silently & active!");
         }).catch(() => {});
     }
 
-    // Cleanup listeners after first interaction
-    window.removeEventListener('click', unlockAudioOnGesture);
-    window.removeEventListener('touchstart', unlockAudioOnGesture);
-    window.removeEventListener('keydown', unlockAudioOnGesture);
+    // Ek baar unlock hone par listeners cleanup ho jayenge
+    if (globalAudioCtx && globalAudioCtx.state === 'running') {
+        ['click', 'touchstart', 'keydown', 'change'].forEach(evt => 
+            window.removeEventListener(evt, unlockAudioOnGesture, true)
+        );
+    }
 };
 
-// Global Event Listeners attach karo
-window.addEventListener('click', unlockAudioOnGesture, { passive: true });
-window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
-window.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
+// Listeners ko Capture Mode (true) mein lagaya hai taaki dropdown change par bhi gesture register ho sake
+['click', 'touchstart', 'keydown', 'change'].forEach(evt => {
+    window.addEventListener(evt, unlockAudioOnGesture, { capture: true, passive: true });
+});
 
-// 3. Siren Trigger: Silent fallback if user hasn't touched the screen yet
+// 3. Ultra-Safe Beep Alert: Zero Warnings Guarantee
 function triggerAudioBeepAlert() {
-    const audioCtx = getAudioContext();
-    
-    // Agar user ne screen touch nahi ki ya context suspended hai, toh sound play nahi hoga (no warning crash)
-    if (!audioCtx || audioCtx.state === 'suspended') {
-        console.log("🔔 New order received! (Audio muted until screen touch)");
+    // Strict Guard: Agar user ne interaction nahi kiya ya AudioContext create nahi hua, silently exit kar jao
+    if (!globalAudioCtx || globalAudioCtx.state !== 'running') {
+        console.log("🔔 New order queued (Audio notification waiting for first screen tap).");
         return;
     }
 
     try {
+        const audioCtx = globalAudioCtx;
+        
         // 3 loud pulses over 3 seconds
         for (let i = 0; i < 3; i++) {
             const startTime = audioCtx.currentTime + (i * 1.0);
@@ -5942,17 +5943,15 @@ function triggerAudioBeepAlert() {
             oscillator.stop(startTime + 0.6);
         }
     } catch (e) { 
-        console.error("Audio beep exception:", e); 
+        console.error("Audio beep handling exception:", e); 
     }
 }
 
 // ===================================================================
 // 👨‍🍳 KITCHEN DISPLAY SYSTEM (KDS) MODULE INITIALIZER
 // ===================================================================
-function launchKitchenDisplaySystemModule() {
-    // 🔊 FORCE RESUME AUDIO ON BUTTON CLICK (USER GESTURE)
-    getAudioContext();
-
+function launchKitchenDisplaySystemModule() {// ✅ Ab hum direct unlock function call karenge taaki button click (User Gesture) ke andar hi audio unlock ho jaye:
+    if (typeof unlockAudioOnGesture === 'function') unlockAudioOnGesture();
     document.getElementById('adminDashboard').style.display = 'none';
     document.getElementById('kitchenDashboard').style.display = 'block';
     
