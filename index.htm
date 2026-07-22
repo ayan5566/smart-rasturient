@@ -4014,6 +4014,19 @@ function initTowerBloxxGame() {
     
     loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
 }
+        // 📊 Calculate Level based on placed floors (Level 1 for 0-10, Level 2 for 11-20, etc.)
+function calculateTowerLevel(floorCount) {
+    return Math.min(5, Math.floor(floorCount / 10) + 1);
+}
+
+// ⚡ Calculate Progressive Swing Speed based on total placed floors
+function calculateTowerSwingSpeed(floorCount) {
+    let baseSpeed = 0.03;
+    let maxSpeed = 0.095;
+    // Gradually increases speed with every single placed floor
+    let calculatedSpeed = baseSpeed + (floorCount * 0.0013);
+    return Math.min(maxSpeed, calculatedSpeed);
+}
 
 // 🌌 CONTINUOUS 50-FLOOR DYNAMIC ATMOSPHERE & ENVIRONMENT
 function render50FloorAtmosphere(floorCount) {
@@ -4157,6 +4170,7 @@ function render50FloorAtmosphere(floorCount) {
         twCtx.restore();
     }
 }
+        
 
 // 🏙️ REALISTIC MODERN SKYSCRAPER FLOOR RENDERER
 function drawStylizedSquareBlock(x, y, w, h, hexColor) {
@@ -4518,16 +4532,14 @@ function frameUpdateTowerBloxx() {
                     }
                 }
                 
-// 🏆 UPDATED 50-FLOOR LEVEL & GRAND VICTORY CHECK
-if (towerScoreCounter % 3 === 0 && towerScoreCounter < 50) {
-    // Current Level ko Math.min se capped rakho taaki max level 5 tak hi jaye bina game end kiye
-    if (currentTowerLevelState < 5) {
-        currentTowerLevelState++;
-        showOnScreenNotification(`🏢 Level Up! Advanced to Tower Level ${currentTowerLevelState}`);
-    }
+// ✅ NEW 10-FLOOR PROGRESSION & SPEED SCALING:
+let calculatedLevel = calculateTowerLevel(towerScoreCounter);
+if (calculatedLevel > currentTowerLevelState) {
+    currentTowerLevelState = calculatedLevel;
+    showOnScreenNotification(`🏢 Level Up! Advanced to Tower Level ${currentTowerLevelState}`);
 }
 
-// 👑 GRAND VICTORY: Sirf tabhi trigger hoga jab poore 50 Floors complete honge!
+// 👑 GRAND VICTORY: Triggers on completion of Floor 50
 if (towerScoreCounter >= 50) {
     clearInterval(loopTimerInstance);
     alert("👑 GRAND VICTORY! You built the ultimate 50-story space skyscraper!");
@@ -4535,9 +4547,9 @@ if (towerScoreCounter >= 50) {
     return;
 }
 
-                // Reset Swinging Block for next turn
-                currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2;
-                currentSwingingBlock.speed = 0.03 + (currentTowerLevelState * 0.008);
+// Reset Swinging Block for next turn with smooth progressive speed
+currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2;
+currentSwingingBlock.speed = calculateTowerSwingSpeed(towerScoreCounter);
                 
             } else {
                 // Collapse / Crash Logic
