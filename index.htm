@@ -5871,15 +5871,48 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊👨‍🍳 ULTRA-LOUD 3-SECOND HIGH-PITCH SIREN ENGINE FOR KDS
+// 🔊 GLOBAL AUDIO CONTEXT & UNLOCKER ENGINE
 // ===================================================================
+let globalAudioCtx = null;
+
+function getAudioContext() {
+    if (!globalAudioCtx) {
+        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume();
+    }
+    return globalAudioCtx;
+}
+
+// Automatically unlock audio on first touch/click anywhere on screen
+const unlockAudioOnGesture = () => {
+    let ctx = getAudioContext();
+    if (ctx && ctx.state === 'running') {
+        window.removeEventListener('click', unlockAudioOnGesture);
+        window.removeEventListener('touchstart', unlockAudioOnGesture);
+        window.removeEventListener('keydown', unlockAudioOnGesture);
+        console.log("🔊 Audio Context successfully unlocked for session!");
+    }
+};
+
+window.addEventListener('click', unlockAudioOnGesture);
+window.addEventListener('touchstart', unlockAudioOnGesture);
+window.addEventListener('keydown', unlockAudioOnGesture);
+
+// 👨‍🍳 REFACTORED LOUD SIREN ENGINE (USES RESUMED CONTEXT)
 function triggerAudioBeepAlert() {
     try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioCtx = getAudioContext();
         
-        // Kitchen ke heavy shor ko kaatne ke liye hum 3 chote loud pulses banayenge 3 seconds ke andar
+        if (audioCtx.state === 'suspended') {
+            console.warn("⚠️ Audio alert blocked by browser! User interaction required first.");
+            return;
+        }
+
+        // 3 loud pulses over 3 seconds
         for (let i = 0; i < 3; i++) {
-            const startTime = audioCtx.currentTime + (i * 1.0); // Har 1 second ke gap par pulse bajega
+            const startTime = audioCtx.currentTime + (i * 1.0);
             
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -5887,26 +5920,25 @@ function triggerAudioBeepAlert() {
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
-            // 🎼 B5 Note (987.77Hz) + Sawtooth wave combo: Yeh pure kitchen noise ko cheer deta hai
             oscillator.type = 'sawtooth'; 
-            oscillator.frequency.value = 987.77; 
+            oscillator.frequency.value = 987.77; // High-pitch B5 note
             
-            // 🔥 VOLUME MAX: Hardware ki maximum 100% capacity level '1.0' par set locked hai
             gainNode.gain.setValueAtTime(1.0, startTime);
             
-            // Har pulse 0.6 second tak bajega, phir 0.4 second ka silence (is se ek teez alarm loop banta hai)
             oscillator.start(startTime);
             oscillator.stop(startTime + 0.6);
         }
-        
     } catch (e) { 
-        console.error("Audio engine context constraint:", e); 
+        console.error("Audio trigger exception:", e); 
     }
 }
-// ⚡ FIXED: Unique channel namespacing separates realtime websocket frames completely at the protocol layers
 function launchKitchenDisplaySystemModule() {
+    // 🔊 FORCE RESUME AUDIO ON BUTTON CLICK:
+    getAudioContext();
+
     document.getElementById('adminDashboard').style.display = 'none';
-    document.getElementById('kitchenDashboard').style.display = 'block';
+    document.getElementById('kitchenDashboard').style.display = 'block'; 
+}
     
     // 🔒 NET LEVEL ISOLATION: Appending unique account key hashes locks websocket listener notifications inside the tenant ecosystem safely
     kdsRealtimeChannelInstance = supabaseClient
@@ -5926,7 +5958,6 @@ function launchKitchenDisplaySystemModule() {
     if (!kdsClockIntervalTimerId) {
         kdsClockIntervalTimerId = setInterval(renderKdsInterfaceMatrix, 1000);
     }
-}
 
 // ===================================================================
 // 👨‍🍳 FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
