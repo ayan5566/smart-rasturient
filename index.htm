@@ -4623,6 +4623,8 @@ let activeDropsArray = [];
 let isBallLaunched = false;
 let ballChargeMeter = 0;       
 let isSuperBallActive = false; 
+let isLifeBeingProcessed = false;
+        
 
 // ===================================================================
 // 🧱 RESTROFLOW PRO ARCADE: 4-PACK FULL DENSITY LEVEL BLUEPRINT MATRIX
@@ -5000,17 +5002,30 @@ function frameUpdateBrickBreaker() {
         }
     }
     
-    // Life lost check
-    if(bBall.y + bBall.r > brickCanvasElement.height) {
+    // ✅ NEW SAFE BLOCK:
+if (bBall.y + bBall.r > brickCanvasElement.height) {
+    if (!isLifeBeingProcessed) {
+        isLifeBeingProcessed = true; // Lock single-hit processing
         gameHeartsRemaining--;
         isBallLaunched = false;
         isSuperBallActive = false;
-        if(gameHeartsRemaining <= 0) {
-            currentActiveLevelIndex = 1; 
+
+        if (gameHeartsRemaining <= 0) {
+            currentActiveLevelIndex = 1;
+            isLifeBeingProcessed = false;
             finalizeFailedRun("💥 All Hearts Shattered! Try Again.");
             return;
+        } else {
+            // Ball ko turant paddle par wapas set karo taaki loop na bane
+            bBall.x = bPaddle.x + (bPaddle.w / 2);
+            bBall.y = bPaddle.y - bBall.r - 2;
+            bBall.dx = 0;
+            bBall.dy = 0;
+
+            isLifeBeingProcessed = false;
         }
     }
+}
     
     // Optimized Drops Processing (Reverse Loop to prevent GC spikes)
     for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
