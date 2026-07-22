@@ -5871,45 +5871,58 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 GLOBAL AUDIO CONTEXT & UNLOCKER ENGINE (CHROME AUTOPLAY POLICY FIX)
+// 🔊 AUTOPLAY-SAFE AUDIO CONTEXT & UNLOCKER ENGINE
 // ===================================================================
 let globalAudioCtx = null;
 
+// 1. Safe Getter: Jab tak user click na kare, AudioContext banega hi nahi
 function getAudioContext() {
-    if (!globalAudioCtx) {
-        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume().catch(() => {});
+    if (!globalAudioCtx && (window.hasUserInteracted || false)) {
+        try {
+            globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log("AudioContext initialization waiting for user interaction.");
+        }
     }
     return globalAudioCtx;
 }
 
-// Automatically unlock audio on first user gesture anywhere on screen
+// 2. User ke PEELE Touch/Click par audio context unlock hoga
 const unlockAudioOnGesture = () => {
-    let ctx = getAudioContext();
-    if (ctx && ctx.state === 'running') {
-        window.removeEventListener('click', unlockAudioOnGesture);
-        window.removeEventListener('touchstart', unlockAudioOnGesture);
-        window.removeEventListener('keydown', unlockAudioOnGesture);
-        console.log("🔊 Audio Context successfully unlocked for session!");
+    window.hasUserInteracted = true;
+    
+    if (!globalAudioCtx) {
+        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+
+    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume().then(() => {
+            console.log("🔊 Audio Context successfully unlocked!");
+        }).catch(() => {});
+    }
+
+    // Cleanup listeners after first interaction
+    window.removeEventListener('click', unlockAudioOnGesture);
+    window.removeEventListener('touchstart', unlockAudioOnGesture);
+    window.removeEventListener('keydown', unlockAudioOnGesture);
 };
 
-window.addEventListener('click', unlockAudioOnGesture);
-window.addEventListener('touchstart', unlockAudioOnGesture);
-window.addEventListener('keydown', unlockAudioOnGesture);
+// Global Event Listeners attach karo
+window.addEventListener('click', unlockAudioOnGesture, { passive: true });
+window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
+window.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
 
-// 👨‍🍳 REFACTORED LOUD SIREN ENGINE (USES RESUMED CONTEXT)
+// 3. Siren Trigger: Silent fallback if user hasn't touched the screen yet
 function triggerAudioBeepAlert() {
-    try {
-        const audioCtx = getAudioContext();
-        
-        if (audioCtx.state === 'suspended') {
-            console.warn("⚠️ Audio alert blocked by browser! User interaction required first.");
-            return;
-        }
+    const audioCtx = getAudioContext();
+    
+    // Agar user ne screen touch nahi ki ya context suspended hai, toh sound play nahi hoga (no warning crash)
+    if (!audioCtx || audioCtx.state === 'suspended') {
+        console.log("🔔 New order received! (Audio muted until screen touch)");
+        return;
+    }
 
+    try {
         // 3 loud pulses over 3 seconds
         for (let i = 0; i < 3; i++) {
             const startTime = audioCtx.currentTime + (i * 1.0);
@@ -5921,7 +5934,7 @@ function triggerAudioBeepAlert() {
             gainNode.connect(audioCtx.destination);
             
             oscillator.type = 'sawtooth'; 
-            oscillator.frequency.value = 987.77; // High-pitch B5 note
+            oscillator.frequency.value = 987.77; // High B5 note
             
             gainNode.gain.setValueAtTime(1.0, startTime);
             
@@ -5929,7 +5942,7 @@ function triggerAudioBeepAlert() {
             oscillator.stop(startTime + 0.6);
         }
     } catch (e) { 
-        console.error("Audio trigger exception:", e); 
+        console.error("Audio beep exception:", e); 
     }
 }
 
