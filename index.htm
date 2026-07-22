@@ -5871,59 +5871,45 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 AUTOPLAY-SAFE LAZY AUDIO CONTEXT ENGINE
+// 🔊 GLOBAL AUDIO CONTEXT & UNLOCKER ENGINE
 // ===================================================================
 let globalAudioCtx = null;
-window.hasUserInteracted = false;
 
-// 1. Safe Getter: Yeh kabhi bhi 'new AudioContext()' NAYA nahi banayega agar gesture na hua ho.
 function getAudioContext() {
+    if (!globalAudioCtx) {
+        globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') {
+        globalAudioCtx.resume();
+    }
     return globalAudioCtx;
 }
 
-// 2. User ke PEELE Touch/Click ya Dropdown interaction par AudioContext BANEGA aur UNLOCK hoga
+// Automatically unlock audio on first touch/click anywhere on screen
 const unlockAudioOnGesture = () => {
-    window.hasUserInteracted = true;
-    
-    // Instance tabhi banega jab real human gesture record ho chuka ho
-    if (!globalAudioCtx) {
-        try {
-            globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.log("AudioContext pending user gesture.");
-        }
-    }
-
-    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume().then(() => {
-            console.log("🔊 Audio Context unlocked silently & active!");
-        }).catch(() => {});
-    }
-
-    // Ek baar unlock hone par listeners cleanup ho jayenge
-    if (globalAudioCtx && globalAudioCtx.state === 'running') {
-        ['click', 'touchstart', 'keydown', 'change'].forEach(evt => 
-            window.removeEventListener(evt, unlockAudioOnGesture, true)
-        );
+    let ctx = getAudioContext();
+    if (ctx && ctx.state === 'running') {
+        window.removeEventListener('click', unlockAudioOnGesture);
+        window.removeEventListener('touchstart', unlockAudioOnGesture);
+        window.removeEventListener('keydown', unlockAudioOnGesture);
+        console.log("🔊 Audio Context successfully unlocked for session!");
     }
 };
 
-// Listeners ko Capture Mode (true) mein lagaya hai taaki dropdown change par bhi gesture register ho sake
-['click', 'touchstart', 'keydown', 'change'].forEach(evt => {
-    window.addEventListener(evt, unlockAudioOnGesture, { capture: true, passive: true });
-});
+window.addEventListener('click', unlockAudioOnGesture);
+window.addEventListener('touchstart', unlockAudioOnGesture);
+window.addEventListener('keydown', unlockAudioOnGesture);
 
-// 3. Ultra-Safe Beep Alert: Zero Warnings Guarantee
+// 👨‍🍳 REFACTORED LOUD SIREN ENGINE (USES RESUMED CONTEXT)
 function triggerAudioBeepAlert() {
-    // Strict Guard: Agar user ne interaction nahi kiya ya AudioContext create nahi hua, silently exit kar jao
-    if (!globalAudioCtx || globalAudioCtx.state !== 'running') {
-        console.log("🔔 New order queued (Audio notification waiting for first screen tap).");
-        return;
-    }
-
     try {
-        const audioCtx = globalAudioCtx;
+        const audioCtx = getAudioContext();
         
+        if (audioCtx.state === 'suspended') {
+            console.warn("⚠️ Audio alert blocked by browser! User interaction required first.");
+            return;
+        }
+
         // 3 loud pulses over 3 seconds
         for (let i = 0; i < 3; i++) {
             const startTime = audioCtx.currentTime + (i * 1.0);
@@ -5935,7 +5921,7 @@ function triggerAudioBeepAlert() {
             gainNode.connect(audioCtx.destination);
             
             oscillator.type = 'sawtooth'; 
-            oscillator.frequency.value = 987.77; // High B5 note
+            oscillator.frequency.value = 987.77; // High-pitch B5 note
             
             gainNode.gain.setValueAtTime(1.0, startTime);
             
@@ -5943,42 +5929,16 @@ function triggerAudioBeepAlert() {
             oscillator.stop(startTime + 0.6);
         }
     } catch (e) { 
-        console.error("Audio beep handling exception:", e); 
+        console.error("Audio trigger exception:", e); 
     }
 }
+function launchKitchenDisplaySystemModule() {
+    // 🔊 FORCE RESUME AUDIO ON BUTTON CLICK:
+    getAudioContext();
 
-// ===================================================================
-// 👨‍🍳 KITCHEN DISPLAY SYSTEM (KDS) MODULE INITIALIZER
-// ===================================================================
-function launchKitchenDisplaySystemModule() {// ✅ Ab hum direct unlock function call karenge taaki button click (User Gesture) ke andar hi audio unlock ho jaye:
-    if (typeof unlockAudioOnGesture === 'function') unlockAudioOnGesture();
     document.getElementById('adminDashboard').style.display = 'none';
-    document.getElementById('kitchenDashboard').style.display = 'block';
-    
-    // 🔒 NET LEVEL ISOLATION: Appending unique account key hashes locks websocket listener notifications inside the tenant ecosystem safely
-    if (kdsRealtimeChannelInstance) {
-        supabaseClient.removeChannel(kdsRealtimeChannelInstance);
-    }
-
-    kdsRealtimeChannelInstance = supabaseClient
-        .channel('kds-live-stream-channel-' + hotelGlobalScopeID)
-        .on('postgres_changes', { 
-            event: '*', 
-            schema: 'public', 
-            table: 'active_orders', 
-            filter: 'hotel_id=eq.' + hotelGlobalScopeID 
-        }, () => {
-            fetchActiveKitchenOrdersQueue();
-        })
-        .subscribe();
-        
-    fetchActiveKitchenOrdersQueue();
-    
-    if (!kdsClockIntervalTimerId) {
-        kdsClockIntervalTimerId = setInterval(renderKdsInterfaceMatrix, 1000);
-    }
+    document.getElementById('kitchenDashboard').style.display = 'block'; 
 }
-
 // ===================================================================
 // 👨‍🍳 FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
 // ===================================================================
