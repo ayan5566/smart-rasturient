@@ -5871,29 +5871,16 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 WARNING-FREE AUDIO CONTEXT & SIREN ENGINE
+// 🔊 100% WARNING-FREE AUDIO CONTEXT ENGINE
 // ===================================================================
 let globalAudioCtx = null;
 let isAudioUnlocked = false;
 
-// Pure session mein sirf ek baar AudioContext safely create/resume hoga
-function getAudioContext() {
-    if (!globalAudioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-            globalAudioCtx = new AudioContextClass();
-        }
-    }
-    if (globalAudioCtx && globalAudioCtx.state === 'suspended' && isAudioUnlocked) {
-        globalAudioCtx.resume().catch(() => {});
-    }
-    return globalAudioCtx;
-}
-
-// User ke pehle tap/click par audio bina kisi warning ke unlock ho jayega
-const unlockAudioOnGesture = () => {
+// Screen par kahin bhi pehla click/touch hote hi Silent Audio Unlock hoga
+function unlockAudioEngineOnUserGesture() {
     if (isAudioUnlocked) return;
-    
+
+    // AudioContext strictly sirf user click ke andar hi create hoga
     if (!globalAudioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
@@ -5901,52 +5888,51 @@ const unlockAudioOnGesture = () => {
         }
     }
 
-    if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume().then(() => {
+    if (globalAudioCtx) {
+        if (globalAudioCtx.state === 'suspended') {
+            globalAudioCtx.resume().then(() => {
+                isAudioUnlocked = true;
+                console.log("🔊 Audio successfully unlocked for this session!");
+                cleanAudioListeners();
+            }).catch(() => {});
+        } else if (globalAudioCtx.state === 'running') {
             isAudioUnlocked = true;
-            console.log("🔊 Audio Context successfully unlocked for session!");
-            removeAudioUnlockListeners();
-        }).catch(() => {});
-    } else if (globalAudioCtx && globalAudioCtx.state === 'running') {
-        isAudioUnlocked = true;
-        removeAudioUnlockListeners();
+            cleanAudioListeners();
+        }
     }
-};
-
-function removeAudioUnlockListeners() {
-    window.removeEventListener('click', unlockAudioOnGesture);
-    window.removeEventListener('touchstart', unlockAudioOnGesture);
-    window.removeEventListener('keydown', unlockAudioOnGesture);
 }
 
-// Single-binding listeners
-window.addEventListener('click', unlockAudioOnGesture, { passive: true });
-window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
-window.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
+function cleanAudioListeners() {
+    window.removeEventListener('click', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('touchstart', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('keydown', unlockAudioEngineOnUserGesture);
+}
 
-// 👨‍🍳 REFACTORED LOUD SIREN ENGINE (ZERO CONSOLE WARNINGS)
+// User events se bind karo (passive: true rakha hai performance ke liye)
+window.addEventListener('click', unlockAudioEngineOnUserGesture, { passive: true });
+window.addEventListener('touchstart', unlockAudioEngineOnUserGesture, { passive: true });
+window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
+
+// 👨‍🍳 KDS SIREN ALERT (Tabhi bajega jab context unlocked aur ready ho)
 function triggerAudioBeepAlert() {
     try {
-        if (!isAudioUnlocked) {
-            console.warn("⚠️ Audio alert waiting for initial page interaction.");
+        if (!isAudioUnlocked || !globalAudioCtx || globalAudioCtx.state !== 'running') {
+            console.log("ℹ️ Audio alert skipped: Waiting for user to tap screen once.");
             return;
         }
 
-        const audioCtx = getAudioContext();
-        if (!audioCtx || audioCtx.state !== 'running') return;
-
-        // 3 loud pulses over 3 seconds
+        // 3 seconds loud pulses
         for (let i = 0; i < 3; i++) {
-            const startTime = audioCtx.currentTime + (i * 1.0);
+            const startTime = globalAudioCtx.currentTime + (i * 1.0);
             
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
+            const oscillator = globalAudioCtx.createOscillator();
+            const gainNode = globalAudioCtx.createGain();
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            gainNode.connect(globalAudioCtx.destination);
             
             oscillator.type = 'sawtooth'; 
-            oscillator.frequency.value = 987.77; // High-pitch B5 note
+            oscillator.frequency.value = 987.77; // High pitch B5 note
             
             gainNode.gain.setValueAtTime(1.0, startTime);
             
@@ -5954,19 +5940,13 @@ function triggerAudioBeepAlert() {
             oscillator.stop(startTime + 0.6);
         }
     } catch (e) { 
-        console.error("Audio trigger exception:", e); 
+        console.error("Audio playback error:", e); 
     }
 }
-// ===================================================================
-// 👨‍🍳 KITCHEN DISPLAY SYSTEM (KDS) MODULE INITIALIZER
-// ===================================================================
 function launchKitchenDisplaySystemModule() {
-    // 🔊 Button click gesture ke saath context unlock trigger karo
-    unlockAudioOnGesture();
-
     document.getElementById('adminDashboard').style.display = 'none';
     document.getElementById('kitchenDashboard').style.display = 'block';
-
+    ...
     // 🔒 NET LEVEL ISOLATION: Unsubscribe old channel if already exists
     if (kdsRealtimeChannelInstance) {
         supabaseClient.removeChannel(kdsRealtimeChannelInstance);
