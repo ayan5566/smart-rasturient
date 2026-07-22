@@ -5871,52 +5871,70 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 AUTOPLAY-SAFE LAZY AUDIO CONTEXT ENGINE
+// 🔊 WARNING-FREE AUDIO CONTEXT & SIREN ENGINE
 // ===================================================================
 let globalAudioCtx = null;
+let isAudioUnlocked = false;
 
-// 1. Safe Getter: User gesture se pehle 'new AudioContext()' kabhi nahi banega
+// Pure session mein sirf ek baar AudioContext safely create/resume hoga
 function getAudioContext() {
+    if (!globalAudioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+            globalAudioCtx = new AudioContextClass();
+        }
+    }
+    if (globalAudioCtx && globalAudioCtx.state === 'suspended' && isAudioUnlocked) {
+        globalAudioCtx.resume().catch(() => {});
+    }
     return globalAudioCtx;
 }
 
-// 2. User ke Pehle Click/Touch par AudioContext Unlock and Resume hoga (Promise Handled)
+// User ke pehle tap/click par audio bina kisi warning ke unlock ho jayega
 const unlockAudioOnGesture = () => {
+    if (isAudioUnlocked) return;
+    
     if (!globalAudioCtx) {
-        try {
-            globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.log("AudioContext waiting for user interaction.");
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+            globalAudioCtx = new AudioContextClass();
         }
     }
 
     if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
         globalAudioCtx.resume().then(() => {
+            isAudioUnlocked = true;
             console.log("🔊 Audio Context successfully unlocked for session!");
-            // Unlock hone ke baad hi event listeners remove karo
-            ['click', 'touchstart', 'keydown', 'change'].forEach(evt => 
-                window.removeEventListener(evt, unlockAudioOnGesture, true)
-            );
+            removeAudioUnlockListeners();
         }).catch(() => {});
+    } else if (globalAudioCtx && globalAudioCtx.state === 'running') {
+        isAudioUnlocked = true;
+        removeAudioUnlockListeners();
     }
 };
 
-// Global Listeners Attach Karo (Capture Mode Enabled)
-['click', 'touchstart', 'keydown', 'change'].forEach(evt => {
-    window.addEventListener(evt, unlockAudioOnGesture, { capture: true, passive: true });
-});
+function removeAudioUnlockListeners() {
+    window.removeEventListener('click', unlockAudioOnGesture);
+    window.removeEventListener('touchstart', unlockAudioOnGesture);
+    window.removeEventListener('keydown', unlockAudioOnGesture);
+}
 
-// 3. Siren Engine: Muted Check to avoid Console Warnings
+// Single-binding listeners
+window.addEventListener('click', unlockAudioOnGesture, { passive: true });
+window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true });
+window.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
+
+// 👨‍🍳 REFACTORED LOUD SIREN ENGINE (ZERO CONSOLE WARNINGS)
 function triggerAudioBeepAlert() {
-    const audioCtx = getAudioContext();
-
-    // Guard: Agar context create nahi hua ya running state mein nahi hai, toh silently return ho jao
-    if (!audioCtx || audioCtx.state !== 'running') {
-        console.log("🔔 New order received! (Audio alert muted until user taps screen)");
-        return;
-    }
-
     try {
+        if (!isAudioUnlocked) {
+            console.warn("⚠️ Audio alert waiting for initial page interaction.");
+            return;
+        }
+
+        const audioCtx = getAudioContext();
+        if (!audioCtx || audioCtx.state !== 'running') return;
+
         // 3 loud pulses over 3 seconds
         for (let i = 0; i < 3; i++) {
             const startTime = audioCtx.currentTime + (i * 1.0);
@@ -5928,7 +5946,7 @@ function triggerAudioBeepAlert() {
             gainNode.connect(audioCtx.destination);
             
             oscillator.type = 'sawtooth'; 
-            oscillator.frequency.value = 987.77; // High B5 note
+            oscillator.frequency.value = 987.77; // High-pitch B5 note
             
             gainNode.gain.setValueAtTime(1.0, startTime);
             
@@ -5939,7 +5957,6 @@ function triggerAudioBeepAlert() {
         console.error("Audio trigger exception:", e); 
     }
 }
-
 // ===================================================================
 // 👨‍🍳 KITCHEN DISPLAY SYSTEM (KDS) MODULE INITIALIZER
 // ===================================================================
