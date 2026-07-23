@@ -777,12 +777,50 @@
         
         
 <h3>🎮 Target Variables & Value Ratios</h3>
-<div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; line-wrap:normal; line-height:1.8;">
-    Brick Clear Target Level: <input type="number" id="cfgBrickTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgBrickDisc" oninput="saveAdminConfig()"><br>
-    Flappy Target Points: <input type="number" id="cfgFlappyTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgFlappyDisc" oninput="saveAdminConfig()"><br>
-    Space Clear Target Stage: <input type="number" id="cfgSpaceTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSpaceDisc" oninput="saveAdminConfig()"><br>
-    Snake Target Apples: <input type="number" id="cfgSnakeTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgSnakeDisc" oninput="saveAdminConfig()"><br>
-    Tower Clear Target Level: <input type="number" id="cfgTowerTar" oninput="saveAdminConfig()"> | Disc %: <input type="number" id="cfgTowerDisc" oninput="saveAdminConfig()"><br>
+<div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
+        
+        <!-- Brick Breaker -->
+        <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Clear Target:</span>
+        <input type="number" id="cfgBrickTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgBrickDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+        <!-- Flappy Bird -->
+        <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
+        <input type="number" id="cfgFlappyTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgFlappyDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+        <!-- Space Shooter -->
+        <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
+        <input type="number" id="cfgSpaceTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgSpaceDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+        <!-- Snake Game -->
+        <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
+        <input type="number" id="cfgSnakeTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgSnakeDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+        <!-- Tower Bloxx -->
+        <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
+        <input type="number" id="cfgTowerTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgTowerDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+    </div>
 </div>
         <h3>📋 Item Master Setup (Photos & Checkboxes)</h3>
         <div id="adminMenuForm"></div>
@@ -1296,7 +1334,7 @@ async function initializeAdminRealtimeBillingTracker() {
     } catch (realtimeErr) {
         console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
     }
-}
+
 function refreshActiveBillingUI(liveSessionData) {
     if (!liveSessionData) return;
     
@@ -3585,7 +3623,7 @@ async function initializeCustomerRealtimeTracker() {
             }
         })
         .subscribe();
-}
+
 // ===================================================================
 // ⚡ HIGH-PERFORMANCE ARCADE INPUT ENGINE (ZERO-FREEZE TOUCH HANDLER)
 // ===================================================================
