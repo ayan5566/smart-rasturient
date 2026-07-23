@@ -900,14 +900,23 @@
 </div>
     <script>
 // ===================================================================
-// 🌐 TOP-LEVEL SUPABASE CLIENT INITIALIZATION (PREVENTS TDZ)
+// 🌐 TOP-LEVEL CORE INITIALIZATION (TDZ & REFERENCE ERROR SHIELD)
 // ===================================================================
 const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co"; 
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw"; 
 
-// 🔥 ALWAYS INITIALIZE BEFORE ANY FUNCTION OR TRY/CATCH EXECUTION
+// 🔥 1. SUPABASE CLIENT GLOBAL DECLARATION
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 🔥 2. HOTEL GLOBAL SCOPE ID DECLARATION (MUST BE BEFORE ANY FUNCTION ACCESS)
+let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+
+if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
+    hotelGlobalScopeID = "Default_HQ_Arena";
+    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+}
+
+window.hotelGlobalScopeID = hotelGlobalScopeID;
 // ===================================================================
 // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
 // ===================================================================
