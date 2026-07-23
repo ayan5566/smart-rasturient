@@ -6102,58 +6102,51 @@ let kdsClockIntervalTimerId = null;
 // ===================================================================
 let globalAudioCtx = null;
 let isAudioUnlocked = false;
-let isUnlockInProgress = false; // Synchronous re-entrancy lock
-// 🟢 NEW KDS & REALTIME DEDUPLICATION STATE
-let isKDSActive = false; 
-const processedOrderIdsSet = new Set(); // Prevents duplicate sounds for the same order
-async function unlockAudioEngineOnUserGesture() {
-    // Prevent duplicate triggers and race conditions
-    if (isAudioUnlocked || isUnlockInProgress) return;
-    isUnlockInProgress = true;
+
+function unlockAudioEngineOnUserGesture() {
+    if (isAudioUnlocked) return;
 
     try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) {
-            isUnlockInProgress = false;
-            return;
-        }
+        if (!AudioContextClass) return;
 
-        // Lazy initialize AudioContext strictly inside gesture handler
+        // 1. Synchronous turn mein AudioContext instantiate karein (No await before this!)
         if (!globalAudioCtx) {
             globalAudioCtx = new AudioContextClass();
         }
 
-        // Direct Resume without state-check warning loop
-        if (globalAudioCtx.state !== 'running') {
-            await globalAudioCtx.resume();
+        // 2. Resume call karein
+        if (globalAudioCtx.state === 'suspended') {
+            globalAudioCtx.resume().then(() => {
+                // 3. Silent 1-sample buffer play karke context seal karein
+                const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
+                const source = globalAudioCtx.createBufferSource();
+                source.buffer = silentBuffer;
+                source.connect(globalAudioCtx.destination);
+                source.start(0);
+
+                isAudioUnlocked = true;
+                cleanAudioListeners();
+                console.log("🔊 Audio successfully unlocked for this session!");
+            }).catch(e => console.error(e));
+        } else if (globalAudioCtx.state === 'running') {
+            isAudioUnlocked = true;
+            cleanAudioListeners();
         }
-
-        // Play silent 1-sample buffer to seal unlock state
-        const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
-        const source = globalAudioCtx.createBufferSource();
-        source.buffer = silentBuffer;
-        source.connect(globalAudioCtx.destination);
-        source.start(0);
-
-        isAudioUnlocked = true;
-        cleanAudioListeners();
-        console.log("🔊 Audio successfully unlocked for this session!");
-
     } catch (err) {
         console.error("Audio unlock exception:", err);
-    } finally {
-        isUnlockInProgress = false;
     }
 }
 
 function cleanAudioListeners() {
-    window.removeEventListener('pointerdown', unlockAudioEngineOnUserGesture);
-    window.removeEventListener('keydown', unlockAudioEngineOnUserGesture);
     window.removeEventListener('click', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('touchstart', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('keydown', unlockAudioEngineOnUserGesture);
 }
 
-// Unified Pointer + Keyboard Listeners (Passive for high performance)
-window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
+// 🎯 Direct Trusted User Event Listeners
+window.addEventListener('click', unlockAudioEngineOnUserGesture, { passive: true });
+window.addEventListener('touchstart', unlockAudioEngineOnUserGesture, { passive: true });
 window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
 
 // 👨‍🍳 KDS SIREN ALERT (Guarded for Realtime, Active KDS, Unlocked State, & Deduplication)
