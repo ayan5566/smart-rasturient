@@ -5871,31 +5871,36 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 100% ZERO-WARNING NATIVE AUDIO UNLOCK ENGINE
+// 🔊 100% WARNING-FREE AUDIO CONTEXT ENGINE
 // ===================================================================
 let globalAudioCtx = null;
 let isAudioUnlocked = false;
+let isUnlockInProgress = false; // Synchronous re-entrancy lock
 
-function unlockAudioEngineOnUserGesture() {
-    if (isAudioUnlocked) return;
+async function unlockAudioEngineOnUserGesture() {
+    // Prevent duplicate triggers and race conditions
+    if (isAudioUnlocked || isUnlockInProgress) return;
+    isUnlockInProgress = true;
 
     try {
-        // 1. AudioContext ko strictly user event ke andar hi create karo
-        if (!globalAudioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) {
-                globalAudioCtx = new AudioContextClass();
-            }
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            isUnlockInProgress = false;
+            return;
         }
 
-        if (globalAudioCtx) {
-            // 2. Agar suspended hai toh resume call karo
-            if (globalAudioCtx.state === 'suspended') {
-                globalAudioCtx.resume();
-            }
+        // Lazy initialize AudioContext within user gesture context
+        if (!globalAudioCtx) {
+            globalAudioCtx = new AudioContextClass();
+        }
 
-            // 3. 🎯 THE REAL FIX: 0.001 Second ka Silent Sound Play karo
-            // Yeh Chrome ki Autoplay Warning ko permanently bypass kar deta hai
+        // Await resume completion before creating buffer nodes
+        if (globalAudioCtx.state === 'suspended') {
+            await globalAudioCtx.resume();
+        }
+
+        if (globalAudioCtx.state === 'running') {
+            // Play a 1-sample silent buffer directly within the gesture pipeline
             const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
             const source = globalAudioCtx.createBufferSource();
             source.buffer = silentBuffer;
@@ -5903,25 +5908,25 @@ function unlockAudioEngineOnUserGesture() {
             source.start(0);
 
             isAudioUnlocked = true;
-            console.log("🔊 Audio successfully unlocked for this session!");
             cleanAudioListeners();
+            console.log("🔊 Audio successfully unlocked for this session!");
         }
-    } catch (e) {
-        console.error("Audio unlock exception:", e);
+    } catch (err) {
+        console.error("Audio unlock exception:", err);
+    } finally {
+        isUnlockInProgress = false;
     }
 }
 
 function cleanAudioListeners() {
     window.removeEventListener('pointerdown', unlockAudioEngineOnUserGesture);
-    window.removeEventListener('click', unlockAudioEngineOnUserGesture);
     window.removeEventListener('keydown', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('click', unlockAudioEngineOnUserGesture);
 }
 
-// { once: true } lene se yeh listener auto-remove ho jayega aur double trigger nahi hoga
-window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { once: true });
-window.addEventListener('click', unlockAudioEngineOnUserGesture, { once: true });
-window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { once: true });
-
+// Unified Pointer + Keyboard Listeners
+window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
+window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
 // 👨‍🍳 KDS SIREN ALERT (Tabhi bajega jab context unlocked aur ready ho)
 function triggerAudioBeepAlert() {
     try {
