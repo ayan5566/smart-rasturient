@@ -5871,16 +5871,19 @@ let kdsRealtimeChannelInstance = null;
 let kdsClockIntervalTimerId = null;
 
 // ===================================================================
-// 🔊 100% WARNING-FREE AUDIO CONTEXT ENGINE
+// 🔊 100% BULLETPROOF & WARNING-FREE AUDIO CONTEXT ENGINE
 // ===================================================================
 let globalAudioCtx = null;
 let isAudioUnlocked = false;
+let isUnlockInProgress = false; // Synchronous Lock Flag (Prevents duplicate race condition)
 
-// Screen par kahin bhi pehla click/touch hote hi Silent Audio Unlock hoga
 function unlockAudioEngineOnUserGesture() {
-    if (isAudioUnlocked) return;
+    // 🛡️ Guard 1: Agar pehle se unlocked hai ya unlock process chal raha hai, turant exit karo
+    if (isAudioUnlocked || isUnlockInProgress) return;
 
-    // AudioContext strictly sirf user click ke andar hi create hoga
+    // Direct Sync Lock: Agli millisecond ke kisi dusre event (like click after touchstart) ko block kar do
+    isUnlockInProgress = true;
+
     if (!globalAudioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass) {
@@ -5892,25 +5895,34 @@ function unlockAudioEngineOnUserGesture() {
         if (globalAudioCtx.state === 'suspended') {
             globalAudioCtx.resume().then(() => {
                 isAudioUnlocked = true;
+                isUnlockInProgress = false;
                 console.log("🔊 Audio successfully unlocked for this session!");
                 cleanAudioListeners();
-            }).catch(() => {});
+            }).catch((err) => {
+                isUnlockInProgress = false;
+                console.error("Audio unlock exception:", err);
+            });
         } else if (globalAudioCtx.state === 'running') {
             isAudioUnlocked = true;
+            isUnlockInProgress = false;
             cleanAudioListeners();
         }
+    } else {
+        isUnlockInProgress = false;
     }
 }
 
 function cleanAudioListeners() {
     window.removeEventListener('click', unlockAudioEngineOnUserGesture);
     window.removeEventListener('touchstart', unlockAudioEngineOnUserGesture);
+    window.removeEventListener('pointerdown', unlockAudioEngineOnUserGesture);
     window.removeEventListener('keydown', unlockAudioEngineOnUserGesture);
 }
 
-// User events se bind karo (passive: true rakha hai performance ke liye)
+// Attach event listeners using { passive: true }
 window.addEventListener('click', unlockAudioEngineOnUserGesture, { passive: true });
 window.addEventListener('touchstart', unlockAudioEngineOnUserGesture, { passive: true });
+window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
 window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
 
 // 👨‍🍳 KDS SIREN ALERT (Tabhi bajega jab context unlocked aur ready ho)
