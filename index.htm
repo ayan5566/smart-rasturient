@@ -5876,7 +5876,9 @@ let kdsClockIntervalTimerId = null;
 let globalAudioCtx = null;
 let isAudioUnlocked = false;
 let isUnlockInProgress = false; // Synchronous re-entrancy lock
-
+// 🟢 NEW KDS & REALTIME DEDUPLICATION STATE
+let isKDSActive = false; 
+const processedOrderIdsSet = new Set(); // Prevents duplicate sounds for the same order
 async function unlockAudioEngineOnUserGesture() {
     // Prevent duplicate triggers and race conditions
     if (isAudioUnlocked || isUnlockInProgress) return;
@@ -5929,15 +5931,41 @@ function cleanAudioListeners() {
 window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
 window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
 
-// 👨‍🍳 KDS SIREN ALERT (Tabhi bajega jab context unlocked aur ready ho)
-function triggerAudioBeepAlert() {
+// 👨‍🍳 KDS SIREN ALERT (Guarded for Realtime, Active KDS, Unlocked State, & Deduplication)
+function triggerAudioBeepAlert(orderId = null, eventType = 'INSERT') {
     try {
+        // 🛡️ Strict Validation Rules Guard
+        if (!isKDSActive) {
+            console.log("ℹ️ Audio alert skipped: KDS screen is not active.");
+            return;
+        }
+
+        if (eventType !== 'INSERT') {
+            console.log("ℹ️ Audio alert skipped: Event is not a realtime INSERT.");
+            return;
+        }
+
         if (!isAudioUnlocked || !globalAudioCtx || globalAudioCtx.state !== 'running') {
             console.log("ℹ️ Audio alert skipped: Waiting for user to tap screen once.");
             return;
         }
 
-        // 3 seconds loud pulses
+        // 🛡️ Deduplication Guard: Stop if order notification was already played
+        if (orderId) {
+            if (processedOrderIdsSet.has(orderId)) {
+                console.log(`ℹ️ Audio alert skipped: Order [${orderId}] already notified.`);
+                return;
+            }
+            processedOrderIdsSet.add(orderId);
+            
+            // Auto-clean Set size to prevent memory leaks over long sessions
+            if (processedOrderIdsSet.size > 200) {
+                const oldest = processedOrderIdsSet.values().next().value;
+                processedOrderIdsSet.delete(oldest);
+            }
+        }
+
+        // 🔊 3 seconds loud pulses (Siren Implementation)
         for (let i = 0; i < 3; i++) {
             const startTime = globalAudioCtx.currentTime + (i * 1.0);
             
