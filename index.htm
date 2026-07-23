@@ -2756,13 +2756,63 @@ function executeNativeBrowserPrintTrigger() {
             element.innerHTML = customPaymentQRData ? `<img src="${customPaymentQRData}" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">` : "🖼️";
         }
 
-        function callWaiterBellSignal() {
-            floorData.forEach(floor => { floor.tables.forEach(t => { if(t.id === clientCurrentActiveTable) t.waiterBell = true; }); });
-            saveAdminConfig(); generateAdminTableGrid();
-            alert(`🔔 Waiter Called! Table [${clientCurrentActiveTable}] alert signal dispatched to owner panel.`);
-        // Bell status true karke cloud par bhejein
-syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
+       // ===================================================================
+// 🔔 WAITER CALLING BELL ENGINE (WITH 10-SECOND AUTO-RESET TIMEOUT)
+// ===================================================================
+function callWaiterBellSignal() {
+    try {
+        let isTableFound = false;
+
+        // 1. Current active table ki state update karo
+        floorData.forEach(floor => { 
+            if (floor && floor.tables) {
+                floor.tables.forEach(t => { 
+                    if (t.id === clientCurrentActiveTable || `${floor.floorName}_${t.id}` === clientCurrentActiveTable) { 
+                        t.waiterBell = true; 
+                        isTableFound = true;
+                    } 
+                }); 
+            }
+        });
+
+        if (isTableFound) {
+            // Local state save & Grid redraw (Flashing animation start)
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
+
+            // Cloud Supabase Par Notification Send Karo
+            syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
+
+            alert(`🔔 Waiter Called! Table [${clientCurrentActiveTable}] alert signal dispatched for 10 seconds.`);
+            showOnScreenNotification(`🔔 Waiter alert active on Table ${clientCurrentActiveTable}!`);
+
+            // 🎯 10 SECONDS TIMEOUT: 10 sec baad alert automatically band ho jayega
+            setTimeout(() => {
+                floorData.forEach(floor => { 
+                    if (floor && floor.tables) {
+                        floor.tables.forEach(t => { 
+                            if (t.id === clientCurrentActiveTable || `${floor.floorName}_${t.id}` === clientCurrentActiveTable) { 
+                                t.waiterBell = false; 
+                            } 
+                        }); 
+                    }
+                });
+
+                localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
+                
+                // Cloud par auto-reset status bhej do
+                syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
+                console.log(`⏰ Waiter Bell Auto-Reset: Alert cleared for Table [${clientCurrentActiveTable}] after 10 seconds.`);
+            }, 10000); // 10000ms = Exact 10 Seconds
+
+        } else {
+            alert("❌ Error: Active table identity not matched!");
         }
+    } catch (err) {
+        console.error("🚨 Waiter Bell Signal Error:", err);
+    }
+}
 
 
 // ===================================================================
