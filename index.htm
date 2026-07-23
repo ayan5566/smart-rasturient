@@ -757,20 +757,30 @@
             <div id="adminAnalyticsLiveOutputGrid"></div>
         </div>
 
-        <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
-        <div style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
-            <select id="waiterTableSelect" style="padding:6px; margin:4px 0; font-size:12px; font-weight: bold; color: var(--tbl-orange);"></select>
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Dish Asset:</label>
-            <select id="waiterItemSelect" onchange="syncWaiterSizeDropdownOptions()"></select>
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
-            <select id="waiterSizeSelect"></select>
-            <button onclick="injectExtraItemFromBillPanel()" style="background:var(--dark-charcoal); color:white; border:none; padding:10px; border-radius:8px; font-size:13px; width:100%; font-weight:bold; cursor:pointer; margin-top:5px;">+ Push Into Running Bill Matrix</button>
-            <button onclick="confirmKdsVisibilityStatus()" style="background:#34495e; color:white; border:none; padding:8px; border-radius:8px; font-size:12px; width:100%; font-weight:bold; cursor:pointer; margin-top:8px;">
-            🔍 Verify & Confirm KDS Routing Status
-            </button>
-            
-        </div>
+       <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
+<div style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
+    <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
+    <select id="waiterTableSelect" style="padding:6px; margin:4px 0; font-size:12px; font-weight: bold; color: var(--tbl-orange);"></select>
+    
+    <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Dish Asset:</label>
+    <select id="waiterItemSelect" onchange="syncWaiterSizeDropdownOptions()"></select>
+    
+    <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
+    <select id="waiterSizeSelect"></select>
+
+    <!-- 🎯 DUAL ACTION BUTTONS -->
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+        <!-- Button 1: SIRF BILL MEIN ADD HOGA -->
+        <button onclick="injectExtraItemFromBillPanel(false)" style="background: var(--dark-charcoal); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
+            📋 Add to Running Bill Only (No KDS)
+        </button>
+        
+        <!-- Button 2: BILL + KDS DONO MEIN ADD HOGA -->
+        <button onclick="injectExtraItemFromBillPanel(true)" style="background: var(--neon-green); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
+            🔥 Add to Bill + Send to Kitchen (KDS)
+        </button>
+    </div>
+</div>
 
         <h3>⚖️ Dynamic Tax Rates Configurations</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px;">
@@ -2341,40 +2351,56 @@ async function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFiel
 }
 
 // ===================================================================
-// ⚡ WAITER BILLING CONSOLE: FORCE INJECT WITH KDS REALTIME SYNC & CONFIRMATION
+// ⚡ WAITER BILLING CONSOLE: DUAL ROUTING ENGINE (BILL & KDS)
 // ===================================================================
-async function injectExtraItemFromBillPanel() {
-    let selectedTargetTable = document.getElementById('waiterTableSelect').value;
-    let targetDishName = document.getElementById('waiterItemSelect').value;
-    let targetSize = document.getElementById('waiterSizeSelect').value;
-    let bp = null; 
-    
-    // Dish details Lookup
-    menuCategories.forEach(c => { 
-        let f = c.items.find(i => i.name === targetDishName); 
-        if (f) bp = f; 
-    });
-    
-    if (bp && targetSize) {
-        let fixedUnitPrice = bp[targetSize] || 0;
-        let cleanTableId = selectedTargetTable.includes('_') ? selectedTargetTable.split('_')[1] : selectedTargetTable;
+async function injectExtraItemFromBillPanel(sendToKds = false) {
+    try {
+        let selectedTargetTable = document.getElementById('waiterTableSelect').value;
+        let targetDishName = document.getElementById('waiterItemSelect').value;
+        let targetSize = document.getElementById('waiterSizeSelect').value;
 
-        // 1. Bill Matrix mein add karo
-        await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable, 1);
-        
-        // 2. 🔥 KDS PAR FORCE PUSH (Kitchen Screen par order live chala jayega)
-        await dispatchKdsTicketDirectly(cleanTableId, targetDishName, targetSize, 1);
+        if (!selectedTargetTable || !targetDishName || !targetSize) {
+            alert("⚠️ Please select Table, Dish, and Size first!");
+            return;
+        }
 
-        // UI Refresh
-        localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-        auditSelectedTableBillInvoiceLive();
+        // Dish details lookup from menu
+        let bp = null; 
+        const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+        safeCategories.forEach(c => { 
+            if (c && Array.isArray(c.items)) {
+                let f = c.items.find(i => i && i.name === targetDishName); 
+                if (f) bp = f; 
+            }
+        });
 
-        // Confirmation Alert / Notification
-        showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} [${targetSize.toUpperCase()}] pushed to Table ${cleanTableId} & Live KDS!`);
-        alert(`✅ CONFIRMED KDS PUSH:\n\nItem '${targetDishName}' has been added to Table ${cleanTableId}'s running bill AND dispatched directly to the KDS Kitchen Monitor!`);
+        if (bp && targetSize) {
+            let fixedUnitPrice = parseFloat(bp[targetSize]) || 0;
+            let cleanTableId = selectedTargetTable.includes('_') ? selectedTargetTable.split('_')[1] : selectedTargetTable;
 
-    } else { 
-        showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
+            // 1. Always append dish to the live Running Bill
+            await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable, 1);
+
+            // 2. Conditional Push to Kitchen (KDS)
+            if (sendToKds) {
+                await dispatchKdsTicketDirectly(selectedTargetTable, targetDishName, targetSize, 1);
+                showOnScreenNotification(`🔥 Item [${targetDishName}] added to Table ${cleanTableId} Bill & sent to Kitchen KDS!`);
+                alert(`✅ SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill AND sent directly to the Kitchen KDS Monitor!`);
+            } else {
+                showOnScreenNotification(`📋 Item [${targetDishName}] added to Table ${cleanTableId} Bill only!`);
+                alert(`✅ SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill ONLY (Not sent to KDS).`);
+            }
+
+            // UI Refresh for Cashier/Admin Live Viewer
+            if (typeof auditSelectedTableBillInvoiceLive === "function") {
+                auditSelectedTableBillInvoiceLive();
+            }
+        } else { 
+            showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
+        }
+    } catch (err) {
+        console.error("🚨 Waiter Inject Error:", err);
+        alert("❌ Failed to process waiter order injection: " + err.message);
     }
 }
 
