@@ -2757,7 +2757,7 @@ function executeNativeBrowserPrintTrigger() {
         }
 
 // ===================================================================
-// 🔔 SAAS MULTI-TENANT WAITER CALLING BELL ENGINE
+// 🔔 WAITER CALLING BELL ENGINE (VISUAL GLOW ALERT + 10s AUTO RESET)
 // ===================================================================
 let waiterBellTimer = null;
 
@@ -2765,17 +2765,16 @@ function callWaiterBellSignal() {
     try {
         let isTableFound = false;
 
-        // 1. Force Audio Unlock for current session
-        if (typeof unlockAudioEngineOnUserGesture === 'function') {
-            unlockAudioEngineOnUserGesture();
-        }
-
-        // 2. Local Table Mapping & Verification
+        // 1. Target table ko match karke uska waiterBell flag true karo (Glow start karne ke liye)
         floorData.forEach(floor => { 
             if (floor && floor.tables) {
                 floor.tables.forEach(t => { 
-                    let compoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                    if (t.id === clientCurrentActiveTable || compoundKey === clientCurrentActiveTable || clientCurrentActiveTable.endsWith('_' + t.id.trim())) { 
+                    let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                    let activeTableClean = clientCurrentActiveTable.trim();
+
+                    if (t.id === activeTableClean || 
+                        currentLocalKey === activeTableClean || 
+                        activeTableClean.endsWith('_' + t.id.trim())) { 
                         t.waiterBell = true; 
                         isTableFound = true;
                     } 
@@ -2783,39 +2782,36 @@ function callWaiterBellSignal() {
             }
         });
 
-        // Fallback for isolated single table setup
-        if (!isTableFound && floorData[0] && floorData[0].tables[0]) {
+        // Fallback: Agar exact match na mile par table active hai
+        if (!isTableFound && floorData[0] && floorData[0].tables && floorData[0].tables[0]) {
             floorData[0].tables[0].waiterBell = true;
             isTableFound = true;
         }
 
         if (isTableFound) {
-            // Local state update & Grid re-render
+            // 2. Local State Save & Admin Grid Redraw (Table Card par 'waiter-alert' Glowing animation start ho jayegi)
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
             if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
 
-            // 3. Supabase Realtime Dispatch (Broadcast to Admin/POS Dashboard)
+            // 3. Supabase Cloud Sync (Admin/Cashier Dashboard par Realtime Glow Broadcast)
             syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, true, 'PENDING');
 
-            // 4. Audio Alert Dispatch (Triggers Siren on Admin/Waiter Dashboard)
-            if (typeof triggerAudioBeepAlert === 'function') {
-                let kdsStateBackup = isKDSActive;
-                isKDSActive = true;
-                triggerAudioBeepAlert(null, 'INSERT');
-                isKDSActive = kdsStateBackup;
-            }
+            showOnScreenNotification(`🔔 Waiter alert sent for Table ${clientCurrentActiveTable}!`);
 
-            showOnScreenNotification(`🔔 Waiter signal dispatched for Table ${clientCurrentActiveTable}!`);
-
-            // 5. Multi-click Safety & 10-Second Auto-Reset Timer Window
+            // 4. Multi-click safety (Purana pending reset timer clear karein)
             if (waiterBellTimer) clearTimeout(waiterBellTimer);
 
+            // 5. Exact 10 Seconds Auto-Reset (10s baad Glowing Status Automatic band ho jayega)
             waiterBellTimer = setTimeout(() => {
                 floorData.forEach(floor => { 
                     if (floor && floor.tables) {
                         floor.tables.forEach(t => { 
-                            let compoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                            if (t.id === clientCurrentActiveTable || compoundKey === clientCurrentActiveTable || clientCurrentActiveTable.endsWith('_' + t.id.trim())) { 
+                            let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                            let activeTableClean = clientCurrentActiveTable.trim();
+
+                            if (t.id === activeTableClean || 
+                                currentLocalKey === activeTableClean || 
+                                activeTableClean.endsWith('_' + t.id.trim())) { 
                                 t.waiterBell = false; 
                             } 
                         }); 
@@ -2825,16 +2821,16 @@ function callWaiterBellSignal() {
                 localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                 if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
                 
-                // Clear state in Cloud Database
+                // Cloud DB reset (Admin panel par glow clear kar do)
                 syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
-                console.log(`⏰ SaaS Waiter Bell Engine: Auto-reset completed for Table [${clientCurrentActiveTable}]`);
-            }, 10000); // 10 Seconds Auto Window
+                console.log(`⏰ Waiter Bell Auto-Reset: Flashing glow cleared for Table [${clientCurrentActiveTable}] after 10s.`);
+            }, 10000); // Exact 10 Seconds
 
         } else {
             showOnScreenNotification("❌ Active table scope unverified!", true);
         }
     } catch (err) {
-        console.error("🚨 SaaS Bell Dispatch Exception:", err);
+        console.error("🚨 Waiter Bell Signal Error:", err);
     }
 }
 // ===================================================================
