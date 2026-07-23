@@ -5962,6 +5962,7 @@ function triggerAudioBeepAlert() {
 function launchKitchenDisplaySystemModule() {
     document.getElementById('adminDashboard').style.display = 'none';
     document.getElementById('kitchenDashboard').style.display = 'block';
+
     // 🔒 NET LEVEL ISOLATION: Unsubscribe old channel if already exists
     if (kdsRealtimeChannelInstance) {
         supabaseClient.removeChannel(kdsRealtimeChannelInstance);
@@ -5974,11 +5975,16 @@ function launchKitchenDisplaySystemModule() {
             schema: 'public', 
             table: 'active_orders', 
             filter: 'hotel_id=eq.' + hotelGlobalScopeID 
-        }, () => {
+        }, (payload) => {
+            // 🔔 SOUND RULE: Play alert ONLY when a brand-new order is inserted while KDS is open
+            if (payload.eventType === 'INSERT') {
+                triggerAudioBeepAlert();
+            }
             fetchActiveKitchenOrdersQueue();
         })
         .subscribe();
         
+    // Initial load: Fetches existing pending orders SILENTLY
     fetchActiveKitchenOrdersQueue();
     
     if (!kdsClockIntervalTimerId) {
