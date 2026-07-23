@@ -5891,29 +5891,27 @@ async function unlockAudioEngineOnUserGesture() {
             return;
         }
 
-        // Lazy initialize AudioContext strictly within user gesture context
+        // Lazy initialize AudioContext strictly inside gesture handler
         if (!globalAudioCtx) {
             globalAudioCtx = new AudioContextClass();
         }
 
-        // Await resume completion before playing buffer nodes
-        if (globalAudioCtx.state === 'suspended') {
+        // Direct Resume without state-check warning loop
+        if (globalAudioCtx.state !== 'running') {
             await globalAudioCtx.resume();
         }
 
-        if (globalAudioCtx.state === 'running') {
-            // Play a 1-sample silent buffer directly within the gesture pipeline
-            // This satisfies Chrome's Autoplay Policy without printing warnings
-            const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
-            const source = globalAudioCtx.createBufferSource();
-            source.buffer = silentBuffer;
-            source.connect(globalAudioCtx.destination);
-            source.start(0);
+        // Play silent 1-sample buffer to seal unlock state
+        const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
+        const source = globalAudioCtx.createBufferSource();
+        source.buffer = silentBuffer;
+        source.connect(globalAudioCtx.destination);
+        source.start(0);
 
-            isAudioUnlocked = true;
-            cleanAudioListeners();
-            console.log("🔊 Audio successfully unlocked for this session!");
-        }
+        isAudioUnlocked = true;
+        cleanAudioListeners();
+        console.log("🔊 Audio successfully unlocked for this session!");
+
     } catch (err) {
         console.error("Audio unlock exception:", err);
     } finally {
