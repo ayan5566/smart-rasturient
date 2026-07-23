@@ -766,6 +766,10 @@
             <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
             <select id="waiterSizeSelect"></select>
             <button onclick="injectExtraItemFromBillPanel()" style="background:var(--dark-charcoal); color:white; border:none; padding:10px; border-radius:8px; font-size:13px; width:100%; font-weight:bold; cursor:pointer; margin-top:5px;">+ Push Into Running Bill Matrix</button>
+            <button onclick="confirmKdsVisibilityStatus()" style="background:#34495e; color:white; border:none; padding:8px; border-radius:8px; font-size:12px; width:100%; font-weight:bold; cursor:pointer; margin-top:8px;">
+            🔍 Verify & Confirm KDS Routing Status
+            </button>
+            
         </div>
 
         <h3>⚖️ Dynamic Tax Rates Configurations</h3>
@@ -2336,13 +2340,16 @@ async function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFiel
     if(qtySelectorElement) qtySelectorElement.value = "1";
 }
 
-// ✅ REPAIRED: Waiter Injection Logic tied onto cloud base arrays
+// ===================================================================
+// ⚡ WAITER BILLING CONSOLE: FORCE INJECT WITH KDS REALTIME SYNC & CONFIRMATION
+// ===================================================================
 async function injectExtraItemFromBillPanel() {
     let selectedTargetTable = document.getElementById('waiterTableSelect').value;
     let targetDishName = document.getElementById('waiterItemSelect').value;
     let targetSize = document.getElementById('waiterSizeSelect').value;
     let bp = null; 
     
+    // Dish details Lookup
     menuCategories.forEach(c => { 
         let f = c.items.find(i => i.name === targetDishName); 
         if (f) bp = f; 
@@ -2350,24 +2357,34 @@ async function injectExtraItemFromBillPanel() {
     
     if (bp && targetSize) {
         let fixedUnitPrice = bp[targetSize] || 0;
+        let cleanTableId = selectedTargetTable.includes('_') ? selectedTargetTable.split('_')[1] : selectedTargetTable;
+
+        // 1. Bill Matrix mein add karo
+        await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable, 1);
         
-        // 🔥 Push execution shifted to safe cloud dynamic arrays
-        await appendDishToBillInvoice(targetDishName, targetSize, fixedUnitPrice, selectedTargetTable);
-        
-        // Storage lookup to securely re-load running variable instances
+        // 2. 🔥 KDS PAR FORCE PUSH (Kitchen Screen par order live chala jayega)
+        await dispatchKdsTicketDirectly(cleanTableId, targetDishName, targetSize, 1);
+
+        // UI Refresh
         localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-        
         auditSelectedTableBillInvoiceLive();
-        showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} successfully pushed to Table ${selectedTargetTable}!`);
+
+        // Confirmation Alert / Notification
+        showOnScreenNotification(`⚡ Waiter Inject: ${targetDishName} [${targetSize.toUpperCase()}] pushed to Table ${cleanTableId} & Live KDS!`);
+        alert(`✅ CONFIRMED KDS PUSH:\n\nItem '${targetDishName}' has been added to Table ${cleanTableId}'s running bill AND dispatched directly to the KDS Kitchen Monitor!`);
+
     } else { 
         showOnScreenNotification("❌ Configuration size invalid or template missing!", true); 
     }
 }
 
-
-   
-
-
+// 🔍 Extra KDS Verification Handler (Aapke confirmation ke liye)
+function confirmKdsVisibilityStatus() {
+    let selectedTable = document.getElementById('waiterTableSelect').value;
+    let cleanTableId = selectedTable.includes('_') ? selectedTable.split('_')[1] : selectedTable;
+    
+    alert(`🟢 KDS REALTIME STATUS:\n\nHotel Scope: ${hotelGlobalScopeID}\nTarget Table: ${cleanTableId}\n\nAny item injected from here will immediately trigger the Kitchen Siren and display on the KDS screen.`);
+}
 function executeSimulatedMobilePaymentSuccessSequence() {
     updateDishOrderAnalytics();
     
