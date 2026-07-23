@@ -5889,18 +5889,19 @@ async function unlockAudioEngineOnUserGesture() {
             return;
         }
 
-        // Lazy initialize AudioContext within user gesture context
+        // Lazy initialize AudioContext strictly within user gesture context
         if (!globalAudioCtx) {
             globalAudioCtx = new AudioContextClass();
         }
 
-        // Await resume completion before creating buffer nodes
+        // Await resume completion before playing buffer nodes
         if (globalAudioCtx.state === 'suspended') {
             await globalAudioCtx.resume();
         }
 
         if (globalAudioCtx.state === 'running') {
             // Play a 1-sample silent buffer directly within the gesture pipeline
+            // This satisfies Chrome's Autoplay Policy without printing warnings
             const silentBuffer = globalAudioCtx.createBuffer(1, 1, 22050);
             const source = globalAudioCtx.createBufferSource();
             source.buffer = silentBuffer;
@@ -5924,9 +5925,10 @@ function cleanAudioListeners() {
     window.removeEventListener('click', unlockAudioEngineOnUserGesture);
 }
 
-// Unified Pointer + Keyboard Listeners
+// Unified Pointer + Keyboard Listeners (Passive for high performance)
 window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
 window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
+
 // 👨‍🍳 KDS SIREN ALERT (Tabhi bajega jab context unlocked aur ready ho)
 function triggerAudioBeepAlert() {
     try {
