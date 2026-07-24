@@ -792,10 +792,14 @@
         
 <h3>🎮 Target Variables & Value Ratios</h3>
 <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center;">
+    <!-- Added slightly more vertical gap (16px) to space out the new labels comfortably -->
+    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 12px; align-items: center;">
         
         <!-- Brick Breaker -->
-        <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Clear Target:</span>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Clear Target:</span>
+            <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: 3–5 Levels <span style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
+        </div>
         <input type="number" id="cfgBrickTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
@@ -803,7 +807,10 @@
         </div>
 
         <!-- Flappy Bird -->
-        <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
+            <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: 5–10 Points <span style="color:#7f8c8d; font-weight:500;">(Hard)</span></span>
+        </div>
         <input type="number" id="cfgFlappyTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
@@ -811,7 +818,10 @@
         </div>
 
         <!-- Space Shooter -->
-        <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
+            <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: Stage 3–5 <span style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
+        </div>
         <input type="number" id="cfgSpaceTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
@@ -819,7 +829,10 @@
         </div>
 
         <!-- Snake Game -->
-        <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
+            <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">⭐ Rec: 10–15 Apples <span style="color:#7f8c8d; font-weight:500;">(Easy)</span></span>
+        </div>
         <input type="number" id="cfgSnakeTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
@@ -827,7 +840,10 @@
         </div>
 
         <!-- Tower Bloxx -->
-        <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
+            <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: Level 3–4 <span style="color:#7f8c8d; font-weight:500;">(Hard / 20-30 Floors)</span></span>
+        </div>
         <input type="number" id="cfgTowerTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
