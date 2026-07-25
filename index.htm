@@ -5624,99 +5624,276 @@ function frameUpdateBrickBreaker() {
     brCtx.fillText(scoreDisplay, brickCanvasElement.width - 12, 25);
 }
 // ===================================================================
-// 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (ZERO OVERLAP OVERLAY)
+// 🐦 FLAPPY BIRD AAA VFX, HOOKS & STATE VARIABLES
+// ===================================================================
+var flappyParticles = [];
+var flappyClouds = [];
+var flappyTime = 0;
+var flappyCameraShake = 0;
+var flappyCameraY = 0;
+var flappyGroundScroll = 0;
+var flappyComboCount = 1;
+var flappyComboTimer = 0;
+var flappyLevelTheme = { sky: '#1e3c72', pipe: '#2ecc71', ground: '#27ae60' };
+
+// Pre-initialize clouds once to save GC spikes
+for(let i=0; i<6; i++) {
+    flappyClouds.push({
+        x: Math.random() * 400, y: Math.random() * 150 + 20, 
+        size: Math.random() * 20 + 15, speed: Math.random() * 0.5 + 0.2
+    });
+}
+
+// 🎵 AUDIO HOOKS (Ready for your external system)
+function onFlappyJump() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'JUMP'); }
+function onFlappyPass() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'SCORE'); }
+function onFlappyCrash() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'CRASH'); }
+function onFlappyReward() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'REWARD'); }
+
+function createFlappyParticles(x, y, color, count, isCrash = false) {
+    for(let i = 0; i < count; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = Math.random() * (isCrash ? 5 : 2) + 1;
+        flappyParticles.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 1.0, decay: Math.random() * 0.05 + 0.02, color: color, size: Math.random() * 3 + 1
+        });
+    }
+}
+
+// ===================================================================
+// 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (AAA UPGRADE)
 // ===================================================================
 function frameUpdateFlappy() {
-    // 🛡️ Safe checks to ensure canvas context is active before rendering frames
     if (!flappyCanvasElement || !flCtx) return;
 
-    // 💧 Dynamic stage clear bounds matching screen resolution natively
-    flCtx.clearRect(0, 0, flappyCanvasElement.width, flappyCanvasElement.height); 
+    flappyTime += 0.05;
     
+    // --- 1. DYNAMIC DIFFICULTY PROGRESSION ---
+    let difficultyLevel = Math.floor(flappyScoreTracker / 5);
+    let currentSpeed = 2.2 + Math.min(2.0, difficultyLevel * 0.3); // Caps at +2.0 speed
+    let currentGapSize = Math.max(85, 120 - (difficultyLevel * 5)); // Gap shrinks but never impossible
+    
+    // Dynamic Theme Shifting
+    if (difficultyLevel >= 4) flappyLevelTheme = { sky: '#0f2027', pipe: '#e74c3c', ground: '#c0392b' }; // Lava / Expert
+    else if (difficultyLevel >= 2) flappyLevelTheme = { sky: '#2b5876', pipe: '#f39c12', ground: '#d35400' }; // Sunset / Hard
+    else flappyLevelTheme = { sky: '#70c5ce', pipe: '#2ecc71', ground: '#27ae60' }; // Day / Easy
+
+    // --- 2. CAMERA SHAKE & PARALLAX BACKGROUND ---
+    let camOffsetX = 0, camOffsetY = 0;
+    if (flappyCameraShake > 0) {
+        camOffsetX = (Math.random() - 0.5) * flappyCameraShake;
+        camOffsetY = (Math.random() - 0.5) * flappyCameraShake;
+        flappyCameraShake *= 0.85; 
+        if (flappyCameraShake < 0.5) flappyCameraShake = 0;
+    }
+
+    flCtx.save();
+    flCtx.translate(camOffsetX, camOffsetY);
+
+    // Deep Sky Background
+    flCtx.fillStyle = flappyLevelTheme.sky;
+    flCtx.fillRect(0, 0, flappyCanvasElement.width, flappyCanvasElement.height);
+
+    // Parallax Clouds
+    flCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    flappyClouds.forEach(cloud => {
+        cloud.x -= cloud.speed;
+        if (cloud.x + cloud.size < 0) { cloud.x = flappyCanvasElement.width + cloud.size; cloud.y = Math.random() * 150 + 20; }
+        flCtx.beginPath();
+        flCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+        flCtx.arc(cloud.x + 15, cloud.y - 10, cloud.size * 0.8, 0, Math.PI * 2);
+        flCtx.fill();
+    });
+
+    // --- 3. BIRD PHYSICS & ANIMATION ---
+    // Hook Jump Velocity manually reading native jump (if velocity jumps drastically negative)
+    let previousVelocity = fBird.velocity;
     fBird.velocity += 0.23; 
     fBird.y += fBird.velocity;
     
-    // Draw Bird body (remains centered relative to horizontal coordinate X: 50)
-    flCtx.fillStyle = "#ffd700"; flCtx.beginPath(); flCtx.arc(50, fBird.y, 11, 0, Math.PI*2); flCtx.fill();
-    flCtx.fillStyle = "white"; flCtx.beginPath(); flCtx.arc(54, fBird.y-3, 4, 0, Math.PI*2); flCtx.fill();
-    flCtx.fillStyle = "black"; flCtx.beginPath(); flCtx.arc(55, fBird.y-3, 1.5, 0, Math.PI*2); flCtx.fill();
-    flCtx.fillStyle = "#e67e22"; flCtx.fillRect(58, fBird.y-1, 6, 4);
+    if (previousVelocity > 0 && fBird.velocity < -3) onFlappyJump(); // Intercepted jump hook
+
+    // Smooth Pitch Rotation
+    let targetRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, fBird.velocity * 0.12));
+
+    flCtx.save();
+    flCtx.translate(50, fBird.y);
+    flCtx.rotate(targetRotation);
+
+    // Glowing Aura
+    flCtx.shadowColor = '#f39c12';
+    flCtx.shadowBlur = 10;
     
-    // 🔥 FIXED: Floor crash limit bound to current physical height dynamically
-    if(fBird.y > flappyCanvasElement.height - 11 || fBird.y < 0) { 
-        finalizeFailedRun("💥 Bird Crashed Floor!"); 
-        return; 
+    // Bird Body
+    flCtx.fillStyle = "#ffd700"; 
+    flCtx.beginPath(); flCtx.ellipse(0, 0, 14, 11, 0, 0, Math.PI*2); flCtx.fill();
+    
+    flCtx.shadowBlur = 0; // Turn off shadow for inner details to save GPU
+    
+    // Wing Flap Animation (Flaps faster when rising)
+    let flapSpeed = fBird.velocity < 0 ? 25 : 8;
+    let wingY = Math.sin(flappyTime * flapSpeed) * 4;
+    flCtx.fillStyle = "#f39c12"; 
+    flCtx.beginPath(); flCtx.ellipse(-4, wingY, 8, 5, -0.2, 0, Math.PI*2); flCtx.fill();
+    
+    // Eye & Blinking
+    let isBlinking = Math.random() > 0.98;
+    flCtx.fillStyle = "white"; 
+    flCtx.beginPath(); flCtx.arc(6, -4, 5, 0, Math.PI*2); flCtx.fill();
+    if (!isBlinking) {
+        flCtx.fillStyle = "black"; 
+        flCtx.beginPath(); flCtx.arc(8, -4, 2, 0, Math.PI*2); flCtx.fill();
     }
     
+    // Beak
+    flCtx.fillStyle = "#e67e22"; 
+    flCtx.beginPath();
+    flCtx.moveTo(10, 0); flCtx.lineTo(20, -2); flCtx.lineTo(18, 4); flCtx.fill();
+    
+    // Feather Highlight
+    flCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    flCtx.beginPath(); flCtx.ellipse(0, -6, 6, 2, 0, 0, Math.PI*2); flCtx.fill();
+    
+    flCtx.restore();
+
+    // --- 4. FLOOR CRASH DETECTOR ---
+    let groundY = flappyCanvasElement.height - 30;
+    if(fBird.y > groundY - 11 || fBird.y < -20) { 
+        flappyCameraShake = 15;
+        onFlappyCrash();
+        createFlappyParticles(50, fBird.y, '#ffd700', 30, true); // Feather explosion
+        finalizeFailedRun("💥 Bird Crashed!"); 
+        return; 
+    }
+
+    // --- 5. PREMIUM PIPES & COLLISION ---
     fPipes.forEach((p, idx) => {
-        p.x -= 2.2; 
-        flCtx.fillStyle = "#27ae60"; 
+        p.x -= currentSpeed; 
         
-        // Draw Top Pipe
-        flCtx.fillRect(p.x, 0, 42, p.gapTop); 
+        let pipeW = 48; // Slightly thicker premium pipes
         
-        // 🔥 FIXED: Bottom Pipe length calculated automatically according to current screen height
-        flCtx.fillRect(p.x, p.gapBottom, 42, flappyCanvasElement.height - p.gapBottom);
+        // Pseudo-3D Pipe Render (No Gradients)
+        flCtx.fillStyle = flappyLevelTheme.pipe; 
+        flCtx.fillRect(p.x, 0, pipeW, p.gapTop); 
+        flCtx.fillRect(p.x, p.gapBottom, pipeW, flappyCanvasElement.height - p.gapBottom);
         
-        // 🔥 FIXED: Spawns next pipe exactly when the current one crosses the exact center of any mobile screen
+        // Pipe Shadows/Highlights for Depth
+        flCtx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        flCtx.fillRect(p.x + pipeW - 10, 0, 10, p.gapTop);
+        flCtx.fillRect(p.x + pipeW - 10, p.gapBottom, 10, flappyCanvasElement.height);
+        
+        flCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        flCtx.fillRect(p.x + 2, 0, 6, p.gapTop);
+        flCtx.fillRect(p.x + 2, p.gapBottom, 6, flappyCanvasElement.height);
+
+        // Pipe Caps (Thicker ends)
+        flCtx.fillStyle = flappyLevelTheme.ground;
+        flCtx.fillRect(p.x - 4, p.gapTop - 15, pipeW + 8, 15); // Top Cap
+        flCtx.fillRect(p.x - 4, p.gapBottom, pipeW + 8, 15); // Bottom Cap
+        
+        // Spawn Next Pipe
         if(p.x <= (flappyCanvasElement.width / 2) && !p.registered) { 
             p.registered = true; 
-            // Calculate dynamic tops relative to available stage height boundaries
-            let nextTop = Math.random() * (flappyCanvasElement.height - 200) + 40; 
+            let minTop = 40;
+            let maxTop = groundY - currentGapSize - 40;
+            let nextTop = Math.random() * (maxTop - minTop) + minTop; 
             fPipes.push({ 
                 x: flappyCanvasElement.width, 
                 gapTop: nextTop, 
-                gapBottom: nextTop + 120, // Clean passable opening gap width
+                gapBottom: nextTop + currentGapSize, 
                 registered: false 
             }); 
         }
         
-        // Collision Detection coordinates rules updated natively
-        if(p.x < 61 && p.x + 42 > 39) { 
-            if(fBird.y - 11 < p.gapTop || fBird.y + 11 > p.gapBottom) { 
+        // AAA Collision Detection (Tightened hitbox)
+        let birdLeft = 50 - 9, birdRight = 50 + 9;
+        let birdTop = fBird.y - 9, birdBottom = fBird.y + 9;
+        
+        if(p.x < birdRight && p.x + pipeW > birdLeft) { 
+            if(birdTop < p.gapTop || birdBottom > p.gapBottom) { 
+                flappyCameraShake = 12;
+                onFlappyCrash();
+                createFlappyParticles(50, fBird.y, '#ffd700', 25, true);
                 finalizeFailedRun("💥 Collision with Pipe!"); 
+                return; 
             } 
         }
         
-        // Score trigger point rules updated
-        // Inside frameUpdateFlappy loops structure tracking targets:
-if(p.x + 42 < 39 && p.registered === true && idx === 0) { 
-    flappyScoreTracker++; 
-    // 🔥 FIXED: Standard targets checks linked dynamically to variable configurations rules
-    if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
-        triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
-    }
-    fPipes.shift(); 
-}
+        // AAA Scoring & Combo Hooks
+        if(p.x + pipeW < 50 && p.registered === true && idx === 0) { 
+            flappyScoreTracker++; 
+            flappyCameraY = 5; // Slight camera bump
+            onFlappyPass();
+            createFlappyParticles(50, fBird.y, '#2ecc71', 15, false); // Pass Sparkles
+            
+            // 🔥 FIXED: Preserved original strict admin matrix targets
+            if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
+                onFlappyReward();
+                createFlappyParticles(50, fBird.y, '#f1c40f', 40, true); // Reward Burst
+                triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
+            }
+            fPipes.shift(); 
+        }
     });
-    
-    // Dynamic text score positioning
-    flCtx.fillStyle = "#2c3e50"; 
-    flCtx.font = "bold 15px Arial"; 
-    flCtx.fillText("Points: " + flappyScoreTracker, 15, 25);
-}
 
-       function setupLevelParameters() {
-    let isBoss = (currentLevelState % 5 === 0); // Boss every 5 stages
-    let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
+    // --- 6. SCROLLING GROUND ---
+    flappyGroundScroll = (flappyGroundScroll - currentSpeed) % 30;
+    flCtx.fillStyle = flappyLevelTheme.ground;
+    flCtx.fillRect(0, groundY, flappyCanvasElement.width, 30);
+    flCtx.fillStyle = "rgba(0,0,0,0.15)";
+    flCtx.fillRect(0, groundY, flappyCanvasElement.width, 4); // Ground Shadow
     
-    // Bosses are now massive; minions have varied sizes/speeds based on stage
-    let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
-    let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
-    let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
+    // Striped moving texture
+    flCtx.fillStyle = "rgba(0,0,0,0.1)";
+    for(let gx = flappyGroundScroll; gx < flappyCanvasElement.width; gx += 30) {
+        flCtx.beginPath();
+        flCtx.moveTo(gx, groundY);
+        flCtx.lineTo(gx + 15, groundY);
+        flCtx.lineTo(gx + 5, flappyCanvasElement.height);
+        flCtx.lineTo(gx - 10, flappyCanvasElement.height);
+        flCtx.fill();
+    }
 
-    alienInvaderObj = { 
-        x: 160 - (shipW/2), y: isBoss ? -100 : 40, // Boss drops in from top 
-        w: shipW, h: shipH, 
-        health: bHealth, maxHealth: bHealth, 
-        dx: shipSpeed, 
-        isBoss: isBoss 
-    };
+    // --- 7. PARTICLE ENGINE RENDERER ---
+    for(let i = flappyParticles.length - 1; i >= 0; i--) {
+        let p = flappyParticles[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life -= p.decay;
+        if(p.life <= 0) { flappyParticles.splice(i, 1); continue; }
+        flCtx.globalAlpha = Math.max(0, p.life);
+        flCtx.fillStyle = p.color;
+        flCtx.beginPath(); flCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); flCtx.fill();
+    }
+    flCtx.globalAlpha = 1.0;
+
+    flCtx.restore(); // Restore Camera Shake
+
+    // --- 8. MODERN GLASSMORPHISM HUD ---
+    flCtx.fillStyle = "rgba(15, 23, 42, 0.75)";
+    flCtx.beginPath(); flCtx.roundRect(10, 10, 110, 32, 8); flCtx.fill();
     
-    spaceBullets = []; enemyLasers = []; powerUps = []; 
-    spaceParticlesArray = []; // Clear particles on new stage
-    sShieldTimer = 0; sMultiTimer = 0;
+    flCtx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+    flCtx.lineWidth = 1;
+    flCtx.stroke();
+    
+    flCtx.fillStyle = "#ffffff"; 
+    flCtx.font = "900 15px Segoe UI"; 
+    flCtx.textAlign = "left";
+    flCtx.fillText(`🍎 Pts: ${flappyScoreTracker}`, 18, 32);
+
+    // Difficulty Indicator
+    flCtx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    flCtx.font = "bold 10px Segoe UI";
+    flCtx.textAlign = "right";
+    flCtx.fillText(`Lvl ${difficultyLevel + 1}`, flappyCanvasElement.width - 15, 20);
+    
+    // Dynamic Camera Reset
+    if (flappyCameraY > 0) flappyCameraY -= 0.5;
 }
+// ===================================================================
+// ===== END MODIFICATION =====
 // ===================================================================
 // 🚀 FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
 // ===================================================================
@@ -6507,6 +6684,34 @@ function setSnakeDirection(dirVector) {
     if(dirVector === 'LEFT' && snakeLastMovedVector.x === 0) currentSnakeVector = {x: -20, y: 0}; 
     if(dirVector === 'RIGHT' && snakeLastMovedVector.x === 0) currentSnakeVector = {x: 20, y: 0};
 }
+        // ===================================================================
+// 💥 UPGRADED: GAME OVER RUNTIME CONTROLLER (GLOBAL SCOPE FIX)
+// ===================================================================
+window.finalizeFailedRun = function(failureMessage) { 
+    // 1. Stop the game loop
+    if (typeof loopTimerInstance !== 'undefined') {
+        clearInterval(loopTimerInstance);
+    }
+    
+    // 2. Show the Crash/Game Over Message
+    let statusMsg = document.getElementById('gameScreenStatusMsg');
+    if (statusMsg) {
+        statusMsg.innerHTML = `
+            <div style="color: #ff4d4d; font-size: 20px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                ${failureMessage}
+            </div>
+        `;
+        statusMsg.style.display = "block";
+    }
+    
+    // 3. Show the 'Try Again' Button
+    let tryAgainBtn = document.getElementById('startBtn');
+    if (tryAgainBtn) {
+        tryAgainBtn.style.display = "block";
+        tryAgainBtn.innerText = "🔄 Try Campaign Attempt Again";
+        tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
+    }
+};
 // ===================================================================
 // ===== END MODIFICATION =====
 // ===================================================================
