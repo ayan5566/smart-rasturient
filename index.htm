@@ -6113,142 +6113,402 @@ function createSpaceExplosion(x, y, color, count, isBoss) {
     }
 }
 // ===================================================================
-// 🐍 CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC (ANTI-CRASH)
+// 🐍 AAA SNAKE GAME: GLOBAL STATE & VFX VARIABLES
+// ===================================================================
+var snakeParticlesArray = [];
+var snakeBgStars = [];
+var snakeObstaclesArray = [];
+var snakePowerUpObj = null;
+
+var snakeTickAccumulator = 0;
+var snakeCurrentTickRate = 130; // Starts slightly slower, speeds up dynamically
+var snakeComboCount = 1;
+var snakeComboTimeLeft = 0;
+var snakeTimeVisual = 0;
+var snakeLastMovedVector = { x: 20, y: 0 }; // Prevents rapid double-turn suicide
+var snakeCameraOffset = { x: 0, y: 0 };
+
+// Audio Event Hooks (No actual audio files, ready for your system)
+function onSnakeEatFood() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'EAT'); }
+function onSnakePowerUp() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP'); }
+function onSnakeGameOver() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'GAME_OVER'); }
+function onSnakeCombo() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'COMBO'); }
+
+function createSnakeParticles(x, y, color, count) {
+    for(let i=0; i<count; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = Math.random() * 3 + 1;
+        snakeParticlesArray.push({
+            x: x, y: y,
+            vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+            life: 1.0, decay: Math.random() * 0.05 + 0.02, color: color
+        });
+    }
+}
+
+// ===================================================================
+// 🐍 CORE INITIALIZATION (OVERRIDES EXISTING INIT)
+// ===================================================================
+function initSnakeGameLoop() {
+    clearInterval(loopTimerInstance);
+    // Include px, py to store previous grid locations for 60FPS smooth interpolation
+    snakeArr = [
+        {x: 80, y: 80, px: 80, py: 80}, 
+        {x: 60, y: 80, px: 60, py: 80}, 
+        {x: 40, y: 80, px: 40, py: 80}
+    ]; 
+    currentSnakeVector = { x: 20, y: 0 }; 
+    snakeLastMovedVector = { x: 20, y: 0 };
+    snakeScoreCounter = 0; 
+    
+    // Reset progression variables
+    snakeTickAccumulator = 0;
+    snakeCurrentTickRate = 140;
+    snakeComboCount = 1;
+    snakeComboTimeLeft = 0;
+    snakeObstaclesArray = [];
+    snakePowerUpObj = null;
+    snakeParticlesArray = [];
+    
+    // Generate background ambient stars once to prevent GC spikes
+    snakeBgStars = [];
+    for(let i=0; i<25; i++) {
+        snakeBgStars.push({ x: Math.random() * 400, y: Math.random() * 400, speed: Math.random() * 0.5 + 0.1 });
+    }
+
+    generateSnakeFoodLocation();
+    
+    // 🔥 FRAME UPGRADE: Engine runs at 16ms (~60 FPS) for smooth visual interpolation
+    loopTimerInstance = setInterval(frameUpdateSnake, 16); 
+}
+
+function generateSnakeFoodLocation() { 
+    let maxGridCols = Math.floor(snakeCanvasElement.width / 20);
+    let maxGridRows = Math.floor((snakeCanvasElement.height - 20) / 20);
+    let valid = false;
+    
+    while(!valid) {
+        snakeFoodUnit = { 
+            x: Math.floor(Math.random() * maxGridCols) * 20, 
+            y: Math.floor(Math.random() * maxGridRows + 1) * 20 
+        }; 
+        valid = true;
+        // Verify it doesn't spawn on snake
+        for(let c of snakeArr) if(c.x === snakeFoodUnit.x && c.y === snakeFoodUnit.y) valid = false;
+        // Verify it doesn't spawn on obstacles
+        for(let o of snakeObstaclesArray) if(o.x === snakeFoodUnit.x && o.y === snakeFoodUnit.y) valid = false;
+    }
+}
+
+function generateSnakeObstacle() {
+    let maxGridCols = Math.floor(snakeCanvasElement.width / 20);
+    let maxGridRows = Math.floor((snakeCanvasElement.height - 20) / 20);
+    let obs = { x: Math.floor(Math.random() * maxGridCols) * 20, y: Math.floor(Math.random() * maxGridRows + 1) * 20 };
+    // Safety check to avoid spawning near head or food
+    if (Math.abs(obs.x - snakeArr[0].x) > 40 && Math.abs(obs.y - snakeArr[0].y) > 40) {
+        snakeObstaclesArray.push(obs);
+    }
+}
+
+// ===================================================================
+// 🐍 AAA RENDERING & LOGIC TICK ENGINE (60 FPS + INTERPOLATION)
 // ===================================================================
 function frameUpdateSnake() {
-    // 🛡️ CRITICAL GUARD SHIELD: Agar saamp abhi tak data array mein spawn nahi hua hai, toh crash hone se roko
-    if (!snakeCanvasElement || !snCtx || !snakeArr || snakeArr.length === 0) {
-        return; 
+    if (!snakeCanvasElement || !snCtx || !snakeArr || snakeArr.length === 0) return; 
+
+    snakeTimeVisual += 0.05;
+    snakeTickAccumulator += 16; // 16ms rendering delta
+
+    // --- COMBO TIMERS ---
+    if (snakeComboTimeLeft > 0) {
+        snakeComboTimeLeft -= 16;
+        if (snakeComboTimeLeft <= 0) snakeComboCount = 1; // Reset combo if too slow
     }
 
-    // Now absolute safe to read segment tracks coordinates natively
-    let nextHead = { x: snakeArr[0].x + currentSnakeVector.x, y: snakeArr[0].y + currentSnakeVector.y };
-    
-    // 🔥 FIXED: Wall crash detection linked to live dynamic dimensions
-    if(nextHead.x < 0 || nextHead.x >= snakeCanvasElement.width || nextHead.y < 20 || nextHead.y >= snakeCanvasElement.height) { 
-        finalizeFailedRun("Snake Hit Wall!"); 
-        return; 
-    }
-    
-    for(let cell of snakeArr) { 
-        if(nextHead.x === cell.x && nextHead.y === cell.y) { 
-            finalizeFailedRun("Snake Crashed Self!"); 
+    // --- LOGIC TICK (Executes only when accumulated time exceeds speed rate) ---
+    if (snakeTickAccumulator >= snakeCurrentTickRate) {
+        snakeTickAccumulator -= snakeCurrentTickRate;
+        snakeLastMovedVector = { ...currentSnakeVector }; // Lock movement vector to prevent quick-turn suicide
+
+        // Save previous positions for smooth lerping
+        for(let i = 0; i < snakeArr.length; i++) {
+            snakeArr[i].px = snakeArr[i].x;
+            snakeArr[i].py = snakeArr[i].y;
+        }
+
+        let nextHead = { 
+            x: snakeArr[0].x + currentSnakeVector.x, 
+            y: snakeArr[0].y + currentSnakeVector.y,
+            px: snakeArr[0].x, // Anchor visual start point
+            py: snakeArr[0].y
+        };
+        
+        // 1. Wall Collision (Admin Grid Boundaries)
+        if(nextHead.x < 0 || nextHead.x >= snakeCanvasElement.width || nextHead.y < 20 || nextHead.y >= snakeCanvasElement.height) { 
+            onSnakeGameOver();
+            createSnakeParticles(snakeArr[0].x, snakeArr[0].y, '#ff4d4d', 30);
+            finalizeFailedRun("💥 Snake Hit The Grid Wall!"); 
             return; 
-        } 
-    }
-    
-    snakeArr.unshift(nextHead);
-    if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
-        snakeScoreCounter++; 
-        generateSnakeFoodLocation(); 
-        // 🔥 FIXED: Syncs reward configuration bounds seamlessly with live admin config values
-        if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
-            triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
         }
-    } else { 
-        snakeArr.pop(); 
-    }
-    
-    snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
-    snCtx.fillStyle = "rgba(0,0,0,0.3)"; 
-    snCtx.fillRect(0, 0, snakeCanvasElement.width, 22);
-    
-    snCtx.fillStyle = "white"; snCtx.font = "12px Segoe UI"; 
-    // Dynamic score text display matching ratios properties fold natively
-    let targetGoalMax = parseInt(rules.snakeTar) || 10;
-    snCtx.fillText("Score: " + snakeScoreCounter + " / " + targetGoalMax, 12, 16);
-    
-    // Draw Apple
-    snCtx.fillStyle = "#ff4d4d"; snCtx.beginPath(); snCtx.arc(snakeFoodUnit.x+10, snakeFoodUnit.y+10, 8, 0, Math.PI*2); snCtx.fill();
-    
-    snakeArr.forEach((bUnit, index) => { 
-        if(index === 0) {
-            snCtx.fillStyle = "#00d2d3"; snCtx.fillRect(bUnit.x, bUnit.y, 19, 19); snCtx.fillStyle = "black"; 
-            if(currentSnakeVector.x > 0) { snCtx.fillRect(bUnit.x+12, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+12, bUnit.y+13, 3, 3); }
-            else if(currentSnakeVector.x < 0) { snCtx.fillRect(bUnit.x+4, bUnit.y+3, 3, 3); snCtx.fillRect(bUnit.x+4, bUnit.y+13, 3, 3); }
-            else if(currentSnakeVector.y > 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+12, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+12, 3, 3); }
-            else if(currentSnakeVector.y < 0) { snCtx.fillRect(bUnit.x+3, bUnit.y+4, 3, 3); snCtx.fillRect(bUnit.x+13, bUnit.y+4, 3, 3); }
+        
+        // 2. Self Collision
+        for(let i = 1; i < snakeArr.length; i++) { 
+            if(nextHead.x === snakeArr[i].x && nextHead.y === snakeArr[i].y) { 
+                onSnakeGameOver();
+                createSnakeParticles(nextHead.x, nextHead.y, '#e74c3c', 30);
+                finalizeFailedRun("💥 Snake Tangled Itself!"); 
+                return; 
+            } 
+        }
+
+        // 3. Obstacle Collision
+        for(let obs of snakeObstaclesArray) {
+            if(nextHead.x === obs.x && nextHead.y === obs.y) {
+                onSnakeGameOver();
+                createSnakeParticles(nextHead.x, nextHead.y, '#95a5a6', 30);
+                finalizeFailedRun("💥 Snake Hit A Laser Barrier!"); 
+                return;
+            }
+        }
+        
+        snakeArr.unshift(nextHead);
+
+        // 4. Food Collection Logic
+        if(nextHead.x === snakeFoodUnit.x && nextHead.y === snakeFoodUnit.y) {
+            // Combo System Check
+            if (snakeComboTimeLeft > 0) {
+                snakeComboCount = Math.min(5, snakeComboCount + 1);
+                onSnakeCombo();
+            }
+            
+            snakeScoreCounter += snakeComboCount; 
+            snakeComboTimeLeft = 3500; // 3.5 seconds to maintain combo
+            onSnakeEatFood();
+            
+            createSnakeParticles(snakeFoodUnit.x+10, snakeFoodUnit.y+10, '#2ecc71', 15);
+            generateSnakeFoodLocation(); 
+            
+            // Difficulty Escalation: Speed Boost & Obstacles
+            snakeCurrentTickRate = Math.max(55, 140 - (Math.floor(snakeScoreCounter / 5) * 5));
+            if (snakeScoreCounter > 20 && snakeScoreCounter % 15 === 0 && snakeObstaclesArray.length < 8) {
+                generateSnakeObstacle();
+            }
+
+            // PowerUp Spawner (10% chance)
+            if (!snakePowerUpObj && Math.random() < 0.1) {
+                let maxC = Math.floor(snakeCanvasElement.width / 20);
+                let maxR = Math.floor((snakeCanvasElement.height - 20) / 20);
+                snakePowerUpObj = { x: Math.floor(Math.random() * maxC) * 20, y: Math.floor(Math.random() * maxR + 1) * 20, life: 6000 };
+            }
+
+            // 🔥 Reward System Trigger (Untouched Logic)
+            if(snakeScoreCounter >= (parseInt(rules.snakeTar) || 10)) {
+                triggerRewardCoupon(parseInt(rules.snakeDisc) || 0);
+            }
         } else { 
-            snCtx.fillStyle = `rgb(16, ${175 - (index * 4)}, 135)`; snCtx.fillRect(bUnit.x+1, bUnit.y+1, 17, 17); 
+            snakeArr.pop(); 
         }
+
+        // 5. PowerUp Collection Logic
+        if (snakePowerUpObj) {
+            snakePowerUpObj.life -= snakeCurrentTickRate;
+            if (snakePowerUpObj.life <= 0) snakePowerUpObj = null; // Despawn
+            else if (nextHead.x === snakePowerUpObj.x && nextHead.y === snakePowerUpObj.y) {
+                snakeScoreCounter += 5; // Bonus points
+                snakeComboCount = 5; // Max combo boost
+                snakeComboTimeLeft = 5000; 
+                createSnakeParticles(snakePowerUpObj.x+10, snakePowerUpObj.y+10, '#f1c40f', 25);
+                onSnakePowerUp();
+                snakePowerUpObj = null;
+            }
+        }
+    }
+
+    // --- RENDERING PHASE (Smooth Interpolation) ---
+    // Lerp factor is between 0.0 and 1.0 representing progression between logic grid ticks
+    let lerpP = snakeTickAccumulator / snakeCurrentTickRate;
+
+    snCtx.clearRect(0, 0, snakeCanvasElement.width, snakeCanvasElement.height); 
+
+    // 1. Dynamic Cyber Background
+    let bgGrad = snCtx.createLinearGradient(0, 20, 0, snakeCanvasElement.height);
+    bgGrad.addColorStop(0, '#090a0f');
+    bgGrad.addColorStop(1, '#111522');
+    snCtx.fillStyle = bgGrad;
+    snCtx.fillRect(0, 20, snakeCanvasElement.width, snakeCanvasElement.height - 20);
+
+    // Floating matrix particles
+    snCtx.fillStyle = 'rgba(0, 210, 211, 0.15)';
+    snakeBgStars.forEach(s => {
+        s.y -= s.speed;
+        if (s.y < 20) s.y = snakeCanvasElement.height;
+        snCtx.fillRect(s.x, s.y, s.size, s.size);
     });
-}
-// 🔥 FIXED: Apple generation bounding boxes calculated from active viewport width ratios
 
-        function setSnakeDirection(dirVector) {
-            if(dirVector==='UP' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:-20}; if(dirVector==='DOWN' && currentSnakeVector.y===0) currentSnakeVector = {x:0, y:20};
-            if(dirVector==='LEFT' && currentSnakeVector.x===0) currentSnakeVector = {x:-20, y:0}; if(dirVector==='RIGHT' && currentSnakeVector.x===0) currentSnakeVector = {x:20, y:0};
-        }
-// ===================================================================
-// 💥 UPGRADED: GAME OVER RUNTIME CONTROLLER (WITH INSTANT TRY AGAIN LINK)
-// ===================================================================
-function finalizeFailedRun(failureMessage) { 
-    clearInterval(loopTimerInstance);
+    // Subtle Micro-Camera Follow Effect
+    let visualHeadX = snakeArr[0].px + (snakeArr[0].x - snakeArr[0].px) * lerpP;
+    let visualHeadY = snakeArr[0].py + (snakeArr[0].y - snakeArr[0].py) * lerpP;
     
-    let statusMsg = document.getElementById('gameScreenStatusMsg');
-    if (statusMsg) {
-        statusMsg.innerHTML = `
-            <div style="color: #ff4d4d; font-size: 20px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                ${failureMessage}
-            </div>
-        `;
-        statusMsg.style.display = "block";
-    }
+    let targetCamX = (snakeCanvasElement.width / 2) - visualHeadX;
+    let targetCamY = ((snakeCanvasElement.height + 20) / 2) - visualHeadY;
     
-    // Configures the launch button matrix directly as a page-refresh proof instant reset link
-    let tryAgainBtn = document.getElementById('startBtn');
-    if (tryAgainBtn) {
-        tryAgainBtn.style.display = "block";
-        tryAgainBtn.innerText = "🔄 Try Campaign Attempt Again";
-        // Binds clean isolated target state machine execution sequence synchronously
-        tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
-    }
-}
-        function removeDishRow(cIdx, iIdx) { menuCategories[cIdx].items.splice(iIdx, 1); saveAdminConfig(); populateAdminForms(); }
-        function addDishToCategory(cIdx) { 
-             menuCategories[cIdx].items.push({ 
-             name: "New Recipe Dish", 
-             s: 100, 
-             m: 200, 
-             l: 300, 
-             sActive: true, 
-             mActive: true, 
-             lActive: true, 
-             inStock: true, // ✅ Seeded state defaults active
-             image: "" 
-    }); 
-    saveAdminConfig(); 
-    populateAdminForms(); 
-}
-        function removeCategory(cIdx) { if(confirm('Delete entire section?')) { menuCategories.splice(cIdx, 1); saveAdminConfig(); populateAdminForms(); } }
-        function removeFloor(fIdx) { if(confirm('Delete floor area?')) { floorData.splice(fIdx, 1); saveAdminConfig(); generateAdminTableGrid(); } }
-        function addTableToFloor(fIdx) { let tNum = floorData[fIdx].tables.length + 1; floorData[fIdx].tables.push({ id: "T"+tNum, state: 0, waiterBell: false }); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
-        function removeTable(fIdx, tIdx) { floorData[fIdx].tables.splice(tIdx, 1); saveAdminConfig(); generateAdminTableGrid(); populateWaiterPanelDropdownList(); }
-        function addNewFloor() { floorData.push({ floorName: "New Floor Row", tables: [] }); saveAdminConfig(); generateAdminTableGrid(); }
-        // ➕ NEW: Creating the missing category section engine to fix ReferenceError
-function addNewCategory() {
-    let catName = prompt("➕ Enter New Category Section Name (e.g., Desserts, Soups):");
-    
-    if (catName && catName.trim() !== "") {
-        // Main menu array mein naye block ko push karo
-        menuCategories.push({ categoryName: catName.trim(), items: [] });
-        
-        // Settings ko cloud aur local storage par save karo
-        saveAdminConfig();
-        
-        // Agar refresh function module hai toh run karo, nahi toh menu redraw karo
-        if (typeof populateAdminForms === "function") {
-            populateAdminForms();
-        } else {
-            renderCustomerMenu();
-        }
-        
-        // Premium toast flash notification alert screen par show karo
-        showOnScreenNotification(`🎉 Section [${catName.trim()}] Created Successfully!`);
-    }
-}
-       
+    // Clamp limits so boundaries aren't heavily distorted
+    targetCamX = Math.max(-10, Math.min(10, targetCamX * 0.05));
+    targetCamY = Math.max(-10, Math.min(10, targetCamY * 0.05));
 
+    snakeCameraOffset.x += (targetCamX - snakeCameraOffset.x) * 0.1;
+    snakeCameraOffset.y += (targetCamY - snakeCameraOffset.y) * 0.1;
+
+    snCtx.save();
+    snCtx.translate(snakeCameraOffset.x, snakeCameraOffset.y);
+
+    // 2. Draw Obstacles (Glowing Red Boxes)
+    snCtx.shadowColor = '#e74c3c';
+    snakeObstaclesArray.forEach(obs => {
+        snCtx.shadowBlur = 10 + Math.sin(snakeTimeVisual) * 5;
+        snCtx.fillStyle = '#c0392b';
+        snCtx.beginPath(); snCtx.roundRect(obs.x + 2, obs.y + 2, 16, 16, 4); snCtx.fill();
+        snCtx.fillStyle = '#e74c3c';
+        snCtx.beginPath(); snCtx.roundRect(obs.x + 4, obs.y + 4, 8, 8, 2); snCtx.fill();
+    });
+    snCtx.shadowBlur = 0;
+
+    // 3. Draw Premium Food (Animated Crystal)
+    snCtx.shadowColor = '#2ecc71';
+    snCtx.shadowBlur = 15;
+    snCtx.fillStyle = '#27ae60';
+    let foodYOffset = Math.sin(snakeTimeVisual * 2) * 2; // Floating hover effect
+    snCtx.beginPath(); 
+    snCtx.arc(snakeFoodUnit.x + 10, snakeFoodUnit.y + 10 + foodYOffset, 7, 0, Math.PI*2); 
+    snCtx.fill();
+    snCtx.fillStyle = '#2ecc71';
+    snCtx.beginPath(); 
+    snCtx.arc(snakeFoodUnit.x + 10, snakeFoodUnit.y + 10 + foodYOffset, 3.5, 0, Math.PI*2); 
+    snCtx.fill();
+    snCtx.shadowBlur = 0;
+
+    // Draw PowerUp (If Active)
+    if (snakePowerUpObj) {
+        snCtx.shadowColor = '#f1c40f';
+        snCtx.shadowBlur = 15;
+        snCtx.fillStyle = '#f39c12';
+        let pOffset = Math.cos(snakeTimeVisual * 3) * 3;
+        snCtx.beginPath(); snCtx.arc(snakePowerUpObj.x + 10, snakePowerUpObj.y + 10 + pOffset, 7, 0, Math.PI*2); snCtx.fill();
+        snCtx.fillStyle = '#f1c40f';
+        snCtx.beginPath(); snCtx.arc(snakePowerUpObj.x + 10, snakePowerUpObj.y + 10 + pOffset, 4, 0, Math.PI*2); snCtx.fill();
+        snCtx.shadowBlur = 0;
+    }
+
+    // 4. Draw Smooth Interpolated Snake Body
+    for(let i = snakeArr.length - 1; i >= 0; i--) { 
+        let segment = snakeArr[i];
+        
+        // Calculate exact rendered position between logic grid ticks
+        let drawX = segment.px + (segment.x - segment.px) * lerpP;
+        let drawY = segment.py + (segment.y - segment.py) * lerpP;
+        
+        // Dynamic Segment Sizing (Tail gets thinner)
+        let sSize = 18 - (i * 0.15); 
+        if (sSize < 8) sSize = 8;
+        let sOffset = (20 - sSize) / 2;
+
+        if(i === 0) {
+            // HEAD GRAPHICS
+            snCtx.shadowColor = '#00ffff';
+            snCtx.shadowBlur = 10;
+            snCtx.fillStyle = "#00d2d3"; 
+            snCtx.beginPath(); snCtx.roundRect(drawX + 1, drawY + 1, 18, 18, 8); snCtx.fill();
+            snCtx.shadowBlur = 0;
+
+            // Animated Eyes looking towards movement
+            snCtx.fillStyle = "white"; 
+            let eyeOffsetX = (currentSnakeVector.x / 20) * 3;
+            let eyeOffsetY = (currentSnakeVector.y / 20) * 3;
+            
+            snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI*2); snCtx.fill(); // Left Eye
+            snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI*2); snCtx.fill(); // Right Eye
+            
+            snCtx.fillStyle = "black"; 
+            snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX*1.5, drawY + 6 + eyeOffsetY*1.5, 1.5, 0, Math.PI*2); snCtx.fill();
+            snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX*1.5, drawY + 6 + eyeOffsetY*1.5, 1.5, 0, Math.PI*2); snCtx.fill();
+
+            // Animated Tongue
+            snCtx.fillStyle = "#ff4d4d";
+            let tLen = 3 + Math.sin(snakeTimeVisual * 4) * 3;
+            if(currentSnakeVector.x > 0) snCtx.fillRect(drawX + 19, drawY + 9, tLen, 2);
+            else if(currentSnakeVector.x < 0) snCtx.fillRect(drawX - tLen + 1, drawY + 9, tLen, 2);
+            else if(currentSnakeVector.y > 0) snCtx.fillRect(drawX + 9, drawY + 19, 2, tLen);
+            else if(currentSnakeVector.y < 0) snCtx.fillRect(drawX + 9, drawY - tLen + 1, 2, tLen);
+            
+        } else { 
+            // BODY GRAPHICS (Gradient Color fade to tail)
+            let colorIntensity = Math.max(50, 200 - (i * 5));
+            snCtx.fillStyle = `rgb(16, ${colorIntensity}, 135)`; 
+            snCtx.beginPath(); snCtx.roundRect(drawX + sOffset, drawY + sOffset, sSize, sSize, 6); snCtx.fill(); 
+        }
+    }
+
+    // 5. Render Particle System
+    for(let i = snakeParticlesArray.length - 1; i >= 0; i--) {
+        let p = snakeParticlesArray[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life -= p.decay;
+        if(p.life <= 0) { snakeParticlesArray.splice(i, 1); continue; }
+        snCtx.globalAlpha = Math.max(0, p.life);
+        snCtx.fillStyle = p.color;
+        snCtx.beginPath(); snCtx.arc(p.x, p.y, 2.5, 0, Math.PI*2); snCtx.fill();
+    }
+    snCtx.globalAlpha = 1.0;
+    snCtx.restore(); // Restore Camera
+
+    // --- 6. UPGRADED HUD RENDERING (Screen Space) ---
+    snCtx.fillStyle = "rgba(15, 17, 26, 0.9)"; 
+    snCtx.fillRect(0, 0, snakeCanvasElement.width, 22);
+    snCtx.strokeStyle = "rgba(0, 210, 211, 0.3)";
+    snCtx.beginPath(); snCtx.moveTo(0, 22); snCtx.lineTo(snakeCanvasElement.width, 22); snCtx.stroke();
+    
+    // Top Left: Score
+    snCtx.fillStyle = "white"; 
+    snCtx.font = "bold 11px Segoe UI"; 
+    snCtx.textAlign = "left";
+    let targetGoalMax = parseInt(rules.snakeTar) || 10;
+    snCtx.fillText(`🍎 ${snakeScoreCounter} / ${targetGoalMax}`, 10, 15);
+    
+    // Top Center: Combo Display
+    if (snakeComboCount > 1) {
+        snCtx.fillStyle = "#f39c12";
+        snCtx.textAlign = "center";
+        snCtx.shadowColor = '#e67e22'; snCtx.shadowBlur = 5;
+        let cScale = 11 + Math.sin(snakeTimeVisual*4)*2; // Pulsing combo text
+        snCtx.font = `900 ${cScale}px Segoe UI`;
+        snCtx.fillText(`COMBO x${snakeComboCount}`, snakeCanvasElement.width / 2, 16);
+        snCtx.shadowBlur = 0;
+        
+        // Combo Timeout Bar under header
+        snCtx.fillStyle = 'rgba(243, 156, 18, 0.2)';
+        snCtx.fillRect(0, 22, snakeCanvasElement.width, 3);
+        snCtx.fillStyle = '#f1c40f';
+        let barW = (snakeComboTimeLeft / 3500) * snakeCanvasElement.width;
+        snCtx.fillRect(0, 22, barW, 3);
+    }
+    
+    // Top Right: Speed Level
+    snCtx.fillStyle = "#bdc3c7";
+    snCtx.font = "bold 10px Segoe UI";
+    snCtx.textAlign = "right";
+    let spdLevel = Math.max(1, 15 - Math.floor(snakeCurrentTickRate / 10));
+    snCtx.fillText(`⚡ Lvl ${spdLevel}`, snakeCanvasElement.width - 10, 15);
+}
+
+// Fixed Input Handler: Prevents rapid double-tap self collisions
+function setSnakeDirection(dirVector) {
+    if(dirVector === 'UP' && snakeLastMovedVector.y === 0) currentSnakeVector = {x: 0, y: -20}; 
+    if(dirVector === 'DOWN' && snakeLastMovedVector.y === 0) currentSnakeVector = {x: 0, y: 20};
+    if(dirVector === 'LEFT' && snakeLastMovedVector.x === 0) currentSnakeVector = {x: -20, y: 0}; 
+    if(dirVector === 'RIGHT' && snakeLastMovedVector.x === 0) currentSnakeVector = {x: 20, y: 0};
+}
+// ===================================================================
+// ===== END MODIFICATION =====
 // ===================================================================
 // 🛡️ INDESTRUCTIBLE SUBSCRIPTION GATEKEEPER ENGINE (DOM ELEMENT ASSURANCE)
 // ===================================================================
