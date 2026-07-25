@@ -6894,7 +6894,33 @@ async function uploadMenuToCloud() {
         console.error("Critical Cloud Save Exception:", e); 
     }
 }
-     function initSpaceShooterGame() { 
+   // ===================================================================
+// 🚀 SPACE SHOOTER: LEVEL SETUP & INITIALIZATION (GLOBAL SCOPE FIX)
+// ===================================================================
+
+function setupLevelParameters() {
+    let isBoss = (currentLevelState % 5 === 0); // Boss every 5 stages
+    let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
+    
+    // Bosses are now massive; minions have varied sizes/speeds based on stage
+    let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
+    let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
+    let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
+
+    alienInvaderObj = { 
+        x: 160 - (shipW/2), y: isBoss ? -100 : 40, // Boss drops in from top 
+        w: shipW, h: shipH, 
+        health: bHealth, maxHealth: bHealth, 
+        dx: shipSpeed, 
+        isBoss: isBoss 
+    };
+    
+    spaceBullets = []; enemyLasers = []; powerUps = []; 
+    spaceParticlesArray = []; // Clear particles on new stage
+    sShieldTimer = 0; sMultiTimer = 0;
+}
+
+function initSpaceShooterGame() { 
     clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
     currentLevelState = 1; 
     spaceMoveDir = 0; 
@@ -6912,10 +6938,10 @@ async function uploadMenuToCloud() {
     const sCanvas = document.getElementById('spaceCanvas');
     pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 }; 
     
-    setupLevelParameters(); 
+    setupLevelParameters(); // Call the globally available function
+    
     // Mapped precisely to 20ms cycles for constant frame rate deliveries
     loopTimerInstance = setInterval(frameUpdateSpace, 20); 
- 
 }
 
 // ===================================================================
