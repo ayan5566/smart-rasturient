@@ -5491,132 +5491,348 @@ if(p.x + 42 < 39 && p.registered === true && idx === 0) {
     flCtx.fillText("Points: " + flappyScoreTracker, 15, 25);
 }
 
-        // --- RESTORED: DYNAMIC VECTOR SPACE SHOOTER CAMPAIGN MODULE ARCHITECTURE ---
-        function setupLevelParameters() {
-            let isBoss = (currentLevelState === 5 || currentLevelState === 10); let bHealth = isBoss ? 35 : 3 + currentLevelState * 2;
-            alienInvaderObj = { x: 130, y: 40, w: isBoss?85:42, h: isBoss?55:28, health: bHealth, maxHealth: bHealth, dx: isBoss?1.4:2.2, isBoss: isBoss };
-            spaceBullets = []; enemyLasers = []; powerUps = []; sShieldTimer = 0; sMultiTimer = 0;
-        }
+       function setupLevelParameters() {
+    let isBoss = (currentLevelState % 5 === 0); // Boss every 5 stages
+    let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
+    
+    // Bosses are now massive; minions have varied sizes/speeds based on stage
+    let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
+    let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
+    let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
 
+    alienInvaderObj = { 
+        x: 160 - (shipW/2), y: isBoss ? -100 : 40, // Boss drops in from top 
+        w: shipW, h: shipH, 
+        health: bHealth, maxHealth: bHealth, 
+        dx: shipSpeed, 
+        isBoss: isBoss 
+    };
+    
+    spaceBullets = []; enemyLasers = []; powerUps = []; 
+    spaceParticlesArray = []; // Clear particles on new stage
+    sShieldTimer = 0; sMultiTimer = 0;
+}
 // ===================================================================
-// 🚀 FIXED: SPACE SHOOTER LIQUID PHYSICS BOUNDARIES ENGINE
+// 🚀 FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
 // ===================================================================
 function frameUpdateSpace() {
     if (!spCanvasElement || !spCtx) return;
 
-    // Clear dynamic screen buffer perfectly matching current device size
-    spCtx.fillStyle = "#0c0d14"; 
+    // --- 1. CAMERA SHAKE & CONTEXT SETUP ---
+    let camOffsetX = 0, camOffsetY = 0;
+    if (spaceCameraShake > 0) {
+        camOffsetX = (Math.random() - 0.5) * spaceCameraShake;
+        camOffsetY = (Math.random() - 0.5) * spaceCameraShake;
+        spaceCameraShake *= 0.85; // Smooth decay
+        if (spaceCameraShake < 0.5) spaceCameraShake = 0;
+    }
+
+    spCtx.save();
+    spCtx.translate(camOffsetX, camOffsetY);
+
+    // --- 2. DYNAMIC DEEP SPACE BACKGROUND ---
+    spCtx.fillStyle = "#070913"; // Richer deep space black
     spCtx.fillRect(0, 0, spCanvasElement.width, spCanvasElement.height);
-    
-    cosmicBackgroundStars.forEach(star => {
-        star.y += 0.9; 
-        if(star.y > spCanvasElement.height) star.y = 0;
-        spCtx.fillStyle = `rgba(255,255,255, ${star.alpha})`; 
-        spCtx.fillRect(star.x, star.y, star.size, star.size);
+
+    // Nebula Clouds
+    spaceNebulaClouds.forEach(neb => {
+        neb.y += neb.speed;
+        if(neb.y - neb.r > spCanvasElement.height) neb.y = -neb.r;
+        spCtx.beginPath();
+        spCtx.arc(neb.x, neb.y, neb.r, 0, Math.PI * 2);
+        spCtx.fillStyle = neb.color;
+        spCtx.fill();
     });
 
+    // Parallax Stars
+    cosmicBackgroundStars.forEach(star => {
+        star.y += 0.5 + (star.size * 0.5); // Depth illusion (bigger stars move faster)
+        if(star.y > spCanvasElement.height) { star.y = 0; star.x = Math.random() * spCanvasElement.width; }
+        spCtx.fillStyle = `rgba(255,255,255, ${star.alpha})`; 
+        spCtx.beginPath();
+        spCtx.arc(star.x, star.y, star.size/2, 0, Math.PI*2);
+        spCtx.fill();
+    });
+
+    // Space Debris / Asteroids
+    spaceDebrisArray.forEach(deb => {
+        deb.y += deb.speed;
+        deb.rot += deb.rotSpeed;
+        if(deb.y > spCanvasElement.height + 10) { deb.y = -10; deb.x = Math.random() * spCanvasElement.width; }
+        spCtx.save();
+        spCtx.translate(deb.x, deb.y);
+        spCtx.rotate(deb.rot);
+        spCtx.fillStyle = "rgba(149, 165, 166, 0.4)";
+        spCtx.fillRect(-deb.size/2, -deb.size/2, deb.size, deb.size);
+        spCtx.restore();
+    });
+
+    // --- 3. STAGE TRANSITION ---
     if(spaceTransitionCount > 0) {
         spaceTransitionCount--; 
-        spCtx.fillStyle = "#f1c40f"; 
-        spCtx.font = "bold 20px Segoe UI"; 
+        spCtx.fillStyle = `rgba(241, 196, 15, ${Math.min(1, spaceTransitionCount/30)})`; 
+        spCtx.font = "900 24px Segoe UI"; 
         spCtx.textAlign = "center";
+        spCtx.shadowColor = "#f39c12"; spCtx.shadowBlur = 15;
         spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, spCanvasElement.width / 2, spCanvasElement.height / 2); 
-        spCtx.font = "12px Segoe UI"; 
-        spCtx.fillStyle = "white";
-        spCtx.fillText("Calibrating hyperdrive vectors sequence...", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30); 
+        spCtx.shadowBlur = 0;
+        spCtx.font = "italic 12px Segoe UI"; 
+        spCtx.fillStyle = "rgba(255,255,255,0.7)";
+        spCtx.fillText("Calibrating hyperdrive vectors...", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30); 
         spCtx.textAlign = "start";
         if(spaceTransitionCount === 0) setupLevelParameters(); 
+        spCtx.restore();
         return;
     }
 
+    // --- 4. PLAYER MOVEMENT & RENDERING ---
     if(sShieldTimer > 0) sShieldTimer--; 
     if(sMultiTimer > 0) sMultiTimer--; 
     spaceFrameTracker++;
+    // ===================================================================
+// 🚀 SPACE SHOOTER AAA VFX & STATE VARIABLES
+// ===================================================================
+let spaceCameraShake = 0;
+let spaceParticlesArray = [];
+let spaceNebulaClouds = [];
+let spaceDebrisArray = [];
+
+// Initialize deep space environment once
+for(let i=0; i<4; i++) {
+    spaceNebulaClouds.push({
+        x: Math.random() * 320, y: Math.random() * 400,
+        r: 80 + Math.random() * 60,
+        color: ['rgba(41, 128, 185, 0.05)', 'rgba(142, 68, 173, 0.05)', 'rgba(39, 174, 96, 0.03)'][Math.floor(Math.random()*3)],
+        speed: 0.1 + Math.random() * 0.2
+    });
+}
+for(let i=0; i<5; i++) {
+    spaceDebrisArray.push({
+        x: Math.random() * 320, y: Math.random() * 400,
+        size: Math.random() * 2 + 1, speed: 0.5 + Math.random() * 1.5,
+        rot: Math.random() * Math.PI, rotSpeed: (Math.random() - 0.5) * 0.1
+    });
+}
+
+function applySpaceCameraShake(intensity) {
+    spaceCameraShake = intensity;
+}
+
+function createSpaceExplosion(x, y, color, count, isBoss) {
+    let pCount = isBoss ? count * 4 : count;
+    for(let i = 0; i < pCount; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = (Math.random() * (isBoss ? 6 : 3)) + 1;
+        spaceParticlesArray.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 1.0, decay: Math.random() * 0.04 + 0.02,
+            color: color, size: Math.random() * 3 + 1
+        });
+    }
+}
     
-    // 🔥 FIXED: Boundary check tied dynamically to canvas width rules
     pShipObj.x += spaceMoveDir; 
     if(pShipObj.x < 0) pShipObj.x = 0; 
     if(pShipObj.x > spCanvasElement.width - pShipObj.w) pShipObj.x = spCanvasElement.width - pShipObj.w;
-    
-    // Draw Spaceship
-    spCtx.fillStyle = "#00d2d3"; 
-    spCtx.beginPath(); 
-    spCtx.moveTo(pShipObj.x + 20, pShipObj.y); 
-    spCtx.lineTo(pShipObj.x + pShipObj.w, pShipObj.y + pShipObj.h); 
-    spCtx.lineTo(pShipObj.x, pShipObj.y + pShipObj.h);
-    spCtx.closePath(); 
-    spCtx.fill(); 
-    spCtx.fillStyle = "white"; 
-    spCtx.fillRect(pShipObj.x + 18, pShipObj.y + 10, 4, 8);
 
+    // Advanced Spaceship Drawing
+    spCtx.save();
+    spCtx.translate(pShipObj.x + pShipObj.w/2, pShipObj.y + pShipObj.h/2);
+    
+    // Thruster Flames
+    let flameLen = 12 + Math.random() * 8 + (Math.abs(spaceMoveDir) * 1.5);
+    spCtx.fillStyle = sMultiTimer > 0 ? "#e74c3c" : "#00d2d3"; // Thruster changes color with powerup
+    spCtx.shadowColor = spCtx.fillStyle;
+    spCtx.shadowBlur = 15;
+    spCtx.beginPath();
+    spCtx.moveTo(-6, 14);
+    spCtx.lineTo(6, 14);
+    spCtx.lineTo(0, 14 + flameLen);
+    spCtx.fill();
+    spCtx.shadowBlur = 0;
+
+    // Ship Hull
+    spCtx.fillStyle = "#ecf0f1";
+    spCtx.beginPath();
+    spCtx.moveTo(0, -18); // Nose
+    spCtx.lineTo(18, 14); // Right Wing tip
+    spCtx.lineTo(6, 14);  // Right Engine base
+    spCtx.lineTo(-6, 14); // Left Engine base
+    spCtx.lineTo(-18, 14); // Left Wing tip
+    spCtx.closePath();
+    spCtx.fill();
+
+    // Wing Accents
+    spCtx.fillStyle = "#e74c3c";
+    spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(14, 10); spCtx.lineTo(6, 10); spCtx.fill();
+    spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(-14, 10); spCtx.lineTo(-6, 10); spCtx.fill();
+
+    // Cockpit Canopy
+    spCtx.fillStyle = "#3498db";
+    spCtx.beginPath();
+    spCtx.ellipse(0, -2, 4, 9, 0, 0, Math.PI*2);
+    spCtx.fill();
+    spCtx.fillStyle = "rgba(255,255,255,0.6)"; // Glass reflection
+    spCtx.beginPath(); spCtx.ellipse(-1, -4, 1.5, 4, 0, 0, Math.PI*2); spCtx.fill();
+
+    // Energy Shield
     if(sShieldTimer > 0) { 
-        spCtx.strokeStyle = "#00bcd4"; 
-        spCtx.lineWidth = 2; 
+        spCtx.strokeStyle = `rgba(0, 188, 212, ${0.5 + Math.sin(spaceFrameTracker*0.2)*0.3})`; 
+        spCtx.lineWidth = 2.5; 
         spCtx.beginPath(); 
-        spCtx.arc(pShipObj.x+20, pShipObj.y+16, 28, 0, Math.PI*2); 
+        spCtx.arc(0, 0, 26 + Math.random()*2, 0, Math.PI*2); 
         spCtx.stroke(); 
     }
+    spCtx.restore();
 
-    if(spaceFrameTracker % 13 === 0) {
+    // --- 5. FIRING MECHANICS (WITH RECOIL) ---
+    if(spaceFrameTracker % 12 === 0) {
+        applySpaceCameraShake(1.5); // Micro-recoil
         if(sMultiTimer > 0) { 
-            spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}, {x: pShipObj.x+6, y: pShipObj.y, dx:-1.6}, {x: pShipObj.x+34, y: pShipObj.y, dx:1.6}); 
+            spaceBullets.push(
+                {x: pShipObj.x+pShipObj.w/2, y: pShipObj.y, dx:0}, 
+                {x: pShipObj.x+6, y: pShipObj.y+10, dx:-2}, 
+                {x: pShipObj.x+pShipObj.w-6, y: pShipObj.y+10, dx:2}
+            ); 
         } else { 
-            spaceBullets.push({x: pShipObj.x+20, y: pShipObj.y, dx:0}); 
+            spaceBullets.push({x: pShipObj.x+pShipObj.w/2, y: pShipObj.y, dx:0}); 
         }
     }
 
-    // 🔥 FIXED: Alien bounces exactly at the screen borders width bounds natively
-    alienInvaderObj.x += alienInvaderObj.dx; 
-    if(alienInvaderObj.x < 0 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w) {
-        alienInvaderObj.dx *= -1;
+    // --- 6. ADVANCED ENEMY AI & RENDERING ---
+    let isRage = alienInvaderObj.isBoss && alienInvaderObj.health < alienInvaderObj.maxHealth * 0.4;
+    
+    // Boss Entrance Animation
+    if(alienInvaderObj.isBoss && alienInvaderObj.y < 40) {
+        alienInvaderObj.y += 1.5;
+    } else {
+        // Movement Logic
+        alienInvaderObj.x += alienInvaderObj.dx * (isRage ? 1.5 : 1); 
+        if(alienInvaderObj.x < 0 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w) {
+            alienInvaderObj.dx *= -1;
+        }
+        // Bobbing hover effect
+        if(!alienInvaderObj.isBoss) {
+            alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * 0.05) * 10;
+        } else {
+            alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * (isRage ? 0.1 : 0.03)) * (isRage ? 25 : 10);
+        }
     }
+
+    spCtx.save();
+    spCtx.translate(alienInvaderObj.x + alienInvaderObj.w/2, alienInvaderObj.y + alienInvaderObj.h/2);
     
     if(alienInvaderObj.isBoss) { 
-        spCtx.fillStyle = "#5f27cd"; spCtx.beginPath(); spCtx.moveTo(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+alienInvaderObj.h); spCtx.lineTo(alienInvaderObj.x+alienInvaderObj.w, alienInvaderObj.y); spCtx.lineTo(alienInvaderObj.x, alienInvaderObj.y); spCtx.closePath(); spCtx.fill(); 
-        spCtx.fillStyle = "#ff007f"; spCtx.beginPath(); spCtx.arc(alienInvaderObj.x+alienInvaderObj.w/2, alienInvaderObj.y+20, 14, 0, Math.PI*2); spCtx.fill(); 
+        // 👾 MASSIVE BOSS GRAPHICS
+        if(isRage) {
+            spCtx.shadowColor = "#e74c3c"; spCtx.shadowBlur = 15 + Math.sin(spaceFrameTracker*0.3)*10;
+        }
+        // Wings
+        spCtx.fillStyle = "#2c3e50";
+        spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(-50, -20); spCtx.lineTo(-55, 30); spCtx.lineTo(-20, 10); spCtx.fill();
+        spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(50, -20); spCtx.lineTo(55, 30); spCtx.lineTo(20, 10); spCtx.fill();
+        // Core Body
+        spCtx.fillStyle = isRage ? "#c0392b" : "#5f27cd";
+        spCtx.fillRect(-25, -20, 50, 45);
+        // Engine / Eye
+        spCtx.fillStyle = isRage ? "#f1c40f" : "#ff007f"; 
+        spCtx.beginPath(); spCtx.arc(0, 5, 14, 0, Math.PI*2); spCtx.fill(); 
+        spCtx.fillStyle = "#fff"; spCtx.beginPath(); spCtx.arc(0, 5, 6, 0, Math.PI*2); spCtx.fill(); 
+        spCtx.shadowBlur = 0;
     } else { 
-        spCtx.fillStyle = "#ff6b6b"; spCtx.fillRect(alienInvaderObj.x, alienInvaderObj.y, alienInvaderObj.w, alienInvaderObj.h); 
-        spCtx.fillStyle = "black"; spCtx.fillRect(alienInvaderObj.x+6, alienInvaderObj.y+6, 6, 6); spCtx.fillRect(alienInvaderObj.x+30, alienInvaderObj.y+6, 6, 6);
+        // 🛸 ADVANCED MINION GRAPHICS
+        let minionType = currentLevelState % 3;
+        spCtx.fillStyle = minionType === 0 ? "#e67e22" : (minionType === 1 ? "#9b59b6" : "#e74c3c");
+        spCtx.beginPath();
+        spCtx.moveTo(0, 15); spCtx.lineTo(15, -10); spCtx.lineTo(0, -5); spCtx.lineTo(-15, -10);
+        spCtx.closePath(); spCtx.fill();
+        // Engines
+        spCtx.fillStyle = "#f1c40f";
+        spCtx.beginPath(); spCtx.arc(-8, -10, 4, 0, Math.PI*2); spCtx.arc(8, -10, 4, 0, Math.PI*2); spCtx.fill();
     }
+    spCtx.restore();
 
-    let counterRate = alienInvaderObj.isBoss ? 20 : Math.max(14, 36 - (currentLevelState * 3));
-    if(spaceFrameTracker % counterRate === 0) {
+    // --- 7. ENEMY COMBAT PATTERNS ---
+    let counterRate = alienInvaderObj.isBoss ? (isRage ? 25 : 45) : Math.max(20, 50 - (currentLevelState * 3));
+    if(spaceFrameTracker % counterRate === 0 && alienInvaderObj.y >= 40) {
         if(alienInvaderObj.isBoss) { 
-            enemyLasers.push({x: alienInvaderObj.x+10, y: alienInvaderObj.y+alienInvaderObj.h, dx:-1}, {x: alienInvaderObj.x+alienInvaderObj.w-10, y: alienInvaderObj.y+alienInvaderObj.h, dx:1}); 
+            if(isRage) {
+                // Circular Bullet Hell Pattern
+                applySpaceCameraShake(3);
+                for(let i=0; i<6; i++) {
+                    let angle = (spaceFrameTracker * 0.1) + (i * (Math.PI*2/6));
+                    enemyLasers.push({
+                        x: alienInvaderObj.x + alienInvaderObj.w/2, y: alienInvaderObj.y + alienInvaderObj.h/2,
+                        dx: Math.cos(angle) * 3, dy: Math.sin(angle) * 3
+                    });
+                }
+            } else {
+                // Tri-Shot Spread
+                enemyLasers.push(
+                    {x: alienInvaderObj.x+10, y: alienInvaderObj.y+alienInvaderObj.h, dx:-1.5, dy: 4},
+                    {x: alienInvaderObj.x+alienInvaderObj.w/2, y: alienInvaderObj.y+alienInvaderObj.h, dx:0, dy: 5},
+                    {x: alienInvaderObj.x+alienInvaderObj.w-10, y: alienInvaderObj.y+alienInvaderObj.h, dx:1.5, dy: 4}
+                ); 
+            }
         } else { 
-            enemyLasers.push({x: alienInvaderObj.x+alienInvaderObj.w/2, y: alienInvaderObj.y+alienInvaderObj.h, dx:0}); 
+            // Targeted Minion Shot (Aims slightly towards player)
+            let aimDx = ((pShipObj.x + pShipObj.w/2) - (alienInvaderObj.x + alienInvaderObj.w/2)) * 0.015;
+            enemyLasers.push({x: alienInvaderObj.x+alienInvaderObj.w/2, y: alienInvaderObj.y+alienInvaderObj.h, dx: aimDx, dy: 4.5}); 
         }
     }
 
-    if(Math.random() < 0.005) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: 0, type: ['H','S','M'][Math.floor(Math.random()*3)] });
+    // --- 8. POWERUPS ---
+    if(Math.random() < 0.004) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: -10, type: ['H','S','M'][Math.floor(Math.random()*3)] });
     
     powerUps.forEach((pow, pi) => {
         pow.y += 2.2; 
         spCtx.fillStyle = pow.type=='H'?'#2ecc71':(pow.type=='S'?'#3498db':'#e67e22'); 
-        spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 7, 0, Math.PI*2); spCtx.fill();
+        spCtx.shadowColor = spCtx.fillStyle; spCtx.shadowBlur = 10;
+        spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 8, 0, Math.PI*2); spCtx.fill();
+        spCtx.shadowBlur = 0;
+        spCtx.fillStyle = "#fff"; spCtx.font = "bold 10px Arial"; spCtx.textAlign = "center";
+        spCtx.fillText(pow.type, pow.x, pow.y+3);
+
         if(pow.x > pShipObj.x && pow.x < pShipObj.x+pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y+pShipObj.h) {
+            createSpaceExplosion(pow.x, pow.y, spCtx.fillStyle, 10, false); // Collection spark
             if(pow.type === 'H') pShipObj.health = Math.min(pShipObj.health+2, pShipObj.maxHealth); 
-            if(pow.type === 'S') sShieldTimer = 280; 
-            if(pow.type === 'M') sMultiTimer = 280; 
+            if(pow.type === 'S') sShieldTimer = 350; 
+            if(pow.type === 'M') sMultiTimer = 350; 
             powerUps.splice(pi, 1);
         }
     });
 
+    // --- 9. PLAYER BULLETS & IMPACTS ---
     spaceBullets.forEach((b, bi) => {
-        b.y -= 5.5; b.x += b.dx; spCtx.fillStyle = "#00ff00"; spCtx.fillRect(b.x, b.y, 3, 10);
-        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Bullet range clean-up
+        b.y -= 8.5; b.x += b.dx; 
+        
+        // Advanced Plasma Bullet Graphic
+        spCtx.shadowColor = sMultiTimer > 0 ? "#e74c3c" : "#00ff00"; 
+        spCtx.shadowBlur = 8;
+        spCtx.fillStyle = "#ffffff"; 
+        spCtx.beginPath(); spCtx.roundRect(b.x-2, b.y, 4, 14, 2); spCtx.fill();
+        spCtx.shadowBlur = 0;
+
+        if(b.y < 0) { spaceBullets.splice(bi, 1); return; } // Range clean-up
+        
+        // Alien Collision
         if(b.x > alienInvaderObj.x && b.x < alienInvaderObj.x+alienInvaderObj.w && b.y < alienInvaderObj.y+alienInvaderObj.h && b.y > alienInvaderObj.y) {
-            spaceBullets.splice(bi, 1); alienInvaderObj.health--;
+            spaceBullets.splice(bi, 1); 
+            alienInvaderObj.health--;
+            createSpaceExplosion(b.x, b.y, "#f39c12", 5, false); // Impact sparks
             
-            // Inside frameUpdateSpace -> spaceBullets.forEach tracking nodes:
             if(alienInvaderObj.health <= 0) {
-                // 🔥 FIXED: Clears tracking checks dynamically matching variables dashboards indices directly
+                applySpaceCameraShake(alienInvaderObj.isBoss ? 25 : 8);
+                createSpaceExplosion(alienInvaderObj.x + alienInvaderObj.w/2, alienInvaderObj.y + alienInvaderObj.h/2, "#e74c3c", 40, alienInvaderObj.isBoss);
+                
                 if(currentLevelState === (parseInt(rules.spaceTar) || 3)) {
                     triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
                 }
                 if(currentLevelState < 10) { 
                     currentLevelState++; 
-                    spaceTransitionCount = 90; 
+                    spaceTransitionCount = 100; // Give time to see the explosion
+                    alienInvaderObj.y = -500; // Hide body instantly
                 } else { 
                     finalizeFailedRun("🌌 GALACTIC WINNER COMPLETE!"); 
                 }
@@ -5624,22 +5840,73 @@ function frameUpdateSpace() {
         }
     });
 
+    // --- 10. ENEMY LASERS & IMPACTS ---
     enemyLasers.forEach((el, eli) => {
-        el.y += 4.5; el.x += el.dx || 0; spCtx.fillStyle = "#ff4d4d"; spCtx.fillRect(el.x, el.y, 3, 11);
-        if(el.y > spCanvasElement.height) { enemyLasers.splice(eli, 1); return; }
+        el.y += el.dy || 5.5; el.x += el.dx || 0; 
+        
+        spCtx.shadowColor = "#ff4d4d"; spCtx.shadowBlur = 8;
+        spCtx.fillStyle = "#fff"; 
+        spCtx.beginPath(); spCtx.arc(el.x, el.y, 4, 0, Math.PI*2); spCtx.fill();
+        spCtx.shadowBlur = 0;
+
+        if(el.y > spCanvasElement.height + 10 || el.x < -10 || el.x > spCanvasElement.width + 10) { enemyLasers.splice(eli, 1); return; }
+        
         if(el.x > pShipObj.x && el.x < pShipObj.x+pShipObj.w && el.y > pShipObj.y && el.y < pShipObj.y+pShipObj.h) {
             enemyLasers.splice(eli, 1); 
+            applySpaceCameraShake(6);
+            createSpaceExplosion(el.x, el.y, "#3498db", 8, false); // Shield/Hull spark
+            
             if(sShieldTimer <= 0) pShipObj.health--; 
-            if(pShipObj.health <= 0) finalizeFailedRun("💥 Spaceship Destroyed! Try Again.");
+            if(pShipObj.health <= 0) {
+                createSpaceExplosion(pShipObj.x + pShipObj.w/2, pShipObj.y + pShipObj.h/2, "#3498db", 30, true);
+                finalizeFailedRun("💥 Spaceship Destroyed! Try Again.");
+            }
         }
     });
 
-    spCtx.fillStyle = "white"; spCtx.font = "bold 13px Segoe UI"; 
-    spCtx.fillText("STAGE: " + currentLevelState + "/10", 10, 22);
-    spCtx.fillStyle = pShipObj.health > 1 ? "#2ecc71" : "#e74c3c"; 
-    spCtx.fillText("HP: " + pShipObj.health + "/" + pShipObj.maxHealth, spCanvasElement.width - 70, 22);
-}
+    // --- 11. RENDER PARTICLE ENGINE ---
+    for(let i = spaceParticlesArray.length - 1; i >= 0; i--) {
+        let p = spaceParticlesArray[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life -= p.decay;
+        if(p.life <= 0) { spaceParticlesArray.splice(i, 1); continue; }
+        spCtx.globalAlpha = p.life;
+        spCtx.fillStyle = p.color;
+        spCtx.beginPath(); spCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); spCtx.fill();
+        spCtx.globalAlpha = 1.0;
+    }
 
+    spCtx.restore(); // Restore from camera shake BEFORE drawing HUD
+
+    // --- 12. SLEEK MODERN HUD ---
+    spCtx.textAlign = "start";
+    
+    // Stage display
+    spCtx.fillStyle = "rgba(15, 23, 42, 0.7)";
+    spCtx.beginPath(); spCtx.roundRect(10, 10, 100, 24, 6); spCtx.fill();
+    spCtx.fillStyle = "white"; spCtx.font = "900 12px Segoe UI"; 
+    spCtx.fillText(`STAGE: ${currentLevelState}/10`, 18, 26);
+
+    // Player HP Bar
+    spCtx.beginPath(); spCtx.roundRect(spCanvasElement.width - 110, 10, 100, 24, 6); spCtx.fill();
+    spCtx.fillStyle = pShipObj.health > 2 ? "#2ecc71" : "#e74c3c";
+    let hpWidth = (pShipObj.health / pShipObj.maxHealth) * 90;
+    spCtx.fillRect(spCanvasElement.width - 105, 14, Math.max(0, hpWidth), 16);
+    spCtx.fillStyle = "#fff"; spCtx.fillText("HP", spCanvasElement.width - 100, 26);
+
+    // Boss HP Bar (if active and alive)
+    if(alienInvaderObj.isBoss && alienInvaderObj.y >= 40 && alienInvaderObj.health > 0) {
+        let bossHpPct = alienInvaderObj.health / alienInvaderObj.maxHealth;
+        spCtx.fillStyle = "rgba(0,0,0,0.6)";
+        spCtx.fillRect(spCanvasElement.width/2 - 80, 45, 160, 8);
+        spCtx.fillStyle = isRage ? "#c0392b" : "#9b59b6";
+        spCtx.fillRect(spCanvasElement.width/2 - 80, 45, 160 * Math.max(0, bossHpPct), 8);
+        spCtx.strokeStyle = "#fff"; spCtx.lineWidth = 1;
+        spCtx.strokeRect(spCanvasElement.width/2 - 80, 45, 160, 8);
+        spCtx.fillStyle = "#fff"; spCtx.font = "bold 9px Arial"; spCtx.textAlign = "center";
+        spCtx.fillText("BOSS VITALITY", spCanvasElement.width/2, 42);
+    }
+}
 // ===================================================================
 // 🐍 CLASSIC SNAKE INTERACTIVE GRID MATRIX TRACKER LOGIC (ANTI-CRASH)
 // ===================================================================
