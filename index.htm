@@ -5179,125 +5179,214 @@ function initBrickBreakerGame() {
     loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16); 
 }
         
-// 2️⃣ HIGH-PERFORMANCE RENDER TICK ENGINE (60 FPS STABLE)
+// ===================================================================
+// 2️⃣ HIGH-PERFORMANCE AAA RENDER TICK ENGINE (60 FPS STABLE)
+// ===================================================================
 function frameUpdateBrickBreaker() {
     if (!brickCanvasElement) brickCanvasElement = document.getElementById('brickCanvas');
     if (!brickCanvasElement || !brCtx) return;
     
-    brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+    // --- 1. CAMERA SHAKE SETUP ---
+    let camOffsetX = 0, camOffsetY = 0;
+    if (brickCameraShake > 0) {
+        camOffsetX = (Math.random() - 0.5) * brickCameraShake;
+        camOffsetY = (Math.random() - 0.5) * brickCameraShake;
+        brickCameraShake *= 0.85; 
+        if (brickCameraShake < 0.5) brickCameraShake = 0;
+    }
+
+    brCtx.save();
+    brCtx.translate(camOffsetX, camOffsetY);
     
-    // Background
-    brCtx.fillStyle = '#0f111a';
+    // --- 2. DYNAMIC AAA BACKGROUND ---
+    brickBgPulseTime += 0.02;
+    let bgGrd = brCtx.createLinearGradient(0, 0, 0, brickCanvasElement.height);
+    
+    if (currentActiveLevelIndex === 5) {
+        // Boss Level Environment (Intense Red/Purple)
+        bgGrd.addColorStop(0, '#1a0505');
+        bgGrd.addColorStop(0.5, '#2c0b1e');
+        bgGrd.addColorStop(1, '#0f020a');
+    } else {
+        // Standard Cyber Grid
+        bgGrd.addColorStop(0, '#0f111a');
+        bgGrd.addColorStop(1, currentActiveLevelIndex > 2 ? '#0b1d28' : '#16192b');
+    }
+    
+    brCtx.fillStyle = bgGrd;
     brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
     
-    // Subtle background grid
-    brCtx.strokeStyle = 'rgba(0, 210, 211, 0.04)';
+    // Animated glowing background grid
+    brCtx.strokeStyle = currentActiveLevelIndex === 5 ? 'rgba(231, 76, 60, 0.08)' : 'rgba(0, 210, 211, 0.05)';
     brCtx.lineWidth = 1;
-    let gridSpacer = 16; 
+    let gridSpacer = 20; 
+    let scrollOffset = (brickBgPulseTime * 15) % gridSpacer;
     for (let x = 0; x < brickCanvasElement.width; x += gridSpacer) {
         brCtx.beginPath(); brCtx.moveTo(x, 40); brCtx.lineTo(x, brickCanvasElement.height); brCtx.stroke();
     }
-    for (let y = 40; y < brickCanvasElement.height; y += gridSpacer) {
-        brCtx.beginPath(); brCtx.moveTo(0, y); brCtx.lineTo(brickCanvasElement.width, y); brCtx.stroke();
+    for (let y = 40; y < brickCanvasElement.height + gridSpacer; y += gridSpacer) {
+        brCtx.beginPath(); brCtx.moveTo(0, y + scrollOffset); brCtx.lineTo(brickCanvasElement.width, y + scrollOffset); brCtx.stroke();
     }
     
-    // Paddle movement
+    // --- 3. PADDLE MOVEMENT & RENDER ---
     bPaddle.x += brickPaddleDir;
     if(bPaddle.x < 0) bPaddle.x = 0;
     if(bPaddle.x > brickCanvasElement.width - bPaddle.w) bPaddle.x = brickCanvasElement.width - bPaddle.w;
     
-    // Ball launch tracking
+    brCtx.save();
+    brCtx.shadowColor = isSuperBallActive ? '#00d2d3' : '#f39c12';
+    brCtx.shadowBlur = brickPaddleDir !== 0 ? 15 : 5; // Glows brighter when moving
+    
+    // Metallic 3D Paddle Gradient
+    let padGrad = brCtx.createLinearGradient(bPaddle.x, bPaddle.y, bPaddle.x, bPaddle.y + bPaddle.h);
+    padGrad.addColorStop(0, '#ffffff');
+    padGrad.addColorStop(0.3, '#bdc3c7');
+    padGrad.addColorStop(1, '#2c3e50');
+    
+    brCtx.fillStyle = padGrad;
+    brCtx.beginPath(); 
+    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6); 
+    brCtx.fill();
+    
+    // Neon Energy Strip inside Paddle
+    brCtx.fillStyle = isSuperBallActive ? '#00ffff' : '#f1c40f';
+    brCtx.shadowBlur = 10;
+    brCtx.fillRect(bPaddle.x + 12, bPaddle.y + 3, bPaddle.w - 24, 3);
+    brCtx.restore();
+    
+    // --- 4. BALL PHYSICS & RENDER ---
     if (!isBallLaunched) {
+        brickBallTrailArray = [];
         if (brickPaddleDir !== 0) {
             isBallLaunched = true;
             bBall.dx = brickPaddleDir > 0 ? bBall.baseSpeed : -bBall.baseSpeed;
             bBall.dy = -bBall.baseSpeed;
         } else {
             bBall.x = bPaddle.x + (bPaddle.w / 2);
-            bBall.y = bPaddle.y - bBall.r - 2;
+            bBall.y = bPaddle.y - bBall.r - 4; // Slight hover
         }
     } else {
         bBall.x += bBall.dx;
         bBall.y += bBall.dy;
+        
+        // Ball Light Trail Logic
+        brickBallTrailArray.push({x: bBall.x, y: bBall.y, alpha: 0.8});
+        if(brickBallTrailArray.length > (isSuperBallActive ? 12 : 5)) brickBallTrailArray.shift();
     }
     
-    // Draw Paddle (GPU Shadow applied ONLY when active to save GPU cycles)
+    // Render Trail
+    brickBallTrailArray.forEach((t, ti) => {
+        t.alpha -= isSuperBallActive ? 0.05 : 0.12;
+        if(t.alpha <= 0) return;
+        brCtx.globalAlpha = Math.max(0, t.alpha);
+        brCtx.fillStyle = isSuperBallActive ? '#00d2d3' : '#f1c40f';
+        brCtx.beginPath(); brCtx.arc(t.x, t.y, bBall.r * (t.alpha), 0, Math.PI * 2); brCtx.fill();
+    });
+    brCtx.globalAlpha = 1.0;
+    
+    // Render Ball Core
+    brCtx.save();
+    brCtx.shadowColor = isSuperBallActive ? '#00ffff' : '#f39c12';
+    brCtx.shadowBlur = 12;
     brCtx.fillStyle = '#ffffff';
-    if (isSuperBallActive) {
-        brCtx.shadowColor = '#00d2d3';
-        brCtx.shadowBlur = 12;
-    }
-    brCtx.beginPath(); 
-    brCtx.roundRect(bPaddle.x, bPaddle.y, bPaddle.w, bPaddle.h, 6); 
-    brCtx.fill();
-    if (isSuperBallActive) {
-        brCtx.shadowBlur = 0;
-    }
+    brCtx.beginPath(); brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2); brCtx.fill();
+    brCtx.fillStyle = isSuperBallActive ? '#00d2d3' : '#e67e22';
+    brCtx.beginPath(); brCtx.arc(bBall.x, bBall.y, bBall.r * 0.5, 0, Math.PI * 2); brCtx.fill();
+    brCtx.restore();
     
-    // Draw Ball
-    brCtx.fillStyle = isSuperBallActive ? '#00d2d3' : '#ffffff';
-    brCtx.beginPath(); 
-    brCtx.arc(bBall.x, bBall.y, bBall.r, 0, Math.PI * 2); 
-    brCtx.fill(); 
-    
-    // Wall bounce logic
+    // --- 5. WALL & PADDLE COLLISIONS ---
     if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) {
         bBall.dx *= -1;
+        createBrickExplosion(bBall.x, bBall.y, '#bdc3c7', 4, false); // Wall spark
         if(Math.abs(bBall.dx) < 0.5) bBall.dx = bBall.dx < 0 ? -1.5 : 1.5;
+        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'WALL_HIT');
     }
     if(bBall.y - bBall.r < 40) {
         bBall.dy *= -1;
+        createBrickExplosion(bBall.x, bBall.y, '#bdc3c7', 4, false); // Ceiling spark
         if(Math.abs(bBall.dx) < 0.3) bBall.dx = Math.random() > 0.5 ? 1.0 : -1.0;
+        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'WALL_HIT');
     }
     
-    // Paddle contact logic
+    // Paddle Impact
     if(bBall.y + bBall.r >= bPaddle.y && bBall.x >= bPaddle.x && bBall.x <= bPaddle.x + bPaddle.w) {
         if(bBall.dy > 0) {
             let relativeFactor = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
-            bBall.dx = relativeFactor * (bBall.baseSpeed + 1.2);
+            bBall.dx = relativeFactor * (bBall.baseSpeed + 1.5); // Slightly wider angle
             bBall.dy = -Math.abs(bBall.baseSpeed);
             if(Math.abs(bBall.dx) < 0.2) bBall.dx = relativeFactor < 0 ? -0.8 : 0.8;
+            
+            applyBrickCameraShake(2);
+            createBrickExplosion(bBall.x, bBall.y, '#f1c40f', 8, false); // Paddle hit spark
+            if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'PADDLE_HIT');
         }
     }
     
-    // ✅ NEW SAFE BLOCK:
-if (bBall.y + bBall.r > brickCanvasElement.height) {
-    if (!isLifeBeingProcessed) {
-        isLifeBeingProcessed = true; // Lock single-hit processing
-        gameHeartsRemaining--;
-        isBallLaunched = false;
-        isSuperBallActive = false;
+    // ✅ SAFE LIFE PROCESSOR
+    if (bBall.y + bBall.r > brickCanvasElement.height) {
+        if (!isLifeBeingProcessed) {
+            isLifeBeingProcessed = true; 
+            gameHeartsRemaining--;
+            isBallLaunched = false;
+            isSuperBallActive = false;
+            applyBrickCameraShake(15); // Hard death shake
 
-        if (gameHeartsRemaining <= 0) {
-            currentActiveLevelIndex = 1;
-            isLifeBeingProcessed = false;
-            finalizeFailedRun("💥 All Hearts Shattered! Try Again.");
-            return;
-        } else {
-            // Ball ko turant paddle par wapas set karo taaki loop na bane
-            bBall.x = bPaddle.x + (bPaddle.w / 2);
-            bBall.y = bPaddle.y - bBall.r - 2;
-            bBall.dx = 0;
-            bBall.dy = 0;
-
-            isLifeBeingProcessed = false;
+            if (gameHeartsRemaining <= 0) {
+                currentActiveLevelIndex = 1;
+                isLifeBeingProcessed = false;
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'GAME_OVER');
+                finalizeFailedRun("💥 All Hearts Shattered! Try Again.");
+                return;
+            } else {
+                bBall.x = bPaddle.x + (bPaddle.w / 2);
+                bBall.y = bPaddle.y - bBall.r - 4;
+                bBall.dx = 0; bBall.dy = 0;
+                isLifeBeingProcessed = false;
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'LIFE_LOST');
+            }
         }
     }
-}
     
-    // Optimized Drops Processing (Reverse Loop to prevent GC spikes)
+    // --- 6. ANIMATED POWER-UPS (DROPS) ---
     for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
         let drop = activeDropsArray[dIndex];
         drop.y += 2.5;
-        brCtx.fillStyle = drop.type === 'GROW' ? '#ff4d4d' : '#2ecc71';
-        brCtx.beginPath(); brCtx.arc(drop.x, drop.y, 8, 0, Math.PI * 2); brCtx.fill();
+        drop.rot = (drop.rot || 0) + 0.05;
+
+        brCtx.save();
+        brCtx.translate(drop.x, drop.y);
+        brCtx.rotate(drop.rot);
         
-        brCtx.fillStyle = '#ffffff'; 
-        brCtx.font = "bold 12px Arial"; 
-        brCtx.textAlign = "center";
-        brCtx.fillText("+", drop.x, drop.y + 4);
+        let dropColor = drop.type === 'GROW' ? '#e74c3c' : '#2ecc71';
+        brCtx.fillStyle = dropColor;
+        brCtx.shadowColor = dropColor;
+        brCtx.shadowBlur = 10;
+        
+        // Render custom shapes instead of text
+        brCtx.beginPath();
+        if(drop.type === 'GROW') {
+            brCtx.roundRect(-10, -4, 20, 8, 3); // Wide pill shape for paddle
+        } else {
+            brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Core shape for ball
+        }
+        brCtx.fill();
+        
+        // Inner white shine
+        brCtx.fillStyle = '#ffffff';
+        brCtx.shadowBlur = 0;
+        brCtx.beginPath();
+        if(drop.type === 'GROW') {
+            brCtx.roundRect(-4, -1, 8, 2, 1);
+        } else {
+            brCtx.arc(0, 0, 3, 0, Math.PI * 2);
+        }
+        brCtx.fill();
+        brCtx.restore();
         
         if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
+            createBrickExplosion(drop.x, bPaddle.y, dropColor, 15, false); // Collection burst
+            if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
+            
             if(drop.type === 'GROW') { bPaddle.w = 130; setTimeout(() => { bPaddle.w = 90; }, 8000); }
             else if(drop.type === 'BALL') { bBall.r = 10; setTimeout(() => { bBall.r = 6; }, 8000); }
             activeDropsArray.splice(dIndex, 1);
@@ -5306,72 +5395,160 @@ if (bBall.y + bBall.r > brickCanvasElement.height) {
         }
     }
     
+    // --- 7. BRICK RENDER & IMPACT MECHANICS ---
     let remainingActiveBricksCount = 0;
     
-    // Brick Collision and Drawing
     activeBricksArray.forEach(br => {
         if(br.status > 0) {
-            if (br.special !== 'HIDDEN') remainingActiveBricksCount++;
+            // Count standard targets
+            if (br.special !== 'HIDDEN' && br.special !== 'BOSS') remainingActiveBricksCount++;
+            if (br.special === 'BOSS') remainingActiveBricksCount++; // Boss blocks count towards win
             
+            // 👻 Hidden Bricks - Distortion Effect
             if(br.special === 'HIDDEN') {
-                brCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+                brCtx.strokeStyle = `rgba(255, 255, 255, ${0.1 + Math.sin(brickBgPulseTime*5)*0.05})`;
                 brCtx.lineWidth = 1;
                 brCtx.strokeRect(br.x, br.y, br.w, br.h);
                 return;
             }
             
-            brCtx.fillStyle = br.color;
+            // 🤖 BOSS BRICK INJECTION (Inline Multi-Hit Initialization)
+            if (br.special === 'BOSS' && !br.bossInitDone) {
+                br.status = 15; // Requires 15 hits to destroy!
+                br.bossInitDone = true;
+            }
+            
+            // Render Brick Styling
+            brCtx.save();
+            let bGrad = brCtx.createLinearGradient(br.x, br.y, br.x, br.y + br.h);
+            
+            if (br.special === 'BOSS') {
+                // Boss pulsing red/purple core
+                brCtx.shadowColor = '#e74c3c';
+                brCtx.shadowBlur = 10 + Math.sin(brickBgPulseTime * 10) * 5;
+                bGrad.addColorStop(0, '#c0392b');
+                bGrad.addColorStop(1, '#8e44ad');
+            } else {
+                bGrad.addColorStop(0, '#ffffff'); // Glossy top
+                bGrad.addColorStop(0.2, br.color);
+                bGrad.addColorStop(1, '#000000'); // Shadow bottom
+            }
+            
+            brCtx.fillStyle = bGrad;
             brCtx.beginPath(); 
             brCtx.roundRect(br.x, br.y, br.w, br.h, 3); 
             brCtx.fill();
             
+            // Gloss reflection highlight
+            brCtx.fillStyle = 'rgba(255,255,255,0.2)';
+            brCtx.fillRect(br.x + 2, br.y + 2, br.w - 4, 3);
+            
             if(br.special === 'TNT') {
-                brCtx.fillStyle = 'rgba(0,0,0,0.6)'; 
-                brCtx.font = "9px Arial"; 
+                // Flashing TNT Warning
+                brCtx.fillStyle = Math.floor(Date.now() / 200) % 2 === 0 ? 'rgba(0,0,0,0.8)' : 'rgba(255,0,0,0.8)'; 
+                brCtx.font = "bold 9px Arial"; 
                 brCtx.textAlign = "center";
                 brCtx.fillText("TNT", br.x + (br.w / 2), br.y + 9);
+            } else if (br.special === 'BOSS') {
+                // Boss Health Indicator
+                brCtx.fillStyle = '#ffffff';
+                brCtx.font = "bold 10px monospace";
+                brCtx.textAlign = "center";
+                brCtx.fillText(br.status, br.x + (br.w / 2), br.y + 10);
             }
+            brCtx.restore();
             
+            // 💥 Collision Calculations
             if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
-                if (isSuperBallActive) {
-                    br.status = 0;
-                    brickScoreCounter += 15;
-                } else if (ballChargeMeter >= 100) {
-                    isSuperBallActive = true;
-                    ballChargeMeter = 0;
-                    br.status = 0;
-                    brickScoreCounter += 20;
+                
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, br.special === 'TNT' ? 'EXPLOSION' : 'BRICK_HIT');
+                createBrickExplosion(bBall.x, bBall.y, br.color, br.special === 'BOSS' ? 12 : 6, false); // Impact dust
+
+                if (br.special === 'BOSS') {
+                    // Boss takes damage instead of instant death
+                    br.status -= (isSuperBallActive ? 3 : 1);
+                    applyBrickCameraShake(5);
+                    bBall.dy *= -1; // Boss always bounces ball
+                    
+                    if (br.status <= 0) {
+                        brickScoreCounter += 200;
+                        createBrickExplosion(br.x + br.w/2, br.y + br.h/2, '#e74c3c', 40, true); // Massive boss death
+                        brickScreenFlashAlpha = 1.0;
+                    }
                 } else {
-                    bBall.dy *= -1;
-                    br.status = 0;
-                    brickScoreCounter += 10;
-                    ballChargeMeter = Math.min(100, ballChargeMeter + 10); 
+                    // Standard Brick & TNT Logic
+                    if (isSuperBallActive) {
+                        br.status = 0;
+                        brickScoreCounter += 15;
+                        applyBrickCameraShake(1.5);
+                    } else if (ballChargeMeter >= 100) {
+                        isSuperBallActive = true;
+                        ballChargeMeter = 0;
+                        br.status = 0;
+                        brickScoreCounter += 20;
+                        brickScreenFlashAlpha = 0.5; // Flash on activation
+                        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWER_UP');
+                    } else {
+                        bBall.dy *= -1;
+                        br.status = 0;
+                        brickScoreCounter += 10;
+                        ballChargeMeter = Math.min(100, ballChargeMeter + 10); 
+                        applyBrickCameraShake(0.8);
+                    }
                 }
                 
-                if(br.special === 'TNT') {
+                // Cascade TNT triggers
+                if(br.status <= 0 && br.special === 'TNT') {
+                    applyBrickCameraShake(10); // Heavy TNT shake
+                    createBrickExplosion(br.x + br.w/2, br.y + br.h/2, '#e67e22', 25, true);
+                    
                     activeBricksArray.forEach(subBr => {
                         let distanceX = Math.abs(subBr.x - br.x);
                         let distanceY = Math.abs(subBr.y - br.y);
-                        if(distanceX < 50 && distanceY < 30 && subBr.status === 1) {
+                        if(distanceX < 50 && distanceY < 30 && subBr.status > 0) {
                             subBr.status = 0;
                             brickScoreCounter += 20;
+                            createBrickExplosion(subBr.x + subBr.w/2, subBr.y + subBr.h/2, subBr.color, 8, false);
                         }
                     });
                 }
                 
-                if(Math.random() < 0.18 && !isSuperBallActive) {
+                // Drop Spawns (Only from standard blocks to maintain balance)
+                if(br.status <= 0 && Math.random() < 0.18 && !isSuperBallActive && br.special !== 'BOSS') {
                     let typeAllocated = Math.random() > 0.5 ? 'GROW' : 'BALL';
-                    activeDropsArray.push({ x: br.x + (br.w / 2), y: br.y, type: typeAllocated });
+                    activeDropsArray.push({ x: br.x + (br.w / 2), y: br.y, type: typeAllocated, rot: 0 });
                 }
             }
         }
     });
     
+    // De-activate super ball if dropped low
     if (isSuperBallActive && bBall.y < 50) {
         isSuperBallActive = false;
     }
     
-    // Stage clearance verification
+    // --- 8. PARTICLE ENGINE RENDERER ---
+    for(let i = brickParticlesArray.length - 1; i >= 0; i--) {
+        let p = brickParticlesArray[i];
+        p.x += p.vx; p.y += p.vy;
+        p.life -= p.decay;
+        if(p.life <= 0) { brickParticlesArray.splice(i, 1); continue; }
+        brCtx.globalAlpha = Math.max(0, p.life);
+        brCtx.fillStyle = p.color;
+        brCtx.beginPath(); brCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); brCtx.fill();
+    }
+    brCtx.globalAlpha = 1.0;
+
+    brCtx.restore(); // 🛡️ RESTORE CAMERA BEFORE DRAWING HUD
+    
+    // Flash Overlay (For Boss Kills / Activations)
+    if (brickScreenFlashAlpha > 0) {
+        brCtx.fillStyle = `rgba(255, 255, 255, ${brickScreenFlashAlpha})`;
+        brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
+        brickScreenFlashAlpha -= 0.05;
+    }
+
+    // --- 9. STAGE COMPLETION CHECK ---
     if (remainingActiveBricksCount === 0 && isBallLaunched) {
         clearInterval(loopTimerInstance);
         isBallLaunched = false; 
@@ -5388,37 +5565,50 @@ if (bBall.y + bBall.r > brickCanvasElement.height) {
             initBrickBreakerGame();
         } else {
             currentActiveLevelIndex = 1; 
-            alert(`🎉 VICTORY! You conquered Pack ${currentSelectedPackName}!`);
+            alert(`🏆 GRAND VICTORY! You decimated Pack ${currentSelectedPackName}!`);
             if (typeof switchGameMode === 'function') switchGameMode('FLAPPY');
         }
         return;
     }
     
-    // HUD Header Display Rendering
-    brCtx.fillStyle = "#16192b";
+    // --- 10. MODERN GLASSMORPHISM HUD ---
+    brCtx.fillStyle = "rgba(15, 17, 26, 0.85)";
     brCtx.fillRect(0, 0, brickCanvasElement.width, 40);
+    brCtx.strokeStyle = "rgba(0, 210, 211, 0.2)";
+    brCtx.beginPath(); brCtx.moveTo(0, 40); brCtx.lineTo(brickCanvasElement.width, 40); brCtx.stroke();
     
+    // Glowing Hearts
     for(let h = 0; h < 3; h++) {
+        brCtx.shadowColor = h < gameHeartsRemaining ? '#ff4d4d' : 'transparent';
+        brCtx.shadowBlur = h < gameHeartsRemaining ? 8 : 0;
         brCtx.fillStyle = h < gameHeartsRemaining ? '#ff4d4d' : 'rgba(255,255,255,0.1)';
-        brCtx.beginPath(); brCtx.arc(15 + (h * 12), 20, 3.5, 0, Math.PI * 2); brCtx.fill();
+        brCtx.beginPath(); brCtx.arc(16 + (h * 14), 20, 4.5, 0, Math.PI * 2); brCtx.fill();
     }
+    brCtx.shadowBlur = 0;
     
-    let barX = 60, barY = 15, barW = 75, barH = 10;
-    brCtx.strokeStyle = 'rgba(255,255,255,0.2)';
-    brCtx.strokeRect(barX, barY, barW, barH);
-    brCtx.fillStyle = ballChargeMeter >= 100 ? '#00d2d3' : '#f1c40f';
+    // Futuristic Charge Bar
+    let barX = 65, barY = 16, barW = 80, barH = 8;
+    brCtx.fillStyle = 'rgba(255,255,255,0.1)';
+    brCtx.beginPath(); brCtx.roundRect(barX, barY, barW, barH, 4); brCtx.fill();
+    
+    brCtx.fillStyle = ballChargeMeter >= 100 ? '#00ffff' : '#f1c40f';
+    brCtx.shadowColor = brCtx.fillStyle;
+    brCtx.shadowBlur = ballChargeMeter >= 100 ? 10 : 0;
     let currentRenderedWidth = (ballChargeMeter / 100) * barW;
-    brCtx.fillRect(barX + 1, barY + 1, Math.max(0, currentRenderedWidth - 2), barH - 2);
+    brCtx.beginPath(); brCtx.roundRect(barX, barY, Math.max(0, currentRenderedWidth), barH, 4); brCtx.fill();
+    brCtx.shadowBlur = 0;
     
-    brCtx.fillStyle = "rgba(255, 255, 255, 0.7)";
-    brCtx.font = "11px Segoe UI";
+    // Level & Pack Text
+    brCtx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    brCtx.font = "bold 11px Segoe UI";
     brCtx.textAlign = "left";
     let activePackMetadata = totalBrickPacksDataMatrix[currentSelectedPackName];
     let activeLevelNameString = activePackMetadata.themes[currentActiveLevelIndex - 1];
-    brCtx.fillText(`Lv.${currentActiveLevelIndex}: ${activeLevelNameString}`, barX + barW + 12, 24);
+    brCtx.fillText(`L${currentActiveLevelIndex} : ${activeLevelNameString.toUpperCase()}`, barX + barW + 12, 24);
     
+    // Score
     brCtx.fillStyle = "#ffffff";
-    brCtx.font = "bold 13px monospace";
+    brCtx.font = "900 14px monospace";
     brCtx.textAlign = "right";
     let scoreDisplay = String(brickScoreCounter).padStart(5, '0');
     brCtx.fillText(scoreDisplay, brickCanvasElement.width - 12, 25);
