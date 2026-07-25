@@ -5673,7 +5673,9 @@ function frameUpdateFlappy() {
     // --- 1. DYNAMIC DIFFICULTY PROGRESSION ---
     let difficultyLevel = Math.floor(flappyScoreTracker / 5);
     let currentSpeed = 2.2 + Math.min(2.0, difficultyLevel * 0.3); // Caps at +2.0 speed
-    let currentGapSize = Math.max(85, 120 - (difficultyLevel * 5)); // Gap shrinks but never impossible
+    
+    // 🕳️ VERTICAL GAP: Upar aur neeche wale pipe ke beech ka rasta (Bird ke nikalne ki jagah)
+    let currentGapSize = Math.max(90, 130 - (difficultyLevel * 5)); 
     
     // Dynamic Theme Shifting
     if (difficultyLevel >= 4) flappyLevelTheme = { sky: '#0f2027', pipe: '#e74c3c', ground: '#c0392b' }; // Lava / Expert
@@ -5708,12 +5710,11 @@ function frameUpdateFlappy() {
     });
 
     // --- 3. BIRD PHYSICS & ANIMATION ---
-    // Hook Jump Velocity manually reading native jump (if velocity jumps drastically negative)
     let previousVelocity = fBird.velocity;
     fBird.velocity += 0.23; 
     fBird.y += fBird.velocity;
     
-    if (previousVelocity > 0 && fBird.velocity < -3) onFlappyJump(); // Intercepted jump hook
+    if (previousVelocity > 0 && fBird.velocity < -3) onFlappyJump();
 
     // Smooth Pitch Rotation
     let targetRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, fBird.velocity * 0.12));
@@ -5730,9 +5731,9 @@ function frameUpdateFlappy() {
     flCtx.fillStyle = "#ffd700"; 
     flCtx.beginPath(); flCtx.ellipse(0, 0, 14, 11, 0, 0, Math.PI*2); flCtx.fill();
     
-    flCtx.shadowBlur = 0; // Turn off shadow for inner details to save GPU
+    flCtx.shadowBlur = 0; 
     
-    // Wing Flap Animation (Flaps faster when rising)
+    // Wing Flap Animation
     let flapSpeed = fBird.velocity < 0 ? 25 : 8;
     let wingY = Math.sin(flappyTime * flapSpeed) * 4;
     flCtx.fillStyle = "#f39c12"; 
@@ -5763,7 +5764,7 @@ function frameUpdateFlappy() {
     if(fBird.y > groundY - 11 || fBird.y < -20) { 
         flappyCameraShake = 15;
         onFlappyCrash();
-        createFlappyParticles(50, fBird.y, '#ffd700', 30, true); // Feather explosion
+        createFlappyParticles(50, fBird.y, '#ffd700', 30, true); 
         finalizeFailedRun("💥 Bird Crashed!"); 
         return; 
     }
@@ -5772,14 +5773,13 @@ function frameUpdateFlappy() {
     fPipes.forEach((p, idx) => {
         p.x -= currentSpeed; 
         
-        let pipeW = 48; // Slightly thicker premium pipes
+        let pipeW = 48; 
         
-        // Pseudo-3D Pipe Render (No Gradients)
+        // Pseudo-3D Pipe Render
         flCtx.fillStyle = flappyLevelTheme.pipe; 
         flCtx.fillRect(p.x, 0, pipeW, p.gapTop); 
         flCtx.fillRect(p.x, p.gapBottom, pipeW, flappyCanvasElement.height - p.gapBottom);
         
-        // Pipe Shadows/Highlights for Depth
         flCtx.fillStyle = "rgba(0, 0, 0, 0.2)";
         flCtx.fillRect(p.x + pipeW - 10, 0, 10, p.gapTop);
         flCtx.fillRect(p.x + pipeW - 10, p.gapBottom, 10, flappyCanvasElement.height);
@@ -5788,13 +5788,16 @@ function frameUpdateFlappy() {
         flCtx.fillRect(p.x + 2, 0, 6, p.gapTop);
         flCtx.fillRect(p.x + 2, p.gapBottom, 6, flappyCanvasElement.height);
 
-        // Pipe Caps (Thicker ends)
         flCtx.fillStyle = flappyLevelTheme.ground;
-        flCtx.fillRect(p.x - 4, p.gapTop - 15, pipeW + 8, 15); // Top Cap
-        flCtx.fillRect(p.x - 4, p.gapBottom, pipeW + 8, 15); // Bottom Cap
+        flCtx.fillRect(p.x - 4, p.gapTop - 15, pipeW + 8, 15); 
+        flCtx.fillRect(p.x - 4, p.gapBottom, pipeW + 8, 15); 
+        
+        // 🚀 HORIZONTAL DISTANCE FIX: Agla pillar kitni door aayega
+        // 175 ek dam perfect arcade distance hai. Isko 150 karoge toh paas ho jayenge, 200 karoge toh door ho jayenge.
+        let horizontalDistanceBetweenPillars = 175; 
         
         // Spawn Next Pipe
-        if(p.x <= (flappyCanvasElement.width / 2) && !p.registered) { 
+        if(p.x <= (flappyCanvasElement.width - horizontalDistanceBetweenPillars) && !p.registered) { 
             p.registered = true; 
             let minTop = 40;
             let maxTop = groundY - currentGapSize - 40;
@@ -5807,7 +5810,7 @@ function frameUpdateFlappy() {
             }); 
         }
         
-        // AAA Collision Detection (Tightened hitbox)
+        // AAA Collision Detection 
         let birdLeft = 50 - 9, birdRight = 50 + 9;
         let birdTop = fBird.y - 9, birdBottom = fBird.y + 9;
         
@@ -5824,14 +5827,13 @@ function frameUpdateFlappy() {
         // AAA Scoring & Combo Hooks
         if(p.x + pipeW < 50 && p.registered === true && idx === 0) { 
             flappyScoreTracker++; 
-            flappyCameraY = 5; // Slight camera bump
+            flappyCameraY = 5; 
             onFlappyPass();
-            createFlappyParticles(50, fBird.y, '#2ecc71', 15, false); // Pass Sparkles
+            createFlappyParticles(50, fBird.y, '#2ecc71', 15, false); 
             
-            // 🔥 FIXED: Preserved original strict admin matrix targets
             if(flappyScoreTracker >= (parseInt(rules.flappyTar) || 5)) {
                 onFlappyReward();
-                createFlappyParticles(50, fBird.y, '#f1c40f', 40, true); // Reward Burst
+                createFlappyParticles(50, fBird.y, '#f1c40f', 40, true); 
                 triggerRewardCoupon(parseInt(rules.flappyDisc) || 0); 
             }
             fPipes.shift(); 
@@ -5843,9 +5845,8 @@ function frameUpdateFlappy() {
     flCtx.fillStyle = flappyLevelTheme.ground;
     flCtx.fillRect(0, groundY, flappyCanvasElement.width, 30);
     flCtx.fillStyle = "rgba(0,0,0,0.15)";
-    flCtx.fillRect(0, groundY, flappyCanvasElement.width, 4); // Ground Shadow
+    flCtx.fillRect(0, groundY, flappyCanvasElement.width, 4); 
     
-    // Striped moving texture
     flCtx.fillStyle = "rgba(0,0,0,0.1)";
     for(let gx = flappyGroundScroll; gx < flappyCanvasElement.width; gx += 30) {
         flCtx.beginPath();
@@ -5868,7 +5869,7 @@ function frameUpdateFlappy() {
     }
     flCtx.globalAlpha = 1.0;
 
-    flCtx.restore(); // Restore Camera Shake
+    flCtx.restore(); 
 
     // --- 8. MODERN GLASSMORPHISM HUD ---
     flCtx.fillStyle = "rgba(15, 23, 42, 0.75)";
@@ -5881,20 +5882,17 @@ function frameUpdateFlappy() {
     flCtx.fillStyle = "#ffffff"; 
     flCtx.font = "900 15px Segoe UI"; 
     flCtx.textAlign = "left";
-    flCtx.fillText(`🍎 Pts: ${flappyScoreTracker}`, 18, 32);
+    flCtx.fillText(` Pts: ${flappyScoreTracker}`, 18, 32);
 
-    // Difficulty Indicator
     flCtx.fillStyle = "rgba(255, 255, 255, 0.5)";
     flCtx.font = "bold 10px Segoe UI";
     flCtx.textAlign = "right";
     flCtx.fillText(`Lvl ${difficultyLevel + 1}`, flappyCanvasElement.width - 15, 20);
     
-    // Dynamic Camera Reset
     if (flappyCameraY > 0) flappyCameraY -= 0.5;
 }
 // ===================================================================
 // ===== END MODIFICATION =====
-// ===================================================================
 // 🚀 FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
 // ===================================================================
 function frameUpdateSpace() {
@@ -7523,3 +7521,4 @@ initApp();
 </script>
 </body>
 </html>
+    
