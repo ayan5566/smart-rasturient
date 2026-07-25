@@ -724,14 +724,6 @@
         </div>
         <div id="adminTableLayoutGrid"></div>
         <button class="action-btn" onclick="addNewFloor()" style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
-    <div style="background: #15171e; border: 1px dashed #ffd700; padding: 12px; border-radius: 10px; margin-bottom: 10px; margin-top: 10px; text-align: left;">
-    <span style="font-size: 10px; font-weight: bold; color: #ffd700; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px;">⚡ Bank Webhook Sandbox Simulator Terminal:</span>
-    <p style="font-size: 11px; color: #a4b0be; margin: 0 0 8px 0;">Bina real business account ke, is selected table par fake 'SUCCESS_PAID' ka signal bhejein:</p>
-    <button onclick="simulateInboundBankWebhookSignal()" style="background: linear-gradient(135deg, #ffd700, #ffa500); color: #000; font-size: 11px; font-weight: bold; padding: 8px; border: none; border-radius: 6px; width: 100%; cursor: pointer;">
-        🚀 Inject Fake 'SUCCESS_PAID' Bank Webhook Signal
-    </button>
-</div>
-        
         <h3>📊 Live Customer Billing Tracker Map</h3>
         <div style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt Live:</label>
@@ -792,7 +784,6 @@
         
 <h3>🎮 Target Variables & Value Ratios</h3>
 <div style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-    <!-- Added slightly more vertical gap (16px) to space out the new labels comfortably -->
     <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 12px; align-items: center;">
         
         <!-- Brick Breaker -->
@@ -800,7 +791,10 @@
             <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Clear Target:</span>
             <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: 3–5 Levels <span style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
         </div>
-        <input type="number" id="cfgBrickTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Lev:</span>
+            <input type="number" id="cfgBrickTar" placeholder="Lev" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgBrickDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
@@ -811,7 +805,10 @@
             <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
             <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: 5–10 Points <span style="color:#7f8c8d; font-weight:500;">(Hard)</span></span>
         </div>
-        <input type="number" id="cfgFlappyTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Pts:</span>
+            <input type="number" id="cfgFlappyTar" placeholder="Pts" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgFlappyDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
@@ -822,7 +819,10 @@
             <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
             <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: Stage 3–5 <span style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
         </div>
-        <input type="number" id="cfgSpaceTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Lev:</span>
+            <input type="number" id="cfgSpaceTar" placeholder="Lev" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgSpaceDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
@@ -833,7 +833,10 @@
             <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
             <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">⭐ Rec: 10–15 Apples <span style="color:#7f8c8d; font-weight:500;">(Easy)</span></span>
         </div>
-        <input type="number" id="cfgSnakeTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Qty:</span>
+            <input type="number" id="cfgSnakeTar" placeholder="Qty" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgSnakeDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
@@ -844,7 +847,10 @@
             <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
             <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: Level 3–4 <span style="color:#7f8c8d; font-weight:500;">(Hard / 20-30 Floors)</span></span>
         </div>
-        <input type="number" id="cfgTowerTar" placeholder="Target" oninput="saveAdminConfig()" style="width: 70px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Lev:</span>
+            <input type="number" id="cfgTowerTar" placeholder="Lev" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgTowerDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
