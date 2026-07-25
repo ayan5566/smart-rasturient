@@ -4883,7 +4883,33 @@ let ballChargeMeter = 0;
 let isSuperBallActive = false; 
 let isLifeBeingProcessed = false;
         
+        
+// ===================================================================
+// 🧱 BRICK BREAKER AAA VFX & STATE VARIABLES
+// ===================================================================
+var brickCameraShake = 0;
+var brickParticlesArray = [];
+var brickBallTrailArray = [];
+var brickScreenFlashAlpha = 0;
+var brickBgPulseTime = 0;
 
+function applyBrickCameraShake(intensity) {
+    brickCameraShake = intensity;
+}
+
+function createBrickExplosion(x, y, color, count, isTNT) {
+    let pCount = isTNT ? count * 3 : count;
+    for(let i = 0; i < pCount; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = (Math.random() * (isTNT ? 7 : 3.5)) + 1;
+        brickParticlesArray.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 1.0, decay: Math.random() * 0.05 + 0.02,
+            color: color, size: Math.random() * 3 + 1.5
+        });
+    }
+}
 // ===================================================================
 // 🧱 RESTROFLOW PRO ARCADE: 4-PACK FULL DENSITY LEVEL BLUEPRINT MATRIX
 // ===================================================================
