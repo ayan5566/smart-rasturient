@@ -5589,48 +5589,6 @@ function frameUpdateSpace() {
     if(sShieldTimer > 0) sShieldTimer--; 
     if(sMultiTimer > 0) sMultiTimer--; 
     spaceFrameTracker++;
-    // ===================================================================
-// 🚀 SPACE SHOOTER AAA VFX & STATE VARIABLES
-// ===================================================================
-let spaceCameraShake = 0;
-let spaceParticlesArray = [];
-let spaceNebulaClouds = [];
-let spaceDebrisArray = [];
-
-// Initialize deep space environment once
-for(let i=0; i<4; i++) {
-    spaceNebulaClouds.push({
-        x: Math.random() * 320, y: Math.random() * 400,
-        r: 80 + Math.random() * 60,
-        color: ['rgba(41, 128, 185, 0.05)', 'rgba(142, 68, 173, 0.05)', 'rgba(39, 174, 96, 0.03)'][Math.floor(Math.random()*3)],
-        speed: 0.1 + Math.random() * 0.2
-    });
-}
-for(let i=0; i<5; i++) {
-    spaceDebrisArray.push({
-        x: Math.random() * 320, y: Math.random() * 400,
-        size: Math.random() * 2 + 1, speed: 0.5 + Math.random() * 1.5,
-        rot: Math.random() * Math.PI, rotSpeed: (Math.random() - 0.5) * 0.1
-    });
-}
-
-function applySpaceCameraShake(intensity) {
-    spaceCameraShake = intensity;
-}
-
-function createSpaceExplosion(x, y, color, count, isBoss) {
-    let pCount = isBoss ? count * 4 : count;
-    for(let i = 0; i < pCount; i++) {
-        let angle = Math.random() * Math.PI * 2;
-        let speed = (Math.random() * (isBoss ? 6 : 3)) + 1;
-        spaceParticlesArray.push({
-            x: x, y: y,
-            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-            life: 1.0, decay: Math.random() * 0.04 + 0.02,
-            color: color, size: Math.random() * 3 + 1
-        });
-    }
-}
     
     pShipObj.x += spaceMoveDir; 
     if(pShipObj.x < 0) pShipObj.x = 0; 
@@ -5905,6 +5863,48 @@ function createSpaceExplosion(x, y, color, count, isBoss) {
         spCtx.strokeRect(spCanvasElement.width/2 - 80, 45, 160, 8);
         spCtx.fillStyle = "#fff"; spCtx.font = "bold 9px Arial"; spCtx.textAlign = "center";
         spCtx.fillText("BOSS VITALITY", spCanvasElement.width/2, 42);
+    }
+}
+// ===================================================================
+// 🚀 SPACE SHOOTER AAA VFX & STATE VARIABLES (TOP LEVEL / GLOBAL)
+// ===================================================================
+var spaceCameraShake = 0;
+var spaceParticlesArray = [];
+var spaceNebulaClouds = [];
+var spaceDebrisArray = [];
+
+// Initialize deep space environment (Runs only ONCE)
+for(var i=0; i<4; i++) {
+    spaceNebulaClouds.push({
+        x: Math.random() * 320, y: Math.random() * 400,
+        r: 80 + Math.random() * 60,
+        color: ['rgba(41, 128, 185, 0.05)', 'rgba(142, 68, 173, 0.05)', 'rgba(39, 174, 96, 0.03)'][Math.floor(Math.random()*3)],
+        speed: 0.1 + Math.random() * 0.2
+    });
+}
+for(var i=0; i<5; i++) {
+    spaceDebrisArray.push({
+        x: Math.random() * 320, y: Math.random() * 400,
+        size: Math.random() * 2 + 1, speed: 0.5 + Math.random() * 1.5,
+        rot: Math.random() * Math.PI, rotSpeed: (Math.random() - 0.5) * 0.1
+    });
+}
+
+function applySpaceCameraShake(intensity) {
+    spaceCameraShake = intensity;
+}
+
+function createSpaceExplosion(x, y, color, count, isBoss) {
+    let pCount = isBoss ? count * 4 : count;
+    for(let i = 0; i < pCount; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = (Math.random() * (isBoss ? 6 : 3)) + 1;
+        spaceParticlesArray.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+            life: 1.0, decay: Math.random() * 0.04 + 0.02,
+            color: color, size: Math.random() * 3 + 1
+        });
     }
 }
 // ===================================================================
