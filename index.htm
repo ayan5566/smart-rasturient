@@ -5301,7 +5301,7 @@ function frameUpdateBrickBreaker() {
     }
     
     // Render Trail
-    brickBallTrailArray.forEach((t, ti) => {
+    brickBallTrailArray.forEach((t) => {
         t.alpha -= isSuperBallActive ? 0.05 : 0.12;
         if(t.alpha <= 0) return;
         brCtx.globalAlpha = Math.max(0, t.alpha);
@@ -5388,16 +5388,14 @@ function frameUpdateBrickBreaker() {
         brCtx.shadowColor = dropColor;
         brCtx.shadowBlur = 10;
         
-        // Render custom shapes instead of text
         brCtx.beginPath();
         if(drop.type === 'GROW') {
-            brCtx.roundRect(-10, -4, 20, 8, 3); // Wide pill shape for paddle
+            brCtx.roundRect(-10, -4, 20, 8, 3); // Wide pill shape
         } else {
-            brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Core shape for ball
+            brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Core shape
         }
         brCtx.fill();
         
-        // Inner white shine
         brCtx.fillStyle = '#ffffff';
         brCtx.shadowBlur = 0;
         brCtx.beginPath();
@@ -5426,11 +5424,9 @@ function frameUpdateBrickBreaker() {
     
     activeBricksArray.forEach(br => {
         if(br.status > 0) {
-            // Count standard targets
             if (br.special !== 'HIDDEN' && br.special !== 'BOSS') remainingActiveBricksCount++;
-            if (br.special === 'BOSS') remainingActiveBricksCount++; // Boss blocks count towards win
+            if (br.special === 'BOSS') remainingActiveBricksCount++; 
             
-            // 👻 Hidden Bricks - Distortion Effect
             if(br.special === 'HIDDEN') {
                 brCtx.strokeStyle = `rgba(255, 255, 255, ${0.1 + Math.sin(brickBgPulseTime*5)*0.05})`;
                 brCtx.lineWidth = 1;
@@ -5438,26 +5434,23 @@ function frameUpdateBrickBreaker() {
                 return;
             }
             
-            // 🤖 BOSS BRICK INJECTION (Inline Multi-Hit Initialization)
             if (br.special === 'BOSS' && !br.bossInitDone) {
                 br.status = 15; // Requires 15 hits to destroy!
                 br.bossInitDone = true;
             }
             
-            // Render Brick Styling
             brCtx.save();
             let bGrad = brCtx.createLinearGradient(br.x, br.y, br.x, br.y + br.h);
             
             if (br.special === 'BOSS') {
-                // Boss pulsing red/purple core
                 brCtx.shadowColor = '#e74c3c';
                 brCtx.shadowBlur = 10 + Math.sin(brickBgPulseTime * 10) * 5;
                 bGrad.addColorStop(0, '#c0392b');
                 bGrad.addColorStop(1, '#8e44ad');
             } else {
-                bGrad.addColorStop(0, '#ffffff'); // Glossy top
+                bGrad.addColorStop(0, '#ffffff'); 
                 bGrad.addColorStop(0.2, br.color);
-                bGrad.addColorStop(1, '#000000'); // Shadow bottom
+                bGrad.addColorStop(1, '#000000'); 
             }
             
             brCtx.fillStyle = bGrad;
@@ -5465,18 +5458,15 @@ function frameUpdateBrickBreaker() {
             brCtx.roundRect(br.x, br.y, br.w, br.h, 3); 
             brCtx.fill();
             
-            // Gloss reflection highlight
             brCtx.fillStyle = 'rgba(255,255,255,0.2)';
             brCtx.fillRect(br.x + 2, br.y + 2, br.w - 4, 3);
             
             if(br.special === 'TNT') {
-                // Flashing TNT Warning
                 brCtx.fillStyle = Math.floor(Date.now() / 200) % 2 === 0 ? 'rgba(0,0,0,0.8)' : 'rgba(255,0,0,0.8)'; 
                 brCtx.font = "bold 9px Arial"; 
                 brCtx.textAlign = "center";
                 brCtx.fillText("TNT", br.x + (br.w / 2), br.y + 9);
             } else if (br.special === 'BOSS') {
-                // Boss Health Indicator
                 brCtx.fillStyle = '#ffffff';
                 brCtx.font = "bold 10px monospace";
                 brCtx.textAlign = "center";
@@ -5488,21 +5478,19 @@ function frameUpdateBrickBreaker() {
             if(bBall.x + bBall.r > br.x && bBall.x - bBall.r < br.x + br.w && bBall.y + bBall.r > br.y && bBall.y - bBall.r < br.y + br.h) {
                 
                 if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, br.special === 'TNT' ? 'EXPLOSION' : 'BRICK_HIT');
-                createBrickExplosion(bBall.x, bBall.y, br.color, br.special === 'BOSS' ? 12 : 6, false); // Impact dust
+                createBrickExplosion(bBall.x, bBall.y, br.color, br.special === 'BOSS' ? 12 : 6, false); 
 
                 if (br.special === 'BOSS') {
-                    // Boss takes damage instead of instant death
                     br.status -= (isSuperBallActive ? 3 : 1);
                     applyBrickCameraShake(5);
-                    bBall.dy *= -1; // Boss always bounces ball
+                    bBall.dy *= -1; 
                     
                     if (br.status <= 0) {
                         brickScoreCounter += 200;
-                        createBrickExplosion(br.x + br.w/2, br.y + br.h/2, '#e74c3c', 40, true); // Massive boss death
+                        createBrickExplosion(br.x + br.w/2, br.y + br.h/2, '#e74c3c', 40, true); 
                         brickScreenFlashAlpha = 1.0;
                     }
                 } else {
-                    // Standard Brick & TNT Logic
                     if (isSuperBallActive) {
                         br.status = 0;
                         brickScoreCounter += 15;
@@ -5512,7 +5500,7 @@ function frameUpdateBrickBreaker() {
                         ballChargeMeter = 0;
                         br.status = 0;
                         brickScoreCounter += 20;
-                        brickScreenFlashAlpha = 0.5; // Flash on activation
+                        brickScreenFlashAlpha = 0.5; 
                         if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWER_UP');
                     } else {
                         bBall.dy *= -1;
@@ -5523,9 +5511,8 @@ function frameUpdateBrickBreaker() {
                     }
                 }
                 
-                // Cascade TNT triggers
                 if(br.status <= 0 && br.special === 'TNT') {
-                    applyBrickCameraShake(10); // Heavy TNT shake
+                    applyBrickCameraShake(10); 
                     createBrickExplosion(br.x + br.w/2, br.y + br.h/2, '#e67e22', 25, true);
                     
                     activeBricksArray.forEach(subBr => {
@@ -5539,7 +5526,6 @@ function frameUpdateBrickBreaker() {
                     });
                 }
                 
-                // Drop Spawns (Only from standard blocks to maintain balance)
                 if(br.status <= 0 && Math.random() < 0.18 && !isSuperBallActive && br.special !== 'BOSS') {
                     let typeAllocated = Math.random() > 0.5 ? 'GROW' : 'BALL';
                     activeDropsArray.push({ x: br.x + (br.w / 2), y: br.y, type: typeAllocated, rot: 0 });
@@ -5548,7 +5534,6 @@ function frameUpdateBrickBreaker() {
         }
     });
     
-    // De-activate super ball if dropped low
     if (isSuperBallActive && bBall.y < 50) {
         isSuperBallActive = false;
     }
@@ -5565,9 +5550,8 @@ function frameUpdateBrickBreaker() {
     }
     brCtx.globalAlpha = 1.0;
 
-    brCtx.restore(); // 🛡️ RESTORE CAMERA BEFORE DRAWING HUD
+    brCtx.restore(); 
     
-    // Flash Overlay (For Boss Kills / Activations)
     if (brickScreenFlashAlpha > 0) {
         brCtx.fillStyle = `rgba(255, 255, 255, ${brickScreenFlashAlpha})`;
         brCtx.fillRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
