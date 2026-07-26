@@ -5407,14 +5407,25 @@ for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
     brCtx.fill();
     brCtx.restore();
     
-    if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
-        createBrickExplosion(drop.x, bPaddle.y, dropColor, 15, false); // Collection burst
-        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
-        
-        if(drop.type === 'GROW') { 
-            bPaddle.w = 130; 
-            setTimeout(() => { bPaddle.w = 90; }, 8000); 
-        } else if(drop.type === 'BALL') { 
+    // ===== START MODIFICATION =====
+} else if(drop.type === 'BALL') { 
+    
+    // Core gameplay variable ko update karein (Agar aapke code mein lives ka naam 'lives' ya 'brickLives' hai, toh bLives ki jagah wo likhein)
+    if (bLives < 3) {
+        bLives += 1; 
+    }
+    
+    // UI HUD ko update karein
+    let heartUI = document.getElementById('gameHeartsRemaining');
+    if (heartUI) {
+        heartUI.innerText = bLives; // Agar emojis use kar rahe hain toh: '❤️'.repeat(bLives) likhein
+    }
+
+    // Temporary ball expansion effect
+    bBall.r = 10; 
+    setTimeout(() => { bBall.r = 6; }, 8000); 
+}
+// ===== END MODIFICATION =====
             // 🛑 FIX: Increment game hearts by +1 up to max allowed hearts (3)
             if (gameHeartsRemaining < 3) {
                 gameHeartsRemaining = Math.min(3, gameHeartsRemaining + 1);
