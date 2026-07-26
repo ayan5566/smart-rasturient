@@ -5374,50 +5374,60 @@ function frameUpdateBrickBreaker() {
     }
     
     // --- 6. ANIMATED POWER-UPS (DROPS) ---
-    for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
-        let drop = activeDropsArray[dIndex];
-        drop.y += 2.5;
-        drop.rot = (drop.rot || 0) + 0.05;
+for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
+    let drop = activeDropsArray[dIndex];
+    drop.y += 2.5;
+    drop.rot = (drop.rot || 0) + 0.05;
 
-        brCtx.save();
-        brCtx.translate(drop.x, drop.y);
-        brCtx.rotate(drop.rot);
-        
-        let dropColor = drop.type === 'GROW' ? '#e74c3c' : '#2ecc71';
-        brCtx.fillStyle = dropColor;
-        brCtx.shadowColor = dropColor;
-        brCtx.shadowBlur = 10;
-        
-        brCtx.beginPath();
-        if(drop.type === 'GROW') {
-            brCtx.roundRect(-10, -4, 20, 8, 3); // Wide pill shape
-        } else {
-            brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Core shape
-        }
-        brCtx.fill();
-        
-        brCtx.fillStyle = '#ffffff';
-        brCtx.shadowBlur = 0;
-        brCtx.beginPath();
-        if(drop.type === 'GROW') {
-            brCtx.roundRect(-4, -1, 8, 2, 1);
-        } else {
-            brCtx.arc(0, 0, 3, 0, Math.PI * 2);
-        }
-        brCtx.fill();
-        brCtx.restore();
-        
-        if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
-            createBrickExplosion(drop.x, bPaddle.y, dropColor, 15, false); // Collection burst
-            if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
-            
-            if(drop.type === 'GROW') { bPaddle.w = 130; setTimeout(() => { bPaddle.w = 90; }, 8000); }
-            else if(drop.type === 'BALL') { bBall.r = 10; setTimeout(() => { bBall.r = 6; }, 8000); }
-            activeDropsArray.splice(dIndex, 1);
-        } else if(drop.y > brickCanvasElement.height) {
-            activeDropsArray.splice(dIndex, 1);
-        }
+    brCtx.save();
+    brCtx.translate(drop.x, drop.y);
+    brCtx.rotate(drop.rot);
+    
+    let dropColor = drop.type === 'GROW' ? '#e74c3c' : '#2ecc71';
+    brCtx.fillStyle = dropColor;
+    brCtx.shadowColor = dropColor;
+    brCtx.shadowBlur = 10;
+    
+    brCtx.beginPath();
+    if(drop.type === 'GROW') {
+        brCtx.roundRect(-10, -4, 20, 8, 3); // Wide paddle pill shape
+    } else {
+        brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Ball / Heart core shape
     }
+    brCtx.fill();
+    
+    brCtx.fillStyle = '#ffffff';
+    brCtx.shadowBlur = 0;
+    brCtx.beginPath();
+    if(drop.type === 'GROW') {
+        brCtx.roundRect(-4, -1, 8, 2, 1);
+    } else {
+        brCtx.arc(0, 0, 3, 0, Math.PI * 2);
+    }
+    brCtx.fill();
+    brCtx.restore();
+    
+    if(drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
+        createBrickExplosion(drop.x, bPaddle.y, dropColor, 15, false); // Collection burst
+        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
+        
+        if(drop.type === 'GROW') { 
+            bPaddle.w = 130; 
+            setTimeout(() => { bPaddle.w = 90; }, 8000); 
+        } else if(drop.type === 'BALL') { 
+            // 🛑 FIX: Increment game hearts by +1 up to max allowed hearts (3)
+            if (gameHeartsRemaining < 3) {
+                gameHeartsRemaining = Math.min(3, gameHeartsRemaining + 1);
+            }
+            // Keep temporary ball expansion effect intact
+            bBall.r = 10; 
+            setTimeout(() => { bBall.r = 6; }, 8000); 
+        }
+        activeDropsArray.splice(dIndex, 1);
+    } else if(drop.y > brickCanvasElement.height) {
+        activeDropsArray.splice(dIndex, 1);
+    }
+}
     
     // --- 7. BRICK RENDER & IMPACT MECHANICS ---
     let remainingActiveBricksCount = 0;
@@ -6120,26 +6130,31 @@ function frameUpdateSpace() {
         }
     }
 
-    // --- 8. POWERUPS ---
-    if(Math.random() < 0.004) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: -10, type: ['H','S','M'][Math.floor(Math.random()*3)] });
-    
-    powerUps.forEach((pow, pi) => {
-        pow.y += 2.2; 
-        spCtx.fillStyle = pow.type=='H'?'#2ecc71':(pow.type=='S'?'#3498db':'#e67e22'); 
-        spCtx.shadowColor = spCtx.fillStyle; spCtx.shadowBlur = 10;
-        spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 8, 0, Math.PI*2); spCtx.fill();
-        spCtx.shadowBlur = 0;
-        spCtx.fillStyle = "#fff"; spCtx.font = "bold 10px Arial"; spCtx.textAlign = "center";
-        spCtx.fillText(pow.type, pow.x, pow.y+3);
+   // --- 8. POWERUPS ---
+if(Math.random() < 0.004) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: -10, type: ['H','S','M'][Math.floor(Math.random()*3)] });
 
-        if(pow.x > pShipObj.x && pow.x < pShipObj.x+pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y+pShipObj.h) {
-            createSpaceExplosion(pow.x, pow.y, spCtx.fillStyle, 10, false); // Collection spark
-            if(pow.type === 'H') pShipObj.health = Math.min(pShipObj.health+2, pShipObj.maxHealth); 
-            if(pow.type === 'S') sShieldTimer = 350; 
-            if(pow.type === 'M') sMultiTimer = 350; 
-            powerUps.splice(pi, 1);
+powerUps.forEach((pow, pi) => {
+    pow.y += 2.2; 
+    spCtx.fillStyle = pow.type=='H'?'#2ecc71':(pow.type=='S'?'#3498db':'#e67e22'); 
+    spCtx.shadowColor = spCtx.fillStyle; spCtx.shadowBlur = 10;
+    spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 8, 0, Math.PI*2); spCtx.fill();
+    spCtx.shadowBlur = 0;
+    spCtx.fillStyle = "#fff"; spCtx.font = "bold 10px Arial"; spCtx.textAlign = "center";
+    spCtx.fillText(pow.type, pow.x, pow.y+3);
+
+    if(pow.x > pShipObj.x && pow.x < pShipObj.x+pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y+pShipObj.h) {
+        createSpaceExplosion(pow.x, pow.y, spCtx.fillStyle, 10, false); // Collection spark
+        
+        // 🛑 FIX: Restores +2 HP per pickup, capped strictly at maxHealth
+        if(pow.type === 'H') {
+            pShipObj.health = Math.min(pShipObj.maxHealth, pShipObj.health + 2);
         }
-    });
+        if(pow.type === 'S') sShieldTimer = 350; 
+        if(pow.type === 'M') sMultiTimer = 350; 
+        
+        powerUps.splice(pi, 1);
+    }
+});
 
     // --- 9. PLAYER BULLETS & IMPACTS ---
     spaceBullets.forEach((b, bi) => {
