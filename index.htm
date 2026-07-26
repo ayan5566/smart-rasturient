@@ -5373,72 +5373,68 @@ function frameUpdateBrickBreaker() {
         }
     }
     
-    // --- 6. ANIMATED POWER-UPS (DROPS) ---
-for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
-    let drop = activeDropsArray[dIndex];
-    drop.y += 2.5;
-    drop.rot = (drop.rot || 0) + 0.05;
+// --- 6. ANIMATED POWER-UPS (DROPS) ---
+    for (let dIndex = activeDropsArray.length - 1; dIndex >= 0; dIndex--) {
+        let drop = activeDropsArray[dIndex];
+        drop.y += 2.5;
+        drop.rot = (drop.rot || 0) + 0.05;
 
-    brCtx.save();
-    brCtx.translate(drop.x, drop.y);
-    brCtx.rotate(drop.rot);
-    
-    let dropColor = drop.type === 'GROW' ? '#e74c3c' : '#2ecc71';
-    brCtx.fillStyle = dropColor;
-    brCtx.shadowColor = dropColor;
-    brCtx.shadowBlur = 10;
-    
-    brCtx.beginPath();
-    if(drop.type === 'GROW') {
-        brCtx.roundRect(-10, -4, 20, 8, 3); // Wide paddle pill shape
-    } else {
-        brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Ball / Heart core shape
-    }
-    brCtx.fill();
-    
-    brCtx.fillStyle = '#ffffff';
-    brCtx.shadowBlur = 0;
-    brCtx.beginPath();
-    if(drop.type === 'GROW') {
-        brCtx.roundRect(-4, -1, 8, 2, 1);
-    } else {
-        brCtx.arc(0, 0, 3, 0, Math.PI * 2);
-    }
-    brCtx.fill();
-    brCtx.restore();
-    
-    // ===== START MODIFICATION =====
-} else if(drop.type === 'BALL') { 
-    
-    // Core gameplay variable ko update karein (Agar aapke code mein lives ka naam 'lives' ya 'brickLives' hai, toh bLives ki jagah wo likhein)
-    if (bLives < 3) {
-        bLives += 1; 
-    }
-    
-    // UI HUD ko update karein
-    let heartUI = document.getElementById('gameHeartsRemaining');
-    if (heartUI) {
-        heartUI.innerText = bLives; // Agar emojis use kar rahe hain toh: '❤️'.repeat(bLives) likhein
-    }
-
-    // Temporary ball expansion effect
-    bBall.r = 10; 
-    setTimeout(() => { bBall.r = 6; }, 8000); 
-}
-// ===== END MODIFICATION =====
-            // 🛑 FIX: Increment game hearts by +1 up to max allowed hearts (3)
-            if (gameHeartsRemaining < 3) {
-                gameHeartsRemaining = Math.min(3, gameHeartsRemaining + 1);
-            }
-            // Keep temporary ball expansion effect intact
-            bBall.r = 10; 
-            setTimeout(() => { bBall.r = 6; }, 8000); 
+        brCtx.save();
+        brCtx.translate(drop.x, drop.y);
+        brCtx.rotate(drop.rot);
+        
+        let dropColor = drop.type === 'GROW' ? '#e74c3c' : '#2ecc71';
+        brCtx.fillStyle = dropColor;
+        brCtx.shadowColor = dropColor;
+        brCtx.shadowBlur = 10;
+        
+        brCtx.beginPath();
+        if(drop.type === 'GROW') {
+            brCtx.roundRect(-10, -4, 20, 8, 3); // Wide paddle pill shape
+        } else {
+            brCtx.arc(0, 0, 7, 0, Math.PI * 2); // Ball / Heart core shape
         }
-        activeDropsArray.splice(dIndex, 1);
-    } else if(drop.y > brickCanvasElement.height) {
-        activeDropsArray.splice(dIndex, 1);
+        brCtx.fill();
+        
+        brCtx.fillStyle = '#ffffff';
+        brCtx.shadowBlur = 0;
+        brCtx.beginPath();
+        if(drop.type === 'GROW') {
+            brCtx.roundRect(-4, -1, 8, 2, 1);
+        } else {
+            brCtx.arc(0, 0, 3, 0, Math.PI * 2);
+        }
+        brCtx.fill();
+        brCtx.restore();
+        
+        // 💥 COLLISION DETECTION: Jab power-up Paddle se takraye
+        if (drop.y + 8 >= bPaddle.y && drop.x >= bPaddle.x && drop.x <= bPaddle.x + bPaddle.w) {
+            createBrickExplosion(drop.x, bPaddle.y, dropColor, 15, false); // Collection burst
+            if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
+            
+            if (drop.type === 'GROW') { 
+                bPaddle.w = 130; 
+                setTimeout(() => { bPaddle.w = 90; }, 8000); 
+            } 
+            else if (drop.type === 'BALL') { 
+                // 🛑 FIX: Increment Canvas hearts by +1 (Max 3)
+                if (gameHeartsRemaining < 3) {
+                    gameHeartsRemaining++;
+                }
+                // Temporary ball expansion effect
+                bBall.r = 10; 
+                setTimeout(() => { bBall.r = 6; }, 8000); 
+            }
+            
+            // Collect hone ke baad power-up screen se hata do
+            activeDropsArray.splice(dIndex, 1); 
+            
+        } else if (drop.y > brickCanvasElement.height) {
+            // Agar power-up screen se neeche gir jaye toh use hata do
+            activeDropsArray.splice(dIndex, 1); 
+        }
     }
-}
+
     
     // --- 7. BRICK RENDER & IMPACT MECHANICS ---
     let remainingActiveBricksCount = 0;
