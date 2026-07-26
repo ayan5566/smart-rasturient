@@ -4082,8 +4082,62 @@ function filterCustomerViewCategoryTab(targetCategoryName) {
     customerActiveCategoryName = targetCategoryName;
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
+        // ===================================================================
+// 🏢 FLOOR & TABLE MANAGEMENT FUNCTIONS
+// ===================================================================
 
-     // ===================================================================
+function addNewFloor() {
+    let fName = prompt("🏢 Enter new floor name (e.g., Rooftop, 1st Floor):");
+    if(fName && fName.trim() !== "") {
+        floorData.push({ floorName: fName.trim(), tables: [] });
+        saveAdminConfig();
+        generateAdminTableGrid();
+        showOnScreenNotification("✅ New floor added successfully!");
+    }
+}
+
+function removeFloor(fIdx) {
+    if(confirm(`⚠️ Are you sure you want to delete the entire '${floorData[fIdx].floorName}' floor and all its tables?`)) {
+        floorData.splice(fIdx, 1);
+        saveAdminConfig();
+        generateAdminTableGrid();
+        showOnScreenNotification("🗑️ Floor removed successfully!");
+    }
+}
+
+function addTableToFloor(fIdx) {
+    let tName = prompt("🪑 Enter new Table ID (e.g., T4, VIP-1):");
+    if(tName && tName.trim() !== "") {
+        let cleanName = tName.trim().toUpperCase();
+        let exists = floorData[fIdx].tables.some(t => t.id.toUpperCase() === cleanName);
+        
+        if(exists) {
+            alert("❌ A table with this ID already exists on this floor!");
+            return;
+        }
+        
+        floorData[fIdx].tables.push({
+            id: cleanName,
+            state: 0,
+            waiterBell: false
+        });
+        saveAdminConfig();
+        generateAdminTableGrid();
+        showOnScreenNotification(`✅ Table ${cleanName} added successfully!`);
+    }
+}
+
+function removeTable(fIdx, tIdx) {
+    let targetTable = floorData[fIdx].tables[tIdx];
+    if(confirm(`⚠️ Are you sure you want to delete Table ${targetTable.id}?`)) {
+        floorData[fIdx].tables.splice(tIdx, 1);
+        saveAdminConfig();
+        generateAdminTableGrid();
+        showOnScreenNotification("🗑️ Table removed successfully!");
+    }
+}
+
+// ===================================================================
 // 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
 // ===================================================================
 function generateAdminTableGrid() {
