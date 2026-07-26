@@ -2508,7 +2508,7 @@ function renderAnalyticsDashboard() {
 // ===================================================================
 // 📊 FIXED: ADMIN BILL SETTLEMENT MASTER (WIPES DISHES, PRICES & DISCOUNTS)
 // ===================================================================
- async function executeAdminManualBillWipeSettlement() {
+async function executeAdminManualBillWipeSettlement() {
     let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
     
     if(!activeOwnerAuditTable) {
@@ -2524,46 +2524,56 @@ function renderAnalyticsDashboard() {
             localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
             
-            // Scoped keys ko bhi safaya karo taaki koi ghost discount merge na ho
+            // Scoped keys ko bhi safaya karo
             localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
             
-            // Agar wahi table active hai toh global discount state aur UI badge ko 0% karo
             let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
+            let floorName = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[0] : "";
+            
             if(activeOwnerAuditTable === clientCurrentActiveTable || cleanTableId === clientCurrentActiveTable) {
                 localLiveRunningBill = [];
-                maximumClaimedDisc = 0; // Discount memory reset to 0
+                maximumClaimedDisc = 0; 
                 globalRunningInvoiceSumTotal = 0;
                 
-                // Yellow coin badge ko screen par wapas 0% par le aao
                 let badge = document.getElementById('liveCoinBadge');
                 if(badge) badge.innerText = "0%";
             }
 
-            // STEP 2: HARD WRITE EMPTY MATRIX & 0% DISCOUNT DIRECTLY TO CLOUD
-            await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+            // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Supabase se permanent delete)
+            const compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable}`;
+            await supabaseClient.from('table_sessions').delete().eq('table_id', compositeTableKey);
 
-            // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN TO PRESERVE DB SPACE
+            // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN (KDS)
+            // Fix: Catch all formats (Floor_T1, Floor-T1, T1) to ensure zero ghost tickets left in DB
+            const possibleTableIds = [
+                activeOwnerAuditTable, 
+                cleanTableId,          
+                floorName ? `${floorName}-${cleanTableId}` : cleanTableId 
+            ];
+
             const { data: ordersToClear } = await supabaseClient
                 .from('active_orders')
                 .select('id')
                 .eq('hotel_id', hotelGlobalScopeID)
-                .eq('table_id', activeOwnerAuditTable);
+                .in('table_id', possibleTableIds);
 
             if (ordersToClear && ordersToClear.length > 0) {
                 const orderIds = ordersToClear.map(o => o.id);
+                // Pehle order_items delete karo (Foreign key policy avoid karne ke liye)
                 await supabaseClient.from('order_items').delete().in('order_id', orderIds);
+                // Phir active_orders delete karo
                 await supabaseClient.from('active_orders').delete().in('id', orderIds);
             }
 
-            // 🔥 UPDATE: Clear Table karte hi table instantly wapas Orange (State 0 / Empty) ho jaye
+            // STEP 4: UPDATE UI STATE TO EMPTY (ORANGE)
             floorData.forEach(floor => { 
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => { 
                         let currentCompoundKey = `${floor.floorName}_${t.id}`;
                         if(t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) { 
-                            t.state = 0; // Reset inside matrix mapping back to Orange
+                            t.state = 0; 
                             t.waiterBell = false; 
                             delete t.custom_color; 
                         } 
@@ -2578,7 +2588,7 @@ function renderAnalyticsDashboard() {
             auditSelectedTableBillInvoiceLive();
             
             showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
-            alert(`🧹 Success! Table session and discounts completely wiped from Cloud, Memory, and UI.`);
+            alert(`🧹 Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
 
         } catch (err) {
             console.error("🚨 CRITICAL CORE WIPEOUT FAILURE:", err);
@@ -2586,8 +2596,6 @@ function renderAnalyticsDashboard() {
         }
     }
 }
-       
-
 // ===================================================================
 // 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WITH BRICK CONTROLS INTEGRATED)
 // ===================================================================
