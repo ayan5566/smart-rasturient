@@ -4083,6 +4083,59 @@ function filterCustomerViewCategoryTab(targetCategoryName) {
     renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
 }
         // ===================================================================
+// 📋 MENU, CATEGORY & DISH MANAGEMENT FUNCTIONS
+// ===================================================================
+
+function addNewCategory() {
+    let catName = prompt("📝 Enter new Category Name (e.g., Starters, Main Course):");
+    if(catName && catName.trim() !== "") {
+        menuCategories.push({ categoryName: catName.trim(), items: [] });
+        saveAdminConfig();
+        populateAdminForms();
+        if (typeof renderCustomerMenu === "function") renderCustomerMenu();
+        showOnScreenNotification("✅ New category section created!");
+    }
+}
+
+function removeCategory(cIdx) {
+    if(confirm(`⚠️ Are you sure you want to delete the entire '${menuCategories[cIdx].categoryName}' category and ALL its dishes?`)) {
+        menuCategories.splice(cIdx, 1);
+        saveAdminConfig();
+        populateAdminForms();
+        if (typeof renderCustomerMenu === "function") renderCustomerMenu();
+        showOnScreenNotification("🗑️ Category removed successfully!");
+    }
+}
+
+function addDishToCategory(cIdx) {
+    let dishName = prompt(`🍲 Enter new dish name for ${menuCategories[cIdx].categoryName}:`);
+    if(dishName && dishName.trim() !== "") {
+        // Nayi dish ka default blueprint
+        menuCategories[cIdx].items.push({
+            name: dishName.trim(),
+            s: 0, m: 0, l: 0,
+            sActive: false, mActive: true, lActive: false, // Default M size ON rakha hai
+            image: "",
+            inStock: true
+        });
+        saveAdminConfig();
+        populateAdminForms();
+        if (typeof renderCustomerMenu === "function") renderCustomerMenu();
+        showOnScreenNotification(`✅ Dish '${dishName}' added to menu!`);
+    }
+}
+
+function removeDishRow(cIdx, iIdx) {
+    let targetDish = menuCategories[cIdx].items[iIdx];
+    if(confirm(`⚠️ Are you sure you want to delete the dish '${targetDish.name}'?`)) {
+        menuCategories[cIdx].items.splice(iIdx, 1);
+        saveAdminConfig();
+        populateAdminForms();
+        if (typeof renderCustomerMenu === "function") renderCustomerMenu();
+        showOnScreenNotification("🗑️ Dish removed successfully!");
+    }
+}
+// ===================================================================
 // 🏢 FLOOR & TABLE MANAGEMENT FUNCTIONS
 // ===================================================================
 
