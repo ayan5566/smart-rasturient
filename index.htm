@@ -4159,27 +4159,32 @@ function removeFloor(fIdx) {
 }
 
 function addTableToFloor(fIdx) {
-    let tName = prompt("🪑 Enter new Table ID (e.g., T4, VIP-1):");
-    if(tName && tName.trim() !== "") {
-        let cleanName = tName.trim().toUpperCase();
-        let exists = floorData[fIdx].tables.some(t => t.id.toUpperCase() === cleanName);
-        
-        if(exists) {
-            alert("❌ A table with this ID already exists on this floor!");
-            return;
+    // 1. Us floor ke saare tables mein se sabse bada 'T' number dhundho
+    let maxNum = 0;
+    floorData[fIdx].tables.forEach(t => {
+        // Check karega ki kya naam T1, T2 format mein hai
+        let match = t.id.match(/^T(\d+)$/i); 
+        if (match) {
+            let num = parseInt(match[1]);
+            if (num > maxNum) maxNum = num;
         }
-        
-        floorData[fIdx].tables.push({
-            id: cleanName,
-            state: 0,
-            waiterBell: false
-        });
-        saveAdminConfig();
-        generateAdminTableGrid();
-        showOnScreenNotification(`✅ Table ${cleanName} added successfully!`);
-    }
+    });
+    
+    // 2. Naya table ID automatically generate karo (jaise T4, T5)
+    let newTableId = `T${maxNum + 1}`;
+    
+    // 3. Table ko array mein add karo
+    floorData[fIdx].tables.push({
+        id: newTableId,
+        state: 0,
+        waiterBell: false
+    });
+    
+    // 4. Save karke grid refresh karo
+    saveAdminConfig();
+    generateAdminTableGrid();
+    showOnScreenNotification(`✅ Table ${newTableId} added successfully!`);
 }
-
 function removeTable(fIdx, tIdx) {
     let targetTable = floorData[fIdx].tables[tIdx];
     if(confirm(`⚠️ Are you sure you want to delete Table ${targetTable.id}?`)) {
