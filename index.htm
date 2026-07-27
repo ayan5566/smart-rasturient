@@ -642,6 +642,10 @@
             <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Secure Access Password</label>
             <input type="password" id="authPasswordInput" placeholder="Enter workspace password..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
         </div>
+        <div id="authPhoneInputContainer" style="text-align: left; margin-bottom: 25px; display: none;">
+            <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Mobile Number</label>
+            <input type="number" id="authPhoneInput" placeholder="Enter 10-digit mobile number..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+        </div>
         
         <button class="action-btn" id="authPrimaryActionButton" onclick="executeAuthPortalMasterRouter()" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
     🚀 Authenticate & Boot System
@@ -1964,35 +1968,34 @@ async function executeRealCloudLoginSequence() {
     }
 }
         
-// 🔄 SWITCH MODE FUNCTION: Toggles between Login screen layout and Create Account layout
 function toggleAuthPortalViewMode() {
     const title = document.getElementById('authPortalTitle');
     const subTitle = document.getElementById('authPortalSubTitle');
     const mainBtn = document.getElementById('authPrimaryActionButton');
     const toggleLabel = document.getElementById('authToggleStateLabelText');
     const toggleLink = document.getElementById('authActionToggleLink');
+    const phoneContainer = document.getElementById('authPhoneInputContainer'); // Naya Phone Dabba
 
     if (!isAuthPortalInSignUpMode) {
-        // Shift layout to Create Account view properties
         title.innerText = "Create Account";
         subTitle.innerText = "Register New Workspace Node";
         mainBtn.innerText = "✨ Register & Create Workspace";
         mainBtn.setAttribute("onclick", "executeRealCloudSignUpSequence()");
         toggleLabel.innerText = "Already registered?";
         toggleLink.innerText = "Login Instead";
+        if(phoneContainer) phoneContainer.style.display = 'block'; // Phone Box Show karein
         isAuthPortalInSignUpMode = true;
     } else {
-        // Shift layout back to traditional Login interface
         title.innerText = "RestroFlow";
         subTitle.innerText = "Workspace Gateway Terminal";
         mainBtn.innerText = "🚀 Authenticate & Boot System";
         mainBtn.setAttribute("onclick", "executeRealCloudLoginSequence()");
         toggleLabel.innerText = "New to RestroFlow?";
         toggleLink.innerText = "Create Account";
+        if(phoneContainer) phoneContainer.style.display = 'none'; // Phone Box Hide karein
         isAuthPortalInSignUpMode = false;
     }
 }
-
 // ===================================================================
 // 🔐 FIXED: ANTI-422 VALIDATED FLEXIBLE ONBOARDING ENGINE
 // ===================================================================
@@ -2012,6 +2015,7 @@ async function executeRealCloudSignUpSequence() {
         return;
     }
 
+    // ✅ AAPKA PURANA FEATURE: Agar email box me number dala hai toh usey phone maan lo
     if (email && !isNaN(email) && email.length >= 10) {
         phone = email;
         email = "";
@@ -2022,6 +2026,7 @@ async function executeRealCloudSignUpSequence() {
         return;
     }
 
+    // ✅ AAPKA PURANA FEATURE: Auto email generator
     let targetEmail = "";
     if (email) {
         if (!email.includes("@")) {
@@ -2036,7 +2041,6 @@ async function executeRealCloudSignUpSequence() {
         }
         targetEmail = `${phone}@restroflow.com`;
     }
-
     try {
         showOnScreenNotification("🚀 Registering secure workspace...", false);
         
@@ -2051,7 +2055,7 @@ async function executeRealCloudSignUpSequence() {
         }
 
         if (data?.user) {
-            // 🔥 CRITICAL FIX: Pass menuCategories array/object directly to match JSONB constraint requirements
+            // 🔥 CRITICAL FIX (Aapka): Pass menuCategories array/object directly
             const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                 id: targetEmail, 
                 hotel_name: "Restaurant",
@@ -2063,6 +2067,7 @@ async function executeRealCloudSignUpSequence() {
             let endTime = new Date();
             endTime.setDate(startTime.getDate() + 30);
 
+            // 💾 NAYA PHONE NUMBER SUPABASE MEIN SAVE HO RAHA HAI
             const { error: subError } = await supabaseClient.from('subscriptions').upsert({
                 id: targetEmail,                     
                 user_phone: phone || "No Mobile",     
@@ -2078,7 +2083,7 @@ async function executeRealCloudSignUpSequence() {
                 return;
             }
 
-            alert(`🎉 Account Created Successfully!\n\nRegistered Identity: ${targetEmail}\n\nAapka workspace successfully trigger ho gaya hai.`);
+            alert(`🎉 Account Created Successfully!\n\nRegistered Identity: ${targetEmail}\nMobile: ${phone}\n\nAapka workspace successfully trigger ho gaya hai.`);
             
             if (document.getElementById('authEmailInput')) document.getElementById('authEmailInput').value = "";
             document.getElementById('authPasswordInput').value = "";
