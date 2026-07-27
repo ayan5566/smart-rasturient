@@ -5445,17 +5445,15 @@ function frameUpdateBrickBreaker() {
     brCtx.beginPath(); brCtx.arc(bBall.x, bBall.y, bBall.r * 0.5, 0, Math.PI * 2); brCtx.fill();
     brCtx.restore();
     
-    // --- 5. WALL & PADDLE COLLISIONS ---
+   // --- 5. WALL & PADDLE COLLISIONS ---
     if(bBall.x + bBall.r > brickCanvasElement.width || bBall.x - bBall.r < 0) {
         bBall.dx *= -1;
         createBrickExplosion(bBall.x, bBall.y, '#bdc3c7', 4, false); // Wall spark
-        if(Math.abs(bBall.dx) < 0.5) bBall.dx = bBall.dx < 0 ? -1.5 : 1.5;
         if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'WALL_HIT');
     }
     if(bBall.y - bBall.r < 40) {
         bBall.dy *= -1;
         createBrickExplosion(bBall.x, bBall.y, '#bdc3c7', 4, false); // Ceiling spark
-        if(Math.abs(bBall.dx) < 0.3) bBall.dx = Math.random() > 0.5 ? 1.0 : -1.0;
         if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'WALL_HIT');
     }
     
@@ -5465,11 +5463,32 @@ function frameUpdateBrickBreaker() {
             let relativeFactor = (bBall.x - (bPaddle.x + bPaddle.w / 2)) / (bPaddle.w / 2);
             bBall.dx = relativeFactor * (bBall.baseSpeed + 1.5); // Slightly wider angle
             bBall.dy = -Math.abs(bBall.baseSpeed);
-            if(Math.abs(bBall.dx) < 0.2) bBall.dx = relativeFactor < 0 ? -0.8 : 0.8;
+            
+            // 🛡️ Add tiny random variation to prevent perfectly repeated bounce loops
+            bBall.dx += (Math.random() - 0.5) * 0.4;
             
             applyBrickCameraShake(2);
             createBrickExplosion(bBall.x, bBall.y, '#f1c40f', 8, false); // Paddle hit spark
             if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'PADDLE_HIT');
+        }
+    }
+
+    // 🛡️ ANTI-STUCK & SPEED NORMALIZER
+    if (isBallLaunched) {
+        // Prevent pure vertical loops (90°)
+        if (Math.abs(bBall.dx) < 0.6) {
+            bBall.dx = bBall.dx < 0 ? -0.8 : 0.8;
+        }
+        // Prevent pure horizontal loops (0°)
+        if (Math.abs(bBall.dy) < 0.6) {
+            bBall.dy = bBall.dy < 0 ? -0.8 : 0.8;
+        }
+        
+        // Normalize ball speed vector to maintain constant velocity without speed spikes
+        let currentSpeed = Math.sqrt(bBall.dx * bBall.dx + bBall.dy * bBall.dy);
+        if (currentSpeed > 0) {
+            bBall.dx = (bBall.dx / currentSpeed) * bBall.baseSpeed;
+            bBall.dy = (bBall.dy / currentSpeed) * bBall.baseSpeed;
         }
     }
     
