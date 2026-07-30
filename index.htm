@@ -2970,11 +2970,18 @@ async function auditSelectedTableBillInvoiceLive() {
         outputBox.innerHTML = ''; 
         let subtotal = 0; 
 
-        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-        targetBill.forEach(row => {
+       outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
+        targetBill.forEach((row, rIdx) => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0); 
             subtotal += rowCost; 
-            outputBox.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:13px;"><span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span><b>₹${rowCost}</b></div>`;
+            outputBox.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:13px;">
+                    <span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <b>₹${rowCost}</b>
+                        <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">❌</button>
+                    </div>
+                </div>`;
         });
 
         if (kitchenOrders && kitchenOrders.length > 0) {
@@ -3000,16 +3007,130 @@ async function auditSelectedTableBillInvoiceLive() {
                                 <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
                                  <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
                             </div>
-                            <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
+                                <button onclick="adminRemoveSpecificItem('KDS', '${selectedAdminTable}', null, '${order.id}', '${item.id}')" id="delBtn_KDS_${item.id}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete from Kitchen">❌</button>
+                            </div>
                         </div>`;
-                });
-            });
-        }
     
         if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
             outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
+// ===================================================================
+// 🗑️ ADVANCED: SINGLE DISH DELETION ENGINE (LEDGER & KDS SYNCHRONIZED)
+// ===================================================================
+async function adminRemoveSpecificItem(removalType, tableId, ledgerIndex = null, orderId = null, itemId = null) {
+    // 1. Disable button instantly to prevent duplicate clicks/transactions
+    let btnId = removalType === 'LEDGER' ? `delBtn_LEDGER_${ledgerIndex}` : `delBtn_KDS_${itemId}`;
+    let targetBtn = document.getElementById(btnId);
+    if(targetBtn) {
+        targetBtn.disabled = true;
+        targetBtn.innerText = "⏳";
+    }
+
+    if(!confirm("⚠️ Are you sure you want to permanently delete this specific item?")) {
+        if(targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "❌"; }
+        return;
+    }
+
+    try {
+        showOnScreenNotification("⏳ Processing secure deletion...", false);
+        const compositeKey = `${hotelGlobalScopeID}_${tableId}`;
+
+        if (removalType === 'LEDGER') {
+            // A. Fetch current cloud state to ensure we are editing the most accurate bill
+            const { data: session } = await supabaseClient
+                .from('table_sessions')
+                .select('live_bill, discount_claimed, payment_status, waiter_bell')
+                .eq('table_id', compositeKey)
+                .maybeSingle();
+
+            let currentBill = session ? session.live_bill || [] : [];
+            let currentDiscount = session ? parseInt(session.discount_claimed) || 0 : 0;
+            let payStatus = session ? session.payment_status : 'PENDING';
+            let bellStatus = session ? session.waiter_bell : false;
+
+            // Fallback for offline cache parity
+            if (currentBill.length === 0) {
+                currentBill = JSON.parse(localStorage.getItem('bill_map_' + tableId)) || [];
+                currentDiscount = parseInt(localStorage.getItem('discount_map_' + tableId)) || 0;
+            }
+
+            if (ledgerIndex !== null && currentBill[ledgerIndex]) {
+                // B. Splice out ONLY the target index accurately
+                currentBill.splice(ledgerIndex, 1);
+                
+                // C. If the bill becomes empty after deletion, normalize values to ₹0
+                if (currentBill.length === 0) {
+                    currentDiscount = 0;
+                    if(tableId === clientCurrentActiveTable) maximumClaimedDisc = 0;
+                }
+
+                // D. Rely on the existing Atomic Sync Function to commit and distribute websocket updates
+                await syncLiveSessionToSupabase(tableId, currentBill, currentDiscount, bellStatus, payStatus);
+
+                // E. Update local UI pointers immediately
+                localStorage.setItem('bill_map_' + tableId, JSON.stringify(currentBill));
+                localStorage.setItem('discount_map_' + tableId, currentDiscount);
+                if (tableId === clientCurrentActiveTable) {
+                    localLiveRunningBill = currentBill;
+                }
+            }
+
+        } else if (removalType === 'KDS') {
+            // A. Target deletion by explicit Unique Supabase ID (Not Dish Name)
+            const { error: deleteErr } = await supabaseClient
+                .from('order_items')
+                .delete()
+                .eq('id', itemId);
+            
+            if (deleteErr) throw deleteErr;
+
+            // B. Check if this deletion emptied the parent active order container
+            const { data: remainingItems } = await supabaseClient
+                .from('order_items')
+                .select('id')
+                .eq('order_id', orderId);
+
+            // C. Clean up ghost/orphan KDS orders instantly
+            if (!remainingItems || remainingItems.length === 0) {
+                await supabaseClient.from('active_orders').delete().eq('id', orderId);
+            }
+            
+            // D. Refresh Active KDS Screens system-wide
+            if (typeof fetchActiveKitchenOrdersQueue === 'function') {
+                fetchActiveKitchenOrdersQueue();
+            }
+        }
+
+        showOnScreenNotification("✅ Item successfully deleted!");
+        
+        // --- 2. GLOBAL SYSTEM REFRESH TRIGGERS ---
+        // Refresh Current Admin Panel Data
+        if (typeof auditSelectedTableBillInvoiceLive === "function") {
+            auditSelectedTableBillInvoiceLive();
+        }
+        
+        // Refresh Color Mapping on Floor Grid (Reverts to Orange if empty)
+        if (typeof generateAdminTableGrid === "function") {
+            generateAdminTableGrid();
+        }
+        
+        // If the customer view modal is open for this table, recalculate math seamlessly
+        if (tableId === clientCurrentActiveTable && typeof renderLiveCalculatedBill === "function") {
+            if (document.getElementById('invoiceBillModal') && document.getElementById('invoiceBillModal').style.display === 'flex') {
+                renderLiveCalculatedBill();
+            }
+        }
+
+    } catch (err) {
+        console.error("🚨 Deletion Error:", err);
+        showOnScreenNotification("❌ Deletion failed. Sync error with cloud database.", true);
+        // Safely re-enable button on crash
+        if(targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "❌"; }
+    }
+}
 
         // ===================================================================
         // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
