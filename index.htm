@@ -2984,39 +2984,36 @@ async function auditSelectedTableBillInvoiceLive() {
                 </div>`;
         });
 
-        if (kitchenOrders && kitchenOrders.length > 0) {
-            outputBox.innerHTML += `<div style="font-weight:bold; color:#e67e22; border-bottom:1px solid #ffeaa7; margin:14px 0 8px 0; padding-bottom:4px; font-size:13px;">👨‍🍳 Real-time Inbound Kitchen Streams:</div>`;
-            kitchenOrders.forEach(order => {
-                const elapsedSecs = Math.floor((new Date() - new Date(order.created_at)) / 1000);
-                const displayMin = Math.floor(elapsedSecs / 60); const displaySec = elapsedSecs % 60;
-                let badgeBg = order.status === 'PENDING' ? '#ffb81c' : '#3498db';
-                let badgeText = order.status === 'PENDING' ? 'PENDING' : 'COOKING';
-
-                order.order_items.forEach(item => {
-                    let calculatedLivePrice = 200; 
-                    let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                    menuCategories.forEach(cat => {
-                        let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                        if (matchedMenuDish) calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
-                    });
-
-                    outputBox.innerHTML += `
-                        <div style="background: #f8fafc; border-left: 4px solid ${badgeBg}; padding: 6px; margin-bottom: 4px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #333;">
-                            <div>
-                                <span style="font-weight:600; font-size:12px;">🍜 ${item.dish_name} [${item.size.toUpperCase()}] x${item.qty}</span>
-                                <span style="font-size:11px; color:#e67e22; font-weight:700; margin-left:5px;">₹${calculatedLivePrice} (In Prep)</span><br>
-                                 <span style="font-size:10px; color:#7f8c8d;">⏱️ Elapsed: ${displayMin}m ${displaySec}s ago</span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span style="background:${badgeBg}; color:white; font-size:9px; font-weight:bold; padding:2px 5px; border-radius:4px;">${badgeText}</span>
-                                <button onclick="adminRemoveSpecificItem('KDS', '${selectedAdminTable}', null, '${order.id}', '${item.id}')" id="delBtn_KDS_${item.id}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete from Kitchen">❌</button>
-                            </div>
-                        </div>`;
-    
         if(targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) { 
             outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`; 
             paymentBanner.style.display = "none"; if(taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return; 
         }
+
+        // ===================================================================
+        // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
+        // ===================================================================
+        // Database data processed natively through the single math engine pipeline
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
+
+        if(taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${invoiceMath.subtotal.toFixed(2)}</span></div>
+                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-₹${invoiceMath.discountValue.toFixed(2)}</span></div>
+                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
+                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
+                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
+
+    } catch (err) { 
+        // 🛡️ SYNTAX SHIELD: Properly catching backend query exceptions inside engine context
+        console.error("🚨 Admin Invoice Tracker Exception:", err); 
+    }
+} // <--- ✅ PEHLA FUNCTION YAHAN KHATAM HOGA! Iske baad naya function shuru hoga.
+
+
 // ===================================================================
 // 🗑️ ADVANCED: SINGLE DISH DELETION ENGINE (LEDGER & KDS SYNCHRONIZED)
 // ===================================================================
@@ -3132,29 +3129,8 @@ async function adminRemoveSpecificItem(removalType, tableId, ledgerIndex = null,
     }
 }
 
-        // ===================================================================
-        // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
-        // ===================================================================
-        // Database data processed natively through the single math engine pipeline
-        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
-        if(taxBox) {
-            taxBox.style.display = "block";
-            taxBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${invoiceMath.subtotal.toFixed(2)}</span></div>
-                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-₹${invoiceMath.discountValue.toFixed(2)}</span></div>
-                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
-                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
-                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
-            `;
-        }
-        grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
 
-    } catch (err) { 
-        // 🛡️ SYNTAX SHIELD: Properly catching backend query exceptions inside engine context
-        console.error("🚨 Admin Invoice Tracker Exception:", err); 
-    }
-}
 // ===================================================================
 // 🔌 THE INVERTER CORE: UNIFIED BILLING MATHEMATICS ENGINE (FIXED GLOBAL LEAK)
 // ===================================================================
