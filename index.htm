@@ -7113,6 +7113,17 @@ async function verifySubscriptionGatekeeper(ownerId) {
         let today = new Date();
         let expiryDate = new Date(subData.current_period_end);
 
+        // 👇 YEH NAYA CODE ADD KARO CHECK KARNE KE LIYE 👇
+        console.log("🔍 DEBUG GATEKEEPER:", {
+            emailChecked: ownerId,
+            statusInDb: subData.status,
+            isStatusValid: subData.status === 'active',
+            todayIs: today.toLocaleString(),
+            expiryIs: expiryDate.toLocaleString(),
+            isDateExpired: today > expiryDate
+        });
+        // 👆 ------------------------------------------ 👆
+
         // Agar plan expire ho chuka hai ya status active nahi hai
         if (subData.status !== 'active' || today > expiryDate) {
             // 🔥 SaaS Model Core: Calculate fallbacks inside verification nodes natively if database returns 0
