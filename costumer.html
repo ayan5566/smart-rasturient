@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestroFlow - Customer Panel</title>
+
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <link rel="shortcut icon" type="image/jpeg" href="favicon.jpg">
+
+    <script src="../core/config.js"></script>
+    
+    <style>
+    /* ================================================================= */
+    /* 🎨 CUSTOMER PANEL CSS                                             */
+    /* ================================================================= */
+    :root { 
+        --primary-bg: #f9f5d7;
+        --card-bg: #dddcd1;
+        --accent-gold: #f1c40f;
+        --neon-green: #2ecc71;
+        --danger-red: #e74c3c;
+        --dark-charcoal: #2c3e50;
+        --tbl-orange: #e67e22;
+        --tbl-green: #2ecc71;
+        --tbl-grey: #7f8c8d;
+        --tbl-brown: #8b4513;
+    }
+
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background-color: var(--primary-bg); 
+        margin: 0; padding: 20px; 
+        display: flex; flex-direction: column; align-items: center; 
+    }
+
+    .container { 
+        width: 95% !important; 
+        max-width: 1280px !important; 
+        background: var(--card-bg); 
+        padding: 25px; border-radius: 20px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+        margin: 0 auto 20px auto; box-sizing: border-box; 
+        position: relative; border: 1px solid rgba(255,255,255,0.4);
+    }
+
+    h1, h2, h3, h4 { margin-top: 0; text-align: center; color: var(--dark-charcoal); }
+
+    /* Golden Badge & Floating Buttons */
+    .discount-badge {
+        position: absolute; top: -15px; left: -15px; 
+        background: linear-gradient(135deg, #f1c40f, #f39c12);
+        color: white; width: 60px; height: 60px; border-radius: 50%; 
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; font-weight: 900; 
+        box-shadow: 0 6px 15px rgba(243, 156, 18, 0.4), inset 0 -3px 0 rgba(0,0,0,0.2); 
+        border: 3px solid white; z-index: 10; cursor: pointer; 
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .discount-badge:hover { transform: scale(1.15) rotate(10deg); }
+
+    .floating-action-container { position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 12px; z-index: 999; }
+    .floating-btn { width: 60px; height: 60px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.25); cursor: pointer; border: 3px solid white; transition: 0.2s; }
+    .floating-btn:hover { transform: scale(1.1) translateY(-3px); }
+    .bill-btn { background: linear-gradient(135deg, #2c3e50, #1a252f); }
+    .waiter-btn { background: linear-gradient(135deg, #e67e22, #d35400); }
+
+    /* Customer Tab Scrolling & Menu Layout */
+    .category-tabs-wrapper { display: flex; gap: 8px; margin: 15px 0; overflow-x: auto; padding-bottom: 8px; width: 100%; scrollbar-width: none; }
+    .category-tabs-wrapper::-webkit-scrollbar { display: none; }
+    .category-tab-btn { padding: 8px 16px; background: white; border: 1px solid #ccc; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; white-space: nowrap; color: var(--dark-charcoal); transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+    .category-tab-btn.active { background: var(--dark-charcoal); color: white; border-color: var(--dark-charcoal); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+    #menuContainer {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+        gap: 16px !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .menu-item { background: white; padding: 16px; border-radius: 14px; margin-bottom: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; transition: 0.2s; }
+    .menu-item:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06); }
+    .dish-main-info { display: flex; align-items: center; justify-content: space-between; }
+    .dish-details { display: flex; align-items: center; gap: 12px; }
+    .dish-photo-frame { width: 65px; height: 65px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .dish-header-text { display: flex; flex-direction: column; }
+    .dish-header-text strong { font-size: 16px; color: var(--dark-charcoal); }
+    .price-display { color: #27ae60; font-size: 18px; font-weight: 800; }
+
+    .size-selector { display: flex; gap: 6px; margin: 12px 0 6px 0; }
+    .size-btn { flex: 1; padding: 8px; border: 1px solid #e0e0e0; border-radius: 8px; background: #f8f9fa; cursor: pointer; font-weight: bold; font-size: 13px; color: #555; display: none; }
+    .size-btn.visible { display: block; }
+    .size-btn.active { background: var(--dark-charcoal); color: white; border-color: var(--dark-charcoal); box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+
+    button.action-btn { width: 100%; background: linear-gradient(135deg, #b9ae9f, #9e9384); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .order-btn { background: var(--neon-green); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+    .modal-overlay .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+
+    .rules-list, .bill-item-list { text-align: left; padding: 0; list-style: none; margin: 15px 0; }
+    .rules-list li, .bill-item-row { background: #f8f9fa; padding: 12px; margin-bottom: 8px; border-radius: 10px; border-left: 4px solid var(--accent-gold); font-size: 14px; }
+    .bill-item-row { border-left-color: var(--dark-charcoal); display: flex; justify-content: space-between; align-items: center; }
+
+    #customToastNotification {
+        position: fixed; top: 20px; right: 20px; background: var(--dark-charcoal); color: white;
+        padding: 12px 20px; border-radius: 10px; font-weight: bold; font-size: 14px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; z-index: 3000;
+    }
+
+    @media screen and (max-width: 767px) {
+        body { padding: 10px !important; }
+        .container { width: 96% !important; margin: 10px auto !important; padding: 15px !important; }
+    }
+    </style>
+</head>
+<body>
+
+<!-- Hidden Supabase Service Frame -->
+<iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+
+<!-- Toast Notification -->
+<div id="customToastNotification">🛒 Added to Cart!</div>
+
+<!-- Floating Action Buttons -->
+<div class="floating-action-container">
+    <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">🔔</div>
+    <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">🧾</div>
+</div>
+
+<!-- Main Customer Container -->
+<div class="container" id="customerView">
+    <div class="discount-badge" id="liveCoinBadge" onclick="document.getElementById('discountSheetModal').style.display='flex'">0%</div>
+    
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 20px; width: 100%;">
+        <img src="../favicon.jpg" alt="RestroFlow Logo" style="width: 140px; height: auto; object-fit: contain; margin-bottom: 12px; display: block; mix-blend-mode: multiply;" onerror="this.onerror=null; this.style.display='none';">
+        <h2 id="displayHotelRegistryScopeLabel" style="font-size: 26px; font-weight: 800; color: var(--dark-charcoal); margin: 0;">RestroFlow</h2>
+        <h3 id="displayTableName" style="font-size: 16px; font-weight: bold; color: var(--tbl-orange); margin: 4px 0 0 0;">Table T1</h3>
+    </div>
+    
+    <!-- Category Tabs -->
+    <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
+    
+    <!-- Menu Container -->
+    <div id="menuContainer"></div>
+
+    <!-- Game Launcher Straps -->
+    <div class="game-box" style="background: #ffffff; padding: 20px; border-radius: 16px; border: 2px dashed #b9ae9f; text-align: center; margin-top: 25px;">
+        <h4 style="margin-top: 0; color: var(--dark-charcoal); font-weight: 800;">🎮 Play Games & Earn Discounts!</h4>
+        <div class="game-nav" style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: #eee; padding: 4px; border-radius: 10px;">
+            <button onclick="window.location.href='../modules/game.html?mode=BRICK&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span style="font-size: 20px;">🧱</span> Bricks</button>
+            <button onclick="window.location.href='../modules/game.html?mode=FLAPPY&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span style="font-size: 20px;">🐦</span> Flappy</button>
+            <button onclick="window.location.href='../modules/game.html?mode=SPACE&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span style="font-size: 20px;">🚀</span> Space</button>
+            <button onclick="window.location.href='../modules/game.html?mode=SNAKE&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span style="font-size: 20px;">🐍</span> Snake</button>
+            <button onclick="window.location.href='../modules/game.html?mode=TOWER&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span style="font-size: 20px;">🏢</span> Tower</button>
+        </div>
+    </div>
+
+    <!-- Admin Workspace Login Button -->
+    <div style="width: 100%; margin-top: 25px;">
+        <button onclick="launchSleekLoginOverlay()" style="background: var(--dark-charcoal); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
+            🔒 Open RestroFlow Workspace Portal (Admin Login)
+        </button>
+    </div>
+</div>
+
+<!-- RestroFlow Login Modal -->
+<div class="modal-overlay" id="portalLoginModal" style="display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0, 0, 0, 0.7); z-index:9999;" onclick="this.style.display='none'">
+    <div class="modal-content" style="background:#ffffff; color:#333; width:100%; max-width:400px; border-radius:24px; padding:35px 25px; box-shadow:0 15px 40px rgba(0,0,0,0.3); text-align:center; position:relative;" onclick="event.stopPropagation()">
+        
+        <div style="background:#2c3e50; width:64px; height:64px; border-radius:18px; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(44,62,80,0.3);">
+            <span style="font-size:28px; color:#f39c12;">⚡</span>
+        </div>
+
+        <h2 style="color:#2c3e50; font-weight:900; margin-bottom:5px; font-size:26px;">RestroFlow Portal</h2>
+        <div style="color:#95a5a6; font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:30px; text-transform:uppercase;">Workspace Gateway Terminal</div>
+        
+        <div style="text-align:left; margin-bottom:20px;">
+            <label style="color:#2c3e50; font-size:11px; font-weight:bold; text-transform:uppercase; margin-bottom:8px; display:block;">Workspace Email Identity</label>
+            <input type="email" id="loginEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#2c3e50; box-sizing:border-box; outline:none; transition:0.2s;">
+        </div>
+
+        <div style="text-align:left; margin-bottom:25px;">
+            <label style="color:#2c3e50; font-size:11px; font-weight:bold; text-transform:uppercase; margin-bottom:8px; display:block;">Secure Access Password</label>
+            <input type="password" id="loginPasswordInput" placeholder="••••••" style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#2c3e50; box-sizing:border-box; outline:none; transition:0.2s; background:#f8fafc;">
+        </div>
+
+        <button class="action-btn" onclick="authenticateAdminLogin()" style="background:#2c3e50; color:white; font-weight:bold; padding:16px; border-radius:12px; font-size:15px; margin-bottom:15px; width:100%;">🚀 Authenticate & Boot System</button>
+        
+        <button onclick="toggleToRegistrationModal()" style="background:#f1f5f9; color:#64748b; border:none; padding:12px; border-radius:10px; font-size:13px; font-weight:bold; width:100%; cursor:pointer;">
+            New to RestroFlow? <span style="color:#3498db;">Create Account</span>
+        </button>
+    </div>
+</div>
+
+<!-- RestroFlow Register Modal -->
+<div class="modal-overlay" id="portalRegisterModal" style="display:none; align-items:center; justify-content:center; padding:20px; background:rgba(0, 0, 0, 0.7); z-index:9999;" onclick="this.style.display='none'">
+    <div class="modal-content" style="background:#ffffff; color:#333; width:100%; max-width:400px; border-radius:24px; padding:35px 25px; box-shadow:0 15px 40px rgba(0,0,0,0.3); text-align:center; position:relative;" onclick="event.stopPropagation()">
+        
+        <div style="background:#2c3e50; width:64px; height:64px; border-radius:18px; margin:0 auto 15px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(44,62,80,0.3);">
+            <span style="font-size:28px; color:#f39c12;">⚡</span>
+        </div>
+
+        <h2 style="color:#2c3e50; font-weight:900; margin-bottom:5px; font-size:26px;">Create Account</h2>
+        <div style="color:#95a5a6; font-size:11px; font-weight:bold; letter-spacing:1px; margin-bottom:30px; text-transform:uppercase;">Register New Workspace Node</div>
+        
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="color:#2c3e50; font-size:11px; font-weight:bold; text-transform:uppercase; margin-bottom:8px; display:block;">Workspace Email Identity</label>
+            <input type="email" id="regEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#2c3e50; box-sizing:border-box; outline:none; transition:0.2s;">
+        </div>
+
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="color:#2c3e50; font-size:11px; font-weight:bold; text-transform:uppercase; margin-bottom:8px; display:block;">Secure Access Password</label>
+            <input type="password" id="regPasswordInput" placeholder="••••••" style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#2c3e50; box-sizing:border-box; outline:none; transition:0.2s; background:#f8fafc;">
+        </div>
+
+        <div style="text-align:left; margin-bottom:25px;">
+            <label style="color:#2c3e50; font-size:11px; font-weight:bold; text-transform:uppercase; margin-bottom:8px; display:block;">Mobile Number</label>
+            <input type="tel" id="regMobileInput" placeholder="Enter 10-digit mobile number..." style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; color:#2c3e50; box-sizing:border-box; outline:none; transition:0.2s;">
+        </div>
+
+        <button class="action-btn" onclick="registerNewAdminAccount()" style="background:#2c3e50; color:white; font-weight:bold; padding:16px; border-radius:12px; font-size:15px; margin-bottom:15px; width:100%;">✨ Register & Create Workspace</button>
+        
+        <button onclick="toggleToLoginModal()" style="background:#f1f5f9; color:#64748b; border:none; padding:12px; border-radius:10px; font-size:13px; font-weight:bold; width:100%; cursor:pointer;">
+            Already registered? <span style="color:#3498db;">Login Instead</span>
+        </button>
+    </div>
+</div>
+
+<!-- Invoice Bill Modal -->
+<div class="modal-overlay" id="invoiceBillModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>🧾 Live Order Invoice</h3>
+        <p id="billTableScopeText" style="font-size:12px; font-weight:bold; color:#7f8c8d; text-align:center; margin-top:0; margin-bottom:15px;"></p>
+        <div class="bill-item-list" id="invoiceRowsContainer"></div>
+        <div style="background:#f1f2f6; padding:12px; border-radius:10px; font-size:14px; margin-bottom:15px; font-weight:500;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal:</span><span id="billSubtotal">₹0</span></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--danger-red);"><span>Game Disc. Allowed:</span><span id="billDiscountApplied">0%</span></div>
+            <hr style="border:0; border-top:1px dashed #ccc; margin:6px 0;">
+            <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; color:var(--neon-green);"><span>Total Bill:</span><span id="billGrandTotal">₹0</span></div>
+        </div>
+        <button class="action-btn" id="payOnlineInvoiceMainBtn" onclick="openSmartMobilePaymentGatewayGateway()" style="background:var(--neon-green); margin-bottom:8px; color:white;">💳 Pay Online from Mobile (UPI)</button>
+        <button class="action-btn" onclick="document.getElementById('invoiceBillModal').style.display='none'" style="background:#333; color:white;">Back to Hub</button>
+    </div>
+</div>
+
+<!-- Mobile Payment Simulator Modal -->
+<div class="modal-overlay" id="mobilePaymentSimulatorModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
+        <h3>💳 Mobile UPI Payment Gateway</h3>
+        <p style="font-size: 13px; color: #555;">Scan QR or tap below to pay using any UPI app:</p>
+        <div style="font-size: 18px; font-weight: 800; color: var(--neon-green); margin-bottom: 15px;" id="simulatedUpiAmountText">Amount: ₹0</div>
+        <button class="action-btn" onclick="executeNativeUpiIntentRoutingPipeline()" style="background: #27ae60; color: white; margin-bottom: 8px;">🚀 Open Google Pay / PhonePe / Paytm</button>
+        <button class="action-btn" id="simPaymentSuccessBtn" onclick="executeSimulatedMobilePaymentSuccessSequence()" style="background: #e67e22; color: white; margin-bottom: 8px;">⚡ Simulate Successful Payment</button>
+        <button class="action-btn" onclick="document.getElementById('mobilePaymentSimulatorModal').style.display='none'" style="background: #7f8c8d; color: white;">Cancel</button>
+    </div>
+</div>
+
+<!-- Discount Sheet Modal -->
+<div class="modal-overlay" id="discountSheetModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3>🎁 Game Reward Matrix</h3>
+        <ul class="rules-list" id="rulesListDisplay">
+            <li>🧱 Brick Breaker: Clear 3 Levels = 10% OFF</li>
+            <li>🐦 Flappy Bird: Score 10 Points = 15% OFF</li>
+            <li>🚀 Space Shooter: Destroy 20 Aliens = 15% OFF</li>
+            <li>🐍 Snake: Eat 15 Apples = 10% OFF</li>
+            <li>🏢 Tower Bloxx: Stack 10 Floors = 20% OFF</li>
+        </ul>
+        <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'" style="background:#2c3e50; color:white;">Start Playing!</button>
+    </div>
+</div>
+
+<script>
+// Customer Panel State
+let hotelScope = window.hotelGlobalScopeID || "Default_HQ_Arena";
+let clientCurrentActiveTable = window.clientCurrentActiveTable || "T1";
+let localLiveRunningBill = JSON.parse(localStorage.getItem('restroflow_live_bill')) || [];
+let maximumClaimedDisc = parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
+let globalRunningInvoiceSumTotal = 0;
+let customerActiveCategoryName = "";
+
+async function renderCustomerMenu() {
+    const menuContainer = document.getElementById('menuContainer');
+    const tabsWrapper = document.getElementById('customerCategoryTabs');
+    if (!menuContainer || !tabsWrapper) return;
+
+    try {
+        let res = typeof window.dbFetchMenuCategories === 'function' ? await window.dbFetchMenuCategories() : null;
+        if (res && res.data && res.data.length > 0) {
+            window.customerMenuCategories = res.data;
+        } else {
+            window.customerMenuCategories = window.fallbackMenu || [];
+        }
+
+        let customerMenuCategories = window.customerMenuCategories;
+        tabsWrapper.innerHTML = '';
+        menuContainer.innerHTML = '';
+
+        if (!customerMenuCategories || customerMenuCategories.length === 0) return;
+
+        let selectedCat = customerMenuCategories.find(c => (c.categoryName || c.category) === customerActiveCategoryName) || customerMenuCategories[0];
+        customerActiveCategoryName = selectedCat ? (selectedCat.categoryName || selectedCat.category) : "";
+
+        customerMenuCategories.forEach(cat => {
+            let catName = cat.categoryName || cat.category || "Menu";
+            let isActive = catName === customerActiveCategoryName;
+            tabsWrapper.innerHTML += `<button class="category-tab-btn ${isActive ? 'active' : ''}" onclick="filterCustomerViewCategoryTab('${catName}')">${catName}</button>`;
+        });
+
+        let cIdx = customerMenuCategories.indexOf(selectedCat);
+        const safeItems = Array.isArray(selectedCat?.items) ? selectedCat.items : [];
+
+        safeItems.forEach((item, iIdx) => {
+            if (!item || item.inStock === false) return;
+
+            let sHas = (item.sActive !== false) && (item.s > 0);
+            let mHas = (item.mActive !== false) && (item.m > 0);
+            let lHas = (item.lActive !== false) && (item.l > 0);
+            let defaultSize = mHas ? 'm' : (sHas ? 's' : (lHas ? 'l' : 'm'));
+            let defaultPrice = item[defaultSize] || item.m || item.s || item.l || 0;
+            let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
+            let qtyInputId = `itemQty_${cIdx}_${iIdx}`;
+
+            menuContainer.innerHTML += `
+                <div class="menu-item">
+                    <div class="dish-main-info">
+                        <div class="dish-details">
+                            <div class="dish-photo-frame">🍲</div>
+                            <div class="dish-header-text"><strong>${item.name || 'Dish'}</strong></div>
+                        </div>
+                        <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
+                    </div>
+                    <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}" data-selected-size="${defaultSize}" data-selected-price="${defaultPrice}">
+                        <button class="size-btn ${sHas?'visible':''} ${defaultSize==='s'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s||0}, this)">S</button>
+                        <button class="size-btn ${mHas?'visible':''} ${defaultSize==='m'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'm', ${item.m||0}, this)">M</button>
+                        <button class="size-btn ${lHas?'visible':''} ${defaultSize==='l'?'active':''}" onclick="changeSizeToggle('${domUniqueId}', 'l', ${item.l||0}, this)">L</button>
+                    </div>
+                    <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+                            <button onclick="modifyInputQtyCounter('${qtyInputId}', -1)" style="width:32px; height:32px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">−</button>
+                            <input type="number" id="${qtyInputId}" value="1" min="1" max="20" readonly style="width:45px; text-align:center; font-weight:bold; border:none; background:transparent;">
+                            <button onclick="modifyInputQtyCounter('${qtyInputId}', 1)" style="width:32px; height:32px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">+</button>
+                        </div>
+                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')">🛒 Order Now</button>
+                    </div>
+                </div>`;
+        });
+    } catch (err) {
+        console.error("🚨 Customer Menu Error:", err);
+    }
+}
+
+function filterCustomerViewCategoryTab(targetCategoryName) {
+    customerActiveCategoryName = targetCategoryName;
+    renderCustomerMenu();
+}
+
+function changeSizeToggle(priceDomId, size, price, btnElement) {
+    const priceNode = document.getElementById(priceDomId);
+    if (priceNode) priceNode.innerText = "₹" + price;
+    let parent = btnElement.parentElement;
+    parent.setAttribute('data-selected-size', size);
+    parent.setAttribute('data-selected-price', price);
+    parent.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+}
+
+function modifyInputQtyCounter(elementId, shiftValue) {
+    const field = document.getElementById(elementId);
+    if (!field) return;
+    let val = (parseInt(field.value) || 1) + shiftValue;
+    if (val < 1) val = 1;
+    if (val > 20) val = 20;
+    field.value = val;
+}
+
+function executeCustomerOrderCommitLink(priceDomId, dishName, qtyInputFieldId) {
+    let priceNode = document.getElementById(priceDomId);
+    let selectorNode = priceNode ? priceNode.parentElement.nextElementSibling : null;
+    let size = selectorNode ? (selectorNode.getAttribute('data-selected-size') || 'm') : 'm';
+    let price = selectorNode ? (parseInt(selectorNode.getAttribute('data-selected-price')) || 100) : 100;
+    let qty = parseInt(document.getElementById(qtyInputFieldId)?.value) || 1;
+
+    localLiveRunningBill.push({ name: dishName, size, price, qty });
+    localStorage.setItem('restroflow_live_bill', JSON.stringify(localLiveRunningBill));
+    calculateUnifiedMasterInvoice();
+    showOnScreenNotification(`✅ Added ${dishName} (${size.toUpperCase()}) x${qty} to Cart!`);
+}
+
+function calculateUnifiedMasterInvoice() {
+    let subtotal = 0;
+    localLiveRunningBill.forEach(item => { subtotal += (item.price * item.qty); });
+    let discountAmount = (subtotal * maximumClaimedDisc) / 100;
+    globalRunningInvoiceSumTotal = Math.max(0, subtotal - discountAmount);
+
+    const subNode = document.getElementById('billSubtotal');
+    const discNode = document.getElementById('billDiscountApplied');
+    const grandNode = document.getElementById('billGrandTotal');
+
+    if (subNode) subNode.innerText = `₹${subtotal}`;
+    if (discNode) discNode.innerText = `${maximumClaimedDisc}% (-₹${discountAmount.toFixed(0)})`;
+    if (grandNode) grandNode.innerText = `₹${globalRunningInvoiceSumTotal.toFixed(0)}`;
+}
+
+function renderLiveCalculatedBill() {
+    const modal = document.getElementById('invoiceBillModal');
+    const rowsContainer = document.getElementById('invoiceRowsContainer');
+    if (!modal || !rowsContainer) return;
+
+    rowsContainer.innerHTML = '';
+    if (localLiveRunningBill.length === 0) {
+        rowsContainer.innerHTML = "<p style='text-align:center; color:#7f8c8d;'>Your cart is empty!</p>";
+    } else {
+        localLiveRunningBill.forEach((item, idx) => {
+            rowsContainer.innerHTML += `
+                <div class="bill-item-row">
+                    <div><strong>${item.name}</strong> (${item.size.toUpperCase()}) x${item.qty}</div>
+                    <div>₹${item.price * item.qty} <span style="cursor:pointer;" onclick="localLiveRunningBill.splice(${idx},1); localStorage.setItem('restroflow_live_bill', JSON.stringify(localLiveRunningBill)); renderLiveCalculatedBill();">❌</span></div>
+                </div>`;
+        });
+    }
+    calculateUnifiedMasterInvoice();
+    modal.style.display = 'flex';
+}
+
+function openSmartMobilePaymentGatewayGateway() {
+    if (localLiveRunningBill.length === 0) return alert("⚠️ Cart is empty!");
+    const simModal = document.getElementById('mobilePaymentSimulatorModal');
+    const amtText = document.getElementById('simulatedUpiAmountText');
+    if (amtText) amtText.innerText = `Amount: ₹${globalRunningInvoiceSumTotal.toFixed(0)}`;
+    if (simModal) simModal.style.display = 'flex';
+}
+
+function executeNativeUpiIntentRoutingPipeline() {
+    window.location.href = `upi://pay?pa=restaurant@upi&pn=RestroFlow&am=${globalRunningInvoiceSumTotal.toFixed(2)}&cu=INR`;
+}
+
+function executeSimulatedMobilePaymentSuccessSequence() {
+    showOnScreenNotification(`🎉 Payment of ₹${globalRunningInvoiceSumTotal.toFixed(0)} Received! Thank you!`);
+    localLiveRunningBill = [];
+    localStorage.removeItem('restroflow_live_bill');
+    document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
+    document.getElementById('invoiceBillModal').style.display = 'none';
+    calculateUnifiedMasterInvoice();
+}
+
+function callWaiterBellSignal() {
+    let compositeTableKey = `${hotelScope}_${clientCurrentActiveTable}`;
+    if (window.supabaseClient) {
+        window.supabaseClient
+            .from('table_sessions')
+            .upsert({
+                table_id: compositeTableKey,
+                waiter_bell: true,
+                bill_items: window.localLiveRunningBill || [],
+                discount_percent: window.maximumClaimedDisc || 0,
+                last_updated: new Date().toISOString()
+            })
+            .then(({ error }) => {
+                if (error) console.error("📡 Supabase Waiter Bell Signal Exception:", error.message);
+            });
+    }
+    showOnScreenNotification("🔔 Service request sent to waiter staff!");
+}
+
+function showOnScreenNotification(msg) {
+    const toast = document.getElementById('customToastNotification');
+    if (!toast) return;
+    toast.innerText = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 3000);
+}
+
+function launchSleekLoginOverlay() {
+    document.getElementById('portalLoginModal').style.display = 'flex';
+    document.getElementById('portalRegisterModal').style.display = 'none';
+}
+
+function toggleToRegistrationModal() {
+    document.getElementById('portalLoginModal').style.display = 'none';
+    document.getElementById('portalRegisterModal').style.display = 'flex';
+}
+
+function toggleToLoginModal() {
+    document.getElementById('portalRegisterModal').style.display = 'none';
+    document.getElementById('portalLoginModal').style.display = 'flex';
+}
+
+function authenticateAdminLogin() {
+    const email = document.getElementById('loginEmailInput').value;
+    const pwd = document.getElementById('loginPasswordInput').value;
+    if (email && pwd) {
+        window.location.href = '../modules/admin.html';
+    } else {
+        alert("Please enter workspace credentials.");
+    }
+}
+
+function registerNewAdminAccount() {
+    const email = document.getElementById('regEmailInput').value;
+    const pwd = document.getElementById('regPasswordInput').value;
+    const mob = document.getElementById('regMobileInput').value;
+    if (email && pwd && mob) {
+        alert("Workspace successfully registered!");
+        window.location.href = '../modules/admin.html';
+    } else {
+        alert("Please complete all registration fields.");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlHotel = urlParams.get('hotel');
+    const urlTable = urlParams.get('table');
+    if (urlHotel) hotelScope = urlHotel;
+    if (urlTable) clientCurrentActiveTable = urlTable;
+
+    const scopeLabel = document.getElementById('displayHotelRegistryScopeLabel');
+    const tableLabel = document.getElementById('displayTableName');
+    if (scopeLabel) scopeLabel.innerText = hotelScope;
+    if (tableLabel) tableLabel.innerText = `Table ${clientCurrentActiveTable}`;
+    renderCustomerMenu();
+});
+</script>
+</body>
+</html>
