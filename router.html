@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RestroFlow - Master App Shell & SPA Router</title>
+
+    <link rel="icon" type="image/jpeg" href="../favicon.jpg">
+    <link rel="shortcut icon" type="image/jpeg" href="../favicon.jpg">
+
+    <!-- External Libraries CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+    <!-- Global Database & Configuration Scripts -->
+    <script src="config.js"></script>
+    <iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+
+    <!-- Global Base Styles & Design Tokens -->
+    <style>
+    :root { 
+        --primary-bg: #f9f5d7;
+        --card-bg: #dddcd1;
+        --accent-gold: #f1c40f;
+        --neon-green: #2ecc71;
+        --danger-red: #e74c3c;
+        --dark-charcoal: #2c3e50;
+        --tbl-orange: #e67e22;
+        --tbl-green: #2ecc71;
+        --tbl-grey: #7f8c8d;
+        --tbl-brown: #8b4513;
+    }
+
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background-color: var(--primary-bg); 
+        margin: 0; padding: 20px; 
+        display: flex; flex-direction: column; align-items: center; 
+    }
+
+    .container { 
+        width: 95% !important; 
+        max-width: 1280px !important; 
+        background: var(--card-bg); 
+        padding: 25px; border-radius: 20px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+        margin: 0 auto 20px auto; box-sizing: border-box; 
+        position: relative; border: 1px solid rgba(255,255,255,0.4);
+    }
+    
+    h1, h2, h3, h4 { margin-top: 0; text-align: center; color: var(--dark-charcoal); }
+    
+    input[type="number"], input[type="text"], input[type="password"], select { 
+        width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; 
+    }
+    button.action-btn { 
+        width: 100%; background: linear-gradient(135deg, #b9ae9f, #9e9384); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
+    }
+    .order-btn { 
+        background: var(--neon-green); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 8px; width: 100%; 
+    }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+    .modal-overlay .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Global Alert / Toast System -->
+    <div id="customToastNotification" style="position: fixed; top: 20px; max-width: 320px; width: 85%; background: #2c3e50; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 99999; display: none; font-weight: 600; font-size: 14px; border-left: 6px solid #2ecc71; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
+
+    <!-- 2. Master App Loading Screen -->
+    <div id="app-root" style="width: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 50px;">
+        <h2>⚡ Loading RestroFlow Modules...</h2>
+        <p style="color: #7f8c8d; font-size: 14px;">Routing request to destination module</p>
+    </div>
+
+    <!-- 3. Auth Portal Modal UI -->
+    <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
+        <div class="modal-content" style="max-width:380px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
+            <div style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;" title="Founder Secret Entry">⚡</div>
+            <h2 id="authPortalTitle" style="color: var(--dark-charcoal); font-weight: 800; margin-bottom: 4px; font-size: 26px; letter-spacing: -0.5px;">RestroFlow Portal</h2>
+            <p id="authPortalSubTitle" style="color: #7f8c8d; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">Workspace Gateway Terminal</p>
+            
+            <div style="text-align: left; margin-bottom: 12px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace Email Identity</label>
+                <input type="text" id="authEmailInput" placeholder="Enter owner email address..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+            </div>
+            
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Secure Access Password</label>
+                <input type="password" id="authPasswordInput" placeholder="Enter workspace password..." style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+            </div>
+            
+            <button class="action-btn" id="authPrimaryActionButton" onclick="executeAuthPortalMasterRouter()" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
+                🚀 Authenticate & Boot System
+            </button>
+
+            <button onclick="closeLoginConsoleOverlay()" style="background: none; border: none; color: #7f8c8d; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;">
+                Cancel Request
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. Global SaaS Gatekeeper Paywall Modal UI -->
+    <div class="modal-overlay" id="subscriptionExpiredPaywallModal" style="display:none;">
+        <div class="modal-content" style="max-width:390px; width:90%; padding:30px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 25px 60px rgba(0,0,0,0.25); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box; margin: auto;">
+            <div style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">⚠️</div>
+            <h2 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">YOUR PLAN IS EXPIRED</h2>
+            <p style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">Your RestroFlow workspace account requires activation.</p>
+            <button class="action-btn" onclick="window.location.href='../modules/costumer.html'" style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%;">
+                👀 Continue to Customer Panel
+            </button>
+        </div>
+    </div>
+
+    <!-- Inline System Boot & Authentication Logic -->
+    <script>
+    let isAuthPortalInSignUpMode = false;
+
+    // 🚀 System Boot Function: Parses URL params and handles routing
+    async function initApp() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tableParam = urlParams.get('table');
+        const hotelParam = urlParams.get('hotel');
+        const modeParam = urlParams.get('mode');
+
+        if (hotelParam) {
+            window.hotelGlobalScopeID = hotelParam;
+            localStorage.setItem('restaurantHotelClassificationID', hotelParam);
+        }
+        if (tableParam) {
+            window.clientCurrentActiveTable = tableParam;
+            localStorage.setItem('restroflow_active_table', tableParam);
+        }
+
+        console.log(`🚀 Booting RestroFlow App. Hotel: ${window.hotelGlobalScopeID}, Table: ${window.clientCurrentActiveTable}`);
+
+        // Verify Subscription Status before rendering
+        const isValid = await verifySubscriptionGatekeeper(window.hotelGlobalScopeID);
+        if (!isValid) return;
+
+        // Navigation redirection logic
+        if (modeParam === 'admin') {
+            window.location.href = `../modules/admin.html?hotel=${encodeURIComponent(window.hotelGlobalScopeID)}`;
+        } else if (modeParam === 'game') {
+            window.location.href = `../modules/game.html?table=${encodeURIComponent(window.clientCurrentActiveTable)}&hotel=${encodeURIComponent(window.hotelGlobalScopeID)}`;
+        } else {
+            window.location.href = `../modules/costumer.html?table=${encodeURIComponent(window.clientCurrentActiveTable)}&hotel=${encodeURIComponent(window.hotelGlobalScopeID)}`;
+        }
+    }
+
+    // 🔒 Subscription Gatekeeper Verification Function
+    async function verifySubscriptionGatekeeper(hotelScopeId) {
+        if (!window.supabaseClient) return true;
+        try {
+            const { data: subData, error } = await window.supabaseClient
+                .from('subscriptions')
+                .select('status')
+                .eq('id', hotelScopeId)
+                .maybeSingle();
+
+            if (subData && subData.status === 'EXPIRED') {
+                const paywallModal = document.getElementById('subscriptionExpiredPaywallModal');
+                if (paywallModal) paywallModal.style.display = 'flex';
+                return false;
+            }
+        } catch (err) {
+            console.error("Subscription check exception:", err);
+        }
+        return true;
+    }
+
+    function launchSleekLoginOverlay() {
+        const modal = document.getElementById('restroflowLoginModal');
+        if (modal) modal.style.display = 'flex';
+    }
+
+    function closeLoginConsoleOverlay() {
+        const modal = document.getElementById('restroflowLoginModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Auto boot on DOM load
+    document.addEventListener("DOMContentLoaded", () => {
+        initApp();
+    });
+    </script>
+</body>
+</html>
