@@ -370,6 +370,9 @@
 </head>
 
 <body>
+    <!-- Hidden Supabase Service Frame -->
+    <iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
         onclick="document.getElementById('discountSheetModal').style.display='flex'">0%</div>
@@ -379,6 +382,10 @@
         <h4 style="margin-top: 0; color: white; font-weight: 800;">🎮 Play Games & Earn Discounts!</h4>
         <div class="game-nav"
             style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
+            <button id="navHOME"
+                onclick="window.location.href='costumer.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
+                style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.6);"><span
+                    style="font-size: 20px;">🏠</span> Home</button>
             <button id="navBRICK"
                 onclick="window.location.href='game.html?mode=BRICK&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
                     style="font-size: 20px;">🧱</span> Bricks</button>
@@ -467,12 +474,39 @@
             brick_ball: new Image(),
             tower_block: new Image()
         };
-        sprites.space_ship.src = '../assets/sprites/space_ship.png';
-        sprites.space_enemy.src = '../assets/sprites/space_enemy.png';
-        sprites.flappy_bird.src = '../assets/sprites/flappy_bird.png';
-        sprites.snake_head.src = '../assets/sprites/snake_head.png';
-        sprites.brick_ball.src = '../assets/sprites/brick_ball.png';
-        sprites.tower_block.src = '../assets/sprites/tower_block.png';
+        function loadSpriteWithFallbacks(imgObj, relativePath) {
+            const possiblePaths = [
+                relativePath,
+                '../' + relativePath.replace(/^(\.\.\/)+/, ''),
+                '/' + relativePath.replace(/^(\.\.\/|\/)+/, ''),
+                relativePath.replace(/^(\.\.\/|\/)+/, '')
+            ];
+            let attemptIndex = 0;
+            function tryNext() {
+                if (attemptIndex < possiblePaths.length) {
+                    const nextSrc = possiblePaths[attemptIndex] + '?v=' + Date.now();
+                    attemptIndex++;
+                    imgObj.onerror = function() {
+                        console.warn('⚠️ Sprite load failed from:', nextSrc, 'trying next path...');
+                        tryNext();
+                    };
+                    imgObj.onload = function() {
+                        console.log('✅ Sprite successfully loaded:', nextSrc, `${imgObj.naturalWidth}x${imgObj.naturalHeight}`);
+                    };
+                    imgObj.src = nextSrc;
+                } else {
+                    console.error('❌ All sprite load paths failed for:', relativePath);
+                }
+            }
+            tryNext();
+        }
+
+        loadSpriteWithFallbacks(sprites.space_ship, '../assets/sprites/space_ship.png');
+        loadSpriteWithFallbacks(sprites.space_enemy, '../assets/sprites/space_enemy.png');
+        loadSpriteWithFallbacks(sprites.flappy_bird, '../assets/sprites/flappy_bird.png');
+        loadSpriteWithFallbacks(sprites.snake_head, '../assets/sprites/snake_head.png');
+        loadSpriteWithFallbacks(sprites.brick_ball, '../assets/sprites/brick_ball.png');
+        loadSpriteWithFallbacks(sprites.tower_block, '../assets/sprites/tower_block.png');
 
         // ===================================================================
         // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
@@ -498,11 +532,16 @@
         // 🌐 GLOBAL GAME ENGINE STATE VARIABLES
         // ===================================================================
 
-        // Dynamic State Pointers (Extracted from main file.html)
-        window.hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        window.clientCurrentActiveTable = localStorage.getItem('restroflow_active_table') || "T1";
-        let maximumClaimedDisc = parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
-        let globalRunningInvoiceSumTotal = 0;
+        // Dynamic State Pointers (Extracted from main file.html with URL query parameter support)
+        const urlParamsGame = new URLSearchParams(window.location.search);
+        var hotelGlobalScopeID = urlParamsGame.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+        window.hotelGlobalScopeID = hotelGlobalScopeID;
+        var clientCurrentActiveTable = urlParamsGame.get('table') || window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || "T1";
+        window.clientCurrentActiveTable = clientCurrentActiveTable;
+        var maximumClaimedDisc = window.maximumClaimedDisc || parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
+        window.maximumClaimedDisc = maximumClaimedDisc;
+        var globalRunningInvoiceSumTotal = window.globalRunningInvoiceSumTotal || 0;
+        window.globalRunningInvoiceSumTotal = globalRunningInvoiceSumTotal;
 
         // Simulate invoice calculation logic from main file.html for discount context
         function calculateUnifiedMasterInvoice(subtotal) {
@@ -516,19 +555,93 @@
             if (badgeNode) badgeNode.innerText = `${maximumClaimedDisc}%`;
         }
 
-        var activeGameMode = 'BRICK';
+        // =================================================================
+        // ⚙️ UNIFIED INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED)
+        // =================================================================
+        var activeGameMode = 'FLAPPY'; // Math hatne ke baad FLAPPY default mode hai
+        var realtimeRenderTimeout = null;
         var loopTimerInstance = null;
-        var cosmicBackgroundStars = [];
+        var customerActiveCategoryName = "";
+        var configSaveTimeout = null;
+        var isAuthPortalInSignUpMode = false;
 
-        // -------------------------------------------------------------------
-        // 🧱 BRICK BREAKER VARIABLES
-        // -------------------------------------------------------------------
-        var brickCanvasElement = null, brCtx = null;
-        var brickPaddleDir = 0;
-        var brickScoreCounter = 0;
-        var bBall = { x: 160, y: 300, dx: 3, dy: -3, radius: 8 };
-        var bPaddle = { x: 120, width: 75, height: 10 };
-        var activeBricksArray = [];
+        window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
+
+        // LEVEL 1: hotelGlobalScopeID initialization
+
+        if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
+            hotelGlobalScopeID = "Default_HQ_Arena";
+            window.hotelGlobalScopeID = "Default_HQ_Arena";
+            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+        }
+
+        // 🛡️ LEVEL 2: RULES REDECLARATION SHIELD (🧱 BRICK BREAKER ADDED HERE!)
+        if (typeof window.rules === 'undefined') {
+            window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
+                flappyTar: 5,
+                flappyDisc: 10,
+                spaceTar: 3,
+                spaceDisc: 15,
+                snakeTar: 10,
+                snakeDisc: 12,
+                brickTar: 15,    // ⚡ Brick breaker target blocks
+                brickDisc: 8     // ⚡ Brick breaker discount %
+            };
+        }
+        var rules = window.rules;
+
+        // 🧱 BRICK BREAKER PHYSICS MECHANICS POINTERS (ADDED HERE!)
+        var brickCanvasElement = document.getElementById('brickCanvas');
+        var brCtx = brickCanvasElement ? brickCanvasElement.getContext('2d') : null;
+        var brickPaddleDir = 0, brickScoreCounter = 0;
+        var bBall = {}, bPaddle = {}, activeBricksArray = [];
+
+        // Baseline SaaS packages defaults
+        var dynamicGlobalSaaSDefaults = {
+            monthly: 499,
+            yearly: 4999
+        };
+
+        // ... Iske neeche aapka baki ka code (fallbackMenu, defaultFloors, etc.) jaisa hai waisa hi rahega
+        var fallbackMenu = [
+            { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
+            { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+        ];
+        var defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+        var defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
+
+        // 🛡️ LEVEL 3: Core Configurations arrays data streams retrieval bindings
+        var menuCategories = fallbackMenu;
+        try {
+            // Ab hotelGlobalScopeID upar defined hai, toh bina reference error ke local storage data perfectly inject hoga
+            let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
+            if (localMenuRawData) {
+                let parsedMenu = JSON.parse(localMenuRawData);
+                if (Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
+            }
+        } catch (e) { console.log("Local menu parsing fallback active:", e); }
+
+        var floorData = defaultFloors;
+        try {
+            let localTablesRawData = localStorage.getItem('restaurantFloors');
+            if (localTablesRawData) {
+                let parsedFloors = JSON.parse(localTablesRawData);
+                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
+            }
+        } catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
+
+        var taxConfig = defaultTaxes;
+        try {
+            let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
+            if (localTaxRawData) {
+                let parsedTax = JSON.parse(localTaxRawData);
+                if (parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
+            }
+        } catch (e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+
+        var customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
+
+        var cosmicBackgroundStars = [];
         var totalBrickPacksDataMatrix = [];
         var isBrickKeyboardBound = false;
         var brickCameraShake = 0;
@@ -624,85 +737,174 @@
         // 🕹️ GAME SWITCHER & CONTROLLER DISPATCHER
         // ===================================================================
 
+        // ===================================================================
+        // 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WITH BRICK CONTROLS INTEGRATED)
+        // ===================================================================
         function switchGameMode(selectedTargetMode) {
-            activeGameMode = selectedTargetMode;
-            console.log(`🕹️ Arcade Switched to: ${selectedTargetMode}`);
-
-            const canvases = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
-            canvases.forEach(id => {
-                const c = document.getElementById(id);
-                if (c) c.style.display = 'none';
-            });
-
-            const ctrlPads = ['brickControls', 'spaceControls', 'snakeControls'];
-            ctrlPads.forEach(id => {
-                const p = document.getElementById(id);
-                if (p) p.style.display = 'none';
-            });
-
-            document.querySelectorAll('.game-nav button').forEach(b => b.classList.remove('active'));
-            const activeNavBtn = document.getElementById(`nav${selectedTargetMode}`);
-            if (activeNavBtn) activeNavBtn.classList.add('active');
-
-            if (selectedTargetMode === 'BRICK') {
-                const el = document.getElementById('brickCanvas');
-                if (el) el.style.display = 'block';
-                const ctrl = document.getElementById('brickControls');
-                if (ctrl) ctrl.style.display = 'flex';
-            } else if (selectedTargetMode === 'FLAPPY') {
-                const el = document.getElementById('flappyCanvas');
-                if (el) el.style.display = 'block';
-            } else if (selectedTargetMode === 'SPACE') {
-                const el = document.getElementById('spaceCanvas');
-                if (el) el.style.display = 'block';
-                const ctrl = document.getElementById('spaceControls');
-                if (ctrl) ctrl.style.display = 'flex';
-            } else if (selectedTargetMode === 'SNAKE') {
-                const el = document.getElementById('snakeCanvas');
-                if (el) el.style.display = 'block';
-                const ctrl = document.getElementById('snakeControls');
-                if (ctrl) ctrl.style.display = 'flex';
-            } else if (selectedTargetMode === 'TOWER') {
-                const el = document.getElementById('towerCanvas');
-                if (el) el.style.display = 'block';
+            activeGameMode = selectedTargetMode; 
+            
+            // 🧹 STAGE SFAI: Hard kill any active background frames animation tickers instantly
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance); 
+                cancelAnimationFrame(loopTimerInstance);
             }
+            
+            // Sabhi canvas aur elements ko shuruat mein hide karo
+            if (document.getElementById('flappyCanvas')) document.getElementById('flappyCanvas').style.display = 'none';
+            if (document.getElementById('spaceCanvas')) document.getElementById('spaceCanvas').style.display = 'none';
+            if (document.getElementById('snakeCanvas')) document.getElementById('snakeCanvas').style.display = 'none';
+            if (document.getElementById('brickCanvas')) document.getElementById('brickCanvas').style.display = 'none'; 
+            if (document.getElementById('towerCanvas')) document.getElementById('towerCanvas').style.display = 'none';
+            if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = 'none';
 
-            const msg = document.getElementById('gameScreenStatusMsg');
-            if (msg) msg.innerText = `Press Launch Engine Run to start ${selectedTargetMode}!`;
+            // Tabs ki active class update karo
+            document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
+            if (document.getElementById('nav' + selectedTargetMode)) {
+                document.getElementById('nav' + selectedTargetMode).classList.add('active');
+            }
+            
+            // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain
+            if (document.getElementById('spaceControls')) document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
+            if (document.getElementById('snakeControls')) document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
+            if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (selectedTargetMode === 'BRICK') ? 'flex' : 'none'; 
+            
+            // Baki games ke liye engine direct launch ready rahega
+            if (document.getElementById('startBtn')) {
+                document.getElementById('startBtn').style.display = 'block';
+                document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
+            }
+            
+            // Stage update code if already active in fullscreen modal layout
+            let gameBox = document.querySelector('.game-box');
+            if (gameBox && gameBox.classList.contains('fullscreen-arcade-active')) {
+                startSelectedGame();
+            }
         }
 
+        // ===================================================================
+        // 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
+        // ===================================================================
         function startSelectedGame() {
-            if (loopTimerInstance) {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance); 
                 cancelAnimationFrame(loopTimerInstance);
-                clearInterval(loopTimerInstance);
                 loopTimerInstance = null;
             }
+            
+            if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = "none";
+            if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = "none";
+            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none"; 
+            
+            // Sabhi canvas ko completely reset karo taaki overlapping 100% khatam ho jaye
+            const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+            allGameCanvasIds.forEach(id => {
+                const targetElement = document.getElementById(id);
+                if (targetElement) targetElement.style.display = 'none';
+            });
 
-            if (activeGameMode === 'BRICK') {
-                initBrickBreakerGame();
-            } else if (activeGameMode === 'FLAPPY') {
-                initFlappyBirdGame();
-            } else if (activeGameMode === 'SPACE') {
-                initSpaceShooterGame();
-            } else if (activeGameMode === 'SNAKE') {
-                initSnakeGameLoop();
-            } else if (activeGameMode === 'TOWER') {
-                initTowerBloxxGame();
+            // Toggle corresponding layout controller blocks dynamically
+            if (document.getElementById('spaceControls')) document.getElementById('spaceControls').style.display = (activeGameMode === 'SPACE') ? 'flex' : 'none';
+            if (document.getElementById('snakeControls')) document.getElementById('snakeControls').style.display = (activeGameMode === 'SNAKE') ? 'flex' : 'none';
+            if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (activeGameMode === 'BRICK') ? 'flex' : 'none';
+
+            let gameBox = document.querySelector('.game-box');
+            if (gameBox && activeGameMode !== 'MATH') {
+                gameBox.classList.add('fullscreen-arcade-active');
+                if (document.getElementById('exitGameBtn')) document.getElementById('exitGameBtn').style.display = "block";
+            }
+
+            // 💧 🔥 THE LIQUID COMPROLLER: Real screen space ke mutabik length aur breadth calculate karo
+            let fluidBreadth = Math.min(window.innerWidth * 0.95, 500); 
+            let fluidLength = Math.min(window.innerHeight * 0.50, 450);
+
+            if (activeGameMode === 'FLAPPY') { 
+                const fCanvas = document.getElementById('flappyCanvas');
+                if (fCanvas) {
+                    fCanvas.width = fluidBreadth;
+                    fCanvas.height = fluidLength;
+                    fCanvas.style.display = 'block'; 
+                }
+                if (typeof initFlappyBirdGame === 'function') initFlappyBirdGame(); 
+            }
+            else if (activeGameMode === 'BRICK') { 
+                const bCanvas = document.getElementById('brickCanvas');
+                if (bCanvas) {
+                    bCanvas.width = fluidBreadth;
+                    bCanvas.height = fluidLength;
+                    bCanvas.style.display = 'block'; 
+                    brickCanvasElement = bCanvas;
+                    brCtx = bCanvas.getContext('2d');
+                }
+                if (typeof initBrickBreakerGame === 'function') initBrickBreakerGame(); 
+            }
+            else if (activeGameMode === 'SPACE') { 
+                const sCanvas = document.getElementById('spaceCanvas');
+                if (sCanvas) {
+                    sCanvas.width = fluidBreadth;
+                    sCanvas.height = fluidLength;
+                    sCanvas.style.display = 'block'; 
+                }
+                if (typeof initSpaceShooterGame === 'function') initSpaceShooterGame(); 
+            }
+            else if (activeGameMode === 'SNAKE') { 
+                let snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
+                const sCanvas = document.getElementById('snakeCanvas');
+                if (sCanvas) {
+                    sCanvas.width = snakeSquareSize;
+                    sCanvas.height = snakeSquareSize;
+                    sCanvas.style.display = 'block'; 
+                }
+                if (typeof initSnakeGameLoop === 'function') initSnakeGameLoop(); 
+            }
+            else if (activeGameMode === 'TOWER') { 
+                const tCanvas = document.getElementById('towerCanvas');
+                if (tCanvas) {
+                    tCanvas.width = fluidBreadth; 
+                    tCanvas.height = fluidLength;
+                    tCanvas.style.display = 'block'; 
+                    towerCanvasElement = tCanvas;
+                    twCtx = tCanvas.getContext('2d');
+                }
+                if (typeof initTowerBloxxGame === 'function') initTowerBloxxGame(); 
             }
         }
 
+        // ===================================================================
+        // 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
+        // ===================================================================
         function exitGameEngine() {
-            if (loopTimerInstance) {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance); 
                 cancelAnimationFrame(loopTimerInstance);
-                clearInterval(loopTimerInstance);
                 loopTimerInstance = null;
             }
-            const wrapper = document.getElementById('arcadeGameWrapper');
-            if (wrapper) wrapper.style.display = 'none';
-            let scopeId = window.hotelGlobalScopeID || "Default_HQ_Arena";
-            let activeTable = window.clientCurrentActiveTable || "T1";
-            window.location.href = `costumer.html?table=${encodeURIComponent(activeTable)}&hotel=${encodeURIComponent(scopeId)}`;
+            
+            let gameBox = document.querySelector('.game-box');
+            if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
+            if (document.getElementById('exitGameBtn')) document.getElementById('exitGameBtn').style.display = "none";
+            if (document.getElementById('startBtn')) {
+                document.getElementById('startBtn').style.display = "block";
+                document.getElementById('startBtn').innerText = "Launch Engine Run";
+            }
+            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none";
+            
+            const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+            allGameCanvasIds.forEach(id => {
+                const targetElement = document.getElementById(id);
+                if (targetElement) targetElement.style.display = 'none';
+            });
+
+            // Redirect back to customer home panel with table & hotel parameters preserved
+            const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+            const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+            window.location.href = `costumer.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
         }
+
+        // Attach core controller functions explicitly to global window object
+        window.switchGameMode = switchGameMode;
+        window.startSelectedGame = startSelectedGame;
+        window.exitGameEngine = exitGameEngine;
+        window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
 
         function triggerRewardCoupon(arg1, arg2) {
             let earnedPercent = (arg2 !== undefined) ? parseInt(arg2) : parseInt(arg1);
@@ -711,7 +913,6 @@
             let clientCurrentActiveTable = window.clientCurrentActiveTable || "T1";
             let hotelGlobalScopeID = window.hotelGlobalScopeID || "Default_HQ_Arena";
 
-            // Save to local storage for main menu to pick up
             localStorage.setItem('discount_map_' + clientCurrentActiveTable, earnedPercent);
             localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent);
 
@@ -755,46 +956,96 @@
         }
         window.showOnScreenNotification = showOnScreenNotification;
 
-        function finalizeFailedRun(gameTitle, score) {
-            console.log(`💀 Game Over [${gameTitle}] Final Score: ${score}`);
-            alert(`💀 Game Over! Score: ${score}`);
-
-            let couponCode = "";
-            let discountPercent = 0;
-
-            if (gameTitle === 'BRICK' && score >= 100) { couponCode = "BRICK100"; discountPercent = 5; }
-            else if (gameTitle === 'FLAPPY' && score >= 15) { couponCode = "FLAPPY15"; discountPercent = 10; }
-            else if (gameTitle === 'SPACE' && score >= 200) { couponCode = "SPACE200"; discountPercent = 15; }
-            else if (gameTitle === 'SNAKE' && score >= 10) { couponCode = "SNAKE10"; discountPercent = 10; }
-            else if (gameTitle === 'TOWER' && score >= 8) { couponCode = "TOWER8"; discountPercent = 10; }
-
-            if (discountPercent > 0 && typeof window.triggerRewardCoupon === 'function') {
-                window.triggerRewardCoupon(couponCode, discountPercent);
-            }
-        }
+        // ===================================================================
+        // ⚡ HIGH-PERFORMANCE ARCADE INPUT ENGINE (ZERO-FREEZE TOUCH HANDLER)
+        // ===================================================================
+        let isBrickControlsBound = false;
 
         function bindAirtightArcadeControls() {
+            // 🧱 BRICK BREAKER ULTRA-FAST INPUT BINDINGS
+            const brickLeftBtn = document.getElementById('brickLeftBtn');
+            const brickRightBtn = document.getElementById('brickRightBtn');
+
+            const bindTouchEvents = (element, dirValue) => {
+                if (!element) return;
+
+                // Prevent ghost clicks and touch emulation lag on Android
+                const handleStart = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    brickPaddleDir = dirValue;
+                };
+
+                const handleEnd = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) {
+                        brickPaddleDir = 0;
+                    }
+                };
+
+                element.addEventListener('touchstart', handleStart, { passive: false });
+                element.addEventListener('touchend', handleEnd, { passive: false });
+                element.addEventListener('touchcancel', handleEnd, { passive: false });
+                
+                element.addEventListener('mousedown', (e) => { brickPaddleDir = dirValue; });
+                element.addEventListener('mouseup', (e) => { 
+                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+                });
+                element.addEventListener('mouseleave', (e) => { 
+                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+                });
+            };
+
+            if (brickLeftBtn) bindTouchEvents(brickLeftBtn, -7);
+            if (brickRightBtn) bindTouchEvents(brickRightBtn, 7);
+
+            // 🚀 SPACE SHOOTER CONTROLS
+            const spaceLeftBtn = document.querySelector("#spaceControls button:first-child");
+            const spaceRightBtn = document.querySelector("#spaceControls button:last-child");
+
+            if (spaceLeftBtn) {
+                spaceLeftBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = -6; }, { passive: false });
+                spaceLeftBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
+            }
+            if (spaceRightBtn) {
+                spaceRightBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 6; }, { passive: false });
+                spaceRightBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
+            }
+
+            // 🐍 SNAKE CONTROLS
+            document.querySelectorAll('.snk-btn').forEach(btn => {
+                if (btn) {
+                    const clickAttr = btn.getAttribute('onclick');
+                    if (clickAttr && clickAttr.includes('setSnakeDirection')) {
+                        const directionToken = clickAttr.match(/'([^']+)'/)[1];
+                        btn.addEventListener('touchstart', (e) => {
+                            if (e.cancelable) e.preventDefault();
+                            setSnakeDirection(directionToken);
+                        }, { passive: false });
+                    }
+                }
+            });
+
             setupGlobalKeyboardBindings();
         }
 
         function setupGlobalKeyboardBindings() {
             window.addEventListener('keydown', (e) => {
+                if (activeGameMode === 'SPACE') {
+                    if (e.key === 'ArrowLeft' || e.key === 'a') spaceMoveDir = -6;
+                    if (e.key === 'ArrowRight' || e.key === 'd') spaceMoveDir = 6;
+                }
                 if (activeGameMode === 'SNAKE') {
                     if (e.key === 'ArrowUp' || e.key === 'w') setSnakeDirection('UP');
                     if (e.key === 'ArrowDown' || e.key === 's') setSnakeDirection('DOWN');
                     if (e.key === 'ArrowLeft' || e.key === 'a') setSnakeDirection('LEFT');
                     if (e.key === 'ArrowRight' || e.key === 'd') setSnakeDirection('RIGHT');
-                } else if (activeGameMode === 'FLAPPY') {
-                    if (e.key === ' ' || e.key === 'ArrowUp') onFlappyJump();
-                } else if (activeGameMode === 'SPACE') {
-                    if (e.key === 'ArrowLeft' || e.key === 'a') spaceMoveDir = -6;
-                    if (e.key === 'ArrowRight' || e.key === 'd') spaceMoveDir = 6;
                 }
             });
-
             window.addEventListener('keyup', (e) => {
                 if (activeGameMode === 'SPACE') {
-                    if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key)) spaceMoveDir = 0;
+                    if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key) && ((spaceMoveDir < 0 && ['ArrowLeft', 'a'].includes(e.key)) || (spaceMoveDir > 0 && ['ArrowRight', 'd'].includes(e.key)))) {
+                        spaceMoveDir = 0;
+                    }
                 }
             });
         }
@@ -1060,9 +1311,7 @@
             spCtx.shadowBlur = 0;
 
             if (sprites.space_ship.complete && sprites.space_ship.naturalWidth > 0) {
-                spCtx.globalCompositeOperation = 'screen';
-                spCtx.drawImage(sprites.space_ship, -20, -20, 40, 40);
-                spCtx.globalCompositeOperation = 'source-over';
+                spCtx.drawImage(sprites.space_ship, -26, -26, 52, 52);
             } else {
                 spCtx.fillStyle = "#ecf0f1";
                 spCtx.beginPath();
@@ -1130,9 +1379,7 @@
                     spCtx.shadowColor = "#e74c3c"; spCtx.shadowBlur = 15 + Math.sin(spaceFrameTracker * 0.3) * 10;
                 }
                 if (sprites.space_enemy.complete && sprites.space_enemy.naturalWidth > 0) {
-                    spCtx.globalCompositeOperation = 'screen';
                     spCtx.drawImage(sprites.space_enemy, -55, -20, 110, 80);
-                    spCtx.globalCompositeOperation = 'source-over';
                 } else {
                     spCtx.fillStyle = "#2c3e50";
                     spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(-50, -20); spCtx.lineTo(-55, 30); spCtx.lineTo(-20, 10); spCtx.fill();
@@ -1147,9 +1394,7 @@
             } else {
                 let minionType = currentLevelState % 3;
                 if (sprites.space_enemy.complete && sprites.space_enemy.naturalWidth > 0) {
-                    spCtx.globalCompositeOperation = 'screen';
                     spCtx.drawImage(sprites.space_enemy, -15, -15, 30, 30);
-                    spCtx.globalCompositeOperation = 'source-over';
                 } else {
                     spCtx.fillStyle = minionType === 0 ? "#e67e22" : (minionType === 1 ? "#9b59b6" : "#e74c3c");
                     spCtx.beginPath();
