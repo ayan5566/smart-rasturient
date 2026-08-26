@@ -17,74 +17,134 @@ if (!window.supabaseClient) {
     }
 }
 
-// ===================================================================
-// 🌐 GLOBAL RULES & ARRAYS STATE
-// ===================================================================
+// =================================================================
+// ⚙️ GLOBAL RULES & ARRAYS STATE (Absolute Zero-Conflict Version)
+// =================================================================
+window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
 
-// Hotel Global Scope Identifier
-let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
-    hotelGlobalScopeID = "Default_HQ_Arena";
+// 🛡️ FIX 1: Bina kisi var/let/const ke seedhe window par register karo
+if (typeof window.hotelGlobalScopeID === 'undefined') {
+    window.hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+}
+
+// 🔥 CRITICAL CHANGE: Global execution scope clash hatane ke liye hamesha window property use hogi
+if (window.hotelGlobalScopeID !== "Default_HQ_Arena" && window.hotelGlobalScopeID.length < 5) {
+    window.hotelGlobalScopeID = "Default_HQ_Arena";
     localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
 }
-window.hotelGlobalScopeID = hotelGlobalScopeID;
 
-// Global Rules Matrix
-window.rules = [
-    { target: "Brick Breaker", desc: "Clear 3 Levels to win 10% Discount" },
-    { target: "Flappy Bird", desc: "Score 10 Points to win 15% Discount" },
-    { target: "Space Shooter", desc: "Destroy 20 Alien Ships for 15% Discount" },
-    { target: "Snake Game", desc: "Eat 15 Apples for 10% Discount" },
-    { target: "Tower Bloxx", desc: "Stack 10 Floors perfectly for 20% Discount" }
-];
-window.rulesConfig = window.rules;
+// purane code se compatibility ke liye bina var/let ke direct assign karo (agar pehle let se defined hai toh crash nahi karega)
+hotelGlobalScopeID = window.hotelGlobalScopeID;
 
-// Dynamic SaaS Pricing Fallback Defaults
-window.dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults || { monthly: 499, yearly: 4999 };
+// 🛡️ FIX 2: rules redeclaration shield
+if (typeof window.rules === 'undefined') {
+    window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
+        flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12, brickTar: 3, brickDisc: 8,
+        towerTar: 3, towerDisc: 15 // Seeded baseline default rules
+    };
+}
+rules = window.rules;
 
-// Default Fallback Menu Array
-window.fallbackMenu = [
-    {
-        categoryName: "Starters & Appetizers",
-        category: "Starters & Appetizers",
-        items: [
-            { id: "p1", name: "Paneer Tikka", s: 180, m: 240, l: 320, sActive: true, mActive: true, lActive: true, inStock: true, photo: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=300" },
-            { id: "p2", name: "Veg Crispy", s: 150, m: 200, l: 260, sActive: true, mActive: true, lActive: true, inStock: true, photo: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=300" }
-        ]
-    },
-    {
-        categoryName: "Main Course",
-        category: "Main Course",
-        items: [
-            { id: "p3", name: "Butter Paneer Masala", s: 220, m: 290, l: 380, sActive: true, mActive: true, lActive: true, inStock: true, photo: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=300" },
-            { id: "p4", name: "Dal Tadka", s: 140, m: 180, l: 240, sActive: true, mActive: true, lActive: true, inStock: true, photo: "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=300" }
-        ]
+// 🛡️ FIX 3: dynamicGlobalSaaSDefaults double-counting block
+if (typeof window.dynamicGlobalSaaSDefaults === 'undefined') {
+    window.dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
+}
+dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
+
+// 🛡️ FIX 4: Core fallback setups
+if (typeof window.fallbackMenu === 'undefined') {
+    window.fallbackMenu = [
+        { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
+        { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+    ];
+}
+fallbackMenu = window.fallbackMenu;
+
+if (typeof window.defaultFloors === 'undefined') {
+    window.defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+}
+defaultFloors = window.defaultFloors;
+
+if (typeof window.defaultTaxes === 'undefined') {
+    window.defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
+}
+defaultTaxes = window.defaultTaxes;
+
+// 🛡️ FIX 5: Main running states
+if (typeof window.menuCategories === 'undefined') {
+    window.menuCategories = fallbackMenu;
+}
+menuCategories = window.menuCategories;
+
+try {
+    let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
+    if (localMenuRawData) {
+        let parsedMenu = JSON.parse(localMenuRawData);
+        if (Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) {
+            menuCategories = parsedMenu;
+            window.menuCategories = parsedMenu;
+        }
     }
-];
+} catch (e) {
+    console.log("Local menu parsing fallback active:", e);
+}
 
-// Default Layout & Tax State Data
-window.defaultFloors = [
-    { name: "Ground Floor", tables: ["T1", "T2", "T3", "T4"] },
-    { name: "First Floor / Terrace", tables: ["T5", "T6", "T7", "T8"] }
-];
+if (typeof window.floorData === 'undefined') {
+    window.floorData = defaultFloors;
+}
+floorData = window.floorData;
 
-window.defaultTaxes = {
-    cgstActive: true, cgstRate: 2.5,
-    sgstActive: true, sgstRate: 2.5,
-    serviceActive: false, serviceRate: 5
-};
+try {
+    let localTablesRawData = localStorage.getItem('restaurantFloors');
+    if (localTablesRawData) {
+        let parsedFloors = JSON.parse(localTablesRawData);
+        if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) {
+            floorData = parsedFloors;
+            window.floorData = parsedFloors;
+        }
+    }
+} catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
 
-window.menuCategories = JSON.parse(localStorage.getItem('restroflow_menu_' + window.hotelGlobalScopeID)) || window.fallbackMenu;
-window.floorData = JSON.parse(localStorage.getItem('restroflow_floors_' + window.hotelGlobalScopeID)) || window.defaultFloors;
-window.taxConfig = JSON.parse(localStorage.getItem('restroflow_taxes_' + window.hotelGlobalScopeID)) || window.defaultTaxes;
-window.customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || localStorage.getItem('customPaymentQRKey') || "";
+if (typeof window.taxConfig === 'undefined') {
+    window.taxConfig = defaultTaxes;
+}
+taxConfig = window.taxConfig;
 
-// ===================================================================
-// 🎯 ATOMIC RESET POINTERS & STATE MONITORS
-// ===================================================================
-window.clientCurrentActiveTable = localStorage.getItem('restroflow_active_table') || "T1";
-window.localLiveRunningBill = JSON.parse(localStorage.getItem('restroflow_live_bill')) || [];
-window.maximumClaimedDisc = parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
-window.globalRunningInvoiceSumTotal = 0;
+try {
+    let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
+    if (localTaxRawData) {
+        let parsedTax = JSON.parse(localTaxRawData);
+        if (parsedTax && parsedTax.cgstRate !== undefined) {
+            taxConfig = parsedTax;
+            window.taxConfig = parsedTax;
+        }
+    }
+} catch (e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+
+if (typeof window.customPaymentQRData === 'undefined') {
+    window.customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
+}
+customPaymentQRData = window.customPaymentQRData;
+
+// 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
+var clientCurrentActiveTable = localStorage.getItem('restroflow_active_table') || "T1";
+var localLiveRunningBill = JSON.parse(localStorage.getItem('restroflow_live_bill')) || [];
+var maximumClaimedDisc = parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
+var globalRunningInvoiceSumTotal = 0;
+
+// Canvas context initialization pointers explicitly binded
+var flappyCanvasElement = document.getElementById('flappyCanvas');
+var flCtx = flappyCanvasElement ? flappyCanvasElement.getContext('2d') : null;
+var spCanvasElement = document.getElementById('spaceCanvas');
+var spCtx = spCanvasElement ? spCanvasElement.getContext('2d') : null;
+var snakeCanvasElement = document.getElementById('snakeCanvas');
+var snCtx = snakeCanvasElement ? snakeCanvasElement.getContext('2d') : null;
+
+// Game Configuration Properties Scope Declarations Assemblies
+var spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
+var pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
+var snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
+var fBird = {}, fPipes = [], flappyScoreTracker = 0;
+var cosmicBackgroundStars = [];
 
 console.log("⚙️ Config.js loaded successfully. Global Scope ID:", window.hotelGlobalScopeID);
