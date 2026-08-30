@@ -2596,49 +2596,21 @@ function initBrickBreakerGame() {
     openBrickBreakerGame();
 }
 
-function switchGameMode(selectedTargetMode) {
-    if (selectedTargetMode === 'BRICK') {
-        openBrickBreakerGame();
-        return;
-    }
-    if (selectedTargetMode === 'FLAPPY') {
-        const tableId = localStorage.getItem('restroflow_active_table') || 'T1';
-        const hotelScope = localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-        const maxDisc = localStorage.getItem('restroflow_max_discount') || 0;
-        window.location.href = `modules/game.html?mode=FLAPPY&table=${encodeURIComponent(tableId)}&hotel=${encodeURIComponent(hotelScope)}&discount=${encodeURIComponent(maxDisc)}`;
-        return;
-    }
-    activeGameMode = selectedTargetMode; 
-    
-    // 🧹 STAGE SFAI: Hard kill any active background frames animation tickers instantly
-    clearInterval(loopTimerInstance); 
-    
-    // Sabhi canvas aur elements ko shuruat mein hide karo
-    document.getElementById('flappyCanvas').style.display = 'none';
-    document.getElementById('spaceCanvas').style.display = 'none';
-    document.getElementById('snakeCanvas').style.display = 'none';
-    document.getElementById('couponDisplay').style.display = 'none';
-
-    // Tabs ki active class update karo
-    document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
-    if(document.getElementById('nav' + selectedTargetMode)) {
-        document.getElementById('nav' + selectedTargetMode).classList.add('active');
-    }
-    
-    // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain
-    document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
-    document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
-    
-    // Baki games ke liye engine direct launch ready rahega
-    document.getElementById('startBtn').style.display = 'block';
-    document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
-    
-    // Stage update code if already active in fullscreen modal layout
-    if(document.querySelector('.game-box').classList.contains('fullscreen-arcade-active')) {
-        startSelectedGame();
-    }
-}
 // ===================================================================
+// 🔄 GAME ROUTER: REDIRECT TO EXTERNAL GAME.HTML WITH URL PARAMETERS
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    // 1. Current session parameters read karein
+    const targetTable = clientCurrentActiveTable || "T1";
+    const targetHotel = hotelGlobalScopeID || "Default_HQ_Arena";
+    const currentDiscount = maximumClaimedDisc || 0;
+
+    // 2. Dusri file (modules/game.html ya game.html) par redirect karein
+    const gameFilePath = "modules/game.html"; // Agar same folder mein hai toh sirf "game.html" rakhein
+
+    window.location.href = `${gameFilePath}?mode=${encodeURIComponent(selectedTargetMode)}&hotel=${encodeURIComponent(targetHotel)}&table=${encodeURIComponent(targetTable)}&discount=${encodeURIComponent(currentDiscount)}`;
+}
+        // ===================================================================
 // 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
 // ===================================================================
 function startSelectedGame() {
