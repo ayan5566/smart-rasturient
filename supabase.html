@@ -1,362 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>RestroFlow - Supabase Background Service</title>
-    <!-- Load Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script>
-        // ===================================================================
-        // 🌐 TOP-LEVEL CORE INITIALIZATION (TDZ & REFERENCE ERROR SHIELD)
-        // ===================================================================
-        const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
+// ===================================================================
+// 🌐 RESTROFLOW CENTRAL DATABASE SERVICE (services/supabase.js)
+// ===================================================================
+(function () {
+    const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
 
-        // 🔥 1. SUPABASE CLIENT GLOBAL DECLARATION
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Global Supabase Client
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
 
-        // 🔥 2. HOTEL GLOBAL SCOPE ID DECLARATION (MUST BE BEFORE ANY FUNCTION ACCESS)
-        let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+    // 🚀 Central DB Controller Object
+    window.RestroDB = {
+        // 1. Discount Save (Game se call hoga)
+        async saveDiscount(hotelId, tableId, discountPercent) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            const discountVal = parseInt(discountPercent) || 0;
 
-        if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
-            hotelGlobalScopeID = "Default_HQ_Arena";
-            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
-        }
-
-        window.hotelGlobalScopeID = hotelGlobalScopeID;
-
-        // Target Window Pointer (Parent iframe or window)
-        const targetWindow = (window.parent && window.parent !== window) ? window.parent : window;
-
-        targetWindow.supabaseClient = supabaseClient;
-        targetWindow.SUPABASE_URL = SUPABASE_URL;
-        targetWindow.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
-        targetWindow.hotelGlobalScopeID = targetWindow.hotelGlobalScopeID || hotelGlobalScopeID;
-
-        // 🛠️ HELPER: Supabase RLS 403 & Privilege Error Shield
-        function handleSupabaseError(error, tableName, operation) {
-            if (!error) return false;
-            const isRLSError = error.status === 403 || error.code === '42501' || 
-                               (error.message && (error.message.toLowerCase().includes('permission') || 
-                                                  error.message.toLowerCase().includes('policy') || 
-                                                  error.message.toLowerCase().includes('forbidden') ||
-                                                  error.message.toLowerCase().includes('row-level security')));
-            
-            if (isRLSError) {
-                console.error(`🚨 SUPABASE 403 FORBIDDEN / RLS POLICY ERROR on table '${tableName}' during ${operation}:`, error.message);
-                console.warn(`💡 FIX INSTRUCTION: Row Level Security (RLS) is blocking the ${operation} request. Run the SQL script in schema.sql or main flie.html in your Supabase SQL Editor.`);
-                if (typeof targetWindow.showOnScreenNotification === 'function') {
-                    targetWindow.showOnScreenNotification(`⚠️ 403 RLS Policy Error on ${tableName}! See main flie.html for SQL fix`, true);
-                }
-            } else {
-                console.error(`🚨 Supabase Error on table '${tableName}' (${operation}):`, error.message);
-                if (typeof targetWindow.showOnScreenNotification === 'function') {
-                    targetWindow.showOnScreenNotification(`⚠️ Supabase Sync Warning: ${error.message}`, true);
-                }
-            }
-            return true;
-        }
-
-        // 1. syncLiveSessionToSupabase
-        async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
             try {
-                const scopeID = targetWindow.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-                const compositeTableKey = `${scopeID}_${tableId}`;
-                const cleanBillPayload = Array.isArray(bill) ? bill : [];
-
-                const sessionPayload = {
-                    table_id: compositeTableKey,
-                    live_bill: cleanBillPayload,
-                    discount_claimed: parseInt(discount) || 0,
-                    waiter_bell: bellStatus || false,
-                    payment_status: payStatus || 'PENDING'
-                };
-
-                const { error: upsertError } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('table_sessions')
-                    .upsert(sessionPayload, { onConflict: 'table_id' });
-
-                if (upsertError) {
-                    handleSupabaseError(upsertError, 'table_sessions', 'UPSERT');
-                } else {
-                    console.log(`🚀 Cloud Sync: Composite Table ${compositeTableKey} securely synchronized.`);
-                }
-            } catch (err) {
-                console.error("System Error during table session sync:", err);
-            }
-        }
-
-        // 2. uploadMenuToCloud
-        async function uploadMenuToCloud() {
-            const currentActiveSaveId = targetWindow.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-            const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
-            
-            try {
-                console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
-                let menuCat = targetWindow.menuCategories || JSON.parse(localStorage.getItem('restaurantMenuCat_' + currentActiveSaveId)) || [];
-                let taxCfg = targetWindow.taxConfig || JSON.parse(localStorage.getItem('restaurantTaxSettings')) || {};
-                let gameRules = targetWindow.rules || JSON.parse(localStorage.getItem('gameRulesConfig')) || {};
-
-                if (Array.isArray(menuCat)) {
-                    menuCat.forEach(cat => {
-                        if (cat && Array.isArray(cat.items)) {
-                            cat.items.forEach(item => {
-                                if (item && item.image && item.image.startsWith('data:image')) {
-                                    console.log(`🗑️ Auto-Sanitizer: Stripping Base64 bloat: ${item.name}`);
-                                    item.image = ''; 
-                                }
-                            });
-                        }
-                    });
-                    localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCat));
-                }
-
-                await supabaseClient
-                    .from('hotel_config')
-                    .delete()
-                    .eq('id', currentActiveSaveId);
-
-                const { data, error: insertError } = await supabaseClient
-                    .from('hotel_config')
-                    .insert({ 
-                        id: currentActiveSaveId, 
-                        hotel_name: currentBrandName, 
-                        menu_data: menuCat,
-                        tax_data: taxCfg,
-                        rules_data: gameRules
-                    })
-                    .select(); 
-
-                if (insertError) {
-                    handleSupabaseError(insertError, 'hotel_config', 'INSERT');
-                } else {
-                    console.log(`🎉 Configuration locked for ID [${currentActiveSaveId}]!`, data);
-                    if (typeof targetWindow.updateFrontEndClassificationLabels === 'function') targetWindow.updateFrontEndClassificationLabels();
-                    if (typeof targetWindow.showOnScreenNotification === 'function') targetWindow.showOnScreenNotification("💾 Menu & Settings safely updated to cloud!");
-                }
-            } catch(e) { 
-                console.error("Critical Cloud Save Exception:", e); 
-            }
-        }
-
-        // 3. initializeAdminRealtimeBillingTracker
-        async function initializeAdminRealtimeBillingTracker() {
-            const scopeID = targetWindow.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-            
-            if (targetWindow.billingOrdersChannel) {
-                try { await supabaseClient.removeChannel(targetWindow.billingOrdersChannel); } catch(e){}
-                targetWindow.billingOrdersChannel = null;
-            }
-            if (targetWindow.billingSessionsChannel) {
-                try { await supabaseClient.removeChannel(targetWindow.billingSessionsChannel); } catch(e){}
-                targetWindow.billingSessionsChannel = null;
-            }
-
-            console.log("📡 RestroFlow Engine: Booting Isolated Admin Realtime Channels...");
-
-            try {
-                targetWindow.billingOrdersChannel = supabaseClient
-                    .channel('billing-orders-stream')
-                    .on('postgres_changes', { 
-                        event: '*', 
-                        schema: 'public', 
-                        table: 'active_orders',
-                        filter: 'hotel_id=eq.' + scopeID
-                    }, () => {
-                        console.log("🔔 Tracker Trigger: Active order state mutation captured!");
-                        if (typeof targetWindow.fetchActiveKitchenOrdersQueue === 'function') targetWindow.fetchActiveKitchenOrdersQueue();
-                        if (typeof targetWindow.queueDebouncedBillRender === "function") targetWindow.queueDebouncedBillRender(); 
-                    })
-                    .subscribe();
-
-                targetWindow.billingSessionsChannel = supabaseClient
-                    .channel('billing-sessions-stream')
-                    .on('postgres_changes', { 
-                        event: '*', 
-                        schema: 'public', 
-                        table: 'table_sessions' 
-                    }, (payload) => {
-                        console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
-                        if (typeof targetWindow.generateAdminTableGrid === "function") targetWindow.generateAdminTableGrid(); 
-                        if (typeof targetWindow.queueDebouncedBillRender === "function") targetWindow.queueDebouncedBillRender();
-                    })
-                    .subscribe();
-
-            } catch (realtimeErr) {
-                console.error("🚨 Cloud Core Realtime Pipeline Exception:", realtimeErr.message);
-            }
-        }
-
-        // 4. initializeCustomerRealtimeTracker
-        async function initializeCustomerRealtimeTracker() {
-            const scopeID = targetWindow.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-            const activeTable = targetWindow.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || "T1";
-            const compositeTableKey = `${scopeID}_${activeTable}`;
-
-            if (targetWindow.customerSessionsChannel) {
-                try { await supabaseClient.removeChannel(targetWindow.customerSessionsChannel); } catch(e){}
-                targetWindow.customerSessionsChannel = null;
-            }
-            if (targetWindow.customerConfigChannel) {
-                try { await supabaseClient.removeChannel(targetWindow.customerConfigChannel); } catch(e){}
-                targetWindow.customerConfigChannel = null;
-            }
-
-            console.log("📡 Customer WebSocket: Registering handshake for:", compositeTableKey);
-
-            targetWindow.customerSessionsChannel = supabaseClient
-                .channel('customer-session-stream-node')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'table_sessions',
-                    filter: `table_id=eq.${compositeTableKey}`
-                }, (payload) => {
-                    if (payload.new) {
-                        targetWindow.localLiveRunningBill = payload.new.live_bill || [];
-                        targetWindow.maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
-                        
-                        localStorage.setItem('bill_map_' + scopeID + '_' + activeTable, JSON.stringify(targetWindow.localLiveRunningBill));
-                        localStorage.setItem('discount_map_' + scopeID + '_' + activeTable, targetWindow.maximumClaimedDisc);
-                        
-                        if (typeof targetWindow.renderLiveCalculatedBill === 'function') targetWindow.renderLiveCalculatedBill();
-                        if (typeof targetWindow.updateFrontEndClassificationLabels === 'function') targetWindow.updateFrontEndClassificationLabels();
-                    }
-                })
-                .subscribe();
-
-            targetWindow.customerConfigChannel = supabaseClient
-                .channel('customer-config-stream-node')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'hotel_config',
-                    filter: `id=eq.${scopeID}`
-                }, (payload) => {
-                    if (payload.new && payload.new.tax_data) {
-                        targetWindow.taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                        localStorage.setItem('restaurantTaxSettings', JSON.stringify(targetWindow.taxConfig));
-                        if (typeof targetWindow.renderLiveCalculatedBill === 'function') targetWindow.renderLiveCalculatedBill();
-                    }
-                })
-                .subscribe();
-        }
-
-        // 5. upgradeCustomerSideRealtimePaymentListener
-        function upgradeCustomerSideRealtimePaymentListener(compositeTableKey) {
-            if (targetWindow.customerPaymentStateChannel) {
-                try { supabaseClient.removeChannel(targetWindow.customerPaymentStateChannel); } catch(e){}
-            }
-
-            targetWindow.customerPaymentStateChannel = supabaseClient
-                .channel('customer-payment-status-node')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'table_sessions',
-                    filter: `table_id=eq.${compositeTableKey}`
-                }, (payload) => {
-                    console.log("📡 Payment Watcher: Row modification detected!", payload);
-                    if (payload.new && payload.new.payment_status === 'SUCCESS_PAID') {
-                        let statusLoader = targetWindow.document.getElementById('customerPaymentLoadingStatusEngine');
-                        let payIntentBtn = targetWindow.document.getElementById('triggerUpiIntentMobileDirectBtn');
-                        
-                        if (statusLoader) {
-                            statusLoader.innerText = "🎉 PAYMENT VERIFIED BY BANK OVER REALM NODES!";
-                            statusLoader.style.background = "#eef9f5";
-                            statusLoader.style.color = "#2ecc71";
-                            statusLoader.style.border = "1px solid #2ecc71";
-                        }
-                        if (payIntentBtn) payIntentBtn.style.display = "none";
-
-                        if (typeof targetWindow.showOnScreenNotification === 'function') {
-                            targetWindow.showOnScreenNotification("💰 Payment verified by Bank! Thank you.");
-                        }
-                        
-                        setTimeout(() => {
-                            let modal1 = targetWindow.document.getElementById('mobilePaymentSimulatorModal');
-                            let modal2 = targetWindow.document.getElementById('invoiceBillModal');
-                            if (modal1) modal1.style.display = 'none';
-                            if (modal2) modal2.style.display = 'none';
-                            if (typeof targetWindow.renderLiveCalculatedBill === "function") targetWindow.renderLiveCalculatedBill();
-                        }, 3000);
-                    }
-                })
-                .subscribe();
-        }
-
-        // 6. simulateInboundBankWebhookSignal
-        async function simulateInboundBankWebhookSignal() {
-            let scopeID = targetWindow.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-            let selectElement = targetWindow.document.getElementById('adminBillingViewerTableSelect') || targetWindow.document.getElementById('liveBillingTableSelect');
-            if (!selectElement || !selectElement.value) {
-                alert("❌ Error: Please select a valid table to target the fake webhook signal!");
-                return;
-            }
-            
-            let targetTable = selectElement.value;
-            const compositeTableKey = `${scopeID}_${targetTable}`;
-            
-            if (typeof targetWindow.showOnScreenNotification === 'function') targetWindow.showOnScreenNotification("⏳ Spooling mock transaction packet link...", false);
-
-            try {
-                const { error } = await supabaseClient
-                    .from('table_sessions')
-                    .update({ payment_status: 'SUCCESS_PAID' })
-                    .eq('table_id', compositeTableKey);
+                    .upsert({
+                        table_id: compositeKey,
+                        discount_claimed: discountVal,
+                        payment_status: 'PENDING',
+                        waiter_bell: false
+                    }, { onConflict: 'table_id' });
 
                 if (error) {
-                    alert("❌ Sandbox Simulation Write Violation: " + error.message);
-                } else {
-                    if (typeof targetWindow.showOnScreenNotification === 'function') targetWindow.showOnScreenNotification("🚀 Bank Webhook Payload Injected! Status changed to SUCCESS_PAID.");
-                    console.log(`📡 Mock Webhook Node: Sent success callback for ${compositeTableKey}`);
+                    console.error("🚨 RestroDB Discount Error:", error.message);
+                    return { success: false, error };
                 }
-            } catch (err) { console.error(err); }
-        }
-
-        // 7. queueDebouncedBillRender
-        let realtimeRenderTimeout = null;
-        function queueDebouncedBillRender() {
-            clearTimeout(realtimeRenderTimeout);
-            realtimeRenderTimeout = setTimeout(async () => {
-                console.log("⚡ Auto-Refreshing Live Billing Dashboard & Table Grid...");
-                if (typeof targetWindow.auditSelectedTableBillInvoiceLive === 'function') {
-                    await targetWindow.auditSelectedTableBillInvoiceLive(); 
-                }
-                if (typeof targetWindow.renderAdminFloorEditor === 'function') {
-                    targetWindow.renderAdminFloorEditor();
-                }
-                if (typeof targetWindow.generateAdminTableGrid === "function") {
-                    targetWindow.generateAdminTableGrid();
-                }
-            }, 400);
-        }
-
-        // Export all functions to parent window / global scope
-        targetWindow.handleSupabaseError = handleSupabaseError;
-        targetWindow.syncLiveSessionToSupabase = syncLiveSessionToSupabase;
-        targetWindow.uploadMenuToCloud = uploadMenuToCloud;
-        targetWindow.initializeAdminRealtimeBillingTracker = initializeAdminRealtimeBillingTracker;
-        targetWindow.initializeCustomerRealtimeTracker = initializeCustomerRealtimeTracker;
-        targetWindow.upgradeCustomerSideRealtimePaymentListener = upgradeCustomerSideRealtimePaymentListener;
-        targetWindow.simulateInboundBankWebhookSignal = simulateInboundBankWebhookSignal;
-        targetWindow.queueDebouncedBillRender = queueDebouncedBillRender;
-
-        // Auto-boot trackers based on active window location
-        try {
-            if (targetWindow.location.pathname.includes('admin.html')) {
-                initializeAdminRealtimeBillingTracker();
-            } else if (targetWindow.location.pathname.includes('costumer.html')) {
-                initializeCustomerRealtimeTracker();
+                console.log(`✅ RestroDB: ${discountVal}% Discount synced to cloud for ${compositeKey}`);
+                return { success: true, data };
+            } catch (err) {
+                console.error("🚨 RestroDB Network Error:", err);
+                return { success: false, error: err };
             }
-        } catch(e) {
-            console.log("Safe scope location check passed.");
-        }
+        },
 
-        console.log("🔥 Supabase Background Service & Shared Realtime Functions injected into window.");
-    </script>
-</head>
-<body>
-    <p>Supabase Background Service Frame (Hidden)</p>
-</body>
-</html>
+        // 2. Full Table Session Sync (Bill + Discount + Bell)
+        async syncTableSession(hotelId, tableId, liveBill, discountPercent, bellStatus, payStatus) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('table_sessions')
+                    .upsert({
+                        table_id: compositeKey,
+                        live_bill: Array.isArray(liveBill) ? liveBill : [],
+                        discount_claimed: parseInt(discountPercent) || 0,
+                        waiter_bell: bellStatus || false,
+                        payment_status: payStatus || 'PENDING'
+                    }, { onConflict: 'table_id' });
+
+                if (error) throw error;
+                return { success: true, data };
+            } catch (err) {
+                console.error("🚨 RestroDB Session Sync Error:", err);
+                return { success: false, error: err };
+            }
+        },
+
+        // 3. Live Session Fetch
+        async getTableSession(hotelId, tableId) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('table_sessions')
+                    .select('*')
+                    .eq('table_id', compositeKey)
+                    .maybeSingle();
+
+                if (error) throw error;
+                return data;
+            } catch (err) {
+                console.error("🚨 RestroDB Fetch Error:", err);
+                return null;
+            }
+        }
+    };
+})();
