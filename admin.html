@@ -558,6 +558,10 @@
         
         <div class="game-box">
             <div class="game-nav">
+                <button id="navBRICK" onclick="switchGameMode('BRICK')">
+                    <span style="font-size: 26px;">🧱</span>
+                    <span>Bricks</span>
+                </button>
                 <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">
                     <span style="font-size: 26px;">🐦</span>
                     <span>Flappy</span>
@@ -822,6 +826,20 @@
         <div style="display: flex; align-items: center; gap: 4px;">
             <span style="color: #64748b;">Disc %:</span>
             <input type="number" id="cfgSnakeDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+
+        <!-- Brick Breaker -->
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Breaker Levels:</span>
+            <span style="font-size: 11px; color: #e67e22; font-weight: 700;">⭐ Rec: 3 Levels <span style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Lev:</span>
+            <input type="number" id="cfgBrickTar" placeholder="Lev" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="color: #64748b;">Disc %:</span>
+            <input type="number" id="cfgBrickDisc" placeholder="%" oninput="saveAdminConfig()" style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
         </div>
 
         <!-- Tower Bloxx -->
@@ -2567,7 +2585,22 @@ async function executeAdminManualBillWipeSettlement() {
 // ===================================================================
 // 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WITH BRICK CONTROLS INTEGRATED)
 // ===================================================================
+function openBrickBreakerGame() {
+    const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+    const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const maxDisc = localStorage.getItem('restroflow_max_discount') || 0;
+    window.location.href = `modules/game.html?mode=BRICK&table=${encodeURIComponent(tableId)}&hotel=${encodeURIComponent(hotelScope)}&discount=${encodeURIComponent(maxDisc)}`;
+}
+
+function initBrickBreakerGame() {
+    openBrickBreakerGame();
+}
+
 function switchGameMode(selectedTargetMode) {
+    if (selectedTargetMode === 'BRICK') {
+        openBrickBreakerGame();
+        return;
+    }
     if (selectedTargetMode === 'FLAPPY') {
         const tableId = localStorage.getItem('restroflow_active_table') || 'T1';
         const hotelScope = localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
@@ -2635,7 +2668,11 @@ function startSelectedGame() {
     let fluidBreadth = Math.min(window.innerWidth * 0.95, 500); 
     let fluidLength = Math.min(window.innerHeight * 0.50, 450);
 
-    if(activeGameMode === 'FLAPPY') { 
+    if(activeGameMode === 'BRICK') { 
+        openBrickBreakerGame();
+        return;
+    }
+    else if(activeGameMode === 'FLAPPY') { 
         const tableId = localStorage.getItem('restroflow_active_table') || 'T1';
         const hotelScope = localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
         const maxDisc = localStorage.getItem('restroflow_max_discount') || 0;
@@ -3483,6 +3520,8 @@ function populateAdminForms() {
     document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
     document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
     document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
+    if(document.getElementById('cfgBrickTar')) document.getElementById('cfgBrickTar').value = rules.brickTar || 3;
+    if(document.getElementById('cfgBrickDisc')) document.getElementById('cfgBrickDisc').value = rules.brickDisc || 0;
     document.getElementById('cfgTowerTar').value = rules.towerTar || 3;
     document.getElementById('cfgTowerDisc').value = rules.towerDisc || 0;
     
@@ -6324,6 +6363,8 @@ function saveAdminConfig() {
     rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
     rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
     rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+    if(document.getElementById('cfgBrickTar')) rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 3;
+    if(document.getElementById('cfgBrickDisc')) rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 0;
     rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
     rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 0;
     let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
