@@ -2,13 +2,13 @@
 <html lang="en">
 
 <head>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestroFlow - Arcade Game Engines</title>
     <link rel="icon" type="image/jpeg" href="../favicon.jpg">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="../core/config.js"></script>
+    <script src="../services/supabase.js"></script>
     <!-- ================================================================= -->
     <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
     <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
@@ -4049,6 +4049,36 @@
                 tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
             }
         };
+        async function triggerRewardCoupon(earnedPercent) {
+    const discountVal = parseInt(earnedPercent) || 0;
+    const urlParams = new URLSearchParams(window.location.search);
+    const hotelId = urlParams.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+    const tableId = urlParams.get('table') || localStorage.getItem('restroflow_active_table') || "T1";
+
+    // Local storage & UI updates
+    localStorage.setItem('discount_map_' + tableId, discountVal.toString());
+    localStorage.setItem('discount_map_' + hotelId + '_' + tableId, discountVal.toString());
+    localStorage.setItem('restroflow_max_discount', discountVal.toString());
+
+    const badge = document.getElementById('liveCoinBadge');
+    if (badge) {
+        badge.innerText = discountVal + "%";
+        badge.classList.remove('coin-pop');
+        void badge.offsetWidth;
+        badge.classList.add('coin-pop');
+    }
+
+    const displayBox = document.getElementById('couponDisplay');
+    if (displayBox) {
+        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${discountVal}% OFF</strong> applied to Table ${tableId}!`;
+        displayBox.style.display = "block";
+    }
+
+    // 🚀 CENTRAL DATABASE SERVICE CALL (Direct Cloud Save)
+    if (window.RestroDB && typeof window.RestroDB.saveDiscount === 'function') {
+        await window.RestroDB.saveDiscount(hotelId, tableId, discountVal);
+    }
+}
     </script>
 </body>
 
