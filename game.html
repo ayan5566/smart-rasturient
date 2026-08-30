@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="../core/config.js"></script>
-    <iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
     <!-- ================================================================= -->
     <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
     <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
@@ -375,7 +374,8 @@
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
-        onclick="document.getElementById('discountSheetModal').style.display='flex'">0%</div>
+        onclick="if(typeof refreshDiscountRulesUI === 'function') refreshDiscountRulesUI(); document.getElementById('discountSheetModal').style.display='flex'">
+        0%</div>
 
     <!-- 🧱 HTML ELEMENTS -->
     <div class="game-box fullscreen-arcade-active" id="arcadeGameWrapper">
@@ -383,24 +383,14 @@
         <div class="game-nav"
             style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
             <button id="navHOME"
-                onclick="window.location.href='costumer.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
+                onclick="window.location.href='../main%20flie.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
                 style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.6);"><span
                     style="font-size: 20px;">🏠</span> Home</button>
-            <button id="navBRICK"
-                onclick="window.location.href='game.html?mode=BRICK&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
-                    style="font-size: 20px;">🧱</span> Bricks</button>
-            <button id="navFLAPPY"
-                onclick="window.location.href='game.html?mode=FLAPPY&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
-                    style="font-size: 20px;">🐦</span> Flappy</button>
-            <button id="navSPACE"
-                onclick="window.location.href='game.html?mode=SPACE&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
-                    style="font-size: 20px;">🚀</span> Space</button>
-            <button id="navSNAKE"
-                onclick="window.location.href='game.html?mode=SNAKE&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
-                    style="font-size: 20px;">🐍</span> Snake</button>
-            <button id="navTOWER"
-                onclick="window.location.href='game.html?mode=TOWER&table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"><span
-                    style="font-size: 20px;">🏢</span> Tower</button>
+            <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
+            <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><span style="font-size: 20px;">🐦</span> Flappy</button>
+            <button id="navSPACE" onclick="switchGameMode('SPACE')"><span style="font-size: 20px;">🚀</span> Space</button>
+            <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><span style="font-size: 20px;">🐍</span> Snake</button>
+            <button id="navTOWER" onclick="switchGameMode('TOWER')"><span style="font-size: 20px;">🏢</span> Tower</button>
         </div>
         <div id="gameWindow" style="text-align: center; width: 100%;">
             <div id="gameScreenStatusMsg" style="color: white; font-weight: bold; margin-bottom: 10px;">Select a game
@@ -486,11 +476,11 @@
                 if (attemptIndex < possiblePaths.length) {
                     const nextSrc = possiblePaths[attemptIndex] + '?v=' + Date.now();
                     attemptIndex++;
-                    imgObj.onerror = function() {
+                    imgObj.onerror = function () {
                         console.warn('⚠️ Sprite load failed from:', nextSrc, 'trying next path...');
                         tryNext();
                     };
-                    imgObj.onload = function() {
+                    imgObj.onload = function () {
                         console.log('✅ Sprite successfully loaded:', nextSrc, `${imgObj.naturalWidth}x${imgObj.naturalHeight}`);
                     };
                     imgObj.src = nextSrc;
@@ -534,61 +524,153 @@
 
         // Dynamic State Pointers (Extracted from main file.html with URL query parameter support)
         const urlParamsGame = new URLSearchParams(window.location.search);
-        var hotelGlobalScopeID = urlParamsGame.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        window.hotelGlobalScopeID = hotelGlobalScopeID;
+
+        // =================================================================
+        // ⚙️ GLOBAL RULES & ARRAYS STATE (Absolute Zero-Conflict Version)
+        // =================================================================
+        window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
+
+        // 🛡️ FIX 1: Bina kisi var/let/const ke seedhe window par register karo
+        if (typeof window.hotelGlobalScopeID === 'undefined') {
+            window.hotelGlobalScopeID = urlParamsGame.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+        }
+
+        // 🔥 CRITICAL CHANGE: Global execution scope clash hatane ke liye hamesha window property use hogi
+        if (window.hotelGlobalScopeID !== "Default_HQ_Arena" && window.hotelGlobalScopeID.length < 5) {
+            window.hotelGlobalScopeID = "Default_HQ_Arena";
+            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+        }
+
+        // purane code se compatibility ke liye bina var/let ke direct assign karo (agar pehle let se defined hai toh crash nahi karega)
+        hotelGlobalScopeID = window.hotelGlobalScopeID;
+
+        // 🛡️ FIX 2: rules redeclaration shield
+        if (typeof window.rules === 'undefined') {
+            window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
+                flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12, brickTar: 3, brickDisc: 8,
+                towerTar: 3, towerDisc: 15 // Seeded baseline default rules
+            };
+        }
+        rules = window.rules;
+
+        // 🛡️ FIX 3: dynamicGlobalSaaSDefaults double-counting block
+        if (typeof window.dynamicGlobalSaaSDefaults === 'undefined') {
+            window.dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
+        }
+        dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
+
+        // 🛡️ FIX 4: Core fallback setups
+        if (typeof window.fallbackMenu === 'undefined') {
+            window.fallbackMenu = [
+                { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
+                { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+            ];
+        }
+        fallbackMenu = window.fallbackMenu;
+
+        if (typeof window.defaultFloors === 'undefined') {
+            window.defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+        }
+        defaultFloors = window.defaultFloors;
+
+        if (typeof window.defaultTaxes === 'undefined') {
+            window.defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
+        }
+        defaultTaxes = window.defaultTaxes;
+
+        // 🛡️ FIX 5: Main running states
+        if (typeof window.menuCategories === 'undefined') {
+            window.menuCategories = fallbackMenu;
+        }
+        menuCategories = window.menuCategories;
+
+        try {
+            let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
+            if (localMenuRawData) {
+                let parsedMenu = JSON.parse(localMenuRawData);
+                if (Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) {
+                    menuCategories = parsedMenu;
+                    window.menuCategories = parsedMenu;
+                }
+            }
+        } catch (e) {
+            console.log("Local menu parsing fallback active:", e);
+        }
+
+        if (typeof window.floorData === 'undefined') {
+            window.floorData = defaultFloors;
+        }
+        floorData = window.floorData;
+
+        try {
+            let localTablesRawData = localStorage.getItem('restaurantFloors');
+            if (localTablesRawData) {
+                let parsedFloors = JSON.parse(localTablesRawData);
+                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) {
+                    floorData = parsedFloors;
+                    window.floorData = parsedFloors;
+                }
+            }
+        } catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
+
+        if (typeof window.taxConfig === 'undefined') {
+            window.taxConfig = defaultTaxes;
+        }
+        taxConfig = window.taxConfig;
+
+        try {
+            let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
+            if (localTaxRawData) {
+                let parsedTax = JSON.parse(localTaxRawData);
+                if (parsedTax && parsedTax.cgstRate !== undefined) {
+                    taxConfig = parsedTax;
+                    window.taxConfig = parsedTax;
+                }
+            }
+        } catch (e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
+
+        if (typeof window.customPaymentQRData === 'undefined') {
+            window.customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
+        }
+        customPaymentQRData = window.customPaymentQRData;
+
+        // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         var clientCurrentActiveTable = urlParamsGame.get('table') || window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || "T1";
         window.clientCurrentActiveTable = clientCurrentActiveTable;
-        var maximumClaimedDisc = window.maximumClaimedDisc || parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
+        var localLiveRunningBill = window.localLiveRunningBill || [];
+        window.localLiveRunningBill = localLiveRunningBill;
+        var maximumClaimedDisc = parseInt(urlParamsGame.get('discount')) ||
+            parseInt(localStorage.getItem('restroflow_max_discount')) ||
+            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena') + '_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) ||
+            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) || 0;
         window.maximumClaimedDisc = maximumClaimedDisc;
         var globalRunningInvoiceSumTotal = window.globalRunningInvoiceSumTotal || 0;
         window.globalRunningInvoiceSumTotal = globalRunningInvoiceSumTotal;
 
         // Simulate invoice calculation logic from main file.html for discount context
         function calculateUnifiedMasterInvoice(subtotal) {
-            let discountAmount = (subtotal * maximumClaimedDisc) / 100;
+            let discPct = window.maximumClaimedDisc || parseInt(localStorage.getItem('restroflow_max_discount')) || 0;
+            window.maximumClaimedDisc = discPct;
+            let discountAmount = (subtotal * discPct) / 100;
             globalRunningInvoiceSumTotal = Math.max(0, subtotal - discountAmount);
+            window.globalRunningInvoiceSumTotal = globalRunningInvoiceSumTotal;
 
             const discNode = document.getElementById('billDiscountApplied');
             const badgeNode = document.getElementById('liveCoinBadge');
 
-            if (discNode) discNode.innerText = `${maximumClaimedDisc}% (-₹${discountAmount.toFixed(0)})`;
-            if (badgeNode) badgeNode.innerText = `${maximumClaimedDisc}%`;
+            if (discNode) discNode.innerText = `${discPct}% (-₹${discountAmount.toFixed(0)})`;
+            if (badgeNode) badgeNode.innerText = `${discPct}%`;
         }
 
         // =================================================================
         // ⚙️ UNIFIED INITIALIZATION MATRIX CONTEXT: TOP-LEVEL SCOPE (FIXED)
         // =================================================================
-        var activeGameMode = 'FLAPPY'; // Math hatne ke baad FLAPPY default mode hai
+        var activeGameMode = (urlParamsGame.get('mode') || 'FLAPPY').toUpperCase();
         var realtimeRenderTimeout = null;
         var loopTimerInstance = null;
         var customerActiveCategoryName = "";
         var configSaveTimeout = null;
         var isAuthPortalInSignUpMode = false;
-
-        window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
-
-        // LEVEL 1: hotelGlobalScopeID initialization
-
-        if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
-            hotelGlobalScopeID = "Default_HQ_Arena";
-            window.hotelGlobalScopeID = "Default_HQ_Arena";
-            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
-        }
-
-        // 🛡️ LEVEL 2: RULES REDECLARATION SHIELD (🧱 BRICK BREAKER ADDED HERE!)
-        if (typeof window.rules === 'undefined') {
-            window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
-                flappyTar: 5,
-                flappyDisc: 10,
-                spaceTar: 3,
-                spaceDisc: 15,
-                snakeTar: 10,
-                snakeDisc: 12,
-                brickTar: 15,    // ⚡ Brick breaker target blocks
-                brickDisc: 8     // ⚡ Brick breaker discount %
-            };
-        }
-        var rules = window.rules;
 
         // 🧱 BRICK BREAKER PHYSICS MECHANICS POINTERS (ADDED HERE!)
         var brickCanvasElement = document.getElementById('brickCanvas');
@@ -596,53 +678,8 @@
         var brickPaddleDir = 0, brickScoreCounter = 0;
         var bBall = {}, bPaddle = {}, activeBricksArray = [];
 
-        // Baseline SaaS packages defaults
-        var dynamicGlobalSaaSDefaults = {
-            monthly: 499,
-            yearly: 4999
-        };
-
-        // ... Iske neeche aapka baki ka code (fallbackMenu, defaultFloors, etc.) jaisa hai waisa hi rahega
-        var fallbackMenu = [
-            { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
-            { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
-        ];
-        var defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
-        var defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
-
-        // 🛡️ LEVEL 3: Core Configurations arrays data streams retrieval bindings
-        var menuCategories = fallbackMenu;
-        try {
-            // Ab hotelGlobalScopeID upar defined hai, toh bina reference error ke local storage data perfectly inject hoga
-            let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
-            if (localMenuRawData) {
-                let parsedMenu = JSON.parse(localMenuRawData);
-                if (Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) menuCategories = parsedMenu;
-            }
-        } catch (e) { console.log("Local menu parsing fallback active:", e); }
-
-        var floorData = defaultFloors;
-        try {
-            let localTablesRawData = localStorage.getItem('restaurantFloors');
-            if (localTablesRawData) {
-                let parsedFloors = JSON.parse(localTablesRawData);
-                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
-            }
-        } catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
-
-        var taxConfig = defaultTaxes;
-        try {
-            let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
-            if (localTaxRawData) {
-                let parsedTax = JSON.parse(localTaxRawData);
-                if (parsedTax && parsedTax.cgstRate !== undefined) taxConfig = parsedTax;
-            }
-        } catch (e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
-
-        var customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
-
         var cosmicBackgroundStars = [];
-        var totalBrickPacksDataMatrix = [];
+        var totalBrickPacksDataMatrix = window.totalBrickPacksDataMatrix || {};
         var isBrickKeyboardBound = false;
         var brickCameraShake = 0;
         var brickParticlesArray = [];
@@ -741,19 +778,19 @@
         // 🔄 UPGRADED: MULTI-GAME SWITCH ROUTER (WITH BRICK CONTROLS INTEGRATED)
         // ===================================================================
         function switchGameMode(selectedTargetMode) {
-            activeGameMode = selectedTargetMode; 
-            
+            activeGameMode = selectedTargetMode;
+
             // 🧹 STAGE SFAI: Hard kill any active background frames animation tickers instantly
             if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance); 
+                clearInterval(loopTimerInstance);
                 cancelAnimationFrame(loopTimerInstance);
             }
-            
+
             // Sabhi canvas aur elements ko shuruat mein hide karo
             if (document.getElementById('flappyCanvas')) document.getElementById('flappyCanvas').style.display = 'none';
             if (document.getElementById('spaceCanvas')) document.getElementById('spaceCanvas').style.display = 'none';
             if (document.getElementById('snakeCanvas')) document.getElementById('snakeCanvas').style.display = 'none';
-            if (document.getElementById('brickCanvas')) document.getElementById('brickCanvas').style.display = 'none'; 
+            if (document.getElementById('brickCanvas')) document.getElementById('brickCanvas').style.display = 'none';
             if (document.getElementById('towerCanvas')) document.getElementById('towerCanvas').style.display = 'none';
             if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = 'none';
 
@@ -762,18 +799,18 @@
             if (document.getElementById('nav' + selectedTargetMode)) {
                 document.getElementById('nav' + selectedTargetMode).classList.add('active');
             }
-            
+
             // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain
             if (document.getElementById('spaceControls')) document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
             if (document.getElementById('snakeControls')) document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
-            if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (selectedTargetMode === 'BRICK') ? 'flex' : 'none'; 
-            
+            if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (selectedTargetMode === 'BRICK') ? 'flex' : 'none';
+
             // Baki games ke liye engine direct launch ready rahega
             if (document.getElementById('startBtn')) {
                 document.getElementById('startBtn').style.display = 'block';
                 document.getElementById('startBtn').innerText = "Launch " + selectedTargetMode + " Run Engine";
             }
-            
+
             // Stage update code if already active in fullscreen modal layout
             let gameBox = document.querySelector('.game-box');
             if (gameBox && gameBox.classList.contains('fullscreen-arcade-active')) {
@@ -786,15 +823,15 @@
         // ===================================================================
         function startSelectedGame() {
             if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance); 
+                clearInterval(loopTimerInstance);
                 cancelAnimationFrame(loopTimerInstance);
                 loopTimerInstance = null;
             }
-            
+
             if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = "none";
             if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = "none";
-            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none"; 
-            
+            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none";
+
             // Sabhi canvas ko completely reset karo taaki overlapping 100% khatam ho jaye
             const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
             allGameCanvasIds.forEach(id => {
@@ -814,58 +851,58 @@
             }
 
             // 💧 🔥 THE LIQUID COMPROLLER: Real screen space ke mutabik length aur breadth calculate karo
-            let fluidBreadth = Math.min(window.innerWidth * 0.95, 500); 
+            let fluidBreadth = Math.min(window.innerWidth * 0.95, 500);
             let fluidLength = Math.min(window.innerHeight * 0.50, 450);
 
-            if (activeGameMode === 'FLAPPY') { 
+            if (activeGameMode === 'FLAPPY') {
                 const fCanvas = document.getElementById('flappyCanvas');
                 if (fCanvas) {
                     fCanvas.width = fluidBreadth;
                     fCanvas.height = fluidLength;
-                    fCanvas.style.display = 'block'; 
+                    fCanvas.style.display = 'block';
                 }
-                if (typeof initFlappyBirdGame === 'function') initFlappyBirdGame(); 
+                if (typeof initFlappyBirdGame === 'function') initFlappyBirdGame();
             }
-            else if (activeGameMode === 'BRICK') { 
+            else if (activeGameMode === 'BRICK') {
                 const bCanvas = document.getElementById('brickCanvas');
                 if (bCanvas) {
                     bCanvas.width = fluidBreadth;
                     bCanvas.height = fluidLength;
-                    bCanvas.style.display = 'block'; 
+                    bCanvas.style.display = 'block';
                     brickCanvasElement = bCanvas;
                     brCtx = bCanvas.getContext('2d');
                 }
-                if (typeof initBrickBreakerGame === 'function') initBrickBreakerGame(); 
+                if (typeof initBrickBreakerGame === 'function') initBrickBreakerGame();
             }
-            else if (activeGameMode === 'SPACE') { 
+            else if (activeGameMode === 'SPACE') {
                 const sCanvas = document.getElementById('spaceCanvas');
                 if (sCanvas) {
                     sCanvas.width = fluidBreadth;
                     sCanvas.height = fluidLength;
-                    sCanvas.style.display = 'block'; 
+                    sCanvas.style.display = 'block';
                 }
-                if (typeof initSpaceShooterGame === 'function') initSpaceShooterGame(); 
+                if (typeof initSpaceShooterGame === 'function') initSpaceShooterGame();
             }
-            else if (activeGameMode === 'SNAKE') { 
+            else if (activeGameMode === 'SNAKE') {
                 let snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
                 const sCanvas = document.getElementById('snakeCanvas');
                 if (sCanvas) {
                     sCanvas.width = snakeSquareSize;
                     sCanvas.height = snakeSquareSize;
-                    sCanvas.style.display = 'block'; 
+                    sCanvas.style.display = 'block';
                 }
-                if (typeof initSnakeGameLoop === 'function') initSnakeGameLoop(); 
+                if (typeof initSnakeGameLoop === 'function') initSnakeGameLoop();
             }
-            else if (activeGameMode === 'TOWER') { 
+            else if (activeGameMode === 'TOWER') {
                 const tCanvas = document.getElementById('towerCanvas');
                 if (tCanvas) {
-                    tCanvas.width = fluidBreadth; 
+                    tCanvas.width = fluidBreadth;
                     tCanvas.height = fluidLength;
-                    tCanvas.style.display = 'block'; 
+                    tCanvas.style.display = 'block';
                     towerCanvasElement = tCanvas;
                     twCtx = tCanvas.getContext('2d');
                 }
-                if (typeof initTowerBloxxGame === 'function') initTowerBloxxGame(); 
+                if (typeof initTowerBloxxGame === 'function') initTowerBloxxGame();
             }
         }
 
@@ -874,11 +911,11 @@
         // ===================================================================
         function exitGameEngine() {
             if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance); 
+                clearInterval(loopTimerInstance);
                 cancelAnimationFrame(loopTimerInstance);
                 loopTimerInstance = null;
             }
-            
+
             let gameBox = document.querySelector('.game-box');
             if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
             if (document.getElementById('exitGameBtn')) document.getElementById('exitGameBtn').style.display = "none";
@@ -887,7 +924,7 @@
                 document.getElementById('startBtn').innerText = "Launch Engine Run";
             }
             if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none";
-            
+
             const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
             allGameCanvasIds.forEach(id => {
                 const targetElement = document.getElementById(id);
@@ -897,7 +934,7 @@
             // Redirect back to customer home panel with table & hotel parameters preserved
             const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
             const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            window.location.href = `costumer.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
+            window.location.href = `../main%20flie.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
         }
 
         // Attach core controller functions explicitly to global window object
@@ -906,30 +943,110 @@
         window.exitGameEngine = exitGameEngine;
         window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
 
+        // ===================================================================
+        // 🔒 ANTI-409 SHIELD: ATOMIC SESSIONS UPSERT ENGINE (CONFLICT PROOF)
+        // ===================================================================
+        async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
+            try {
+                const scopeID = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+                const compositeTableKey = `${scopeID}_${tableId}`;
+
+                // Safety Fallback: Ensure empty arrays are forced encoded as clean parameters
+                const cleanBillPayload = Array.isArray(bill) ? bill : [];
+
+                const sessionPayload = {
+                    table_id: compositeTableKey,
+                    live_bill: cleanBillPayload, // Overwrites old data seamlessly
+                    discount_claimed: parseInt(discount) || 0,
+                    waiter_bell: bellStatus || false,
+                    payment_status: payStatus || 'PENDING'
+                };
+
+                let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+                if (!client) {
+                    const iframe = document.getElementById('supabaseServiceFrame');
+                    if (iframe && iframe.contentWindow && iframe.contentWindow.supabaseClient) {
+                        client = iframe.contentWindow.supabaseClient;
+                    }
+                }
+
+                if (client) {
+                    // 🔥 ATOMIC HANDSHAKE: Automatic update if exists, else insert in 1 single statement
+                    const { error: upsertError } = await client
+                        .from('table_sessions')
+                        .upsert(sessionPayload, { onConflict: 'table_id' }); // Binds tightly to your primary key
+
+                    if (upsertError) {
+                        console.error("🚨 Supabase Sync 409 Shield Interrupted:", upsertError.message);
+                        if (typeof showOnScreenNotification === 'function') {
+                            showOnScreenNotification("⚠️ Database conflict captured!", true);
+                        }
+                    } else {
+                        console.log(`🚀 Cloud Sync: Composite Table ${compositeTableKey} securely synchronized.`);
+                    }
+                } else {
+                    console.warn("⚠️ Supabase Client not yet ready for session sync.");
+                }
+            } catch (err) {
+                console.error("System Error during table session sync:", err);
+            }
+        }
+        window.syncLiveSessionToSupabase = syncLiveSessionToSupabase;
+
+        function syncDiscountToCloud(tableId, discountPercent) {
+            try {
+                const liveBill = window.localLiveRunningBill || window.clientActiveBillArray || [];
+                const bell = window.isWaiterBellActive || false;
+                const payStatus = window.currentTablePaymentStatus || 'PENDING';
+                syncLiveSessionToSupabase(tableId, liveBill, discountPercent, bell, payStatus);
+            } catch (err) {
+                console.warn("Cloud sync warning for game discount:", err);
+            }
+        }
+        window.syncDiscountToCloud = syncDiscountToCloud;
+
         function triggerRewardCoupon(arg1, arg2) {
             let earnedPercent = (arg2 !== undefined) ? parseInt(arg2) : parseInt(arg1);
             if (isNaN(earnedPercent)) earnedPercent = 0;
 
-            let clientCurrentActiveTable = window.clientCurrentActiveTable || "T1";
-            let hotelGlobalScopeID = window.hotelGlobalScopeID || "Default_HQ_Arena";
+            let tableId = window.clientCurrentActiveTable || (typeof clientCurrentActiveTable !== 'undefined' ? clientCurrentActiveTable : "T1");
+            let hotelId = window.hotelGlobalScopeID || (typeof hotelGlobalScopeID !== 'undefined' ? hotelGlobalScopeID : "Default_HQ_Arena");
 
-            localStorage.setItem('discount_map_' + clientCurrentActiveTable, earnedPercent);
-            localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent);
+            // Coupon applied hone ke baad cloud par discount sync karein
+            let liveBillPayload = window.localLiveRunningBill || window.clientActiveBillArray || [];
 
-            let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
+            // Direct function execution
+            syncLiveSessionToSupabase(tableId, liveBillPayload, earnedPercent, false, 'PENDING');
+
+            // Cross-Frame PostMessage backup trigger to supabase.html service
+            const iframe = document.getElementById('supabaseServiceFrame');
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage({
+                    type: 'CLAIM_DISCOUNT',
+                    action: 'SYNC_LIVE_SESSION',
+                    tableId: tableId,
+                    bill: liveBillPayload,
+                    discount: earnedPercent,
+                    bellStatus: false,
+                    payStatus: 'PENDING'
+                }, '*');
+            }
+
+            // 🔥 🔥 THE FIX: Dono dynamic storage keys ko ek sath update karo taaki pipeline sync loose na ho
+            localStorage.setItem('discount_map_' + tableId, earnedPercent.toString());
+            localStorage.setItem('discount_map_' + hotelId + '_' + tableId, earnedPercent.toString());
+
+            let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + hotelId + '_' + tableId)) || 0;
             if (earnedPercent > activeTableDiscount) {
                 activeTableDiscount = earnedPercent;
             }
-
-            if (typeof maximumClaimedDisc !== 'undefined') {
-                maximumClaimedDisc = Math.max(maximumClaimedDisc, activeTableDiscount, earnedPercent);
-            } else {
-                window.maximumClaimedDisc = Math.max(activeTableDiscount, earnedPercent);
-            }
+            maximumClaimedDisc = Math.max(window.maximumClaimedDisc || 0, activeTableDiscount, earnedPercent);
+            window.maximumClaimedDisc = maximumClaimedDisc;
+            localStorage.setItem('restroflow_max_discount', maximumClaimedDisc.toString());
 
             let badge = document.getElementById('liveCoinBadge');
             if (badge) {
-                badge.innerText = (typeof maximumClaimedDisc !== 'undefined' ? maximumClaimedDisc : activeTableDiscount) + "%";
+                badge.innerText = maximumClaimedDisc + "%";
                 badge.classList.remove('coin-pop');
                 void badge.offsetWidth;
                 badge.classList.add('coin-pop');
@@ -937,11 +1054,41 @@
 
             let displayBox = document.getElementById('couponDisplay');
             if (displayBox) {
-                displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${(typeof maximumClaimedDisc !== 'undefined' ? maximumClaimedDisc : activeTableDiscount)}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
+                displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${tableId} Invoice!`;
                 displayBox.style.display = "block";
+            }
+
+            // 🔥 🔥 THE FIX: Bina refresh kiye modal screen data ko turant fresh calculation loops par bhejo
+            let invoiceModal = document.getElementById('invoiceBillModal');
+            if (invoiceModal && invoiceModal.style.display === 'flex') {
+                if (typeof renderLiveCalculatedBill === 'function') {
+                    renderLiveCalculatedBill();
+                }
+            }
+
+            if (typeof updateFrontEndClassificationLabels === 'function') {
+                updateFrontEndClassificationLabels();
+            }
+
+            if (typeof calculateUnifiedMasterInvoice === 'function') {
+                calculateUnifiedMasterInvoice(window.globalSubtotalSum || 0);
             }
         }
         window.triggerRewardCoupon = triggerRewardCoupon;
+
+        function refreshDiscountRulesUI() {
+            const listDisplay = document.getElementById('rulesListDisplay');
+            if (!listDisplay || !window.rules) return;
+            const r = window.rules;
+            listDisplay.innerHTML = `
+                <li style="color: black;">🧱 Brick Breaker: Clear ${r.brickTar || 3} Level(s) = ${r.brickDisc || 8}% OFF</li>
+                <li style="color: black;">🐦 Flappy Bird: Score ${r.flappyTar || 5} Point(s) = ${r.flappyDisc || 10}% OFF</li>
+                <li style="color: black;">🚀 Space Shooter: Level ${r.spaceTar || 3} Clear = ${r.spaceDisc || 15}% OFF</li>
+                <li style="color: black;">🐍 Snake: Score ${r.snakeTar || 10} Apple(s) = ${r.snakeDisc || 12}% OFF</li>
+                <li style="color: black;">🏢 Tower Bloxx: Stack ${r.towerTar || 3} Floor(s) = ${r.towerDisc || 15}% OFF</li>
+            `;
+        }
+        window.refreshDiscountRulesUI = refreshDiscountRulesUI;
 
         function showOnScreenNotification(message) {
             const note = document.createElement('div');
@@ -985,13 +1132,13 @@
                 element.addEventListener('touchstart', handleStart, { passive: false });
                 element.addEventListener('touchend', handleEnd, { passive: false });
                 element.addEventListener('touchcancel', handleEnd, { passive: false });
-                
+
                 element.addEventListener('mousedown', (e) => { brickPaddleDir = dirValue; });
-                element.addEventListener('mouseup', (e) => { 
-                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+                element.addEventListener('mouseup', (e) => {
+                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0;
                 });
-                element.addEventListener('mouseleave', (e) => { 
-                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0; 
+                element.addEventListener('mouseleave', (e) => {
+                    if ((dirValue < 0 && brickPaddleDir < 0) || (dirValue > 0 && brickPaddleDir > 0)) brickPaddleDir = 0;
                 });
             };
 
@@ -1051,497 +1198,14 @@
         }
 
         // -------------------------------------------------------------------
-        // 🧱 BRICK BREAKER ENGINE & VFX
+        // 🧱 BRICK BREAKER ENGINE & VFX (SEE COMPLETE BLUEPRINT BELOW)
         // -------------------------------------------------------------------
 
-        function applyBrickCameraShake(intensity) { brickCameraShake = intensity; }
-        function createBrickExplosion(x, y, color) {
-            for (let i = 0; i < 8; i++) {
-                brickParticlesArray.push({ x, y, dx: (Math.random() - 0.5) * 6, dy: (Math.random() - 0.5) * 6, life: 20, color });
-            }
-        }
-
-        function initBrickBreakerGame() {
-            brickCanvasElement = document.getElementById('brickCanvas');
-            if (!brickCanvasElement) return;
-            brCtx = brickCanvasElement.getContext('2d');
-
-            bBall = { x: brickCanvasElement.width / 2, y: brickCanvasElement.height - 30, dx: 3, dy: -3, radius: 8 };
-            bPaddle = { x: (brickCanvasElement.width - 75) / 2, width: 75, height: 10 };
-            brickScoreCounter = 0;
-
-            frameUpdateBrickBreaker();
-        }
-
-        function frameUpdateBrickBreaker() {
-            if (!brCtx || !brickCanvasElement) return;
-            brCtx.clearRect(0, 0, brickCanvasElement.width, brickCanvasElement.height);
-
-            // Draw Ball
-            if (sprites.brick_ball.complete && sprites.brick_ball.naturalWidth > 0) {
-                brCtx.save();
-                brCtx.globalCompositeOperation = 'screen';
-                brCtx.drawImage(sprites.brick_ball, bBall.x - bBall.radius * 2, bBall.y - bBall.radius * 2, bBall.radius * 4, bBall.radius * 4);
-                brCtx.restore();
-            } else {
-                brCtx.beginPath();
-                brCtx.arc(bBall.x, bBall.y, bBall.radius, 0, Math.PI * 2);
-                brCtx.fillStyle = "#f1c40f";
-                brCtx.fill();
-                brCtx.closePath();
-            }
-
-            // Draw Paddle
-            brCtx.beginPath();
-            brCtx.rect(bPaddle.x, brickCanvasElement.height - bPaddle.height - 5, bPaddle.width, bPaddle.height);
-            brCtx.fillStyle = "#2ecc71";
-            brCtx.fill();
-            brCtx.closePath();
-
-            // Ball Collision physics
-            if (bBall.x + bBall.dx > brickCanvasElement.width - bBall.radius || bBall.x + bBall.dx < bBall.radius) bBall.dx = -bBall.dx;
-            if (bBall.y + bBall.dy < bBall.radius) bBall.dy = -bBall.dy;
-            else if (bBall.y + bBall.dy > brickCanvasElement.height - bBall.radius - bPaddle.height - 5) {
-                if (bBall.x > bPaddle.x && bBall.x < bPaddle.x + bPaddle.width) {
-                    bBall.dy = -bBall.dy;
-                    brickScoreCounter += 10;
-                } else if (bBall.y + bBall.dy > brickCanvasElement.height - bBall.radius) {
-                    finalizeFailedRun('BRICK', brickScoreCounter);
-                    return;
-                }
-            }
-
-            bBall.x += bBall.dx;
-            bBall.y += bBall.dy;
-
-            loopTimerInstance = requestAnimationFrame(frameUpdateBrickBreaker);
-        }
-
         // -------------------------------------------------------------------
-        // 🚀 SPACE SHOOTER AAA ENGINE & VFX
+        // 🚀 SPACE SHOOTER AAA ENGINE & VFX (SEE COMPLETE BLUEPRINT BELOW)
         // -------------------------------------------------------------------
 
-        spaceCameraShake = 0;
-        spaceParticlesArray = [];
-        spaceNebulaClouds = [];
-        spaceDebrisArray = [];
-        spaceBullets = [];
-        enemyLasers = [];
-        powerUps = [];
-        spaceFrameTracker = 0;
-        spaceTransitionCount = 0;
-        sShieldTimer = 0;
-        sMultiTimer = 0;
-        currentLevelState = 1;
-        spaceMoveDir = 0;
 
-        for (let i = 0; i < 4; i++) {
-            spaceNebulaClouds.push({
-                x: Math.random() * 320, y: Math.random() * 400,
-                r: 80 + Math.random() * 60,
-                color: ['rgba(41, 128, 185, 0.05)', 'rgba(142, 68, 173, 0.05)', 'rgba(39, 174, 96, 0.03)'][Math.floor(Math.random() * 3)],
-                speed: 0.1 + Math.random() * 0.2
-            });
-        }
-        for (let i = 0; i < 5; i++) {
-            spaceDebrisArray.push({
-                x: Math.random() * 320, y: Math.random() * 400,
-                size: Math.random() * 2 + 1, speed: 0.5 + Math.random() * 1.5,
-                rot: Math.random() * Math.PI, rotSpeed: (Math.random() - 0.5) * 0.1
-            });
-        }
-
-        // ===================================================================
-        // 🚀 SPACE SHOOTER: LEVEL SETUP & INITIALIZATION (GLOBAL SCOPE FIX)
-        // ===================================================================
-        function setupLevelParameters() {
-            let isBoss = (currentLevelState % 5 === 0); // Boss every 5 stages
-            let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
-
-            // Bosses are now massive; minions have varied sizes/speeds based on stage
-            let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
-            let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
-            let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
-
-            alienInvaderObj = {
-                x: 160 - (shipW / 2), y: isBoss ? -100 : 40, // Boss drops in from top 
-                w: shipW, h: shipH,
-                health: bHealth, maxHealth: bHealth,
-                dx: shipSpeed,
-                isBoss: isBoss
-            };
-
-            spaceBullets = []; enemyLasers = []; powerUps = [];
-            spaceParticlesArray = []; // Clear particles on new stage
-            sShieldTimer = 0; sMultiTimer = 0;
-        }
-
-        function applySpaceCameraShake(intensity) {
-            spaceCameraShake = intensity;
-        }
-
-        function createSpaceExplosion(x, y, color = "#f39c12", count = 10, isBoss = false) {
-            let pCount = isBoss ? count * 4 : count;
-            for (let i = 0; i < pCount; i++) {
-                let angle = Math.random() * Math.PI * 2;
-                let speed = (Math.random() * (isBoss ? 6 : 3)) + 1;
-                spaceParticlesArray.push({
-                    x: x, y: y,
-                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                    life: 1.0, decay: Math.random() * 0.04 + 0.02,
-                    color: color, size: Math.random() * 3 + 1
-                });
-            }
-        }
-
-        function initSpaceShooterGame() {
-            clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
-            currentLevelState = 1;
-            spaceMoveDir = 0;
-            spaceFrameTracker = 0;
-            spaceTransitionCount = 0;
-
-            // Hard purge caching arrays to optimize mobile processor RAM load
-            spaceBullets.length = 0;
-            enemyLasers.length = 0;
-            powerUps.length = 0;
-            spaceBullets = [];
-            enemyLasers = [];
-            powerUps = [];
-
-            spCanvasElement = document.getElementById('spaceCanvas');
-            if (!spCanvasElement) return;
-            spCtx = spCanvasElement.getContext('2d');
-            const sCanvas = spCanvasElement;
-
-            pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 };
-
-            setupLevelParameters(); // Call the globally available function
-
-            // Mapped precisely to 20ms cycles for constant frame rate deliveries
-            loopTimerInstance = setInterval(frameUpdateSpace, 20);
-        }
-
-        function frameUpdateSpace() {
-            if (!spCanvasElement || !spCtx) return;
-
-            let camOffsetX = 0, camOffsetY = 0;
-            if (spaceCameraShake > 0) {
-                camOffsetX = (Math.random() - 0.5) * spaceCameraShake;
-                camOffsetY = (Math.random() - 0.5) * spaceCameraShake;
-                spaceCameraShake *= 0.85;
-                if (spaceCameraShake < 0.5) spaceCameraShake = 0;
-            }
-
-            spCtx.save();
-            spCtx.translate(camOffsetX, camOffsetY);
-
-            spCtx.fillStyle = "#070913";
-            spCtx.fillRect(0, 0, spCanvasElement.width, spCanvasElement.height);
-
-            spaceNebulaClouds.forEach(neb => {
-                neb.y += neb.speed;
-                if (neb.y - neb.r > spCanvasElement.height) neb.y = -neb.r;
-                spCtx.beginPath();
-                spCtx.arc(neb.x, neb.y, neb.r, 0, Math.PI * 2);
-                spCtx.fillStyle = neb.color;
-                spCtx.fill();
-            });
-
-            if (Array.isArray(cosmicBackgroundStars)) {
-                cosmicBackgroundStars.forEach(star => {
-                    star.y += 0.5 + (star.size * 0.5);
-                    if (star.y > spCanvasElement.height) { star.y = 0; star.x = Math.random() * spCanvasElement.width; }
-                    spCtx.fillStyle = `rgba(255,255,255, ${star.alpha})`;
-                    spCtx.beginPath();
-                    spCtx.arc(star.x, star.y, star.size / 2, 0, Math.PI * 2);
-                    spCtx.fill();
-                });
-            }
-
-            spaceDebrisArray.forEach(deb => {
-                deb.y += deb.speed;
-                deb.rot += deb.rotSpeed;
-                if (deb.y > spCanvasElement.height + 10) { deb.y = -10; deb.x = Math.random() * spCanvasElement.width; }
-                spCtx.save();
-                spCtx.translate(deb.x, deb.y);
-                spCtx.rotate(deb.rot);
-                spCtx.fillStyle = "rgba(149, 165, 166, 0.4)";
-                spCtx.fillRect(-deb.size / 2, -deb.size / 2, deb.size, deb.size);
-                spCtx.restore();
-            });
-
-            if (spaceTransitionCount > 0) {
-                spaceTransitionCount--;
-                spCtx.fillStyle = `rgba(241, 196, 15, ${Math.min(1, spaceTransitionCount / 30)})`;
-                spCtx.font = "900 24px Segoe UI";
-                spCtx.textAlign = "center";
-                spCtx.shadowColor = "#f39c12"; spCtx.shadowBlur = 15;
-                spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, spCanvasElement.width / 2, spCanvasElement.height / 2);
-                spCtx.shadowBlur = 0;
-                spCtx.font = "italic 12px Segoe UI";
-                spCtx.fillStyle = "rgba(255,255,255,0.7)";
-                spCtx.fillText("Calibrating hyperdrive vectors...", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30);
-                spCtx.textAlign = "start";
-                if (spaceTransitionCount === 0) setupLevelParameters();
-                spCtx.restore();
-                return;
-            }
-
-            if (sShieldTimer > 0) sShieldTimer--;
-            if (sMultiTimer > 0) sMultiTimer--;
-            spaceFrameTracker++;
-
-            pShipObj.x += spaceMoveDir;
-            if (pShipObj.x < 0) pShipObj.x = 0;
-            if (pShipObj.x > spCanvasElement.width - pShipObj.w) pShipObj.x = spCanvasElement.width - pShipObj.w;
-
-            spCtx.save();
-            spCtx.translate(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2);
-
-            let flameLen = 12 + Math.random() * 8 + (Math.abs(spaceMoveDir) * 1.5);
-            spCtx.fillStyle = sMultiTimer > 0 ? "#e74c3c" : "#00d2d3";
-            spCtx.shadowColor = spCtx.fillStyle;
-            spCtx.shadowBlur = 15;
-            spCtx.beginPath();
-            spCtx.moveTo(-6, 14);
-            spCtx.lineTo(6, 14);
-            spCtx.lineTo(0, 14 + flameLen);
-            spCtx.fill();
-            spCtx.shadowBlur = 0;
-
-            if (sprites.space_ship.complete && sprites.space_ship.naturalWidth > 0) {
-                spCtx.drawImage(sprites.space_ship, -26, -26, 52, 52);
-            } else {
-                spCtx.fillStyle = "#ecf0f1";
-                spCtx.beginPath();
-                spCtx.moveTo(0, -18);
-                spCtx.lineTo(18, 14);
-                spCtx.lineTo(6, 14);
-                spCtx.lineTo(-6, 14);
-                spCtx.lineTo(-18, 14);
-                spCtx.closePath();
-                spCtx.fill();
-
-                spCtx.fillStyle = "#e74c3c";
-                spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(14, 10); spCtx.lineTo(6, 10); spCtx.fill();
-                spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(-14, 10); spCtx.lineTo(-6, 10); spCtx.fill();
-
-                spCtx.fillStyle = "#3498db";
-                spCtx.beginPath();
-                spCtx.ellipse(0, -2, 4, 9, 0, 0, Math.PI * 2);
-                spCtx.fill();
-            }
-
-            if (sShieldTimer > 0) {
-                spCtx.strokeStyle = `rgba(0, 188, 212, ${0.5 + Math.sin(spaceFrameTracker * 0.2) * 0.3})`;
-                spCtx.lineWidth = 2.5;
-                spCtx.beginPath();
-                spCtx.arc(0, 0, 26 + Math.random() * 2, 0, Math.PI * 2);
-                spCtx.stroke();
-            }
-            spCtx.restore();
-
-            if (spaceFrameTracker % 12 === 0) {
-                applySpaceCameraShake(1.5);
-                if (sMultiTimer > 0) {
-                    spaceBullets.push(
-                        { x: pShipObj.x + pShipObj.w / 2, y: pShipObj.y, dx: 0 },
-                        { x: pShipObj.x + 6, y: pShipObj.y + 10, dx: -2 },
-                        { x: pShipObj.x + pShipObj.w - 6, y: pShipObj.y + 10, dx: 2 }
-                    );
-                } else {
-                    spaceBullets.push({ x: pShipObj.x + pShipObj.w / 2, y: pShipObj.y, dx: 0 });
-                }
-            }
-
-            let isRage = alienInvaderObj.isBoss && alienInvaderObj.health < alienInvaderObj.maxHealth * 0.4;
-
-            if (alienInvaderObj.isBoss && alienInvaderObj.y < 40) {
-                alienInvaderObj.y += 1.5;
-            } else {
-                alienInvaderObj.x += alienInvaderObj.dx * (isRage ? 1.5 : 1);
-                if (alienInvaderObj.x < 0 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w) {
-                    alienInvaderObj.dx *= -1;
-                }
-                if (!alienInvaderObj.isBoss) {
-                    alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * 0.05) * 10;
-                } else {
-                    alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * (isRage ? 0.1 : 0.03)) * (isRage ? 25 : 10);
-                }
-            }
-
-            spCtx.save();
-            spCtx.translate(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2);
-
-            if (alienInvaderObj.isBoss) {
-                if (isRage) {
-                    spCtx.shadowColor = "#e74c3c"; spCtx.shadowBlur = 15 + Math.sin(spaceFrameTracker * 0.3) * 10;
-                }
-                if (sprites.space_enemy.complete && sprites.space_enemy.naturalWidth > 0) {
-                    spCtx.drawImage(sprites.space_enemy, -55, -20, 110, 80);
-                } else {
-                    spCtx.fillStyle = "#2c3e50";
-                    spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(-50, -20); spCtx.lineTo(-55, 30); spCtx.lineTo(-20, 10); spCtx.fill();
-                    spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(50, -20); spCtx.lineTo(55, 30); spCtx.lineTo(20, 10); spCtx.fill();
-                    spCtx.fillStyle = isRage ? "#c0392b" : "#5f27cd";
-                    spCtx.fillRect(-25, -20, 50, 45);
-                    spCtx.fillStyle = isRage ? "#f1c40f" : "#ff007f";
-                    spCtx.beginPath(); spCtx.arc(0, 5, 14, 0, Math.PI * 2); spCtx.fill();
-                    spCtx.fillStyle = "#fff"; spCtx.beginPath(); spCtx.arc(0, 5, 6, 0, Math.PI * 2); spCtx.fill();
-                }
-                spCtx.shadowBlur = 0;
-            } else {
-                let minionType = currentLevelState % 3;
-                if (sprites.space_enemy.complete && sprites.space_enemy.naturalWidth > 0) {
-                    spCtx.drawImage(sprites.space_enemy, -15, -15, 30, 30);
-                } else {
-                    spCtx.fillStyle = minionType === 0 ? "#e67e22" : (minionType === 1 ? "#9b59b6" : "#e74c3c");
-                    spCtx.beginPath();
-                    spCtx.moveTo(0, 15); spCtx.lineTo(15, -10); spCtx.lineTo(0, -5); spCtx.lineTo(-15, -10);
-                    spCtx.closePath(); spCtx.fill();
-                    spCtx.fillStyle = "#f1c40f";
-                    spCtx.beginPath(); spCtx.arc(-8, -10, 4, 0, Math.PI * 2); spCtx.arc(8, -10, 4, 0, Math.PI * 2); spCtx.fill();
-                }
-            }
-            spCtx.restore();
-
-            let counterRate = alienInvaderObj.isBoss ? (isRage ? 25 : 45) : Math.max(20, 50 - (currentLevelState * 3));
-            if (spaceFrameTracker % counterRate === 0 && alienInvaderObj.y >= 40) {
-                if (alienInvaderObj.isBoss) {
-                    if (isRage) {
-                        applySpaceCameraShake(3);
-                        for (let i = 0; i < 6; i++) {
-                            let angle = (spaceFrameTracker * 0.1) + (i * (Math.PI * 2 / 6));
-                            enemyLasers.push({
-                                x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h / 2,
-                                dx: Math.cos(angle) * 3, dy: Math.sin(angle) * 3
-                            });
-                        }
-                    } else {
-                        enemyLasers.push(
-                            { x: alienInvaderObj.x + 10, y: alienInvaderObj.y + alienInvaderObj.h, dx: -1.5, dy: 4 },
-                            { x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h, dx: 0, dy: 5 },
-                            { x: alienInvaderObj.x + alienInvaderObj.w - 10, y: alienInvaderObj.y + alienInvaderObj.h, dx: 1.5, dy: 4 }
-                        );
-                    }
-                } else {
-                    let aimDx = ((pShipObj.x + pShipObj.w / 2) - (alienInvaderObj.x + alienInvaderObj.w / 2)) * 0.015;
-                    enemyLasers.push({ x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h, dx: aimDx, dy: 4.5 });
-                }
-            }
-
-            if (Math.random() < 0.004) powerUps.push({ x: Math.random() * (spCanvasElement.width - 40) + 20, y: -10, type: ['H', 'S', 'M'][Math.floor(Math.random() * 3)] });
-
-            powerUps.forEach((pow, pi) => {
-                pow.y += 2.2;
-                spCtx.fillStyle = pow.type == 'H' ? '#2ecc71' : (pow.type == 'S' ? '#3498db' : '#e67e22');
-                spCtx.shadowColor = spCtx.fillStyle; spCtx.shadowBlur = 10;
-                spCtx.beginPath(); spCtx.arc(pow.x, pow.y, 8, 0, Math.PI * 2); spCtx.fill();
-                spCtx.shadowBlur = 0;
-                spCtx.fillStyle = "#fff"; spCtx.font = "bold 10px Arial"; spCtx.textAlign = "center";
-                spCtx.fillText(pow.type, pow.x, pow.y + 3);
-
-                if (pow.x > pShipObj.x && pow.x < pShipObj.x + pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y + pShipObj.h) {
-                    createSpaceExplosion(pow.x, pow.y, spCtx.fillStyle, 10, false);
-                    if (pow.type === 'H') {
-                        pShipObj.health = Math.min(pShipObj.maxHealth, pShipObj.health + 2);
-                    }
-                    if (pow.type === 'S') sShieldTimer = 350;
-                    if (pow.type === 'M') sMultiTimer = 350;
-
-                    powerUps.splice(pi, 1);
-                }
-            });
-
-            spaceBullets.forEach((b, bi) => {
-                b.y -= 8.5; b.x += b.dx;
-
-                spCtx.shadowColor = sMultiTimer > 0 ? "#e74c3c" : "#00ff00";
-                spCtx.shadowBlur = 8;
-                spCtx.fillStyle = "#ffffff";
-                spCtx.beginPath();
-                if (spCtx.roundRect) spCtx.roundRect(b.x - 2, b.y, 4, 14, 2);
-                else spCtx.rect(b.x - 2, b.y, 4, 14);
-                spCtx.fill();
-                spCtx.shadowBlur = 0;
-
-                if (b.y < 0) { spaceBullets.splice(bi, 1); return; }
-
-                if (b.x > alienInvaderObj.x && b.x < alienInvaderObj.x + alienInvaderObj.w && b.y < alienInvaderObj.y + alienInvaderObj.h && b.y > alienInvaderObj.y) {
-                    spaceBullets.splice(bi, 1);
-                    alienInvaderObj.health--;
-                    createSpaceExplosion(b.x, b.y, "#f39c12", 5, false);
-
-                    if (alienInvaderObj.health <= 0) {
-                        applySpaceCameraShake(alienInvaderObj.isBoss ? 25 : 8);
-                        createSpaceExplosion(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2, "#e74c3c", 40, alienInvaderObj.isBoss);
-
-                        if (currentLevelState < 10) {
-                            currentLevelState++;
-                            spaceTransitionCount = 100;
-                            alienInvaderObj.y = -500;
-                        } else {
-                            finalizeFailedRun("SPACE", 1000);
-                        }
-                    }
-                }
-            });
-
-            enemyLasers.forEach((el, eli) => {
-                el.y += el.dy || 5.5; el.x += el.dx || 0;
-
-                spCtx.shadowColor = "#ff4d4d"; spCtx.shadowBlur = 8;
-                spCtx.fillStyle = "#fff";
-                spCtx.beginPath(); spCtx.arc(el.x, el.y, 4, 0, Math.PI * 2); spCtx.fill();
-                spCtx.shadowBlur = 0;
-
-                if (el.y > spCanvasElement.height + 10 || el.x < -10 || el.x > spCanvasElement.width + 10) { enemyLasers.splice(eli, 1); return; }
-
-                if (el.x > pShipObj.x && el.x < pShipObj.x + pShipObj.w && el.y > pShipObj.y && el.y < pShipObj.y + pShipObj.h) {
-                    enemyLasers.splice(eli, 1);
-                    applySpaceCameraShake(6);
-                    createSpaceExplosion(el.x, el.y, "#3498db", 8, false);
-
-                    if (sShieldTimer <= 0) pShipObj.health--;
-                    if (pShipObj.health <= 0) {
-                        createSpaceExplosion(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2, "#3498db", 30, true);
-                        finalizeFailedRun('SPACE', currentLevelState * 10);
-                    }
-                }
-            });
-
-            for (let i = spaceParticlesArray.length - 1; i >= 0; i--) {
-                let p = spaceParticlesArray[i];
-                p.x += p.vx; p.y += p.vy;
-                p.life -= p.decay;
-                if (p.life <= 0) { spaceParticlesArray.splice(i, 1); continue; }
-                spCtx.globalAlpha = p.life;
-                spCtx.fillStyle = p.color;
-                spCtx.beginPath(); spCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); spCtx.fill();
-                spCtx.globalAlpha = 1.0;
-            }
-
-            spCtx.restore();
-
-            spCtx.textAlign = "start";
-            spCtx.fillStyle = "rgba(15, 23, 42, 0.7)";
-            spCtx.beginPath();
-            if (spCtx.roundRect) spCtx.roundRect(10, 10, 100, 24, 6);
-            else spCtx.rect(10, 10, 100, 24);
-            spCtx.fill();
-            spCtx.fillStyle = "white"; spCtx.font = "900 12px Segoe UI";
-            spCtx.fillText(`STAGE: ${currentLevelState}/10`, 18, 26);
-
-            spCtx.beginPath();
-            if (spCtx.roundRect) spCtx.roundRect(spCanvasElement.width - 110, 10, 100, 24, 6);
-            else spCtx.rect(spCanvasElement.width - 110, 10, 100, 24);
-            spCtx.fill();
-            spCtx.fillStyle = pShipObj.health > 2 ? "#2ecc71" : "#e74c3c";
-            let hpWidth = (pShipObj.health / pShipObj.maxHealth) * 90;
-            spCtx.fillRect(spCanvasElement.width - 105, 14, Math.max(0, hpWidth), 16);
-            spCtx.fillStyle = "#fff"; spCtx.fillText("HP", spCanvasElement.width - 100, 26);
-        }
 
         // -------------------------------------------------------------------
         // 🐦 FLAPPY BIRD AAA ENGINE & VFX
@@ -1565,241 +1229,9 @@
             });
         }
 
-        function onFlappyJump() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'JUMP'); }
-        function onFlappyPass() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'SCORE'); }
-        function onFlappyCrash() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'CRASH'); }
-        function onFlappyReward() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'REWARD'); }
-
-        function createFlappyParticles(x, y, color = "#ffd700", count = 10, isCrash = false) {
-            for (let i = 0; i < count; i++) {
-                let angle = Math.random() * Math.PI * 2;
-                let speed = Math.random() * (isCrash ? 5 : 2) + 1;
-                flappyParticles.push({
-                    x: x, y: y,
-                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-                    life: 1.0, decay: Math.random() * 0.05 + 0.02, color: color, size: Math.random() * 3 + 1
-                });
-            }
-        }
-
-        // ===================================================================
-        // 🐦 STATE RESET: FLAPPY BIRD FLIGHT LIFE-CYCLE LIFECYCLE INITIALIZER
-        // ===================================================================
-        function initFlappyBirdGame() {
-            clearInterval(loopTimerInstance); // Hard safety boundary flush
-            const fCanvas = document.getElementById('flappyCanvas');
-
-            flappyCanvasElement = fCanvas;
-            if (!flappyCanvasElement) return;
-            flCtx = flappyCanvasElement.getContext('2d');
-
-            fBird = { y: fCanvas.height / 2, velocity: 0, width: 22, height: 22 };
-            fPipes = [{ x: fCanvas.width, gapTop: 90, gapBottom: 210, registered: false }];
-            flappyScoreTracker = 0;
-
-            fCanvas.onclick = () => fBird.velocity = -4.6;
-            loopTimerInstance = setInterval(frameUpdateFlappy, 22);
-        }
-
-        function frameUpdateFlappy() {
-            if (!flappyCanvasElement || !flCtx) return;
-
-            flappyTime += 0.05;
-
-            let difficultyLevel = Math.floor(flappyScoreTracker / 5);
-            let currentSpeed = 2.2 + Math.min(2.0, difficultyLevel * 0.3);
-            let currentGapSize = Math.max(90, 130 - (difficultyLevel * 5));
-
-            if (difficultyLevel >= 4) flappyLevelTheme = { sky: '#0f2027', pipe: '#e74c3c', ground: '#c0392b' };
-            else if (difficultyLevel >= 2) flappyLevelTheme = { sky: '#2b5876', pipe: '#f39c12', ground: '#d35400' };
-            else flappyLevelTheme = { sky: '#70c5ce', pipe: '#2ecc71', ground: '#27ae60' };
-
-            let camOffsetX = 0, camOffsetY = 0;
-            if (flappyCameraShake > 0) {
-                camOffsetX = (Math.random() - 0.5) * flappyCameraShake;
-                camOffsetY = (Math.random() - 0.5) * flappyCameraShake;
-                flappyCameraShake *= 0.85;
-                if (flappyCameraShake < 0.5) flappyCameraShake = 0;
-            }
-
-            flCtx.save();
-            flCtx.translate(camOffsetX, camOffsetY);
-
-            flCtx.fillStyle = flappyLevelTheme.sky;
-            flCtx.fillRect(0, 0, flappyCanvasElement.width, flappyCanvasElement.height);
-
-            flCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            flappyClouds.forEach(cloud => {
-                cloud.x -= cloud.speed;
-                if (cloud.x + cloud.size < 0) { cloud.x = flappyCanvasElement.width + cloud.size; cloud.y = Math.random() * 150 + 20; }
-                flCtx.beginPath();
-                flCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
-                flCtx.arc(cloud.x + 15, cloud.y - 10, cloud.size * 0.8, 0, Math.PI * 2);
-                flCtx.fill();
-            });
-
-            let previousVelocity = fBird.velocity;
-            fBird.velocity += 0.23;
-            fBird.y += fBird.velocity;
-
-            if (previousVelocity > 0 && fBird.velocity < -3) onFlappyJump();
-
-            let targetRotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, fBird.velocity * 0.12));
-
-            flCtx.save();
-            flCtx.translate(50, fBird.y);
-            flCtx.rotate(targetRotation);
-
-            if (sprites.flappy_bird.complete && sprites.flappy_bird.naturalWidth > 0) {
-                flCtx.globalCompositeOperation = 'screen';
-                flCtx.drawImage(sprites.flappy_bird, -20, -20, 40, 40);
-                flCtx.globalCompositeOperation = 'source-over';
-            } else {
-                flCtx.shadowColor = '#f39c12';
-                flCtx.shadowBlur = 10;
-
-                flCtx.fillStyle = "#ffd700";
-                flCtx.beginPath(); flCtx.ellipse(0, 0, 14, 11, 0, 0, Math.PI * 2); flCtx.fill();
-                flCtx.shadowBlur = 0;
-
-                let flapSpeed = fBird.velocity < 0 ? 25 : 8;
-                let wingY = Math.sin(flappyTime * flapSpeed) * 4;
-                flCtx.fillStyle = "#f39c12";
-                flCtx.beginPath(); flCtx.ellipse(-4, wingY, 8, 5, -0.2, 0, Math.PI * 2); flCtx.fill();
-
-                let isBlinking = Math.random() > 0.98;
-                flCtx.fillStyle = "white";
-                flCtx.beginPath(); flCtx.arc(6, -4, 5, 0, Math.PI * 2); flCtx.fill();
-                if (!isBlinking) {
-                    flCtx.fillStyle = "black";
-                    flCtx.beginPath(); flCtx.arc(8, -4, 2, 0, Math.PI * 2); flCtx.fill();
-                }
-
-                flCtx.fillStyle = "#e67e22";
-                flCtx.beginPath();
-                flCtx.moveTo(10, 0); flCtx.lineTo(20, -2); flCtx.lineTo(18, 4); flCtx.fill();
-
-                flCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
-                flCtx.beginPath(); flCtx.ellipse(0, -6, 6, 2, 0, 0, Math.PI * 2); flCtx.fill();
-            }
-            flCtx.restore();
-
-            let groundY = flappyCanvasElement.height - 30;
-            if (fBird.y > groundY - 11 || fBird.y < -20) {
-                flappyCameraShake = 15;
-                onFlappyCrash();
-                createFlappyParticles(50, fBird.y, '#ffd700', 30, true);
-                finalizeFailedRun('FLAPPY', flappyScoreTracker);
-                return;
-            }
-
-            fPipes.forEach((p, idx) => {
-                p.x -= currentSpeed;
-                let pipeW = 48;
-
-                flCtx.fillStyle = flappyLevelTheme.pipe;
-                flCtx.fillRect(p.x, 0, pipeW, p.gapTop);
-                flCtx.fillRect(p.x, p.gapBottom, pipeW, flappyCanvasElement.height - p.gapBottom);
-
-                flCtx.fillStyle = "rgba(0, 0, 0, 0.2)";
-                flCtx.fillRect(p.x + pipeW - 10, 0, 10, p.gapTop);
-                flCtx.fillRect(p.x + pipeW - 10, p.gapBottom, 10, flappyCanvasElement.height);
-
-                flCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
-                flCtx.fillRect(p.x + 2, 0, 6, p.gapTop);
-                flCtx.fillRect(p.x + 2, p.gapBottom, 6, flappyCanvasElement.height);
-
-                flCtx.fillStyle = flappyLevelTheme.ground;
-                flCtx.fillRect(p.x - 4, p.gapTop - 15, pipeW + 8, 15);
-                flCtx.fillRect(p.x - 4, p.gapBottom, pipeW + 8, 15);
-
-                let horizontalDistanceBetweenPillars = 175;
-
-                if (p.x <= (flappyCanvasElement.width - horizontalDistanceBetweenPillars) && !p.registered) {
-                    p.registered = true;
-                    let minTop = 40;
-                    let maxTop = groundY - currentGapSize - 40;
-                    let nextTop = Math.random() * (maxTop - minTop) + minTop;
-                    fPipes.push({
-                        x: flappyCanvasElement.width,
-                        gapTop: nextTop,
-                        gapBottom: nextTop + currentGapSize,
-                        registered: false
-                    });
-                }
-
-                let birdLeft = 50 - 9, birdRight = 50 + 9;
-                let birdTop = fBird.y - 9, birdBottom = fBird.y + 9;
-
-                if (p.x < birdRight && p.x + pipeW > birdLeft) {
-                    if (birdTop < p.gapTop || birdBottom > p.gapBottom) {
-                        flappyCameraShake = 12;
-                        onFlappyCrash();
-                        createFlappyParticles(50, fBird.y, '#ffd700', 25, true);
-                        finalizeFailedRun('FLAPPY', flappyScoreTracker);
-                        return;
-                    }
-                }
-
-                if (p.x + pipeW < 50 && p.registered === true && idx === 0) {
-                    flappyScoreTracker++;
-                    flappyCameraY = 5;
-                    onFlappyPass();
-                    createFlappyParticles(50, fBird.y, '#2ecc71', 15, false);
-
-                    if (flappyScoreTracker >= 15) {
-                        onFlappyReward();
-                        createFlappyParticles(50, fBird.y, '#f1c40f', 40, true);
-                        if (typeof triggerRewardCoupon === 'function') triggerRewardCoupon("FLAPPY15", 10);
-                    }
-                    fPipes.shift();
-                }
-            });
-
-            flappyGroundScroll = (flappyGroundScroll - currentSpeed) % 30;
-            flCtx.fillStyle = flappyLevelTheme.ground;
-            flCtx.fillRect(0, groundY, flappyCanvasElement.width, 30);
-            flCtx.fillStyle = "rgba(0,0,0,0.15)";
-            flCtx.fillRect(0, groundY, flappyCanvasElement.width, 4);
-
-            flCtx.fillStyle = "rgba(0,0,0,0.1)";
-            for (let gx = flappyGroundScroll; gx < flappyCanvasElement.width; gx += 30) {
-                flCtx.beginPath();
-                flCtx.moveTo(gx, groundY);
-                flCtx.lineTo(gx + 15, groundY);
-                flCtx.lineTo(gx + 5, flappyCanvasElement.height);
-                flCtx.lineTo(gx - 10, flappyCanvasElement.height);
-                flCtx.fill();
-            }
-
-            for (let i = flappyParticles.length - 1; i >= 0; i--) {
-                let p = flappyParticles[i];
-                p.x += p.vx; p.y += p.vy;
-                p.life -= p.decay;
-                if (p.life <= 0) { flappyParticles.splice(i, 1); continue; }
-                flCtx.globalAlpha = Math.max(0, p.life);
-                flCtx.fillStyle = p.color;
-                flCtx.beginPath(); flCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); flCtx.fill();
-            }
-            flCtx.globalAlpha = 1.0;
-
-            flCtx.restore();
-
-            flCtx.fillStyle = "rgba(15, 23, 42, 0.75)";
-            flCtx.beginPath();
-            if (flCtx.roundRect) flCtx.roundRect(10, 10, 110, 32, 8);
-            else flCtx.rect(10, 10, 110, 32);
-            flCtx.fill();
-
-            flCtx.strokeStyle = "rgba(255, 255, 255, 0.1)";
-            flCtx.lineWidth = 1;
-            flCtx.stroke();
-
-            flCtx.fillStyle = "#ffffff";
-            flCtx.font = "900 15px Segoe UI";
-            flCtx.textAlign = "left";
-            flCtx.fillText(` Pts: ${flappyScoreTracker}`, 18, 32);
-        }
+        // -------------------------------------------------------------------
+        // 🐦 FLAPPY BIRD AAA ENGINE & VFX (SEE COMPLETE BLUEPRINT BELOW)
+        // -------------------------------------------------------------------
 
         // -------------------------------------------------------------------
         // 🐍 AAA SNAKE GAME ENGINE & VFX
@@ -1844,6 +1276,13 @@
         // ===================================================================
         function initSnakeGameLoop() {
             clearInterval(loopTimerInstance);
+            const sCanvas = document.getElementById('snakeCanvas');
+            if (sCanvas) {
+                snakeCanvasElement = sCanvas;
+                snCtx = sCanvas.getContext('2d');
+            }
+            if (!snakeCanvasElement) return;
+
             // Include px, py to store previous grid locations for 60FPS smooth interpolation
             snakeArr = [
                 { x: 80, y: 80, px: 80, py: 80 },
@@ -1874,6 +1313,7 @@
             // 🔥 FRAME UPGRADE: Engine runs at 16ms (~60 FPS) for smooth visual interpolation
             loopTimerInstance = setInterval(frameUpdateSnake, 16);
         }
+        window.initSnakeGameLoop = initSnakeGameLoop;
 
         function generateSnakeFoodLocation() {
             let maxGridCols = Math.floor(snakeCanvasElement.width / 20);
@@ -2213,6 +1653,7 @@
             if (dirVector === 'LEFT' && snakeLastMovedVector.x === 0) currentSnakeVector = { x: -20, y: 0 };
             if (dirVector === 'RIGHT' && snakeLastMovedVector.x === 0) currentSnakeVector = { x: 20, y: 0 };
         }
+        window.setSnakeDirection = setSnakeDirection;
         // ===================================================================
         // 💥 UPGRADED: GAME OVER RUNTIME CONTROLLER (GLOBAL SCOPE FIX)
 
@@ -3821,6 +3262,45 @@
         }
 
         // ===================================================================
+        // 🐦 STATE RESET: FLAPPY BIRD FLIGHT LIFE-CYCLE LIFECYCLE INITIALIZER
+        // ===================================================================
+        function initFlappyBirdGame() {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance);
+                cancelAnimationFrame(loopTimerInstance);
+            }
+            const fCanvas = document.getElementById('flappyCanvas');
+            if (!fCanvas) return;
+            flappyCanvasElement = fCanvas;
+            flCtx = fCanvas.getContext('2d');
+
+            fBird = { y: fCanvas.height / 2, velocity: 0, width: 22, height: 22 };
+            fPipes = [{ x: fCanvas.width, gapTop: 90, gapBottom: 210, registered: false }];
+            flappyScoreTracker = 0;
+            flappyTime = 0;
+
+            const handleFlappyJump = (e) => {
+                if (e && e.cancelable && e.type && e.type.startsWith('touch')) e.preventDefault();
+                fBird.velocity = -4.6;
+            };
+
+            fCanvas.onclick = handleFlappyJump;
+            fCanvas.ontouchstart = handleFlappyJump;
+
+            if (!window.isFlappyInputBound) {
+                window.addEventListener('keydown', (e) => {
+                    if (activeGameMode === 'FLAPPY' && (e.key === ' ' || e.key === 'ArrowUp')) {
+                        fBird.velocity = -4.6;
+                    }
+                });
+                window.isFlappyInputBound = true;
+            }
+
+            loopTimerInstance = setInterval(frameUpdateFlappy, 22);
+        }
+        window.initFlappyBirdGame = initFlappyBirdGame;
+
+        // ===================================================================
         // 🐦 FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (AAA UPGRADE)
         // ===================================================================
         function frameUpdateFlappy() {
@@ -4053,6 +3533,9 @@
             if (typeof bindAirtightArcadeControls === 'function') {
                 bindAirtightArcadeControls();
             }
+            if (typeof refreshDiscountRulesUI === 'function') {
+                refreshDiscountRulesUI();
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const modeParam = urlParams.get('mode');
             if (modeParam && typeof switchGameMode === 'function') {
@@ -4065,9 +3548,66 @@
                 localStorage.setItem('restroflow_max_discount', maximumClaimedDisc.toString());
             }
 
+            if (typeof calculateUnifiedMasterInvoice === 'function') {
+                calculateUnifiedMasterInvoice(window.globalSubtotalSum || 0);
+            }
+
             const coinBadge = document.getElementById('liveCoinBadge');
-            if (coinBadge) coinBadge.innerText = `${maximumClaimedDisc}%`;
+            if (coinBadge) coinBadge.innerText = `${window.maximumClaimedDisc || 0}%`;
         });
+        // ===================================================================
+        // 🚀 SPACE SHOOTER: LEVEL SETUP & INITIALIZATION
+        // ===================================================================
+        function setupLevelParameters() {
+            let isBoss = (currentLevelState % 5 === 0);
+            let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
+
+            let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
+            let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
+            let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
+
+            alienInvaderObj = {
+                x: 160 - (shipW / 2), y: isBoss ? -100 : 40,
+                w: shipW, h: shipH,
+                health: bHealth, maxHealth: bHealth,
+                dx: shipSpeed,
+                isBoss: isBoss
+            };
+
+            spaceBullets = []; enemyLasers = []; powerUps = [];
+            spaceParticlesArray = [];
+            sShieldTimer = 0; sMultiTimer = 0;
+        }
+
+        function initSpaceShooterGame() {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance);
+            }
+            currentLevelState = 1;
+            spaceMoveDir = 0;
+            spaceFrameTracker = 0;
+            spaceTransitionCount = 0;
+
+            spaceBullets.length = 0;
+            enemyLasers.length = 0;
+            powerUps.length = 0;
+            spaceBullets = [];
+            enemyLasers = [];
+            powerUps = [];
+
+            spCanvasElement = document.getElementById('spaceCanvas');
+            if (!spCanvasElement) return;
+            spCtx = spCanvasElement.getContext('2d');
+            const sCanvas = spCanvasElement;
+
+            pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 };
+
+            setupLevelParameters();
+
+            loopTimerInstance = setInterval(frameUpdateSpace, 20);
+        }
+        window.initSpaceShooterGame = initSpaceShooterGame;
+
         // 🚀 FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
         // ===================================================================
         function frameUpdateSpace() {
