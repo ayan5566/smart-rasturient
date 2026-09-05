@@ -3314,7 +3314,13 @@
             const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
             const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
             const maxDisc = localStorage.getItem('restroflow_max_discount') || 0;
-            window.location.href = `modules/game.html?mode=${encodeURIComponent(selectedTargetMode)}&table=${encodeURIComponent(tableId)}&hotel=${encodeURIComponent(hotelScope)}&discount=${encodeURIComponent(maxDisc)}`;
+
+            // ✅ Build absolute path so it works BOTH locally and on GitHub Pages
+            // e.g. on GitHub Pages: /smart-rasturient/modules/game.html
+            // e.g. locally: /modules/game.html
+            const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const gameUrl = `${window.location.origin}${basePath}modules/game.html?mode=${encodeURIComponent(selectedTargetMode)}&table=${encodeURIComponent(tableId)}&hotel=${encodeURIComponent(hotelScope)}&discount=${encodeURIComponent(maxDisc)}`;
+            window.location.href = gameUrl;
         }
 
         function executeTriggerNativeQRGenCardWindow(floorName, tableUnitID) {
