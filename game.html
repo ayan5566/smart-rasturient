@@ -2,13 +2,12 @@
 <html lang="en">
 
 <head>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestroFlow - Arcade Game Engines</title>
     <link rel="icon" type="image/jpeg" href="../favicon.jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="../services/supabase.js"></script>
     <!-- ================================================================= -->
     <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
     <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
@@ -383,7 +382,7 @@
         <div class="game-nav"
             style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
             <button id="navHOME"
-                onclick="window.location.href='../main%20flie.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
+                onclick="window.location.href='../index.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
                 style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.6);"><span
                     style="font-size: 20px;">🏠</span> Home</button>
             <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
@@ -934,7 +933,12 @@
             // Redirect back to customer home panel with table & hotel parameters preserved
             const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
             const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            window.location.href = `../main%20flie.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
+            // ✅ Build absolute path back to index.html — works on GitHub Pages AND locally
+            // e.g. GitHub Pages: /smart-rasturient/index.html
+            // e.g. locally: /index.html
+            const gamePageDir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const parentDir = gamePageDir.replace(/\/modules\/$/, '/').replace(/\/modules$/, '/');
+            window.location.href = `${window.location.origin}${parentDir}index.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
         }
 
         // Attach core controller functions explicitly to global window object
@@ -4049,36 +4053,6 @@
                 tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
             }
         };
-        async function triggerRewardCoupon(earnedPercent) {
-    const discountVal = parseInt(earnedPercent) || 0;
-    const urlParams = new URLSearchParams(window.location.search);
-    const hotelId = urlParams.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-    const tableId = urlParams.get('table') || localStorage.getItem('restroflow_active_table') || "T1";
-
-    // Local storage & UI updates
-    localStorage.setItem('discount_map_' + tableId, discountVal.toString());
-    localStorage.setItem('discount_map_' + hotelId + '_' + tableId, discountVal.toString());
-    localStorage.setItem('restroflow_max_discount', discountVal.toString());
-
-    const badge = document.getElementById('liveCoinBadge');
-    if (badge) {
-        badge.innerText = discountVal + "%";
-        badge.classList.remove('coin-pop');
-        void badge.offsetWidth;
-        badge.classList.add('coin-pop');
-    }
-
-    const displayBox = document.getElementById('couponDisplay');
-    if (displayBox) {
-        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${discountVal}% OFF</strong> applied to Table ${tableId}!`;
-        displayBox.style.display = "block";
-    }
-
-    // 🚀 CENTRAL DATABASE SERVICE CALL (Direct Cloud Save)
-    if (window.RestroDB && typeof window.RestroDB.saveDiscount === 'function') {
-        await window.RestroDB.saveDiscount(hotelId, tableId, discountVal);
-    }
-}
     </script>
 </body>
 
