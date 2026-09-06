@@ -4325,27 +4325,25 @@
 
 
 
-        // ===================================================================
-        // 🎮 MULTI-GAME SWITCH ROUTER ENGINE
-        // ===================================================================
-        function switchGameMode(selectedTargetMode) {
-            console.log("🎮 Switching game mode to:", selectedTargetMode);
-            const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
-            const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            window.location.href = `modules/game.html?mode=${encodeURIComponent(selectedTargetMode)}&table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
-        }
-        window.switchGameMode = switchGameMode;
+       // ===================================================================
+// 🎮 FIXED: DIRECT ROOT ROUTER (SOLVES 404 PERMANENTLY)
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+    const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const mode = button.id.replace('nav', '');
-                    if (mode && mode !== 'HOME') {
-                        switchGameMode(mode);
-                    }
-                });
-            });
-        });
+    // Seedha root se game.html open karega
+    const targetUrl = new URL('game.html', window.location.href);
+    targetUrl.searchParams.set('mode', selectedTargetMode);
+    targetUrl.searchParams.set('table', tableId);
+    targetUrl.searchParams.set('hotel', hotelScope);
+    targetUrl.searchParams.set('discount', maxDisc);
+
+    window.location.href = targetUrl.toString();
+}
+
+window.switchGameMode = switchGameMode;
 
         // ===================================================================
         // ===================================================================
