@@ -1683,20 +1683,25 @@
             Return to Login Hub</button>
     </div>
     <script>
-        // Function definition
-        function switchGameMode(selectedTargetMode) {
-            const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
-            const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
+// ===================================================================
+// 🎮 BULLETPROOF ARCADE ROUTER (FIXES 404 ON GITHUB PAGES & SERVER)
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+    const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-            const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-            const gameUrl = `${window.location.origin}${basePath}modules/game.html?mode=${encodeURIComponent(selectedTargetMode)}&table=${encodeURIComponent(tableId)}&hotel=${encodeURIComponent(hotelScope)}&discount=${encodeURIComponent(maxDisc)}`;
+    // 'new URL' se browser relative path auto-resolve karta hai (Kabhi 404 nahi aayega)
+    const targetUrl = new URL('modules/game.html', window.location.href);
+    targetUrl.searchParams.set('mode', selectedTargetMode);
+    targetUrl.searchParams.set('table', tableId);
+    targetUrl.searchParams.set('hotel', hotelScope);
+    targetUrl.searchParams.set('discount', maxDisc);
 
-            window.location.href = gameUrl;
-        }
+    window.location.href = targetUrl.toString();
+}
 
-        // 🌐 Explicitly expose to window object (Fixes ReferenceError instantly)
-        window.switchGameMode = switchGameMode;
+window.switchGameMode = switchGameMode;
         // ===================================================================
         // 🌐 TOP-LEVEL CORE INITIALIZATION (TDZ & REFERENCE ERROR SHIELD)
         // ===================================================================
