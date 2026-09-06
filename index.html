@@ -990,20 +990,24 @@
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal:</span><span
                         id="billSubtotal">₹0</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--danger-red);">
-                    <span>Game Disc. Allowed:</span><span id="billDiscountApplied">0%</span></div>
+                    <span>Game Disc. Allowed:</span><span id="billDiscountApplied">0%</span>
+                </div>
                 <div id="taxRowCGST"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;">
-                    <span>CGST:</span><span id="billCGSTVal">₹0</span></div>
+                    <span>CGST:</span><span id="billCGSTVal">₹0</span>
+                </div>
                 <div id="taxRowSGST"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;">
-                    <span>SGST:</span><span id="billSGSTVal">₹0</span></div>
+                    <span>SGST:</span><span id="billSGSTVal">₹0</span>
+                </div>
                 <div id="taxRowService"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;"><span>Service
                         Charge:</span><span id="billServiceVal">₹0</span></div>
                 <hr style="border:0; border-top:1px dashed #ccc; margin:6px 0;">
                 <div
                     style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; color:var(--neon-green);">
-                    <span>Total Bill:</span><span id="billGrandTotal">₹0</span></div>
+                    <span>Total Bill:</span><span id="billGrandTotal">₹0</span>
+                </div>
             </div>
 
             <button class="action-btn" id="payOnlineInvoiceMainBtn" onclick="openSmartMobilePaymentGatewayGateway()"
@@ -1175,8 +1179,8 @@
         <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
         <div id="menuContainer"></div>
 
-        <div class="game-box">
-            <div class="game-nav">
+        <div class="game-box" style="padding: 15px; border-radius: 16px; margin-top: 25px;">
+            <div class="game-nav" style="margin-bottom: 0;">
                 <button id="navBRICK" onclick="switchGameMode('BRICK')">
                     <span style="font-size: 26px;">🧱</span>
                     <span>Bricks</span>
@@ -1198,47 +1202,15 @@
                     <span>Tower</span>
                 </button>
             </div>
-            <div id="gameWindow">
-                <div id="gameScreenStatusMsg"></div>
-                <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()"
-                    style="display:none; background:var(--danger-red); margin-bottom:10px; max-width: 160px; font-size: 13px; padding: 8px;">❌
-                    Quit Game</button>
-
-
-                <div class="control-pad" id="spaceControls">
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0"
-                        ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
-                    <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0"
-                        ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
-                </div>
-
-                <div class="snake-grid-pad" id="snakeControls">
-                    <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
-                    <div class="snake-row">
-                        <button class="snk-btn" onclick="setSnakeDirection('LEFT')">◀</button>
-                        <button class="snk-btn" style="background:#7f8c8d; cursor:default;">•</button>
-                        <button class="snk-btn" onclick="setSnakeDirection('RIGHT')">▶</button>
-                    </div>
-                    <button class="snk-btn" onclick="setSnakeDirection('DOWN')">▼</button>
-                </div>
-
-                <button id="startBtn" class="action-btn" onclick="startSelectedGame()"
-                    style="display:none; margin-top:15px; background: var(--accent-gold); color:black;">Launch Engine
-                    Run</button>
-            </div>
-            <div id="couponDisplay"
-                style="display:none; margin-top:12px; font-size:15px; color:green; font-weight:bold;"></div>
         </div>
 
-        <div style="width: 100%; margin-top: 25px; display: flex; flex-direction: column; gap: 8px;">
-
-            <div style="width: 100%; margin-top: 25px;">
-                <button onclick="launchSleekLoginOverlay()"
-                    style="background: var(--dark-charcoal); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
-                    🔒 Open RestroFlow Workspace Portal
-                </button>
-            </div>
+        <div style="width: 100%; margin-top: 25px;">
+            <button onclick="launchSleekLoginOverlay()"
+                style="background: var(--dark-charcoal); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
+                🔒 Open RestroFlow Workspace Portal
+            </button>
         </div>
+    </div>
     </div>
     <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
         <div class="modal-content"
@@ -1358,7 +1330,7 @@
         </div>
 
 
-        <<div
+        <div
             style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -1388,205 +1360,209 @@
                     style="font-size: 11px; font-weight: bold; color: var(--danger-red); margin-top: 6px; display: block;">
                     🔒 Status: Hidden & Locked by RestroFlow HQ.</div>
             </div>
-    </div>
-    <h3>🏢 Table curret status section </h3>
-    <div class="table-legend-bar">
-        <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
-        <span class="legend-dot" style="background:var(--tbl-green)">Green: full </span>
-        <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
-        <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
-    </div>
-    <div id="adminTableLayoutGrid"></div>
-    <button class="action-btn" onclick="addNewFloor()"
-        style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
-    <h3>📊 Live Customer Billing Tracker Map</h3>
-    <div
-        style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
-        <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt Live:</label>
-        <select id="adminBillingViewerTableSelect" onchange="auditSelectedTableBillInvoiceLive()"
-            style="border-color:#27ae60; font-weight:bold; color:#27ae60;"></select>
-
-        <div id="adminPaymentLiveAuditNotificationBanner"
-            style="margin:6px 0; padding:6px; border-radius:6px; font-size:12px; font-weight:bold; text-align:center; display:none;">
         </div>
-
-        <div id="adminLiveBillItemOutputBox" style="font-size:13px; max-height:120px; overflow-y:auto; padding:5px 0;">
+        <h3>🏢 Table curret status section </h3>
+        <div class="table-legend-bar">
+            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
+            <span class="legend-dot" style="background:var(--tbl-green)">Green: full </span>
+            <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
+            <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
         </div>
-
-        <div id="adminLiveBillTaxBreakdownBox"
-            style="font-size:12px; color:#555; padding:6px 0; border-top:1px dashed #ccc; line-height: 1.5; display:none;">
-        </div>
-
-        <hr style="border:0; border-top:1px dashed #ccc; margin:8px 0;">
+        <div id="adminTableLayoutGrid"></div>
+        <button class="action-btn" onclick="addNewFloor()"
+            style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
+        <h3>📊 Live Customer Billing Tracker Map</h3>
         <div
-            style="font-size:14px; font-weight:bold; color:var(--dark-charcoal); display:flex; justify-content:space-between;">
-            <span>Net Payable (With Taxes & Disc):</span>
-            <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">₹0</span>
+            style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
+            <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt
+                Live:</label>
+            <select id="adminBillingViewerTableSelect" onchange="auditSelectedTableBillInvoiceLive()"
+                style="border-color:#27ae60; font-weight:bold; color:#27ae60;"></select>
 
+            <div id="adminPaymentLiveAuditNotificationBanner"
+                style="margin:6px 0; padding:6px; border-radius:6px; font-size:12px; font-weight:bold; text-align:center; display:none;">
+            </div>
+
+            <div id="adminLiveBillItemOutputBox"
+                style="font-size:13px; max-height:120px; overflow-y:auto; padding:5px 0;"></div>
+
+            <div id="adminLiveBillTaxBreakdownBox"
+                style="font-size:12px; color:#555; padding:6px 0; border-top:1px dashed #ccc; line-height: 1.5; display:none;">
+            </div>
+
+            <hr style="border:0; border-top:1px dashed #ccc; margin:8px 0;">
+            <div
+                style="font-size:14px; font-weight:bold; color:var(--dark-charcoal); display:flex; justify-content:space-between;">
+                <span>Net Payable (With Taxes & Disc):</span>
+                <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">₹0</span>
+
+            </div>
+            <button class="order-btn"
+                style="background:var(--neon-green); color:white; font-size:12px; padding:6px; margin-top:8px; display: block;"
+                onclick="executeLiveBillingThermalPrint()">🖨️ Print Bill </button>
+            <button class="order-btn"
+                style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;"
+                onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
         </div>
-        <button class="order-btn"
-            style="background:var(--neon-green); color:white; font-size:12px; padding:6px; margin-top:8px; display: block;"
-            onclick="executeLiveBillingThermalPrint()">🖨️ Print Bill </button>
-        <button class="order-btn"
-            style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;"
-            onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
-    </div>
-    <h3>📊 Real-time Popularity & Dish Analytics</h3>
-    <div
-        style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
-        <div id="adminAnalyticsLiveOutputGrid"></div>
-    </div>
-
-    <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
-    <div
-        style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
-        <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
-        <select id="waiterTableSelect"
-            style="padding:6px; margin:4px 0; font-size:12px; font-weight: bold; color: var(--tbl-orange);"></select>
-
-        <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Dish Asset:</label>
-        <select id="waiterItemSelect" onchange="syncWaiterSizeDropdownOptions()"></select>
-
-        <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
-        <select id="waiterSizeSelect"></select>
-
-        <!-- 🎯 DUAL ACTION BUTTONS -->
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-            <!-- Button 1: SIRF BILL MEIN ADD HOGA -->
-            <button onclick="injectExtraItemFromBillPanel(false)"
-                style="background: var(--dark-charcoal); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
-                📋 Add to Running Bill Only (No KDS)
-            </button>
-
-            <!-- Button 2: BILL + KDS DONO MEIN ADD HOGA -->
-            <button onclick="injectExtraItemFromBillPanel(true)"
-                style="background: var(--neon-green); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
-                🔥 Add to Bill + Send to Kitchen (KDS)
-            </button>
+        <h3>📊 Real-time Popularity & Dish Analytics</h3>
+        <div
+            style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
+            <div id="adminAnalyticsLiveOutputGrid"></div>
         </div>
-    </div>
 
-    <h3>⚖️ Dynamic Tax Rates Configurations</h3>
-    <div
-        style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px;">
-        <label><input type="checkbox" id="cfgTaxCGSTActive" onchange="saveAdminConfig()"> Enable CGST (%)</label> <input
-            type="number" id="cfgTaxCGSTRate" style="width:65px; padding:4px;" oninput="saveAdminConfig()"><br><br>
-        <label><input type="checkbox" id="cfgTaxSGSTActive" onchange="saveAdminConfig()"> Enable SGST (%)</label> <input
-            type="number" id="cfgTaxSGSTRate" style="width:65px; padding:4px;" oninput="saveAdminConfig()"><br><br>
-        <label><input type="checkbox" id="cfgTaxServiceActive" onchange="saveAdminConfig()"> Enable Service Charge
-            (%)</label> <input type="number" id="cfgTaxServiceRate" style="width:65px; padding:4px;"
-            oninput="saveAdminConfig()">
-    </div>
+        <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
+        <div
+            style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
+            <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
+            <select id="waiterTableSelect"
+                style="padding:6px; margin:4px 0; font-size:12px; font-weight: bold; color: var(--tbl-orange);"></select>
 
+            <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Dish Asset:</label>
+            <select id="waiterItemSelect" onchange="syncWaiterSizeDropdownOptions()"></select>
 
-    <h3>🎮 Target Variables & Value Ratios</h3>
-    <div
-        style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 12px; align-items: center;">
+            <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
+            <select id="waiterSizeSelect"></select>
 
-            <!-- Brick Breaker -->
-            <div style="display: flex; flex-direction: column; gap: 3px;">
-                <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Clear Target:</span>
-                <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: 3–5 Levels <span
-                        style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Lev:</span>
-                <input type="number" id="cfgBrickTar" placeholder="Lev" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Disc %:</span>
-                <input type="number" id="cfgBrickDisc" placeholder="%" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
+            <!-- 🎯 DUAL ACTION BUTTONS -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                <!-- Button 1: SIRF BILL MEIN ADD HOGA -->
+                <button onclick="injectExtraItemFromBillPanel(false)"
+                    style="background: var(--dark-charcoal); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
+                    📋 Add to Running Bill Only (No KDS)
+                </button>
 
-            <!-- Flappy Bird -->
-            <div style="display: flex; flex-direction: column; gap: 3px;">
-                <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
-                <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: 5–10 Points <span
-                        style="color:#7f8c8d; font-weight:500;">(Hard)</span></span>
+                <!-- Button 2: BILL + KDS DONO MEIN ADD HOGA -->
+                <button onclick="injectExtraItemFromBillPanel(true)"
+                    style="background: var(--neon-green); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
+                    🔥 Add to Bill + Send to Kitchen (KDS)
+                </button>
             </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Pts:</span>
-                <input type="number" id="cfgFlappyTar" placeholder="Pts" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Disc %:</span>
-                <input type="number" id="cfgFlappyDisc" placeholder="%" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-
-            <!-- Space Shooter -->
-            <div style="display: flex; flex-direction: column; gap: 3px;">
-                <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
-                <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: Stage 3–5 <span
-                        style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Lev:</span>
-                <input type="number" id="cfgSpaceTar" placeholder="Lev" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Disc %:</span>
-                <input type="number" id="cfgSpaceDisc" placeholder="%" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-
-            <!-- Snake Game -->
-            <div style="display: flex; flex-direction: column; gap: 3px;">
-                <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
-                <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">⭐ Rec: 25-30 Apples <span
-                        style="color:#7f8c8d; font-weight:500;">(medium to hard)</span></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Qty:</span>
-                <input type="number" id="cfgSnakeTar" placeholder="Qty" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Disc %:</span>
-                <input type="number" id="cfgSnakeDisc" placeholder="%" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-
-            <!-- Tower Bloxx -->
-            <div style="display: flex; flex-direction: column; gap: 3px;">
-                <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
-                <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: Level 3–4 <span
-                        style="color:#7f8c8d; font-weight:500;">(Hard / 20-30 Floors)</span></span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Lev:</span>
-                <input type="number" id="cfgTowerTar" placeholder="Lev" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-                <span style="color: #64748b;">Disc %:</span>
-                <input type="number" id="cfgTowerDisc" placeholder="%" oninput="saveAdminConfig()"
-                    style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
-            </div>
-
         </div>
-    </div>
-    <h3>📋 Item Master Setup (Photos & Checkboxes)</h3>
-    <div id="adminMenuForm"></div>
-    <button class="action-btn" onclick="addNewCategory()" style="background:#2980b9; color:white; margin-bottom:15px;">➕
-        Create New Category Section</button>
 
-    <button class="action-btn" onclick="triggerJustSaveConfig()"
-        style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: 💾 Save Menu &
-        Settings</button>
+        <h3>⚖️ Dynamic Tax Rates Configurations</h3>
+        <div
+            style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px;">
+            <label><input type="checkbox" id="cfgTaxCGSTActive" onchange="saveAdminConfig()"> Enable CGST (%)</label>
+            <input type="number" id="cfgTaxCGSTRate" style="width:65px; padding:4px;"
+                oninput="saveAdminConfig()"><br><br>
+            <label><input type="checkbox" id="cfgTaxSGSTActive" onchange="saveAdminConfig()"> Enable SGST (%)</label>
+            <input type="number" id="cfgTaxSGSTRate" style="width:65px; padding:4px;"
+                oninput="saveAdminConfig()"><br><br>
+            <label><input type="checkbox" id="cfgTaxServiceActive" onchange="saveAdminConfig()"> Enable Service Charge
+                (%)</label> <input type="number" id="cfgTaxServiceRate" style="width:65px; padding:4px;"
+                oninput="saveAdminConfig()">
+        </div>
 
-    <button class="action-btn" onclick="logoutAdmin()"
-        style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout Dashboard</button>
 
-    <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()"
-        style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
-        👑 Founder Master Control
-    </button>
+        <h3>🎮 Target Variables & Value Ratios</h3>
+        <div
+            style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 12px; align-items: center;">
+
+                <!-- Flappy Bird -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
+                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: 5–10 Points <span
+                            style="color:#7f8c8d; font-weight:500;">(Hard)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Pts:</span>
+                    <input type="number" id="cfgFlappyTar" placeholder="Pts" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Disc %:</span>
+                    <input type="number" id="cfgFlappyDisc" placeholder="%" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+
+                <!-- Space Shooter -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
+                    <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: Stage 3–5 <span
+                            style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Lev:</span>
+                    <input type="number" id="cfgSpaceTar" placeholder="Lev" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Disc %:</span>
+                    <input type="number" id="cfgSpaceDisc" placeholder="%" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+
+                <!-- Snake Game -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
+                    <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">⭐ Rec: 25-30 Apples <span
+                            style="color:#7f8c8d; font-weight:500;">(medium to hard)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Qty:</span>
+                    <input type="number" id="cfgSnakeTar" placeholder="Qty" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Disc %:</span>
+                    <input type="number" id="cfgSnakeDisc" placeholder="%" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+
+                <!-- Brick Breaker -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Breaker Levels:</span>
+                    <span style="font-size: 11px; color: #e67e22; font-weight: 700;">⭐ Rec: 3 Levels <span
+                            style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Lev:</span>
+                    <input type="number" id="cfgBrickTar" placeholder="Lev" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Disc %:</span>
+                    <input type="number" id="cfgBrickDisc" placeholder="%" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+
+                <!-- Tower Bloxx -->
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-weight: 600; color: #2c3e50;">🏢 Tower Target Level:</span>
+                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: Level 3–4 <span
+                            style="color:#7f8c8d; font-weight:500;">(Hard / 20-30 Floors)</span></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Lev:</span>
+                    <input type="number" id="cfgTowerTar" placeholder="Lev" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #64748b;">Disc %:</span>
+                    <input type="number" id="cfgTowerDisc" placeholder="%" oninput="saveAdminConfig()"
+                        style="width: 60px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+                </div>
+
+            </div>
+        </div>
+        <h3>📋 Item Master Setup (Photos & Checkboxes)</h3>
+        <div id="adminMenuForm"></div>
+        <button class="action-btn" onclick="addNewCategory()"
+            style="background:#2980b9; color:white; margin-bottom:15px;">➕ Create New Category Section</button>
+
+        <button class="action-btn" onclick="triggerJustSaveConfig()"
+            style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: 💾 Save
+            Menu & Settings</button>
+
+        <button class="action-btn" onclick="logoutAdmin()"
+            style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: 🚪 Logout
+            Dashboard</button>
+
+        <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()"
+            style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
+            👑 Founder Master Control
+        </button>
     </div>
     <div class="container" id="superAdminDashboard"
         style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
@@ -1683,25 +1659,6 @@
             Return to Login Hub</button>
     </div>
     <script>
-// ===================================================================
-// 🎮 BULLETPROOF ARCADE ROUTER (FIXES 404 ON GITHUB PAGES & SERVER)
-// ===================================================================
-function switchGameMode(selectedTargetMode) {
-    const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
-    const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
-
-    // 'new URL' se browser relative path auto-resolve karta hai (Kabhi 404 nahi aayega)
-    const targetUrl = new URL('modules/game.html', window.location.href);
-    targetUrl.searchParams.set('mode', selectedTargetMode);
-    targetUrl.searchParams.set('table', tableId);
-    targetUrl.searchParams.set('hotel', hotelScope);
-    targetUrl.searchParams.set('discount', maxDisc);
-
-    window.location.href = targetUrl.toString();
-}
-
-window.switchGameMode = switchGameMode;
         // ===================================================================
         // 🌐 TOP-LEVEL CORE INITIALIZATION (TDZ & REFERENCE ERROR SHIELD)
         // ===================================================================
@@ -2068,88 +2025,6 @@ window.switchGameMode = switchGameMode;
                 console.error("🚨 Cloud Core Realtime Pipeline Exception:", realtimeErr.message);
             }
         }
-        console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
-
-        try {
-            window.billingOrdersChannel = supabaseClient
-                .channel('billing-orders-stream')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'active_orders',
-                    filter: 'hotel_id=eq.' + hotelGlobalScopeID
-                }, () => {
-                    console.log("🔔 Tracker Trigger: Active order state mutation captured!");
-                    fetchActiveKitchenOrdersQueue();
-                    if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
-                })
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') console.log("✅ Orders Realtime Channel Sync Successful!");
-                });
-
-            window.billingSessionsChannel = supabaseClient
-                .channel('billing-sessions-stream')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'table_sessions'
-                }, (payload) => {
-                    console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
-
-                    if (payload.new) {
-                        const rawCloudTableId = payload.new.table_id;
-                        if (rawCloudTableId && rawCloudTableId.startsWith(hotelGlobalScopeID + "_")) {
-                            let innerTableToken = rawCloudTableId.substring(hotelGlobalScopeID.length + 1);
-
-                            floorData.forEach(floor => {
-                                floor.tables.forEach(t => {
-                                    let currentLocalKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                                    let cleanToken = innerTableToken.trim();
-
-                                    let isTargetTable = false;
-                                    if (currentLocalKey === cleanToken || t.id === cleanToken) {
-                                        isTargetTable = true;
-                                    } else if (cleanToken.includes('_')) {
-                                        let parts = cleanToken.split('_');
-                                        if (parts[0].trim() === floor.floorName.trim() && parts[1].trim() === t.id.trim()) {
-                                            isTargetTable = true;
-                                        }
-                                    }
-
-                                    if (isTargetTable) {
-                                        t.waiterBell = payload.new.waiter_bell || false;
-                                        localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentLocalKey, payload.new.payment_status || 'PENDING');
-
-                                        if (payload.new.live_bill && payload.new.live_bill.length > 0) {
-                                            t.state = 1;
-                                        } else {
-                                            t.state = 0;
-                                            delete t.custom_color;
-                                        }
-                                    }
-                                });
-                            });
-
-                            if (typeof window.floorData !== 'undefined') {
-                                window.floorData = [...floorData];
-                            }
-                            floorData = [...floorData];
-                            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-                        }
-                    }
-
-                    if (typeof generateAdminTableGrid === "function") {
-                        generateAdminTableGrid();
-                    }
-                    if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
-                })
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') console.log("✅ Sessions Realtime Channel Sync Successful!");
-                });
-
-        } catch (realtimeErr) {
-            console.error("🚨 Cloud Core Realtime Pipeline Broken:", realtimeErr.message);
-        }
 
         function refreshActiveBillingUI(liveSessionData) {
             if (!liveSessionData) return;
@@ -2445,7 +2320,7 @@ window.switchGameMode = switchGameMode;
             localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
         }
 
-        // 🛡️ LEVEL 2: RULES REDECLARATION SHIELD (🧱 BRICK BREAKER ADDED HERE!)
+        // 🛡️ LEVEL 2: RULES REDECLARATION SHIELD
         if (typeof window.rules === 'undefined') {
             window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
                 flappyTar: 5,
@@ -2453,18 +2328,10 @@ window.switchGameMode = switchGameMode;
                 spaceTar: 3,
                 spaceDisc: 15,
                 snakeTar: 10,
-                snakeDisc: 12,
-                brickTar: 15,    // ⚡ Brick breaker target blocks
-                brickDisc: 8     // ⚡ Brick breaker discount %
+                snakeDisc: 12
             };
         }
         rules = window.rules;
-
-        // 🧱 BRICK BREAKER PHYSICS MECHANICS POINTERS (ADDED HERE!)
-        let brickCanvasElement = document.getElementById('brickCanvas');
-        let brCtx = brickCanvasElement ? brickCanvasElement.getContext('2d') : null;
-        let brickPaddleDir = 0, brickScoreCounter = 0;
-        let bBall = {}, bPaddle = {}, activeBricksArray = [];
 
         // Baseline SaaS packages defaults
         let dynamicGlobalSaaSDefaults = {
@@ -2546,119 +2413,43 @@ window.switchGameMode = switchGameMode;
             }
         }
         // =================================================================
-        // ⚙️ GLOBAL RULES & ARRAYS STATE (Absolute Zero-Conflict Version)
+        // ⚙️ GLOBAL RULES & ARRAYS STATE
         // =================================================================
         window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
-
-        // 🛡️ FIX 1: Bina kisi var/let/const ke seedhe window par register karo
-        if (typeof window.hotelGlobalScopeID === 'undefined') {
-            window.hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        }
-
-        // 🔥 CRITICAL CHANGE: Global execution scope clash hatane ke liye hamesha window property use hogi
-        if (window.hotelGlobalScopeID !== "Default_HQ_Arena" && window.hotelGlobalScopeID.length < 5) {
-            window.hotelGlobalScopeID = "Default_HQ_Arena";
-            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
-        }
-
-        // purane code se compatibility ke liye bina var/let ke direct assign karo (agar pehle let se defined hai toh crash nahi karega)
-        hotelGlobalScopeID = window.hotelGlobalScopeID;
-
-        // 🛡️ FIX 2: rules redeclaration shield
-        if (typeof window.rules === 'undefined') {
-            window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
-                flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12, brickTar: 3, brickDisc: 8,
-                towerTar: 3, towerDisc: 15 // Seeded baseline default rules
-            };
-        }
-        rules = window.rules;
-
-        // 🛡️ FIX 3: dynamicGlobalSaaSDefaults double-counting block
-        if (typeof window.dynamicGlobalSaaSDefaults === 'undefined') {
-            window.dynamicGlobalSaaSDefaults = { monthly: 499, yearly: 4999 };
-        }
-        dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults;
-
-        // 🛡️ FIX 4: Core fallback setups
-        if (typeof window.fallbackMenu === 'undefined') {
-            window.fallbackMenu = [
-                { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
-                { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
-            ];
-        }
-        fallbackMenu = window.fallbackMenu;
-
-        if (typeof window.defaultFloors === 'undefined') {
-            window.defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
-        }
-        defaultFloors = window.defaultFloors;
-
-        if (typeof window.defaultTaxes === 'undefined') {
-            window.defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
-        }
-        defaultTaxes = window.defaultTaxes;
-
-        // 🛡️ FIX 5: Main running states
-        if (typeof window.menuCategories === 'undefined') {
-            window.menuCategories = fallbackMenu;
-        }
-        menuCategories = window.menuCategories;
-
-        try {
-            let localMenuRawData = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
-            if (localMenuRawData) {
-                let parsedMenu = JSON.parse(localMenuRawData);
-                if (Array.isArray(parsedMenu) && parsedMenu.length > 0 && parsedMenu[0].items) {
-                    menuCategories = parsedMenu;
-                    window.menuCategories = parsedMenu;
-                }
-            }
-        } catch (e) {
-            console.log("Local menu parsing fallback active:", e);
-        }
-
-        if (typeof window.floorData === 'undefined') {
-            window.floorData = defaultFloors;
-        }
-        floorData = window.floorData;
-
-        try {
-            let localTablesRawData = localStorage.getItem('restaurantFloors');
-            if (localTablesRawData) {
-                let parsedFloors = JSON.parse(localTablesRawData);
-                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) {
-                    floorData = parsedFloors;
-                    window.floorData = parsedFloors;
-                }
-            }
-        } catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
-
-        if (typeof window.taxConfig === 'undefined') {
-            window.taxConfig = defaultTaxes;
-        }
-        taxConfig = window.taxConfig;
-
-        try {
-            let localTaxRawData = localStorage.getItem('restaurantTaxSettings');
-            if (localTaxRawData) {
-                let parsedTax = JSON.parse(localTaxRawData);
-                if (parsedTax && parsedTax.cgstRate !== undefined) {
-                    taxConfig = parsedTax;
-                    window.taxConfig = parsedTax;
-                }
-            }
-        } catch (e) { localStorage.setItem('restaurantTaxSettings', JSON.stringify(defaultTaxes)); }
-
-        if (typeof window.customPaymentQRData === 'undefined') {
-            window.customPaymentQRData = localStorage.getItem('restaurantCustomPaymentQR') || "";
-        }
-        customPaymentQRData = window.customPaymentQRData;
+        window.hotelGlobalScopeID = window.hotelGlobalScopeID || hotelGlobalScopeID;
+        window.rules = window.rules || rules;
+        window.dynamicGlobalSaaSDefaults = window.dynamicGlobalSaaSDefaults || dynamicGlobalSaaSDefaults;
+        window.fallbackMenu = window.fallbackMenu || fallbackMenu;
+        window.defaultFloors = window.defaultFloors || defaultFloors;
+        window.defaultTaxes = window.defaultTaxes || defaultTaxes;
+        window.menuCategories = menuCategories;
+        window.floorData = floorData;
+        window.taxConfig = taxConfig;
+        window.customPaymentQRData = customPaymentQRData;
 
         // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         let clientCurrentActiveTable = "T1";
         let localLiveRunningBill = [];
-        let maximumClaimedDisc = 0;
+        let maximumClaimedDisc = parseInt(new URLSearchParams(window.location.search).get('discount')) ||
+            parseInt(localStorage.getItem('restroflow_max_discount')) ||
+            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena') + '_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) ||
+            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) || 0;
         let globalRunningInvoiceSumTotal = 0;
+
+        // Canvas context initialization pointers explicitly binded
+        let flappyCanvasElement = document.getElementById('flappyCanvas');
+        let flCtx = flappyCanvasElement ? flappyCanvasElement.getContext('2d') : null;
+        let spCanvasElement = document.getElementById('spaceCanvas');
+        let spCtx = spCanvasElement ? spCanvasElement.getContext('2d') : null;
+        let snakeCanvasElement = document.getElementById('snakeCanvas');
+        let snCtx = snakeCanvasElement ? snakeCanvasElement.getContext('2d') : null;
+
+        // Game Configuration Properties Scope Declarations Assemblies
+        let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
+        let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
+        let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
+        let fBird = {}, fPipes = [], flappyScoreTracker = 0;
+        let cosmicBackgroundStars = [];
         // ===================================================================
         // 🔐 FIXED: LOGIN ENGINE WITH AUTOMATIC URL QUERY PARAMS STRIPPER
         // ===================================================================
@@ -2863,6 +2654,42 @@ window.switchGameMode = switchGameMode;
                 identityInput.value = realBrandName;
             }
         }
+        function setupGlobalKeyboardBindings() {
+            window.addEventListener('keydown', (e) => {
+                if (activeGameMode === 'SPACE') {
+                    if (e.key === 'ArrowLeft') spaceMoveDir = -6;
+                    if (e.key === 'ArrowRight') spaceMoveDir = 6;
+                }
+                if (activeGameMode === 'SNAKE') {
+                    if (e.key === 'ArrowUp') setSnakeDirection('UP');
+                    if (e.key === 'ArrowDown') setSnakeDirection('DOWN');
+                    if (e.key === 'ArrowLeft') setSnakeDirection('LEFT');
+                    if (e.key === 'ArrowRight') setSnakeDirection('RIGHT');
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (activeGameMode === 'SPACE') {
+                    if (e.key === 'ArrowLeft' && spaceMoveDir < 0) spaceMoveDir = 0;
+                    if (e.key === 'ArrowRight' && spaceMoveDir > 0) spaceMoveDir = 0;
+                }
+            });
+        }
+
+        // --- FIXED: REWARD MATRIX LOGIC RESTORED 100% TO BIND CLICK EVENT ---
+        function openDiscountSheet() {
+            let overlay = document.getElementById('rulesListDisplay');
+            if (!overlay) return;
+
+            // Yahan rules load karo
+            overlay.innerHTML = `
+       
+        <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar} points = <b>${rules.flappyDisc}% Code Coin</b></li>
+        <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar} = <b>${rules.spaceDisc}% Code Coin</b></li>
+        <li>🐍 <b>Classic Snake Game:</b> Secure ${rules.snakeTar} apples = <b>${rules.snakeDisc}% Code Coin</b></li>
+    `;
+            document.getElementById('discountSheetModal').style.display = 'flex';
+        }
+
         // ===================================================================
         // 💳 BROADCAST ENGINE: OPEN SMART INTENT PAYMENTS LOGIC WINDOW
         // ===================================================================
@@ -2908,24 +2735,31 @@ window.switchGameMode = switchGameMode;
         // ===================================================================
         // Note: Apne existing function 'saveAdminConfig()' ke andar, jahan localStorages items push ho rahe hain,
         // wahan bas in 2 lines ko merge/ensure kar lena taaki input value crash na ho:
-        let originalSaveConfigBackup = saveAdminConfig;
+        let originalSaveConfigBackup = (typeof saveAdminConfig === 'function') ? saveAdminConfig : null;
         saveAdminConfig = function () {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             if (vpaInput) {
                 localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
             }
-            originalSaveConfigBackup();
+            if (originalSaveConfigBackup) {
+                originalSaveConfigBackup();
+            } else if (typeof triggerJustSaveConfig === 'function') {
+                triggerJustSaveConfig();
+            }
         };
+        window.saveAdminConfig = saveAdminConfig;
 
-        // Same synchronization link inside forms populator mapping setup
-        let originalPopulateAdminFormsBackup = populateAdminForms;
+        let originalPopulateAdminFormsBackup = (typeof populateAdminForms === 'function') ? populateAdminForms : null;
         populateAdminForms = function () {
-            originalPopulateAdminFormsBackup();
+            if (originalPopulateAdminFormsBackup) {
+                originalPopulateAdminFormsBackup();
+            }
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             if (vpaInput) {
                 vpaInput.value = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "";
             }
         };
+        window.populateAdminForms = populateAdminForms;
         // ===================================================================
         // 👨‍🍳 FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
         // ===================================================================
@@ -3303,6 +3137,7 @@ window.switchGameMode = switchGameMode;
             }
         }
 
+
         function executeTriggerNativeQRGenCardWindow(floorName, tableUnitID) {
             let qrCanvasFrame = document.getElementById('qrcodeCanvasOutputFrame'); if (!qrCanvasFrame) return; qrCanvasFrame.innerHTML = '';
 
@@ -3318,29 +3153,7 @@ window.switchGameMode = switchGameMode;
             document.getElementById('qrPrintPreviewModal').style.display = 'flex';
         }
 
-        // ===================================================================
-        // 🖨️ FIXED: Forces the actual generated QR Code canvas matrix to shift onto the browser print page
-        // ===================================================================
-        function executeNativeBrowserPrintTrigger() {
-            console.log("🚀 RestroFlow Print Engine: Shifting target QR canvas stream...");
 
-            // Target the modal content container which holds the title, subtext, and QR canvas
-            const qrModalContent = document.querySelector('#qrPrintPreviewModal .modal-content');
-            if (!qrModalContent) {
-                alert("❌ Error: QR preview data stream target could not be parsed.");
-                return;
-            }
-
-            // 🛡️ RUNTIME HOOK: Inject active display layout classes to make this container print-visible
-            qrModalContent.classList.add('print-active-target', 'qr-print-layout');
-
-            // Trigger OS level printing window dialog smoothly
-            window.print();
-
-            // 🧹 GARBAGE CLEANER: Strip hooks after printing completes to return back to normal dashboard view
-            qrModalContent.classList.remove('print-active-target', 'qr-print-layout');
-            console.log("🧹 Success: QR print element properties cleaned seamlessly.");
-        }
         function removeCustomPaymentQR() {
             if (confirm("Are you sure you want to remove the custom QR code image?")) {
                 customPaymentQRData = ""; localStorage.removeItem('restaurantCustomPaymentQR'); updateCustomQRAdminPreview();
@@ -4078,14 +3891,14 @@ window.switchGameMode = switchGameMode;
         // 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH IN-STOCK MANAGEMENT ENGINE)
         // ===================================================================
         function populateAdminForms() {
-            document.getElementById('cfgBrickTar').value = rules.brickTar || 15;
-            document.getElementById('cfgBrickDisc').value = rules.brickDisc || 0;
             document.getElementById('cfgFlappyTar').value = rules.flappyTar;
             document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
             document.getElementById('cfgSpaceTar').value = rules.spaceTar;
             document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
             document.getElementById('cfgSnakeTar').value = rules.snakeTar;
             document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
+            if (document.getElementById('cfgBrickTar')) document.getElementById('cfgBrickTar').value = rules.brickTar || 3;
+            if (document.getElementById('cfgBrickDisc')) document.getElementById('cfgBrickDisc').value = rules.brickDisc || 0;
             document.getElementById('cfgTowerTar').value = rules.towerTar || 3;
             document.getElementById('cfgTowerDisc').value = rules.towerDisc || 0;
 
@@ -4510,31 +4323,31 @@ window.switchGameMode = switchGameMode;
                 .subscribe();
         }
 
-        // 🔥 [Block B]: LISTEN TO LIVE HOTEL CONFIG CHANGES (INSTANT GST & TAX SYNC WITH NO REFRESH)
-        window.customerConfigChannel = supabaseClient
-            .channel('customer-config-stream-node')
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'hotel_config',
-                filter: `id=eq.${hotelGlobalScopeID}`
-            }, (payload) => {
-                console.log("🔔 Customer Tax Engine: Realtime GST/Tax update captured from admin!", payload);
-                if (payload.new && payload.new.tax_data) {
-                    // Admin se change hote hi customer phone ki memory mein sateek rate inject karo
-                    taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
 
-                    // Agar user bill modal khol kar baitha hai, toh bina refresh kiye calculation turant badal do
-                    if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                        renderLiveCalculatedBill();
-                    }
-                }
-            })
-            .subscribe();
 
         // ===================================================================
-        // 🚀 SURGICALLY FIXED APP BOOT INITIALIZER (HYBRID ENGINE NO-RESET)
+        // 🎮 MULTI-GAME SWITCH ROUTER ENGINE
+        // ===================================================================
+        function switchGameMode(selectedTargetMode) {
+            console.log("🎮 Switching game mode to:", selectedTargetMode);
+            const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+            const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+            window.location.href = `modules/game.html?mode=${encodeURIComponent(selectedTargetMode)}&table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
+        }
+        window.switchGameMode = switchGameMode;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const mode = button.id.replace('nav', '');
+                    if (mode && mode !== 'HOME') {
+                        switchGameMode(mode);
+                    }
+                });
+            });
+        });
+
+        // ===================================================================
         // ===================================================================
         async function initApp() {
             console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
@@ -4542,6 +4355,14 @@ window.switchGameMode = switchGameMode;
             const urlTable = urlParams.get('table');
             const urlHotel = urlParams.get('hotel');
             const urlFloor = urlParams.get('floor');
+            const urlDiscount = urlParams.get('discount');
+
+            if (urlDiscount) {
+                let parsedDisc = parseInt(urlDiscount) || 0;
+                maximumClaimedDisc = Math.max(maximumClaimedDisc, parsedDisc);
+                localStorage.setItem('restroflow_max_discount', maximumClaimedDisc.toString());
+                localStorage.setItem('discount_map_' + (urlTable || 'T1'), maximumClaimedDisc.toString());
+            }
 
             if (urlTable) {
                 clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
@@ -4570,6 +4391,8 @@ window.switchGameMode = switchGameMode;
                     } else {
                         document.getElementById('customerView').style.display = 'none';
                         document.getElementById('adminDashboard').style.display = 'block';
+                        if (typeof populateAdminForms === 'function') populateAdminForms();
+                        if (typeof generateAdminTableGrid === 'function') generateAdminTableGrid();
                         console.log("🔐 RestroFlow: Active Owner email verified successfully!");
                     }
                 } else if (!urlHotel) {
@@ -4693,6 +4516,9 @@ window.switchGameMode = switchGameMode;
             } catch (cloudInitErr) {
                 console.log("Cloud matrix recovery fallback logs:", cloudInitErr);
             }
+
+            cosmicBackgroundStars = [];
+            for (let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
 
             try {
                 renderCustomerMenu();
@@ -4926,264 +4752,6 @@ window.switchGameMode = switchGameMode;
             document.getElementById('customerView').style.display = 'block';
             renderCustomerMenu();
         }
-        // ===================================================================
-        // 🛡️ INDESTRUCTIBLE SUBSCRIPTION GATEKEEPER ENGINE (DOM ELEMENT ASSURANCE)
-        // ===================================================================
-        async function verifySubscriptionGatekeeper(ownerId) {
-            try { // 🔥 FIXED: Added the missing try opening block
-                console.log("🔍 Gatekeeper: Checking subscription parameters for UUID:", ownerId);
-
-                const { data: subData, error } = await supabaseClient
-                    .from('subscriptions')
-                    .select('status, current_period_end, monthly_price, yearly_price')
-                    .eq('id', ownerId) // ✅ Change 'user_id' to your actual primary key 'id'
-                    .maybeSingle();
-
-                if (error) {
-                    console.error("🚨 Supabase Database Refusal Exception:", error.message);
-                    return false;
-                }
-
-                // 🛡️ SAFE ZONE CONTAINER DETECTION
-                const paywallModal = document.getElementById('subscriptionExpiredPaywallModal');
-                const customerView = document.getElementById('customerView');
-                const adminDashboard = document.getElementById('adminDashboard');
-
-                // Agar database mein subData null hai (Naya Account)
-                if (!subData) {
-                    console.warn("⚠️ Alert: No subscription record existing inside cloud database for UUID:", ownerId);
-
-                    // 🔥 SaaS Model: Default setup values apply synchronously instead of hardcoded 0
-                    let fallbackM = dynamicGlobalSaaSDefaults.monthly;
-                    let fallbackY = dynamicGlobalSaaSDefaults.yearly;
-
-                    if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + fallbackM;
-                    if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + fallbackY;
-
-                    // Safe dynamic element visibility switches
-                    if (adminDashboard) adminDashboard.style.display = 'none';
-                    if (customerView) customerView.style.display = 'none';
-                    if (paywallModal) {
-                        paywallModal.style.display = 'flex';
-                    } else {
-                        alert("⚠️ RestroFlow Billing Notice: Aapka account active nahi hai. Kripya naye Mobile ID se signup karein ya admin se contact karein!");
-                        if (customerView) customerView.style.display = 'block';
-                    }
-                    return false;
-                }
-
-                let today = new Date();
-                let expiryDate = new Date(subData.current_period_end);
-
-                // 👇 YEH NAYA CODE ADD KARO CHECK KARNE KE LIYE 👇
-                console.log("🔍 DEBUG GATEKEEPER:", {
-                    emailChecked: ownerId,
-                    statusInDb: subData.status,
-                    isStatusValid: subData.status === 'active',
-                    todayIs: today.toLocaleString(),
-                    expiryIs: expiryDate.toLocaleString(),
-                    isDateExpired: today > expiryDate
-                });
-                // 👆 ------------------------------------------ 👆
-
-                // Agar plan expire ho chuka hai ya status active nahi hai
-                if (subData.status !== 'active' || today > expiryDate) {
-                    // 🔥 SaaS Model Core: Calculate fallbacks inside verification nodes natively if database returns 0
-                    let mPrice = (parseInt(subData.monthly_price) === 0) ? dynamicGlobalSaaSDefaults.monthly : (subData.monthly_price || dynamicGlobalSaaSDefaults.monthly);
-                    let yPrice = (parseInt(subData.yearly_price) === 0) ? dynamicGlobalSaaSDefaults.yearly : (subData.yearly_price || dynamicGlobalSaaSDefaults.yearly);
-
-                    if (document.getElementById('paywallMonthlyPriceDisplay')) document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + mPrice;
-                    if (document.getElementById('paywallYearlyPriceDisplay')) document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yPrice;
-
-                    if (adminDashboard) adminDashboard.style.display = 'none';
-                    if (customerView) customerView.style.display = 'none';
-                    if (paywallModal) {
-                        paywallModal.style.display = 'flex';
-                    } else {
-                        alert("🚨 Plan Expired! Workspace locked. Kripya pricing system se active karein.");
-                        if (customerView) customerView.style.display = 'block';
-                    }
-
-                    return false;
-                }
-
-                return true; // Plan active hai, welcome to admin dashboard!
-
-            } catch (err) { // 🔥 FIXED: Scope bindings closed perfectly before catch statement
-                console.error("🚨 Critical Gatekeeper Architectural Crash Blocked:", err);
-                return false;
-            }
-        }
-        // ===================================================================
-        // ⚙️ GLOBAL RULES SAVER: LOCKS TARGET VARIABLES CROSS-DEVICE
-        // ===================================================================
-        function saveAdminConfig() {
-            // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
-            if (document.getElementById('adminDashboard').style.display !== 'block') {
-                console.log("🛡️ Shield Active: Prevented customer profile from overwriting global dataset.");
-                return;
-            }
-
-            // 🎯 Capturing form values straight into the global rules state manager object
-            rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 15;
-            rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 0;
-            rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5;
-            rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
-            rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3;
-            rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
-            rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;
-            rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
-            rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
-            rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 0;
-            let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value || "RestroFlow";
-            localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
-
-            if (document.getElementById('cfgTaxCGSTActive')) {
-                taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
-                taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked;
-                taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
-                taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked;
-                taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
-            }
-
-            // Atomic disk saves
-            localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-            localStorage.setItem('gameRulesConfig', JSON.stringify(rules)); // 💾 Strictly locked into the system array matrix
-            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-            localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-
-            clearTimeout(configSaveTimeout);
-            configSaveTimeout = setTimeout(() => {
-                uploadMenuToCloud(); // Triggers global cloud sync worker immediately
-            }, 600);
-        }
-
-        // ===================================================================
-        // 📡 FIXED UNIFIED CLOUD SYNC ENGINE: TRANSMITS TARGET VALUES TO CLOUD
-        // ===================================================================
-        async function uploadMenuToCloud() {
-            const currentActiveSaveId = hotelGlobalScopeID;
-            const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
-
-            try {
-                console.log("🧹 Clear Engine Triggered: Purging old entries for ID:", currentActiveSaveId);
-
-                // 🔥 ANTI-BLOAT SHIELD: Database mein bhejne se pehle local array ko check karo
-                if (Array.isArray(menuCategories)) {
-                    menuCategories.forEach(cat => {
-                        if (cat && Array.isArray(cat.items)) {
-                            cat.items.forEach(item => {
-                                if (item && item.image && item.image.startsWith('data:image')) {
-                                    console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
-                                    item.image = '';
-                                }
-                            });
-                        }
-                    });
-                    // Local storage ko bhi ekdam clean aur fresh kar do
-                    localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
-                }
-
-                // 1. Old configurations rows ko safe purge/delete karo conflict se bachne ke liye
-                const { error: deleteError } = await supabaseClient
-                    .from('hotel_config')
-                    .delete()
-                    .eq('id', currentActiveSaveId);
-
-                if (deleteError) {
-                    console.error("🚨 Supabase Delete Phase Interrupted:", deleteError.message);
-                } else {
-                    console.log("🗑️ Success: Old cloud rows cleared cleanly.");
-                }
-
-                // 2. 🔥 🔥 THE CORE PIPELINE FIX: Fresh menu, tax_data, AND the missing rules object uploaded together in the same insert payload row!
-                const { data, error: insertError } = await supabaseClient
-                    .from('hotel_config')
-                    .insert({
-                        id: currentActiveSaveId,
-                        hotel_name: currentBrandName,
-                        menu_data: menuCategories,
-                        tax_data: taxConfig,
-                        rules_data: rules // 🌟 THE FIX: Saves your custom target scores and percentages directly to the cloud rules_data column field!
-                    })
-                    .select();
-
-                if (insertError) {
-                    console.error("🚨 Supabase Insert Phase Interrupted:", insertError.message);
-                    showOnScreenNotification("❌ Cloud save failed!", true);
-                } else {
-                    console.log(`🎉 Fresh configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
-                    updateFrontEndClassificationLabels();
-                }
-            } catch (e) {
-                console.error("Critical Cloud Save Exception:", e);
-            }
-        }
-        // ===================================================================
-        // 🚀 SPACE SHOOTER: LEVEL SETUP & INITIALIZATION (GLOBAL SCOPE FIX)
-        // ===================================================================
-
-        function setupLevelParameters() {
-            let isBoss = (currentLevelState % 5 === 0); // Boss every 5 stages
-            let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
-
-            // Bosses are now massive; minions have varied sizes/speeds based on stage
-            let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
-            let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
-            let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
-
-            alienInvaderObj = {
-                x: 160 - (shipW / 2), y: isBoss ? -100 : 40, // Boss drops in from top 
-                w: shipW, h: shipH,
-                health: bHealth, maxHealth: bHealth,
-                dx: shipSpeed,
-                isBoss: isBoss
-            };
-
-            spaceBullets = []; enemyLasers = []; powerUps = [];
-            spaceParticlesArray = []; // Clear particles on new stage
-            sShieldTimer = 0; sMultiTimer = 0;
-        }
-
-        function initSpaceShooterGame() {
-            clearInterval(loopTimerInstance); // Stops any ghost loop execution handlers
-            currentLevelState = 1;
-            spaceMoveDir = 0;
-            spaceFrameTracker = 0;
-            spaceTransitionCount = 0;
-
-            // Hard purge caching arrays to optimize mobile processor RAM load
-            spaceBullets.length = 0;
-            enemyLasers.length = 0;
-            powerUps.length = 0;
-            spaceBullets = [];
-            enemyLasers = [];
-            powerUps = [];
-
-            const sCanvas = document.getElementById('spaceCanvas');
-            pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 };
-
-            setupLevelParameters(); // Call the globally available function
-
-            // Mapped precisely to 20ms cycles for constant frame rate deliveries
-            loopTimerInstance = setInterval(frameUpdateSpace, 20);
-        }
-
-        // ===================================================================
-        // 🐦 STATE RESET: FLAPPY BIRD FLIGHT LIFE-CYCLE LIFECYCLE INITIALIZER
-        // ===================================================================
-        function initFlappyBirdGame() {
-            clearInterval(loopTimerInstance); // Hard safety boundary flush
-            const fCanvas = document.getElementById('flappyCanvas');
-
-            fBird = { y: fCanvas.height / 2, velocity: 0, width: 22, height: 22 };
-            fPipes = [{ x: fCanvas.width, gapTop: 90, gapBottom: 210, registered: false }];
-            flappyScoreTracker = 0;
-
-            fCanvas.onclick = () => fBird.velocity = -4.6;
-            loopTimerInstance = setInterval(frameUpdateFlappy, 22);
-        }
-
         // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
         function showOnScreenNotification(message, isError = false) {
             let toast = document.getElementById('customToastNotification');
@@ -5208,6 +4776,64 @@ window.switchGameMode = switchGameMode;
             siblingButtons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
+        // ===================================================================
+        // ☁️ CLOUD SYNC & SUBSCRIPTION VERIFICATION PIPELINES
+        // ===================================================================
+        async function uploadMenuToCloud() {
+            try {
+                let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+                let typedBrandName = (identityInput && identityInput.value) ? identityInput.value : "RestroFlow";
+
+                const { error } = await supabaseClient
+                    .from('hotel_config')
+                    .upsert({
+                        id: hotelGlobalScopeID,
+                        hotel_name: typedBrandName,
+                        menu_data: menuCategories,
+                        rules_data: rules,
+                        tax_data: taxConfig
+                    });
+
+                if (error) {
+                    console.error("Cloud upload error:", error.message);
+                } else {
+                    console.log("☁️ Menu & settings successfully synced to Supabase cloud!");
+                }
+            } catch (err) {
+                console.error("uploadMenuToCloud exception:", err);
+            }
+        }
+        window.uploadMenuToCloud = uploadMenuToCloud;
+
+        async function verifySubscriptionGatekeeper(ownerEmail) {
+            try {
+                if (!ownerEmail) return true;
+                const { data, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('status, current_period_end, monthly_price, yearly_price')
+                    .eq('id', ownerEmail)
+                    .maybeSingle();
+
+                if (error) {
+                    console.warn("verifySubscriptionGatekeeper warning:", error.message);
+                    return true;
+                }
+
+                if (data) {
+                    const isExpired = data.status === 'expired' || (data.current_period_end && new Date(data.current_period_end) < new Date());
+                    if (isExpired) {
+                        displaySubscriptionExpiredPaywallModal(data.monthly_price || 499, data.yearly_price || 5000);
+                        return false;
+                    }
+                }
+                return true;
+            } catch (err) {
+                console.error("verifySubscriptionGatekeeper error:", err);
+                return true;
+            }
+        }
+        window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
+
         // ===================================================================
         // 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
         // ===================================================================
