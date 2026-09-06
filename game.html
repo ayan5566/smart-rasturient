@@ -933,59 +933,75 @@ function startSelectedGame() {
     }
 }
 
-        // ===================================================================
-        // 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
-        // ===================================================================
-        function exitGameEngine() {
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance);
-                cancelAnimationFrame(loopTimerInstance);
-                loopTimerInstance = null;
-            }
-
-            let gameBox = document.querySelector('.game-box');
-            if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
-            if (document.getElementById('exitGameBtn')) document.getElementById('exitGameBtn').style.display = "none";
-            if (document.getElementById('startBtn')) {
-                document.getElementById('startBtn').style.display = "block";
-                document.getElementById('startBtn').innerText = "Launch Engine Run";
-            }
-            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none";
-
-            const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
-            allGameCanvasIds.forEach(id => {
-                const targetElement = document.getElementById(id);
-                if (targetElement) targetElement.style.display = 'none';
-            });
-
-            // Redirect back to customer home panel with table & hotel parameters preserved
-            const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
-            const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            // ✅ Build absolute path back to index.html — works on GitHub Pages AND locally
-            // e.g. GitHub Pages: /smart-rasturient/index.html
-            // e.g. locally: /index.html
-            const gamePageDir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-            const parentDir = gamePageDir.replace(/\/modules\/$/, '/').replace(/\/modules$/, '/');
-            window.location.href = `${window.location.origin}${parentDir}index.html?table=${encodeURIComponent(targetTable)}&hotel=${encodeURIComponent(targetHotel)}`;
+// ===================================================================
+// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET & SAFE REDIRECT)
+// ===================================================================
+function exitGameEngine() {
+    // 1. Clear any running game loops
+    if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+        clearInterval(loopTimerInstance);
+        if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(loopTimerInstance);
         }
+        loopTimerInstance = null;
+    }
 
-        // Attach core controller functions explicitly to global window object
-        window.switchGameMode = switchGameMode;
-        window.startSelectedGame = startSelectedGame;
-        window.exitGameEngine = exitGameEngine;
-        window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
+    // 2. Reset UI view states
+    const gameBox = document.querySelector('.game-box');
+    if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
+    
+    const exitBtn = document.getElementById('exitGameBtn');
+    if (exitBtn) exitBtn.style.display = "none";
+    
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.style.display = "block";
+        startBtn.innerText = "Launch Engine Run";
+    }
+    
+    const statusMsg = document.getElementById('gameScreenStatusMsg');
+    if (statusMsg) statusMsg.style.display = "none";
 
-        // Attach event listeners to game navigation buttons for clean event handling
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const mode = button.id.replace('nav', '');
-                    if (mode && mode !== 'HOME' && typeof switchGameMode === 'function') {
-                        switchGameMode(mode);
-                    }
-                });
-            });
+    // 3. Hide all canvas layers
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+    allGameCanvasIds.forEach(id => {
+        const targetElement = document.getElementById(id);
+        if (targetElement) targetElement.style.display = 'none';
+    });
+
+    // 4. Resolve session identifiers
+    const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+    const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
+
+    // 5. 🛡️ BULLETPROOF REDIRECT: Resolves relative path '../index.html' seamlessly on GitHub Pages and Localhost
+    const homeUrl = new URL('../index.html', window.location.href);
+    homeUrl.searchParams.set('table', targetTable);
+    homeUrl.searchParams.set('hotel', targetHotel);
+    homeUrl.searchParams.set('discount', maxDisc);
+
+    window.location.href = homeUrl.toString();
+}
+
+// Global scope attachment
+window.switchGameMode = switchGameMode;
+window.startSelectedGame = startSelectedGame;
+window.exitGameEngine = exitGameEngine;
+window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
+
+// Navigation buttons click binding
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
+        button.addEventListener('click', () => {
+            const mode = button.id.replace('nav', '');
+            if (mode === 'HOME') {
+                exitGameEngine();
+            } else if (mode && typeof switchGameMode === 'function') {
+                switchGameMode(mode);
+            }
         });
+    });
+});
 
         // ===================================================================
         // 🔒 ANTI-409 SHIELD: ATOMIC SESSIONS UPSERT ENGINE (CONFLICT PROOF)
