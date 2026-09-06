@@ -817,93 +817,121 @@
             }
         }
 
-        // ===================================================================
-        // 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
-        // ===================================================================
-        function startSelectedGame() {
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance);
-                cancelAnimationFrame(loopTimerInstance);
-                loopTimerInstance = null;
-            }
-
-            if (document.getElementById('startBtn')) document.getElementById('startBtn').style.display = "none";
-            if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = "none";
-            if (document.getElementById('gameScreenStatusMsg')) document.getElementById('gameScreenStatusMsg').style.display = "none";
-
-            // Sabhi canvas ko completely reset karo taaki overlapping 100% khatam ho jaye
-            const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
-            allGameCanvasIds.forEach(id => {
-                const targetElement = document.getElementById(id);
-                if (targetElement) targetElement.style.display = 'none';
-            });
-
-            // Toggle corresponding layout controller blocks dynamically
-            if (document.getElementById('spaceControls')) document.getElementById('spaceControls').style.display = (activeGameMode === 'SPACE') ? 'flex' : 'none';
-            if (document.getElementById('snakeControls')) document.getElementById('snakeControls').style.display = (activeGameMode === 'SNAKE') ? 'flex' : 'none';
-            if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (activeGameMode === 'BRICK') ? 'flex' : 'none';
-
-            let gameBox = document.querySelector('.game-box');
-            if (gameBox && activeGameMode !== 'MATH') {
-                gameBox.classList.add('fullscreen-arcade-active');
-                if (document.getElementById('exitGameBtn')) document.getElementById('exitGameBtn').style.display = "block";
-            }
-
-            // 💧 🔥 THE LIQUID COMPROLLER: Real screen space ke mutabik length aur breadth calculate karo
-            let fluidBreadth = Math.min(window.innerWidth * 0.95, 500);
-            let fluidLength = Math.min(window.innerHeight * 0.50, 450);
-
-            if (activeGameMode === 'FLAPPY') {
-                const fCanvas = document.getElementById('flappyCanvas');
-                if (fCanvas) {
-                    fCanvas.width = fluidBreadth;
-                    fCanvas.height = fluidLength;
-                    fCanvas.style.display = 'block';
-                }
-                if (typeof initFlappyBirdGame === 'function') initFlappyBirdGame();
-            }
-            else if (activeGameMode === 'BRICK') {
-                const bCanvas = document.getElementById('brickCanvas');
-                if (bCanvas) {
-                    bCanvas.width = fluidBreadth;
-                    bCanvas.height = fluidLength;
-                    bCanvas.style.display = 'block';
-                    brickCanvasElement = bCanvas;
-                    brCtx = bCanvas.getContext('2d');
-                }
-                if (typeof initBrickBreakerGame === 'function') initBrickBreakerGame();
-            }
-            else if (activeGameMode === 'SPACE') {
-                const sCanvas = document.getElementById('spaceCanvas');
-                if (sCanvas) {
-                    sCanvas.width = fluidBreadth;
-                    sCanvas.height = fluidLength;
-                    sCanvas.style.display = 'block';
-                }
-                if (typeof initSpaceShooterGame === 'function') initSpaceShooterGame();
-            }
-            else if (activeGameMode === 'SNAKE') {
-                let snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
-                const sCanvas = document.getElementById('snakeCanvas');
-                if (sCanvas) {
-                    sCanvas.width = snakeSquareSize;
-                    sCanvas.height = snakeSquareSize;
-                    sCanvas.style.display = 'block';
-                }
-                if (typeof initSnakeGameLoop === 'function') initSnakeGameLoop();
-            }
-            else if (activeGameMode === 'TOWER') {
-                const tCanvas = document.getElementById('towerCanvas');
-                if (tCanvas) {
-                    tCanvas.width = fluidBreadth;
-                    tCanvas.height = fluidLength;
-                    tCanvas.style.display = 'block';
-                    towerCanvasElement = tCanvas;
-                    twCtx = tCanvas.getContext('2d');
-                }
-                if (typeof initTowerBloxxGame === 'function') initTowerBloxxGame();
-            }
+       // ===================================================================
+// 🌊 FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
+// ===================================================================
+function startSelectedGame() {
+    // 1. Clear any active loops/tickers
+    if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+        clearInterval(loopTimerInstance);
+        if (typeof cancelAnimationFrame === 'function') {
+            cancelAnimationFrame(loopTimerInstance);
         }
+        loopTimerInstance = null;
+    }
+
+    // 2. Hide HUD buttons and status text
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) startBtn.style.display = "none";
+
+    const couponDisplay = document.getElementById('couponDisplay');
+    if (couponDisplay) couponDisplay.style.display = "none";
+
+    const statusMsg = document.getElementById('gameScreenStatusMsg');
+    if (statusMsg) statusMsg.style.display = "none";
+
+    // 3. Reset and hide all game canvases to eliminate overlap
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+    allGameCanvasIds.forEach(id => {
+        const targetElement = document.getElementById(id);
+        if (targetElement) targetElement.style.display = 'none';
+    });
+
+    // 4. Toggle specific mobile touch controls
+    const spaceControls = document.getElementById('spaceControls');
+    if (spaceControls) spaceControls.style.display = (activeGameMode === 'SPACE') ? 'flex' : 'none';
+
+    const snakeControls = document.getElementById('snakeControls');
+    if (snakeControls) snakeControls.style.display = (activeGameMode === 'SNAKE') ? 'flex' : 'none';
+
+    const brickControls = document.getElementById('brickControls');
+    if (brickControls) brickControls.style.display = (activeGameMode === 'BRICK') ? 'flex' : 'none';
+
+    // 5. Expand arcade wrapper to fluid viewport
+    const gameBox = document.querySelector('.game-box');
+    if (gameBox && activeGameMode !== 'MATH') {
+        gameBox.classList.add('fullscreen-arcade-active');
+        const exitBtn = document.getElementById('exitGameBtn');
+        if (exitBtn) exitBtn.style.display = "block";
+    }
+
+    // 6. Dynamic liquid dimensions calculation
+    const fluidBreadth = Math.min(window.innerWidth * 0.95, 500);
+    const fluidLength = Math.min(window.innerHeight * 0.50, 450);
+
+    // 7. Context initialization and game-specific launch
+    if (activeGameMode === 'FLAPPY') {
+        flappyCanvasElement = document.getElementById('flappyCanvas');
+        if (flappyCanvasElement) {
+            flappyCanvasElement.width = fluidBreadth;
+            flappyCanvasElement.height = fluidLength;
+            flappyCanvasElement.style.display = 'block';
+            flCtx = flappyCanvasElement.getContext('2d');
+        }
+        if (typeof initFlappyBirdGame === 'function') {
+            initFlappyBirdGame();
+        }
+    }
+    else if (activeGameMode === 'BRICK') {
+        brickCanvasElement = document.getElementById('brickCanvas');
+        if (brickCanvasElement) {
+            brickCanvasElement.width = fluidBreadth;
+            brickCanvasElement.height = fluidLength;
+            brickCanvasElement.style.display = 'block';
+            brCtx = brickCanvasElement.getContext('2d');
+        }
+        if (typeof initBrickBreakerGame === 'function') {
+            initBrickBreakerGame();
+        }
+    }
+    else if (activeGameMode === 'SPACE') {
+        spCanvasElement = document.getElementById('spaceCanvas');
+        if (spCanvasElement) {
+            spCanvasElement.width = fluidBreadth;
+            spCanvasElement.height = fluidLength;
+            spCanvasElement.style.display = 'block';
+            spCtx = spCanvasElement.getContext('2d');
+        }
+        if (typeof initSpaceShooterGame === 'function') {
+            initSpaceShooterGame();
+        }
+    }
+    else if (activeGameMode === 'SNAKE') {
+        const snakeSquareSize = Math.floor(Math.min(fluidBreadth, fluidLength) / 20) * 20;
+        snakeCanvasElement = document.getElementById('snakeCanvas');
+        if (snakeCanvasElement) {
+            snakeCanvasElement.width = snakeSquareSize;
+            snakeCanvasElement.height = snakeSquareSize;
+            snakeCanvasElement.style.display = 'block';
+            snCtx = snakeCanvasElement.getContext('2d');
+        }
+        if (typeof initSnakeGameLoop === 'function') {
+            initSnakeGameLoop();
+        }
+    }
+    else if (activeGameMode === 'TOWER') {
+        towerCanvasElement = document.getElementById('towerCanvas');
+        if (towerCanvasElement) {
+            towerCanvasElement.width = fluidBreadth;
+            towerCanvasElement.height = fluidLength;
+            towerCanvasElement.style.display = 'block';
+            twCtx = towerCanvasElement.getContext('2d');
+        }
+        if (typeof initTowerBloxxGame === 'function') {
+            initTowerBloxxGame();
+        }
+    }
+}
 
         // ===================================================================
         // 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET)
@@ -946,6 +974,18 @@
         window.startSelectedGame = startSelectedGame;
         window.exitGameEngine = exitGameEngine;
         window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
+
+        // Attach event listeners to game navigation buttons for clean event handling
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const mode = button.id.replace('nav', '');
+                    if (mode && mode !== 'HOME' && typeof switchGameMode === 'function') {
+                        switchGameMode(mode);
+                    }
+                });
+            });
+        });
 
         // ===================================================================
         // 🔒 ANTI-409 SHIELD: ATOMIC SESSIONS UPSERT ENGINE (CONFLICT PROOF)
@@ -1180,26 +1220,25 @@
         }
 
         function setupGlobalKeyboardBindings() {
-            window.addEventListener('keydown', (e) => {
-                if (activeGameMode === 'SPACE') {
-                    if (e.key === 'ArrowLeft' || e.key === 'a') spaceMoveDir = -6;
-                    if (e.key === 'ArrowRight' || e.key === 'd') spaceMoveDir = 6;
-                }
-                if (activeGameMode === 'SNAKE') {
-                    if (e.key === 'ArrowUp' || e.key === 'w') setSnakeDirection('UP');
-                    if (e.key === 'ArrowDown' || e.key === 's') setSnakeDirection('DOWN');
-                    if (e.key === 'ArrowLeft' || e.key === 'a') setSnakeDirection('LEFT');
-                    if (e.key === 'ArrowRight' || e.key === 'd') setSnakeDirection('RIGHT');
-                }
-            });
-            window.addEventListener('keyup', (e) => {
-                if (activeGameMode === 'SPACE') {
-                    if (['ArrowLeft', 'ArrowRight', 'a', 'd'].includes(e.key) && ((spaceMoveDir < 0 && ['ArrowLeft', 'a'].includes(e.key)) || (spaceMoveDir > 0 && ['ArrowRight', 'd'].includes(e.key)))) {
-                        spaceMoveDir = 0;
+                window.addEventListener('keydown', (e) => {
+                    if (activeGameMode === 'SPACE') {
+                        if (e.key === 'ArrowLeft') spaceMoveDir = -6;
+                        if (e.key === 'ArrowRight') spaceMoveDir = 6;
                     }
-                }
-            });
-        }
+                    if (activeGameMode === 'SNAKE') {
+                        if (e.key === 'ArrowUp') setSnakeDirection('UP');
+                        if (e.key === 'ArrowDown') setSnakeDirection('DOWN');
+                        if (e.key === 'ArrowLeft') setSnakeDirection('LEFT');
+                        if (e.key === 'ArrowRight') setSnakeDirection('RIGHT');
+                    }
+                });
+                window.addEventListener('keyup', (e) => {
+                    if (activeGameMode === 'SPACE') {
+                        if (e.key === 'ArrowLeft' && spaceMoveDir < 0) spaceMoveDir = 0;
+                        if (e.key === 'ArrowRight' && spaceMoveDir > 0) spaceMoveDir = 0;
+                    }
+                });
+            }
 
         // -------------------------------------------------------------------
         // 🧱 BRICK BREAKER ENGINE & VFX (SEE COMPLETE BLUEPRINT BELOW)
@@ -3603,8 +3642,13 @@
             if (!spCanvasElement) return;
             spCtx = spCanvasElement.getContext('2d');
             const sCanvas = spCanvasElement;
+            // Game Configuration Properties Scope Declarations Assemblies
+            let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
+            let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
+            let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
+            let fBird = {}, fPipes = [], flappyScoreTracker = 0;
+            let cosmicBackgroundStars = [];
 
-            pShipObj = { x: (sCanvas.width / 2) - 20, y: sCanvas.height - 60, w: 40, h: 32, health: 5, maxHealth: 5 };
 
             setupLevelParameters();
 
