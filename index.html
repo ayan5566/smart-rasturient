@@ -2911,14 +2911,51 @@
         // ===================================================================
         // Note: Apne existing function 'saveAdminConfig()' ke andar, jahan localStorages items push ho rahe hain,
         // wahan bas in 2 lines ko merge/ensure kar lena taaki input value crash na ho:
-        let originalSaveConfigBackup = saveAdminConfig;
-        saveAdminConfig = function () {
+        function saveAdminConfig() {
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             if (vpaInput) {
                 localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
             }
-            originalSaveConfigBackup();
-        };
+
+            if (document.getElementById('cfgFlappyTar')) {
+                rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5;
+                rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+                rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3;
+                rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+                rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;
+                rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+                if (document.getElementById('cfgBrickTar')) rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 3;
+                if (document.getElementById('cfgBrickDisc')) rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 0;
+                if (document.getElementById('cfgTowerTar')) rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
+                if (document.getElementById('cfgTowerDisc')) rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 0;
+            }
+
+            if (document.getElementById('cfgTaxCGSTActive')) {
+                taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked;
+                taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+                taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked;
+                taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+                taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked;
+                taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+            }
+
+            if (typeof hotelGlobalScopeID !== 'undefined') {
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            }
+            localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+
+            if (typeof configSaveTimeout !== 'undefined') {
+                clearTimeout(configSaveTimeout);
+                configSaveTimeout = setTimeout(() => {
+                    if (typeof uploadMenuToCloud === "function") {
+                        uploadMenuToCloud();
+                    }
+                }, 1000);
+            }
+        }
+        window.saveAdminConfig = saveAdminConfig;
 
         // Same synchronization link inside forms populator mapping setup
         let originalPopulateAdminFormsBackup = populateAdminForms;
@@ -4980,6 +5017,45 @@
             siblingButtons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
+        async function uploadMenuToCloud() {
+            try {
+                const currentActiveSaveId = hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+                const currentBrandName = localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow";
+
+                let menuCat = menuCategories || JSON.parse(localStorage.getItem('restaurantMenuCat_' + currentActiveSaveId)) || [];
+                let taxCfg = taxConfig || JSON.parse(localStorage.getItem('restaurantTaxSettings')) || {};
+                let gameRules = rules || JSON.parse(localStorage.getItem('gameRulesConfig')) || {};
+
+                if (Array.isArray(menuCat)) {
+                    menuCat.forEach(cat => {
+                        if (cat && Array.isArray(cat.items)) {
+                            cat.items.forEach(item => {
+                                if (item && item.image && item.image.startsWith('data:image')) {
+                                    item.image = '';
+                                }
+                            });
+                        }
+                    });
+                    localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCat));
+                }
+
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    await supabaseClient
+                        .from('hotel_config')
+                        .upsert({
+                            id: currentActiveSaveId,
+                            hotel_name: currentBrandName,
+                            menu_data: menuCat,
+                            tax_data: taxCfg,
+                            rules_data: gameRules
+                        });
+                }
+            } catch (err) {
+                console.error("Error in uploadMenuToCloud:", err);
+            }
+        }
+        window.uploadMenuToCloud = uploadMenuToCloud;
+
         // ===================================================================
         // 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
         // ===================================================================
