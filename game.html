@@ -5,14 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestroFlow - Arcade Game Engines</title>
-    <link rel="icon" type="image/jpeg" href="../favicon.jpg">
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <!-- ================================================================= -->
-    <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
-    <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
-    <!-- and Tower Bloxx physics, loops, canvas rendering, and VFX engine.   -->
-    <!-- ================================================================= -->
 
     <style>
         /* ================================================================= */
@@ -369,7 +364,7 @@
 
 <body>
     <!-- Hidden Supabase Service Frame -->
-    <iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+   <iframe src="supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
@@ -490,12 +485,12 @@
             tryNext();
         }
 
-        loadSpriteWithFallbacks(sprites.space_ship, '../assets/sprites/space_ship.png');
-        loadSpriteWithFallbacks(sprites.space_enemy, '../assets/sprites/space_enemy.png');
-        loadSpriteWithFallbacks(sprites.flappy_bird, '../assets/sprites/flappy_bird.png');
-        loadSpriteWithFallbacks(sprites.snake_head, '../assets/sprites/snake_head.png');
-        loadSpriteWithFallbacks(sprites.brick_ball, '../assets/sprites/brick_ball.png');
-        loadSpriteWithFallbacks(sprites.tower_block, '../assets/sprites/tower_block.png');
+       loadSpriteWithFallbacks(sprites.space_ship, 'assets/sprites/space_ship.png');
+       loadSpriteWithFallbacks(sprites.space_enemy, 'assets/sprites/space_enemy.png');
+       loadSpriteWithFallbacks(sprites.flappy_bird, 'assets/sprites/flappy_bird.png') ;
+       loadSpriteWithFallbacks(sprites.snake_head, 'assets/sprites/snake_head.png');
+       loadSpriteWithFallbacks(sprites.brick_ball, 'assets/sprites/brick_ball.png');
+       loadSpriteWithFallbacks(sprites.tower_block, 'assets/sprites/tower_block.png');
 
         // ===================================================================
         // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
@@ -934,10 +929,10 @@ function startSelectedGame() {
 }
 
 // ===================================================================
-// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET & SAFE REDIRECT)
+// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (ROOT-SAFE REDIRECT & RESET)
 // ===================================================================
 function exitGameEngine() {
-    // 1. Clear any running game loops
+    // 1. Clear active game loops
     if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
         clearInterval(loopTimerInstance);
         if (typeof cancelAnimationFrame === 'function') {
@@ -946,7 +941,7 @@ function exitGameEngine() {
         loopTimerInstance = null;
     }
 
-    // 2. Reset UI view states
+    // 2. Reset UI elements
     const gameBox = document.querySelector('.game-box');
     if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
     
@@ -962,20 +957,20 @@ function exitGameEngine() {
     const statusMsg = document.getElementById('gameScreenStatusMsg');
     if (statusMsg) statusMsg.style.display = "none";
 
-    // 3. Hide all canvas layers
+    // 3. Reset canvases
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
         if (targetElement) targetElement.style.display = 'none';
     });
 
-    // 4. Resolve session identifiers
+    // 4. Resolve identifiers
     const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
     const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
     const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-    // 5. 🛡️ BULLETPROOF REDIRECT: Resolves relative path '../index.html' seamlessly on GitHub Pages and Localhost
-    const homeUrl = new URL('../index.html', window.location.href);
+    // 5. 🛡️ DIRECT ROOT REDIRECT (Fixes 404 on GitHub Pages)
+    const homeUrl = new URL('index.html', window.location.href);
     homeUrl.searchParams.set('table', targetTable);
     homeUrl.searchParams.set('hotel', targetHotel);
     homeUrl.searchParams.set('discount', maxDisc);
@@ -983,7 +978,7 @@ function exitGameEngine() {
     window.location.href = homeUrl.toString();
 }
 
-// Global scope attachment
+// Global scope bindings
 window.switchGameMode = switchGameMode;
 window.startSelectedGame = startSelectedGame;
 window.exitGameEngine = exitGameEngine;
