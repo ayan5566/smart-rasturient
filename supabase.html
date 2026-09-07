@@ -1,1 +1,82 @@
+// ===================================================================
+// 🌐 RESTROFLOW CENTRAL DATABASE SERVICE (services/supabase.js)
+// ===================================================================
+(function () {
+    const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
 
+    // Global Supabase Client
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
+
+    // 🚀 Central DB Controller Object
+    window.RestroDB = {
+        // 1. Discount Save (Game se call hoga)
+        async saveDiscount(hotelId, tableId, discountPercent) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            const discountVal = parseInt(discountPercent) || 0;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('table_sessions')
+                    .upsert({
+                        table_id: compositeKey,
+                        discount_claimed: discountVal,
+                        payment_status: 'PENDING',
+                        waiter_bell: false
+                    }, { onConflict: 'table_id' });
+
+                if (error) {
+                    console.error("🚨 RestroDB Discount Error:", error.message);
+                    return { success: false, error };
+                }
+                console.log(`✅ RestroDB: ${discountVal}% Discount synced to cloud for ${compositeKey}`);
+                return { success: true, data };
+            } catch (err) {
+                console.error("🚨 RestroDB Network Error:", err);
+                return { success: false, error: err };
+            }
+        },
+
+        // 2. Full Table Session Sync (Bill + Discount + Bell)
+        async syncTableSession(hotelId, tableId, liveBill, discountPercent, bellStatus, payStatus) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('table_sessions')
+                    .upsert({
+                        table_id: compositeKey,
+                        live_bill: Array.isArray(liveBill) ? liveBill : [],
+                        discount_claimed: parseInt(discountPercent) || 0,
+                        waiter_bell: bellStatus || false,
+                        payment_status: payStatus || 'PENDING'
+                    }, { onConflict: 'table_id' });
+
+                if (error) throw error;
+                return { success: true, data };
+            } catch (err) {
+                console.error("🚨 RestroDB Session Sync Error:", err);
+                return { success: false, error: err };
+            }
+        },
+
+        // 3. Live Session Fetch
+        async getTableSession(hotelId, tableId) {
+            const compositeKey = `${hotelId}_${tableId}`;
+            try {
+                const { data, error } = await supabaseClient
+                    .from('table_sessions')
+                    .select('*')
+                    .eq('table_id', compositeKey)
+                    .maybeSingle();
+
+                if (error) throw error;
+                return data;
+            } catch (err) {
+                console.error("🚨 RestroDB Fetch Error:", err);
+                return null;
+            }
+        }
+    };
+})();
+    </script>
