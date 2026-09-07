@@ -5,9 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestroFlow - Arcade Game Engines</title>
-    <link rel="icon" type="image/jpeg" href="favicon.jpg">
+    <link rel="icon" type="image/jpeg" href="../favicon.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <!-- ================================================================= -->
+    <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
+    <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
+    <!-- and Tower Bloxx physics, loops, canvas rendering, and VFX engine.   -->
+    <!-- ================================================================= -->
 
     <style>
         /* ================================================================= */
@@ -364,7 +369,7 @@
 
 <body>
     <!-- Hidden Supabase Service Frame -->
-   <iframe src="supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+    <iframe src="../services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
@@ -377,7 +382,7 @@
         <div class="game-nav"
             style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
             <button id="navHOME"
-                onclick="window.location.href='../index.html?table=' + encodeURIComponent(window.clientCurrentActiveTable || 'T1') + '&hotel=' + encodeURIComponent(window.hotelGlobalScopeID || 'Default_HQ_Arena')"
+                onclick="exitGameEngine()"
                 style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.6);"><span
                     style="font-size: 20px;">🏠</span> Home</button>
             <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
@@ -449,48 +454,6 @@
 
     <!-- ⚙️ JAVASCRIPT LOGIC -->
     <script>
-        // --- LOAD AI SPRITES ---
-        const sprites = {
-            space_ship: new Image(),
-            space_enemy: new Image(),
-            flappy_bird: new Image(),
-            snake_head: new Image(),
-            brick_ball: new Image(),
-            tower_block: new Image()
-        };
-        function loadSpriteWithFallbacks(imgObj, relativePath) {
-            const possiblePaths = [
-                relativePath,
-                '../' + relativePath.replace(/^(\.\.\/)+/, ''),
-                '/' + relativePath.replace(/^(\.\.\/|\/)+/, ''),
-                relativePath.replace(/^(\.\.\/|\/)+/, '')
-            ];
-            let attemptIndex = 0;
-            function tryNext() {
-                if (attemptIndex < possiblePaths.length) {
-                    const nextSrc = possiblePaths[attemptIndex] + '?v=' + Date.now();
-                    attemptIndex++;
-                    imgObj.onerror = function () {
-                        console.warn('⚠️ Sprite load failed from:', nextSrc, 'trying next path...');
-                        tryNext();
-                    };
-                    imgObj.onload = function () {
-                        console.log('✅ Sprite successfully loaded:', nextSrc, `${imgObj.naturalWidth}x${imgObj.naturalHeight}`);
-                    };
-                    imgObj.src = nextSrc;
-                } else {
-                    console.error('❌ All sprite load paths failed for:', relativePath);
-                }
-            }
-            tryNext();
-        }
-
-       loadSpriteWithFallbacks(sprites.space_ship, 'assets/sprites/space_ship.png');
-       loadSpriteWithFallbacks(sprites.space_enemy, 'assets/sprites/space_enemy.png');
-       loadSpriteWithFallbacks(sprites.flappy_bird, 'assets/sprites/flappy_bird.png') ;
-       loadSpriteWithFallbacks(sprites.snake_head, 'assets/sprites/snake_head.png');
-       loadSpriteWithFallbacks(sprites.brick_ball, 'assets/sprites/brick_ball.png');
-       loadSpriteWithFallbacks(sprites.tower_block, 'assets/sprites/tower_block.png');
 
         // ===================================================================
         // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
@@ -929,10 +892,10 @@ function startSelectedGame() {
 }
 
 // ===================================================================
-// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (ROOT-SAFE REDIRECT & RESET)
+// 🧹 UNIVERSAL GAME DISMISSAL CONTROLLER (FULL PURGE RESET & SAFE REDIRECT)
 // ===================================================================
 function exitGameEngine() {
-    // 1. Clear active game loops
+    // 1. Clear any running game loops
     if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
         clearInterval(loopTimerInstance);
         if (typeof cancelAnimationFrame === 'function') {
@@ -941,7 +904,7 @@ function exitGameEngine() {
         loopTimerInstance = null;
     }
 
-    // 2. Reset UI elements
+    // 2. Reset UI view states
     const gameBox = document.querySelector('.game-box');
     if (gameBox) gameBox.classList.remove('fullscreen-arcade-active');
     
@@ -957,20 +920,22 @@ function exitGameEngine() {
     const statusMsg = document.getElementById('gameScreenStatusMsg');
     if (statusMsg) statusMsg.style.display = "none";
 
-    // 3. Reset canvases
+    // 3. Hide all canvas layers
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
         if (targetElement) targetElement.style.display = 'none';
     });
 
-    // 4. Resolve identifiers
+    // 4. Resolve session identifiers
     const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
     const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
     const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-    // 5. 🛡️ DIRECT ROOT REDIRECT (Fixes 404 on GitHub Pages)
-    const homeUrl = new URL('index.html', window.location.href);
+    // 5. 🛡️ BULLETPROOF REDIRECT: Resolves relative path seamlessly on GitHub Pages and Localhost
+    const isSubfolder = window.location.pathname.includes('/modules/');
+    const homeRel = isSubfolder ? '../index.html' : 'index.html';
+    const homeUrl = new URL(homeRel, window.location.href);
     homeUrl.searchParams.set('table', targetTable);
     homeUrl.searchParams.set('hotel', targetHotel);
     homeUrl.searchParams.set('discount', maxDisc);
@@ -978,7 +943,7 @@ function exitGameEngine() {
     window.location.href = homeUrl.toString();
 }
 
-// Global scope bindings
+// Global scope attachment
 window.switchGameMode = switchGameMode;
 window.startSelectedGame = startSelectedGame;
 window.exitGameEngine = exitGameEngine;
@@ -1600,46 +1565,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 let sOffset = (20 - sSize) / 2;
 
                 if (i === 0) {
-                    // HEAD GRAPHICS
-                    if (sprites.snake_head.complete && sprites.snake_head.naturalWidth > 0) {
-                        snCtx.save();
-                        snCtx.globalCompositeOperation = 'screen';
-                        snCtx.translate(drawX + 10, drawY + 10);
-                        let rot = 0;
-                        if (currentSnakeVector.x > 0) rot = Math.PI / 2;
-                        else if (currentSnakeVector.x < 0) rot = -Math.PI / 2;
-                        else if (currentSnakeVector.y > 0) rot = Math.PI;
-                        else if (currentSnakeVector.y < 0) rot = 0;
-                        snCtx.rotate(rot);
-                        snCtx.drawImage(sprites.snake_head, -14, -14, 28, 28);
-                        snCtx.restore();
-                    } else {
-                        snCtx.shadowColor = '#00ffff';
-                        snCtx.shadowBlur = 10;
-                        snCtx.fillStyle = "#00d2d3";
-                        snCtx.beginPath(); snCtx.roundRect(drawX + 1, drawY + 1, 18, 18, 8); snCtx.fill();
-                        snCtx.shadowBlur = 0;
+                    // HEAD GRAPHICS (Pure HTML5 Canvas Vector)
+                    snCtx.shadowColor = '#00ffff';
+                    snCtx.shadowBlur = 10;
+                    snCtx.fillStyle = "#00d2d3";
+                    snCtx.beginPath(); snCtx.roundRect(drawX + 1, drawY + 1, 18, 18, 8); snCtx.fill();
+                    snCtx.shadowBlur = 0;
 
-                        // Animated Eyes looking towards movement
-                        snCtx.fillStyle = "white";
-                        let eyeOffsetX = (currentSnakeVector.x / 20) * 3;
-                        let eyeOffsetY = (currentSnakeVector.y / 20) * 3;
+                    // Animated Eyes looking towards movement
+                    snCtx.fillStyle = "white";
+                    let eyeOffsetX = (currentSnakeVector.x / 20) * 3;
+                    let eyeOffsetY = (currentSnakeVector.y / 20) * 3;
 
-                        snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Left Eye
-                        snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Right Eye
+                    snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Left Eye
+                    snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Right Eye
 
-                        snCtx.fillStyle = "black";
-                        snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
-                        snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
+                    snCtx.fillStyle = "black";
+                    snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
+                    snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
 
-                        // Animated Tongue
-                        snCtx.fillStyle = "#ff4d4d";
-                        let tLen = 3 + Math.sin(snakeTimeVisual * 4) * 3;
-                        if (currentSnakeVector.x > 0) snCtx.fillRect(drawX + 19, drawY + 9, tLen, 2);
-                        else if (currentSnakeVector.x < 0) snCtx.fillRect(drawX - tLen + 1, drawY + 9, tLen, 2);
-                        else if (currentSnakeVector.y > 0) snCtx.fillRect(drawX + 9, drawY + 19, 2, tLen);
-                        else if (currentSnakeVector.y < 0) snCtx.fillRect(drawX + 9, drawY - tLen + 1, 2, tLen);
-                    }
+                    // Animated Tongue
+                    snCtx.fillStyle = "#ff4d4d";
+                    let tLen = 3 + Math.sin(snakeTimeVisual * 4) * 3;
+                    if (currentSnakeVector.x > 0) snCtx.fillRect(drawX + 19, drawY + 9, tLen, 2);
+                    else if (currentSnakeVector.x < 0) snCtx.fillRect(drawX - tLen + 1, drawY + 9, tLen, 2);
+                    else if (currentSnakeVector.y > 0) snCtx.fillRect(drawX + 9, drawY + 19, 2, tLen);
+                    else if (currentSnakeVector.y < 0) snCtx.fillRect(drawX + 9, drawY - tLen + 1, 2, tLen);
                 } else {
                     // BODY GRAPHICS (Gradient Color fade to tail)
                     let colorIntensity = Math.max(50, 200 - (i * 5));
