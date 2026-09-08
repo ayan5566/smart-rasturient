@@ -3887,51 +3887,80 @@
             }
         }
 
-        // ===================================================================
-// 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH IN-STOCK MANAGEMENT ENGINE)
 // ===================================================================
-function populateAdminForms() {
-    document.getElementById('cfgBrickTar').value = rules.brickTar || 15;
-    document.getElementById('cfgBrickDisc').value = rules.brickDisc || 0;
-    document.getElementById('cfgFlappyTar').value = rules.flappyTar; 
-    document.getElementById('cfgFlappyDisc').value = rules.flappyDisc;
-    document.getElementById('cfgSpaceTar').value = rules.spaceTar; 
-    document.getElementById('cfgSpaceDisc').value = rules.spaceDisc;
-    document.getElementById('cfgSnakeTar').value = rules.snakeTar;  
-    document.getElementById('cfgSnakeDisc').value = rules.snakeDisc;
-    document.getElementById('cfgTowerTar').value = rules.towerTar || 3;
-    document.getElementById('cfgTowerDisc').value = rules.towerDisc || 0;
-    
-    document.getElementById('cfgTaxCGSTActive').checked = taxConfig.cgstActive; 
-    document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate;
-    document.getElementById('cfgTaxSGSTActive').checked = taxConfig.sgstActive; 
-    document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate;
-    document.getElementById('cfgTaxServiceActive').checked = taxConfig.serviceActive; 
-    document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate;
+        // 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH SAFE INPUT FALLBACKS & IN-STOCK)
+        // ===================================================================
+        function populateAdminForms() {
+            // 🛡️ Safe rules object declaration to prevent undefined parsing crashes
+            const r = window.rules || {};
 
-    updateCustomQRAdminPreview();
-    renderAnalyticsDashboard(); 
-    
-    const formElement = document.getElementById('adminMenuForm'); 
-    if(!formElement) return; 
-    formElement.innerHTML = '';
-    
-    const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
-    safeCategories.forEach((cat, cIdx) => {
-        if(!cat) return;
-        let catHTML = `<div class="admin-section-block"><div class="section-header"><input type="text" value="${cat.categoryName || ''}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();"><button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button></div>`;
-        
-        const safeItems = Array.isArray(cat.items) ? cat.items : [];
-        safeItems.forEach((item, iIdx) => {
-            if(!item) return;
-            let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
-            
-            // Checking availability binary state toggles
-            let isItemInStock = item.inStock !== false; 
-            let stockBadgeBg = isItemInStock ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
-            let stockTextColor = isItemInStock ? 'var(--neon-green)' : 'var(--danger-red)';
+            // Fallback values ensure input elements always receive valid numbers
+            if (document.getElementById('cfgFlappyTar')) {
+                document.getElementById('cfgFlappyTar').value = r.flappyTar !== undefined ? r.flappyTar : 5;
+            }
+            if (document.getElementById('cfgFlappyDisc')) {
+                document.getElementById('cfgFlappyDisc').value = r.flappyDisc !== undefined ? r.flappyDisc : 10;
+            }
 
-            catHTML += `
+            if (document.getElementById('cfgSpaceTar')) {
+                document.getElementById('cfgSpaceTar').value = r.spaceTar !== undefined ? r.spaceTar : 3;
+            }
+            if (document.getElementById('cfgSpaceDisc')) {
+                document.getElementById('cfgSpaceDisc').value = r.spaceDisc !== undefined ? r.spaceDisc : 15;
+            }
+
+            if (document.getElementById('cfgSnakeTar')) {
+                document.getElementById('cfgSnakeTar').value = r.snakeTar !== undefined ? r.snakeTar : 10;
+            }
+            if (document.getElementById('cfgSnakeDisc')) {
+                document.getElementById('cfgSnakeDisc').value = r.snakeDisc !== undefined ? r.snakeDisc : 12;
+            }
+
+            if (document.getElementById('cfgBrickTar')) {
+                document.getElementById('cfgBrickTar').value = r.brickTar !== undefined ? r.brickTar : 3;
+            }
+            if (document.getElementById('cfgBrickDisc')) {
+                document.getElementById('cfgBrickDisc').value = r.brickDisc !== undefined ? r.brickDisc : 8;
+            }
+
+            if (document.getElementById('cfgTowerTar')) {
+                document.getElementById('cfgTowerTar').value = r.towerTar !== undefined ? r.towerTar : 3;
+            }
+            if (document.getElementById('cfgTowerDisc')) {
+                document.getElementById('cfgTowerDisc').value = r.towerDisc !== undefined ? r.towerDisc : 15;
+            }
+
+            // Tax configurations mapping with safe fallback checks
+            if (document.getElementById('cfgTaxCGSTActive')) document.getElementById('cfgTaxCGSTActive').checked = !!taxConfig.cgstActive;
+            if (document.getElementById('cfgTaxCGSTRate')) document.getElementById('cfgTaxCGSTRate').value = taxConfig.cgstRate || 0;
+            if (document.getElementById('cfgTaxSGSTActive')) document.getElementById('cfgTaxSGSTActive').checked = !!taxConfig.sgstActive;
+            if (document.getElementById('cfgTaxSGSTRate')) document.getElementById('cfgTaxSGSTRate').value = taxConfig.sgstRate || 0;
+            if (document.getElementById('cfgTaxServiceActive')) document.getElementById('cfgTaxServiceActive').checked = !!taxConfig.serviceActive;
+            if (document.getElementById('cfgTaxServiceRate')) document.getElementById('cfgTaxServiceRate').value = taxConfig.serviceRate || 0;
+
+            updateCustomQRAdminPreview();
+            renderAnalyticsDashboard();
+
+            const formElement = document.getElementById('adminMenuForm');
+            if (!formElement) return;
+            formElement.innerHTML = '';
+
+            const safeCategories = Array.isArray(menuCategories) ? menuCategories : [];
+            safeCategories.forEach((cat, cIdx) => {
+                if (!cat) return;
+                let catHTML = `<div class="admin-section-block"><div class="section-header"><input type="text" value="${cat.categoryName || ''}" oninput="menuCategories[${cIdx}].categoryName=this.value; saveAdminConfig();"><button onclick="removeCategory(${cIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Section</button></div>`;
+
+                const safeItems = Array.isArray(cat.items) ? cat.items : [];
+                safeItems.forEach((item, iIdx) => {
+                    if (!item) return;
+                    let miniPreview = item.image ? `<img src="${item.image}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">` : `<span style="font-size:24px;">📸</span>`;
+
+                    // Checking availability binary state toggles
+                    let isItemInStock = item.inStock !== false;
+                    let stockBadgeBg = isItemInStock ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
+                    let stockTextColor = isItemInStock ? 'var(--neon-green)' : 'var(--danger-red)';
+
+                    catHTML += `
                 <div class="admin-row">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #fff; padding: 4px; border-radius: 8px;">
                         <div class="image-upload-container" style="flex: 1; border: none; padding: 0;">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>
@@ -3942,18 +3971,18 @@ function populateAdminForms() {
                     </div>
                     
                     Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive?'checked':''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
                     <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
                 </div>`;
-        });
-        catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName || ''}</button></div>`; 
-        formElement.innerHTML += catHTML;
-    });
-    generateAdminTableGrid(); 
-    populateWaiterPanelDropdownList();
-}
+                });
+                catHTML += `<button onclick="addDishToCategory(${cIdx})" style="background:#2ecc71; color:white; border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">+ Add Dish to ${cat.categoryName || ''}</button></div>`;
+                formElement.innerHTML += catHTML;
+            });
+            generateAdminTableGrid();
+            populateWaiterPanelDropdownList();
+        }
         function simulateQRScan() {
             let scannedID = prompt("Simulation Scan: Enter Table ID code (e.g. T1, T2):");
             if (scannedID) {
