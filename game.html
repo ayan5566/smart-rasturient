@@ -3592,40 +3592,53 @@ document.addEventListener('DOMContentLoaded', () => {
             sShieldTimer = 0; sMultiTimer = 0;
         }
 
-        function initSpaceShooterGame() {
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
-                clearInterval(loopTimerInstance);
-            }
-            currentLevelState = 1;
-            spaceMoveDir = 0;
-            spaceFrameTracker = 0;
-            spaceTransitionCount = 0;
+// ===================================================================
+// 🚀 FIXED: SPACE SHOOTER INITIALIZER (NO TDZ / ZERO REFERENCE ERROR)
+// ===================================================================
+function initSpaceShooterGame() {
+    if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+        clearInterval(loopTimerInstance);
+    }
 
-            spaceBullets.length = 0;
-            enemyLasers.length = 0;
-            powerUps.length = 0;
-            spaceBullets = [];
-            enemyLasers = [];
-            powerUps = [];
+    // Top-level global variables reset
+    currentLevelState = 1;
+    spaceMoveDir = 0;
+    spaceFrameTracker = 0;
+    spaceTransitionCount = 0;
 
-            spCanvasElement = document.getElementById('spaceCanvas');
-            if (!spCanvasElement) return;
-            spCtx = spCanvasElement.getContext('2d');
-            const sCanvas = spCanvasElement;
-            // Game Configuration Properties Scope Declarations Assemblies
-            let spaceMoveDir = 0, spaceFrameTracker = 0, spaceTransitionCount = 0, currentLevelState = 1;
-            let pShipObj = null, alienInvaderObj = null, spaceBullets = [], enemyLasers = [], powerUps = [], sShieldTimer = 0, sMultiTimer = 0;
-            let snakeArr = [], snakeFoodUnit = {}, snakeScoreCounter = 0, currentSnakeVector = { x: 20, y: 0 };
-            let fBird = {}, fPipes = [], flappyScoreTracker = 0;
-            let cosmicBackgroundStars = [];
+    // Bullet aur powerup arrays clean karein
+    spaceBullets = [];
+    enemyLasers = [];
+    powerUps = [];
+    spaceParticlesArray = [];
 
+    const sCanvas = document.getElementById('spaceCanvas');
+    if (!sCanvas) return;
+    
+    spCanvasElement = sCanvas;
+    spCtx = sCanvas.getContext('2d');
 
-            setupLevelParameters();
+    // Player ship properties reset
+    pShipObj = { 
+        x: (sCanvas.width / 2) - 20, 
+        y: sCanvas.height - 60, 
+        w: 40, 
+        h: 32, 
+        health: 5, 
+        maxHealth: 5 
+    };
 
-            loopTimerInstance = setInterval(frameUpdateSpace, 20);
-        }
-        window.initSpaceShooterGame = initSpaceShooterGame;
+    // Level setup function call
+    if (typeof setupLevelParameters === 'function') {
+        setupLevelParameters();
+    }
 
+    // 20ms fixed interval ticker loop
+    loopTimerInstance = setInterval(frameUpdateSpace, 20);
+}
+
+window.initSpaceShooterGame = initSpaceShooterGame;
+        // ===================================================================
         // 🚀 FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
         // ===================================================================
         function frameUpdateSpace() {
