@@ -369,15 +369,14 @@
 
 <body>
     <!-- Hidden Supabase Service Frame -->
-    <iframe src="services/supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
+    <iframe src="supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
     <script>
-        (function ensureSupabaseServiceFramePath() {
-            const iframe = document.getElementById('supabaseServiceFrame');
-            if (iframe) {
-                const isSubfolder = window.location.pathname.includes('/modules/');
-                iframe.src = isSubfolder ? '../services/supabase.html' : 'services/supabase.html';
-            }
-        })();
+(function ensureSupabaseServiceFramePath() {
+    const iframe = document.getElementById('supabaseServiceFrame');
+    if (iframe) {
+        iframe.src = 'supabase.html';
+    }
+    })();
     </script>
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
