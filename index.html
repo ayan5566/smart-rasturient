@@ -4803,50 +4803,60 @@ window.switchGameMode = switchGameMode;
             siblingButtons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
-        // ===================================================================
-        // ☁️ CLOUD SYNC & SUBSCRIPTION VERIFICATION PIPELINES (CLEAN OVERWRITE)
+// ===================================================================
+        // ☁️ CLOUD SYNC: HOTEL NAME & MENU CONFIG (FAILSAFE UPDATE/INSERT)
         // ===================================================================
         async function uploadMenuToCloud() {
             try {
                 let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
                 let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
 
-                // 1. Purana cached brand name retrieve karke verify karein
                 let storageBrandKey = 'restroflow_actual_brand_name_' + hotelGlobalScopeID;
-                let previousSavedBrandName = localStorage.getItem(storageBrandKey);
-
-                // Agar naam badal gaya hai, toh purana cache clean karke naya naam lock karein
-                if (previousSavedBrandName && previousSavedBrandName !== typedBrandName) {
-                    console.log(`🔄 Hotel Name Changed: Overwriting "${previousSavedBrandName}" with "${typedBrandName}"`);
-                    localStorage.removeItem(storageBrandKey);
-                }
                 localStorage.setItem(storageBrandKey, typedBrandName);
 
-                // 2. Supabase par purane hotel_name ko naye hotel_name se overwrite (replace) karein
-                const { error } = await supabaseClient
+                const payload = {
+                    id: hotelGlobalScopeID,
+                    hotel_name: typedBrandName,
+                    menu_data: menuCategories,
+                    rules_data: rules,
+                    tax_data: taxConfig
+                };
+
+                // Pehle upsert try karein
+                let { error } = await supabaseClient
                     .from('hotel_config')
-                    .upsert({
-                        id: hotelGlobalScopeID, // Primary Key matches row and overwrites fields
-                        hotel_name: typedBrandName,
-                        menu_data: menuCategories,
-                        rules_data: rules,
-                        tax_data: taxConfig
-                    }, { onConflict: 'id' });
+                    .upsert(payload, { onConflict: 'id' });
+
+                // Agar constraint issue ki wajah se upsert fail ho, toh update -> insert fallback
+                if (error) {
+                    console.warn("Upsert failed, falling back to manual update/insert:", error.message);
+                    
+                    const { data: existing } = await supabaseClient
+                        .from('hotel_config')
+                        .select('id')
+                        .eq('id', hotelGlobalScopeID)
+                        .maybeSingle();
+
+                    if (existing) {
+                        const updateRes = await supabaseClient
+                            .from('hotel_config')
+                            .update(payload)
+                            .eq('id', hotelGlobalScopeID);
+                        error = updateRes.error;
+                    } else {
+                        const insertRes = await supabaseClient
+                            .from('hotel_config')
+                            .insert(payload);
+                        error = insertRes.error;
+                    }
+                }
 
                 if (error) {
                     console.error("Cloud upload error:", error.message);
-                    if (typeof showOnScreenNotification === 'function') {
-                        showOnScreenNotification("❌ Failed to update hotel name on cloud!", true);
-                    }
                 } else {
-                    console.log("☁️ Hotel name & menu successfully updated in Supabase cloud!");
-                    
-                    // 3. Screen par jahan-jahan purana naam dikh raha hai, use naye naam se refresh karein
+                    console.log("☁️ Hotel config successfully updated in Supabase cloud!");
                     if (typeof updateFrontEndClassificationLabels === 'function') {
                         updateFrontEndClassificationLabels();
-                    }
-                    if (typeof showOnScreenNotification === 'function') {
-                        showOnScreenNotification(`✅ Hotel name updated to "${typedBrandName}"!`);
                     }
                 }
             } catch (err) {
