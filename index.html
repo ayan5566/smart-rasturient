@@ -4804,58 +4804,116 @@ window.switchGameMode = switchGameMode;
             btnElement.classList.add('active');
         }
 // ===================================================================
-// ☁️ CLEANED: SINGLE-POINT HOTEL CONFIG UPSERT (ZERO 400 ERRORS)
+// ⚙️ GLOBAL RULES SAVER: LOCKS TARGET VARIABLES CROSS-DEVICE
 // ===================================================================
 function saveAdminConfig() {
-    // 1. Local state update
-    let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
-    let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
+    // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
+    if (document.getElementById('adminDashboard').style.display !== 'block') {
+        console.log("🛡️ Shield Active: Prevented customer profile from overwriting global dataset.");
+        return;
+    }
+
+    // 🎯 Capturing form values straight into the global rules state manager object
+    rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
+    rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+    rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
+    rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+    rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
+    rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+
+    if (document.getElementById('cfgBrickTar')) {
+        rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 3;
+    }
+    if (document.getElementById('cfgBrickDisc')) {
+        rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 8;
+    }
+    if (document.getElementById('cfgTowerTar')) {
+        rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
+    }
+    if (document.getElementById('cfgTowerDisc')) {
+        rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 15;
+    }
+
+    let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value.trim() || "RestroFlow";
+    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); 
     
-    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
+    if (document.getElementById('cfgTaxCGSTActive')) {
+        taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked;
+        taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+        taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
+        taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+        taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
+        taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+    }
+
+    // Atomic disk saves
     localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
     localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
     localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-
-    // 2. Debounced single call to cloud (Puraane saare multiple timers cancel)
+    
     clearTimeout(configSaveTimeout);
     configSaveTimeout = setTimeout(() => {
         uploadMenuToCloud();
     }, 500);
 }
 
+// ===================================================================
+// 📡 UNIFIED CLOUD SYNC ENGINE: TRANSMITS TARGET VALUES TO CLOUD (ATOMIC UPSERT)
+// ===================================================================
 async function uploadMenuToCloud() {
-    try {
-        let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
-        let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
+    const currentActiveSaveId = String(hotelGlobalScopeID || "Default_HQ_Arena").trim();
+    const identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+    const currentBrandName = (identityInput && identityInput.value.trim()) 
+        ? identityInput.value.trim() 
+        : (localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow");
 
-        // Sirf wahi fields bhejein jo PostgreSQL table mein defined hain
+    try {
+        // 🔥 ANTI-BLOAT SHIELD: Base64 string filter before transmission
+        if (Array.isArray(menuCategories)) {
+            menuCategories.forEach(cat => {
+                if (cat && Array.isArray(cat.items)) {
+                    cat.items.forEach(item => {
+                        if (item && item.image && item.image.startsWith('data:image')) {
+                            console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
+                            item.image = ''; 
+                        }
+                    });
+                }
+            });
+            localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
+        }
+
+        // 🎯 RLS-Safe Clean Payload Structure
         const cleanPayload = {
-            id: String(hotelGlobalScopeID),
-            hotel_name: typedBrandName,
+            id: currentActiveSaveId,
+            hotel_name: currentBrandName,
             menu_data: Array.isArray(menuCategories) ? menuCategories : [],
             tax_data: taxConfig || {},
             rules_data: rules || {}
         };
 
-        const { error } = await supabaseClient
+        const { data, error: upsertError } = await supabaseClient
             .from('hotel_config')
-            .upsert(cleanPayload, { onConflict: 'id' });
+            .upsert(cleanPayload, { onConflict: 'id' })
+            .select();
 
-        if (error) {
-            console.error("🚨 Cloud Sync Error:", error.message, error.details);
+        if (upsertError) {
+            console.error("🚨 Supabase Cloud Save Refusal Exception:", upsertError.message);
+            if (typeof showOnScreenNotification === 'function') {
+                showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
+            }
         } else {
-            console.log("✅ hotel_config updated successfully without conflicts.");
+            console.log(`🎉 Configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
             if (typeof updateFrontEndClassificationLabels === 'function') {
                 updateFrontEndClassificationLabels();
             }
         }
-    } catch (err) {
-        console.error("Cloud Exception:", err);
+    } catch(e) { 
+        console.error("Critical Cloud Save Exception:", e); 
     }
 }
 
-// Global window attachment
 window.saveAdminConfig = saveAdminConfig;
 window.uploadMenuToCloud = uploadMenuToCloud;
 
