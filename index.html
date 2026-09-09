@@ -4804,66 +4804,62 @@ window.switchGameMode = switchGameMode;
             btnElement.classList.add('active');
         }
 // ===================================================================
-        // ☁️ CLOUD SYNC: HOTEL NAME & MENU CONFIG (FAILSAFE UPDATE/INSERT)
-        // ===================================================================
-        async function uploadMenuToCloud() {
-            try {
-                let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
-                let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
+// ☁️ CLEANED: SINGLE-POINT HOTEL CONFIG UPSERT (ZERO 400 ERRORS)
+// ===================================================================
+let configSaveTimeout = null;
 
-                let storageBrandKey = 'restroflow_actual_brand_name_' + hotelGlobalScopeID;
-                localStorage.setItem(storageBrandKey, typedBrandName);
+function saveAdminConfig() {
+    // 1. Local state update
+    let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+    let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
+    
+    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
+    localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
 
-                const payload = {
-                    id: hotelGlobalScopeID,
-                    hotel_name: typedBrandName,
-                    menu_data: menuCategories,
-                    rules_data: rules,
-                    tax_data: taxConfig
-                };
+    // 2. Debounced single call to cloud (Puraane saare multiple timers cancel)
+    clearTimeout(configSaveTimeout);
+    configSaveTimeout = setTimeout(() => {
+        uploadMenuToCloud();
+    }, 500);
+}
 
-                // Pehle upsert try karein
-                let { error } = await supabaseClient
-                    .from('hotel_config')
-                    .upsert(payload, { onConflict: 'id' });
+async function uploadMenuToCloud() {
+    try {
+        let identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+        let typedBrandName = (identityInput && identityInput.value.trim()) ? identityInput.value.trim() : "RestroFlow";
 
-                // Agar constraint issue ki wajah se upsert fail ho, toh update -> insert fallback
-                if (error) {
-                    console.warn("Upsert failed, falling back to manual update/insert:", error.message);
-                    
-                    const { data: existing } = await supabaseClient
-                        .from('hotel_config')
-                        .select('id')
-                        .eq('id', hotelGlobalScopeID)
-                        .maybeSingle();
+        // Sirf wahi fields bhejein jo PostgreSQL table mein defined hain
+        const cleanPayload = {
+            id: String(hotelGlobalScopeID),
+            hotel_name: typedBrandName,
+            menu_data: Array.isArray(menuCategories) ? menuCategories : [],
+            tax_data: taxConfig || {},
+            rules_data: rules || {}
+        };
 
-                    if (existing) {
-                        const updateRes = await supabaseClient
-                            .from('hotel_config')
-                            .update(payload)
-                            .eq('id', hotelGlobalScopeID);
-                        error = updateRes.error;
-                    } else {
-                        const insertRes = await supabaseClient
-                            .from('hotel_config')
-                            .insert(payload);
-                        error = insertRes.error;
-                    }
-                }
+        const { error } = await supabaseClient
+            .from('hotel_config')
+            .upsert(cleanPayload, { onConflict: 'id' });
 
-                if (error) {
-                    console.error("Cloud upload error:", error.message);
-                } else {
-                    console.log("☁️ Hotel config successfully updated in Supabase cloud!");
-                    if (typeof updateFrontEndClassificationLabels === 'function') {
-                        updateFrontEndClassificationLabels();
-                    }
-                }
-            } catch (err) {
-                console.error("uploadMenuToCloud exception:", err);
+        if (error) {
+            console.error("🚨 Cloud Sync Error:", error.message, error.details);
+        } else {
+            console.log("✅ hotel_config updated successfully without conflicts.");
+            if (typeof updateFrontEndClassificationLabels === 'function') {
+                updateFrontEndClassificationLabels();
             }
         }
-        window.uploadMenuToCloud = uploadMenuToCloud;
+    } catch (err) {
+        console.error("Cloud Exception:", err);
+    }
+}
+
+// Global window attachment
+window.saveAdminConfig = saveAdminConfig;
+window.uploadMenuToCloud = uploadMenuToCloud;
 
         async function verifySubscriptionGatekeeper(ownerEmail) {
             try {
