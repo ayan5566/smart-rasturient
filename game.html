@@ -389,10 +389,6 @@
         <h4 style="margin-top: 0; color: white; font-weight: 800;">🎮 Play Games & Earn Discounts!</h4>
         <div class="game-nav"
             style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
-            <button id="navHOME"
-                onclick="exitGameEngine()"
-                style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.6);"><span
-                    style="font-size: 20px;">🏠</span> Home</button>
             <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
             <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><span style="font-size: 20px;">🐦</span> Flappy</button>
             <button id="navSPACE" onclick="switchGameMode('SPACE')"><span style="font-size: 20px;">🚀</span> Space</button>
@@ -403,8 +399,8 @@
             <div id="gameScreenStatusMsg" style="color: white; font-weight: bold; margin-bottom: 10px;">Select a game
                 mode to launch</div>
             <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()"
-                style="background: var(--danger-red, #e74c3c); margin-bottom: 10px; max-width: 160px; font-size: 13px; padding: 8px; color: white; border: none; border-radius: 8px;">❌
-                Quit Game</button>
+                style="background: var(--danger-red, #e74c3c); margin-bottom: 10px; max-width: 160px; font-size: 13px; padding: 8px; color: white; border: none; border-radius: 8px;">
+                🔙 Back to Table Menu</button>
 
             <!-- Game Canvases -->
             <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
@@ -4080,6 +4076,29 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                 tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
             }
         };
+// ===================================================================
+// 🔙 RETURN TO EXACT RESTAURANT & TABLE ON INDEX.HTML
+// ===================================================================
+function returnToCustomerMenu() {
+    const currentParams = new URLSearchParams(window.location.search);
+
+    const hotelScope = currentParams.get('hotel') || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const floorName = currentParams.get('floor') || '';
+    const tableId = currentParams.get('table') || 'T1';
+    const earnedDisc = currentParams.get('discount') || window.maximumClaimedDisc || 0;
+
+    const returnUrl = new URL('index.html', window.location.href);
+    returnUrl.searchParams.set('hotel', hotelScope);
+    if (floorName) {
+        returnUrl.searchParams.set('floor', floorName);
+    }
+    returnUrl.searchParams.set('table', tableId);
+    returnUrl.searchParams.set('discount', earnedDisc);
+
+    window.location.href = returnUrl.toString();
+}
+
+window.returnToCustomerMenu = returnToCustomerMenu;
     </script>
 </body>
 
