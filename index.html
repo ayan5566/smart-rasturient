@@ -4354,24 +4354,28 @@
 
 
 
-       // ===================================================================
-// 🎮 FIXED: DIRECT ROOT ROUTER (SOLVES 404 PERMANENTLY)
+// ===================================================================
+// 🎮 FIXED: PASS FULL URL CONTEXT TO GAME.HTML (ZERO LOSS)
 // ===================================================================
 function switchGameMode(selectedTargetMode) {
-    const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
-    const hotelScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const currentParams = new URLSearchParams(window.location.search);
+
+    const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    const floorName = currentParams.get('floor') || '';
+    const tableId = currentParams.get('table') || window.clientCurrentActiveTable || 'T1';
     const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-    // Seedha root se game.html open karega
     const targetUrl = new URL('game.html', window.location.href);
     targetUrl.searchParams.set('mode', selectedTargetMode);
-    targetUrl.searchParams.set('table', tableId);
     targetUrl.searchParams.set('hotel', hotelScope);
+    if (floorName) {
+        targetUrl.searchParams.set('floor', floorName);
+    }
+    targetUrl.searchParams.set('table', tableId);
     targetUrl.searchParams.set('discount', maxDisc);
 
     window.location.href = targetUrl.toString();
 }
-
 window.switchGameMode = switchGameMode;
 
         // ===================================================================
