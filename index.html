@@ -4439,54 +4439,64 @@ window.switchGameMode = switchGameMode;
                 menuCategories = urlHotel ? [] : fallbackMenu;
             }
 
-            try {
-                // 🔥 🔥 THE REAL FIX: select ke andar strictly 'tax_data' ke sath 'rules_data' jadd diya hai taaki customer phone cloud se game rules aur targets uthaye
-                const { data, error } = await supabaseClient
-                    .from('hotel_config')
-                    .select('menu_data, hotel_name, tax_data, rules_data')
-                    .eq('id', hotelGlobalScopeID)
-                    .limit(1);
+try {
+        // 🔥 select ke andar 'floors_data' mangwaya gaya hai
+        const { data, error } = await supabaseClient
+            .from('hotel_config')
+            .select('menu_data, hotel_name, tax_data, rules_data, floors_data')
+            .eq('id', hotelGlobalScopeID)
+            .limit(1);
 
-                if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
+        if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
 
-                const activeConfigRow = data?.[0];
-                if (!error && activeConfigRow) {
-                    let cloudMenu = activeConfigRow.menu_data;
-                    if (typeof cloudMenu === 'string') {
-                        try { cloudMenu = JSON.parse(cloudMenu); } catch (jsonErr) { console.error(jsonErr); }
-                    }
-                    if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                        menuCategories = cloudMenu;
-                        localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-                    }
-                    if (activeConfigRow.hotel_name) {
-                        localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
-                    }
+        const activeConfigRow = data?.[0];
+        if (!error && activeConfigRow) {
+            // 1. Menu Load
+            let cloudMenu = activeConfigRow.menu_data;
+            if (typeof cloudMenu === 'string') {
+                try { cloudMenu = JSON.parse(cloudMenu); } catch (jsonErr) { console.error(jsonErr); }
+            }
+            if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
+                menuCategories = cloudMenu;
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            }
 
-                    // Cloud se aaya hua sateek tax rate local storage aur variable mein load karo
-                    if (activeConfigRow.tax_data) {
-                        taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
-                        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-                    }
-
-                    // 🔥 🔥 THE MULTI-DEVICE FIX: Cloud se target parameters object ko reads karke customer phone par live override karo
-                    if (activeConfigRow.rules_data) {
-                        rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
-                        localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-                    }
-
-                    renderCustomerMenu();
-                    updateFrontEndClassificationLabels();
-                } else if (!activeConfigRow && !error) {
-                    if (urlHotel) {
-                        menuCategories = [];
-                        localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify([]));
-                    }
-                    renderCustomerMenu();
-                    updateFrontEndClassificationLabels();
+            // 2. 🔥 Cloud se Tables & Floors Load
+            if (activeConfigRow.floors_data) {
+                let cloudFloors = activeConfigRow.floors_data;
+                if (typeof cloudFloors === 'string') {
+                    try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { console.error(e); }
                 }
-            } catch (err) { console.error(err); }
+                if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
+                    floorData = cloudFloors;
+                    window.floorData = floorData;
+                    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                }
+            }
 
+            // 3. Brand Name Load
+            if (activeConfigRow.hotel_name) {
+                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
+            }
+
+            // 4. Taxes & Rules Load
+            if (activeConfigRow.tax_data) {
+                taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            }
+
+            if (activeConfigRow.rules_data) {
+                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
+                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+            }
+
+            renderCustomerMenu();
+            generateAdminTableGrid();
+            updateFrontEndClassificationLabels();
+        }
+    } catch (err) { 
+        console.error(err); 
+    }
             // 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
             try {
                 const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
@@ -4869,7 +4879,7 @@ function saveAdminConfig() {
 }
 
 // ===================================================================
-// 📡 UNIFIED CLOUD SYNC ENGINE: TRANSMITS TARGET VALUES TO CLOUD (ATOMIC UPSERT)
+// 📡 CLOUD SYNC: MENU + TABLES/FLOORS DATA SYNC TO SUPABASE
 // ===================================================================
 async function uploadMenuToCloud() {
     const currentActiveSaveId = String(hotelGlobalScopeID || "Default_HQ_Arena").trim();
@@ -4879,13 +4889,12 @@ async function uploadMenuToCloud() {
         : (localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow");
 
     try {
-        // 🔥 ANTI-BLOAT SHIELD: Base64 string filter before transmission
+        // 1. Base64 image bloat clean-up
         if (Array.isArray(menuCategories)) {
             menuCategories.forEach(cat => {
                 if (cat && Array.isArray(cat.items)) {
                     cat.items.forEach(item => {
                         if (item && item.image && item.image.startsWith('data:image')) {
-                            console.log(`🗑️ Auto-Sanitizer: Stripping legacy Base64 bloat from item: ${item.name}`);
                             item.image = ''; 
                         }
                     });
@@ -4894,11 +4903,15 @@ async function uploadMenuToCloud() {
             localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
         }
 
-        // 🎯 RLS-Safe Clean Payload Structure
+        // Local storage par floor data backup
+        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+
+        // 2. Supabase Cloud Payload (Menu + Floor/Tables Dono Sath Me)
         const cleanPayload = {
             id: currentActiveSaveId,
             hotel_name: currentBrandName,
             menu_data: Array.isArray(menuCategories) ? menuCategories : [],
+            floors_data: Array.isArray(floorData) ? floorData : defaultFloors, // 👈 Table data cloud me sync hoga
             tax_data: taxConfig || {},
             rules_data: rules || {}
         };
@@ -4909,12 +4922,12 @@ async function uploadMenuToCloud() {
             .select();
 
         if (upsertError) {
-            console.error("🚨 Supabase Cloud Save Refusal Exception:", upsertError.message);
+            console.error("🚨 Cloud Save Failed:", upsertError.message);
             if (typeof showOnScreenNotification === 'function') {
                 showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
             }
         } else {
-            console.log(`🎉 Configuration cleanly locked for ID [${currentActiveSaveId}]!`, data);
+            console.log("☁️ Menu, Settings & Tables successfully saved to Supabase!");
             if (typeof updateFrontEndClassificationLabels === 'function') {
                 updateFrontEndClassificationLabels();
             }
@@ -4923,8 +4936,6 @@ async function uploadMenuToCloud() {
         console.error("Critical Cloud Save Exception:", e); 
     }
 }
-
-window.saveAdminConfig = saveAdminConfig;
 window.uploadMenuToCloud = uploadMenuToCloud;
 
         async function verifySubscriptionGatekeeper(ownerEmail) {
