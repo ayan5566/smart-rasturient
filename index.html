@@ -4723,52 +4723,62 @@ window.switchGameMode = switchGameMode;
             }
         }
 
-        // ===================================================================
-        // 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
-        // ===================================================================
-        function generateAdminTableGrid() {
-            const container = document.getElementById('adminTableLayoutGrid');
-            if (!container) return;
-            container.innerHTML = '';
+       // ===================================================================
+// 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
+// ===================================================================
+function generateAdminTableGrid() {
+    const container = document.getElementById('adminTableLayoutGrid'); 
+    if(!container) return; 
+    container.innerHTML = '';
+    
+    floorData.forEach((floor, fIdx) => {
+        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+        
+        floor.tables.forEach((tbl, tIdx) => {
+            let baseThemeColor = tbl.custom_color;
+            let currentLabel = 'Empty';
+            let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
+            
+            if(tbl.state === 0) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                currentLabel = 'Empty';
+            } else if(tbl.state === 1) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                currentLabel = 'Full';
+            } else if(tbl.state === 2) {
+                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                currentLabel = 'Booked';
+            }
+            
+            // Scoped payment tracking prevents duplicate mapping bugs
+            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') { 
+                baseThemeColor = '#2196f3'; 
+                currentLabel = '💰 Paid UPI'; 
+            }
+            
+            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            floorData.forEach((floor, fIdx) => {
-                let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
-
-                floor.tables.forEach((tbl, tIdx) => {
-                    let baseThemeColor = tbl.custom_color;
-                    let currentLabel = 'Empty';
-                    let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
-
-                    if (tbl.state === 0) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                        currentLabel = 'Empty';
-                    } else if (tbl.state === 1) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                        currentLabel = 'Full';
-                    } else if (tbl.state === 2) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
-                        currentLabel = 'Booked';
-                    }
-
-                    // Scoped payment tracking prevents duplicate mapping bugs
-                    if (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') {
-                        baseThemeColor = '#2196f3';
-                        currentLabel = '💰 Paid UPI';
-                    }
-
-                    let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
-
-                    floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
-                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
-            </div>`;
-                });
-
-                floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`;
-                container.innerHTML += floorHTML;
-            });
-        }
+            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
+                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+            </div>`;
+        });
+        
+        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
+        container.innerHTML += floorHTML;
+    });
+}
+        async function closePaywallAndExitToHub() {
+    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
+    document.getElementById('saasPricingTiersContainer').style.display = 'none';
+    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
+    
+    // Sign out to clear session credentials tokens securely
+    await supabaseClient.auth.signOut();
+    document.getElementById('customerView').style.display = 'block';
+    renderCustomerMenu();
+}
         async function closePaywallAndExitToHub() {
             document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
             document.getElementById('saasPricingTiersContainer').style.display = 'none';
