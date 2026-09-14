@@ -2358,14 +2358,20 @@
             }
         } catch (e) { console.log("Local menu parsing fallback active:", e); }
 
+// 🛡️ MULTI-TENANT ISOLATED STORAGE INITIALIZER (EMAIL SCOPED)
         let floorData = defaultFloors;
         try {
-            let localTablesRawData = localStorage.getItem('restaurantFloors');
-            if (localTablesRawData) {
-                let parsedFloors = JSON.parse(localTablesRawData);
-                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) floorData = parsedFloors;
+            let scopedFloorRaw = localStorage.getItem('restaurantFloors_' + hotelGlobalScopeID);
+            if (scopedFloorRaw) {
+                let parsedFloors = JSON.parse(scopedFloorRaw);
+                if (Array.isArray(parsedFloors) && parsedFloors.length > 0 && parsedFloors[0].tables) {
+                    floorData = parsedFloors;
+                }
             }
-        } catch (e) { localStorage.setItem('restaurantFloors', JSON.stringify(defaultFloors)); }
+        } catch (e) { 
+            floorData = defaultFloors; 
+        }
+        window.floorData = floorData;
 
         let taxConfig = defaultTaxes;
         try {
@@ -4465,18 +4471,25 @@ try {
                 localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             }
 
-            // 2. 🔥 Cloud se Tables & Floors Load
-            if (activeConfigRow.floors_data) {
+           // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation)
+            if (activeConfigRow && activeConfigRow.floors_data) {
                 let cloudFloors = activeConfigRow.floors_data;
                 if (typeof cloudFloors === 'string') {
-                    try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { console.error(e); }
+                    try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
                 }
                 if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
                     floorData = cloudFloors;
-                    window.floorData = floorData;
-                    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                } else {
+                    floorData = JSON.parse(JSON.stringify(defaultFloors));
                 }
+            } else {
+                // Agar is email ka database me koi custom floor data nahi hai, toh fresh default assign karo
+                floorData = JSON.parse(JSON.stringify(defaultFloors));
             }
+            
+            // Email-scoped key par hi save karein
+            window.floorData = floorData;
+            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
 
             // 3. Brand Name Load
             if (activeConfigRow.hotel_name) {
@@ -4873,7 +4886,7 @@ function saveAdminConfig() {
     // Atomic disk saves
     localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
     localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-    localStorage.setItem('restaurantFloors', JSON.stringify(floorData)); 
+    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
     localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
     
     clearTimeout(configSaveTimeout);
@@ -4908,7 +4921,7 @@ async function uploadMenuToCloud() {
         }
 
         // Local storage par floor data backup
-        localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+        localStorage.setItem('restaurantFloors_' + currentActiveSaveId, JSON.stringify(floorData));
 
         // 2. Supabase Cloud Payload (Menu + Floor/Tables Dono Sath Me)
         const cleanPayload = {
@@ -5000,7 +5013,7 @@ window.uploadMenuToCloud = uploadMenuToCloud;
             }
             localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
             localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
             localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
 
             // Clear any loose pending background macro tasks to avoid collision
