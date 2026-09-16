@@ -1724,40 +1724,55 @@
                 location.reload();
             }
         }
-        // ===================================================================
-        // 👑 UPGRADED PAYWALL: INJECTS GLOBAL BASE RATES INSTEAD OF 0 PRICING
-        // ===================================================================
-        async function revealSaaSPricingTiersMatrix() {
-            try {
-                const { data: subData } = await supabaseClient
-                    .from('subscriptions')
-                    .select('monthly_price, yearly_price')
-                    .eq('id', hotelGlobalScopeID)
-                    .maybeSingle();
+       // ===================================================================
+// 👑 FIXED: FETCHES DIRECTLY FROM 'plans' TABLE IN SUPABASE
+// ===================================================================
+async function revealSaaSPricingTiersMatrix() {
+    try {
+        let finalMonthlyRate = 499;
+        let finalYearlyRate = 4999;
 
-                // 🔥 REFERENCE INTEGRATION: Baseline fallbacks are now securely read from global config objects
-                let finalMonthlyRate = dynamicGlobalSaaSDefaults.monthly || 499;
-                let finalYearlyRate = dynamicGlobalSaaSDefaults.yearly || 4999;
+        // Step 1: Global active plans table se real prices uthao
+        const { data: plansData, error: plansErr } = await supabaseClient
+            .from('plans')
+            .select('slug, price_in_rupees')
+            .eq('is_active', true);
 
-                if (subData) {
-                    // 🔥 SaaS Model Core: Agar user rate 0 hai, toh baseline defaults load karo, warna custom rate dikhao
-                    finalMonthlyRate = (parseInt(subData.monthly_price) === 0) ? dynamicGlobalSaaSDefaults.monthly : (subData.monthly_price || dynamicGlobalSaaSDefaults.monthly);
-                    finalYearlyRate = (parseInt(subData.yearly_price) === 0) ? dynamicGlobalSaaSDefaults.yearly : (subData.yearly_price || dynamicGlobalSaaSDefaults.yearly);
-                } else {
-                    finalMonthlyRate = dynamicGlobalSaaSDefaults.monthly;
-                    finalYearlyRate = dynamicGlobalSaaSDefaults.yearly;
-                }
+        if (!plansErr && plansData && plansData.length > 0) {
+            const mPlan = plansData.find(p => p.slug === 'monthly-pro' || p.slug.includes('monthly'));
+            const yPlan = plansData.find(p => p.slug === 'yearly-super' || p.slug.includes('yearly'));
 
-                // Modal interface values deployment
-                document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + finalMonthlyRate;
-                document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + finalYearlyRate;
+            if (mPlan) finalMonthlyRate = mPlan.price_in_rupees;
+            if (yPlan) finalYearlyRate = yPlan.price_in_rupees;
+        }
 
-                document.getElementById('saasPricingTiersContainer').style.display = 'block';
-                document.getElementById('activatePlanTriggerBtn').style.display = 'none';
-            } catch (err) {
-                console.error("Pricing Fetch Error:", err);
+        // Step 2: Agar is specific hotel ke liye koi custom rate set hai toh use override karo
+        const { data: subData } = await supabaseClient
+            .from('subscriptions')
+            .select('monthly_price, yearly_price')
+            .eq('id', hotelGlobalScopeID)
+            .maybeSingle();
+
+        if (subData) {
+            if (parseInt(subData.monthly_price) > 0) {
+                finalMonthlyRate = subData.monthly_price;
+            }
+            if (parseInt(subData.yearly_price) > 0) {
+                finalYearlyRate = subData.yearly_price;
             }
         }
+
+        // Screen text update
+        document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + finalMonthlyRate;
+        document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + finalYearlyRate;
+
+        document.getElementById('saasPricingTiersContainer').style.display = 'block';
+        document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+    } catch (err) {
+        console.error("Pricing Fetch Error:", err);
+    }
+}
+window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
         // ===================================================================
         // 💳 BROADCAST INTEGRATION: HOSTED GATEWAY ROUTER (STRIPE/RAZORPAY READY)
         // ===================================================================
@@ -4955,35 +4970,65 @@ async function uploadMenuToCloud() {
 }
 window.uploadMenuToCloud = uploadMenuToCloud;
 
-        async function verifySubscriptionGatekeeper(ownerEmail) {
-            try {
-                if (!ownerEmail) return true;
-                const { data, error } = await supabaseClient
-                    .from('subscriptions')
-                    .select('status, current_period_end, monthly_price, yearly_price')
-                    .eq('id', ownerEmail)
-                    .maybeSingle();
+        // ===================================================================
+// 🛡️ FIXED GATEKEEPER: LOADS REAL PRICES FROM 'plans' TABLE ON EXPIRY
+// ===================================================================
+async function verifySubscriptionGatekeeper(ownerEmail) {
+    try {
+        if (!ownerEmail) return true;
 
-                if (error) {
-                    console.warn("verifySubscriptionGatekeeper warning:", error.message);
-                    return true;
-                }
+        const { data: subData, error } = await supabaseClient
+            .from('subscriptions')
+            .select('status, current_period_end, monthly_price, yearly_price')
+            .eq('id', ownerEmail)
+            .maybeSingle();
 
-                if (data) {
-                    const isExpired = data.status === 'expired' || (data.current_period_end && new Date(data.current_period_end) < new Date());
-                    if (isExpired) {
-                        displaySubscriptionExpiredPaywallModal(data.monthly_price || 499, data.yearly_price || 5000);
-                        return false;
-                    }
-                }
-                return true;
-            } catch (err) {
-                console.error("verifySubscriptionGatekeeper error:", err);
-                return true;
-            }
+        if (error) {
+            console.warn("verifySubscriptionGatekeeper warning:", error.message);
+            return true;
         }
-        window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
 
+        let mPrice = 499;
+        let yPrice = 4999;
+
+        // 'plans' table se live rates load karein
+        const { data: plansData } = await supabaseClient
+            .from('plans')
+            .select('slug, price_in_rupees')
+            .eq('is_active', true);
+
+        if (plansData && plansData.length > 0) {
+            const mPlan = plansData.find(p => p.slug === 'monthly-pro' || p.slug.includes('monthly'));
+            const yPlan = plansData.find(p => p.slug === 'yearly-super' || p.slug.includes('yearly'));
+            if (mPlan) mPrice = mPlan.price_in_rupees;
+            if (yPlan) yPrice = yPlan.price_in_rupees;
+        }
+
+        if (subData) {
+            if (parseInt(subData.monthly_price) > 0) mPrice = subData.monthly_price;
+            if (parseInt(subData.yearly_price) > 0) yPrice = subData.yearly_price;
+
+            let today = new Date();
+            let expiryDate = new Date(subData.current_period_end);
+
+            if (subData.status === 'expired' || today > expiryDate) {
+                displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+                return false;
+            }
+        } else {
+            // Agar subscription record hi nahi hai
+            displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error("verifySubscriptionGatekeeper error:", err);
+        return true;
+    }
+}
+window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
+        
         // ===================================================================
         // 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
         // ===================================================================
