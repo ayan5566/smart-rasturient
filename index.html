@@ -1706,24 +1706,7 @@
             console.log("🌊 Active Flow: Touch clicks unlocked perfectly. Long-press copy still blocked.");
         })();
 
-        // 🚪 FIXED: Secure Logout on Cancel
-        async function closePaywallAndExitToHub() {
-            try {
-                console.log("🚪 User cancelled: Logging out securely...");
-
-                // 1. Supabase session destroy karo
-                await supabaseClient.auth.signOut();
-
-                // 2. UI Reset
-                document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
-
-                // 3. Page Reload (Session saaf ho jayega)
-                location.reload();
-            } catch (err) {
-                console.error("Logout Error:", err);
-                location.reload();
-            }
-        }
+       
 // ===================================================================
 // 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
 // ===================================================================
@@ -1753,29 +1736,6 @@ async function resolveHotelSubscriptionPricing(hotelScopeId) {
 
     return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
 }
-
-// 1. Paywall Modal me exact deal price display karein
-async function revealSaaSPricingTiersMatrix() {
-    try {
-        const targetScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        const pricing = await resolveHotelSubscriptionPricing(targetScope);
-
-        const monthlyDisplay = document.getElementById('paywallMonthlyPriceDisplay');
-        const yearlyDisplay = document.getElementById('paywallYearlyPriceDisplay');
-
-        if (monthlyDisplay) monthlyDisplay.innerText = "₹" + pricing.monthlyPrice;
-        if (yearlyDisplay) yearlyDisplay.innerText = "₹" + pricing.yearlyPrice;
-
-        const tiersContainer = document.getElementById('saasPricingTiersContainer');
-        const triggerBtn = document.getElementById('activatePlanTriggerBtn');
-
-        if (tiersContainer) tiersContainer.style.display = 'block';
-        if (triggerBtn) triggerBtn.style.display = 'none';
-    } catch (err) {
-        console.error("Pricing Fetch Error:", err);
-    }
-}
-window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
 
 // 2. Gatekeeper: Expiry check karein aur custom deal price ke sath paywall show karein
 async function verifySubscriptionGatekeeper(ownerEmail) {
@@ -4862,26 +4822,7 @@ function generateAdminTableGrid() {
         container.innerHTML += floorHTML;
     });
 }
-        async function closePaywallAndExitToHub() {
-    document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
-    document.getElementById('saasPricingTiersContainer').style.display = 'none';
-    document.getElementById('activatePlanTriggerBtn').style.display = 'block';
-    
-    // Sign out to clear session credentials tokens securely
-    await supabaseClient.auth.signOut();
-    document.getElementById('customerView').style.display = 'block';
-    renderCustomerMenu();
-}
-        async function closePaywallAndExitToHub() {
-            document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
-            document.getElementById('saasPricingTiersContainer').style.display = 'none';
-            document.getElementById('activatePlanTriggerBtn').style.display = 'block';
-
-            // Sign out to clear session credentials tokens securely
-            await supabaseClient.auth.signOut();
-            document.getElementById('customerView').style.display = 'block';
-            renderCustomerMenu();
-        }
+        
         // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
         function showOnScreenNotification(message, isError = false) {
             let toast = document.getElementById('customToastNotification');
@@ -5560,15 +5501,7 @@ window.uploadMenuToCloud = uploadMenuToCloud;
 
             // Open the premium modal screen view
             document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
-        }
-
-        function revealSaaSPricingTiersMatrix() {
-            // Reveal the hidden pricing container node smoothly
-            document.getElementById('saasPricingTiersContainer').style.display = 'block';
-            document.getElementById('activatePlanTriggerBtn').style.display = 'none';
-            showOnScreenNotification("ℹ️ YOUR PLAN IS EXPIRE! Please contact administrator node.");
-        }
-
+        }    
         async function closePaywallAndExitToHub() {
             document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
             document.getElementById('saasPricingTiersContainer').style.display = 'none';
@@ -5579,9 +5512,7 @@ window.uploadMenuToCloud = uploadMenuToCloud;
             document.getElementById('customerView').style.display = 'block';
             renderCustomerMenu();
         }
-
-
-        initApp();
+    initApp();
     </script>
 </body>
 
