@@ -1724,55 +1724,106 @@
                 location.reload();
             }
         }
-       // ===================================================================
-// 👑 FIXED: FETCHES DIRECTLY FROM 'plans' TABLE IN SUPABASE
 // ===================================================================
-async function revealSaaSPricingTiersMatrix() {
+// 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
+// ===================================================================
+
+// Helper: Target hotel ke verified deal prices resolve karein
+async function resolveHotelSubscriptionPricing(hotelScopeId) {
+    let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
+    let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
+
     try {
-        let finalMonthlyRate = 499;
-        let finalYearlyRate = 4999;
-
-        // Step 1: Global active plans table se real prices uthao
-        const { data: plansData, error: plansErr } = await supabaseClient
-            .from('plans')
-            .select('slug, price_in_rupees')
-            .eq('is_active', true);
-
-        if (!plansErr && plansData && plansData.length > 0) {
-            const mPlan = plansData.find(p => p.slug === 'monthly-pro' || p.slug.includes('monthly'));
-            const yPlan = plansData.find(p => p.slug === 'yearly-super' || p.slug.includes('yearly'));
-
-            if (mPlan) finalMonthlyRate = mPlan.price_in_rupees;
-            if (yPlan) finalYearlyRate = yPlan.price_in_rupees;
-        }
-
-        // Step 2: Agar is specific hotel ke liye koi custom rate set hai toh use override karo
-        const { data: subData } = await supabaseClient
+        const { data: subData, error } = await supabaseClient
             .from('subscriptions')
             .select('monthly_price, yearly_price')
-            .eq('id', hotelGlobalScopeID)
+            .eq('id', hotelScopeId)
             .maybeSingle();
 
-        if (subData) {
-            if (parseInt(subData.monthly_price) > 0) {
-                finalMonthlyRate = subData.monthly_price;
-            }
-            if (parseInt(subData.yearly_price) > 0) {
-                finalYearlyRate = subData.yearly_price;
-            }
+        if (!error && subData) {
+            let mVal = parseInt(subData.monthly_price);
+            let yVal = parseInt(subData.yearly_price);
+
+            if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
+            if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
         }
+    } catch (err) {
+        console.error("Pricing resolution fallback triggered:", err);
+    }
 
-        // Screen text update
-        document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + finalMonthlyRate;
-        document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + finalYearlyRate;
+    return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
+}
 
-        document.getElementById('saasPricingTiersContainer').style.display = 'block';
-        document.getElementById('activatePlanTriggerBtn').style.display = 'none';
+// 1. Paywall Modal me exact deal price display karein
+async function revealSaaSPricingTiersMatrix() {
+    try {
+        const targetScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+        const pricing = await resolveHotelSubscriptionPricing(targetScope);
+
+        const monthlyDisplay = document.getElementById('paywallMonthlyPriceDisplay');
+        const yearlyDisplay = document.getElementById('paywallYearlyPriceDisplay');
+
+        if (monthlyDisplay) monthlyDisplay.innerText = "₹" + pricing.monthlyPrice;
+        if (yearlyDisplay) yearlyDisplay.innerText = "₹" + pricing.yearlyPrice;
+
+        const tiersContainer = document.getElementById('saasPricingTiersContainer');
+        const triggerBtn = document.getElementById('activatePlanTriggerBtn');
+
+        if (tiersContainer) tiersContainer.style.display = 'block';
+        if (triggerBtn) triggerBtn.style.display = 'none';
     } catch (err) {
         console.error("Pricing Fetch Error:", err);
     }
 }
 window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
+
+// 2. Gatekeeper: Expiry check karein aur custom deal price ke sath paywall show karein
+async function verifySubscriptionGatekeeper(ownerEmail) {
+    try {
+        if (!ownerEmail) return true;
+
+        const { data: subData, error } = await supabaseClient
+            .from('subscriptions')
+            .select('status, current_period_end, monthly_price, yearly_price')
+            .eq('id', ownerEmail)
+            .maybeSingle();
+
+        if (error) {
+            console.warn("verifySubscriptionGatekeeper warning:", error.message);
+            return true;
+        }
+
+        // Deal rates extract karein (fallback defaults active rahenge)
+        let mPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
+        let yPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
+
+        if (subData) {
+            let mVal = parseInt(subData.monthly_price);
+            let yVal = parseInt(subData.yearly_price);
+
+            if (!isNaN(mVal) && mVal > 0) mPrice = mVal;
+            if (!isNaN(yVal) && yVal > 0) yPrice = yVal;
+
+            let today = new Date();
+            let expiryDate = new Date(subData.current_period_end);
+
+            if (subData.status === 'expired' || (subData.current_period_end && today > expiryDate)) {
+                displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+                return false;
+            }
+        } else {
+            // Subscription missing hone par fallback paywall dikhayein
+            displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error("verifySubscriptionGatekeeper error:", err);
+        return true;
+    }
+}
+window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
         // ===================================================================
         // 💳 BROADCAST INTEGRATION: HOSTED GATEWAY ROUTER (STRIPE/RAZORPAY READY)
         // ===================================================================
@@ -4969,66 +5020,7 @@ async function uploadMenuToCloud() {
     }
 }
 window.uploadMenuToCloud = uploadMenuToCloud;
-
-        // ===================================================================
-// 🛡️ FIXED GATEKEEPER: LOADS REAL PRICES FROM 'plans' TABLE ON EXPIRY
-// ===================================================================
-async function verifySubscriptionGatekeeper(ownerEmail) {
-    try {
-        if (!ownerEmail) return true;
-
-        const { data: subData, error } = await supabaseClient
-            .from('subscriptions')
-            .select('status, current_period_end, monthly_price, yearly_price')
-            .eq('id', ownerEmail)
-            .maybeSingle();
-
-        if (error) {
-            console.warn("verifySubscriptionGatekeeper warning:", error.message);
-            return true;
-        }
-
-        let mPrice = 499;
-        let yPrice = 4999;
-
-        // 'plans' table se live rates load karein
-        const { data: plansData } = await supabaseClient
-            .from('plans')
-            .select('slug, price_in_rupees')
-            .eq('is_active', true);
-
-        if (plansData && plansData.length > 0) {
-            const mPlan = plansData.find(p => p.slug === 'monthly-pro' || p.slug.includes('monthly'));
-            const yPlan = plansData.find(p => p.slug === 'yearly-super' || p.slug.includes('yearly'));
-            if (mPlan) mPrice = mPlan.price_in_rupees;
-            if (yPlan) yPrice = yPlan.price_in_rupees;
-        }
-
-        if (subData) {
-            if (parseInt(subData.monthly_price) > 0) mPrice = subData.monthly_price;
-            if (parseInt(subData.yearly_price) > 0) yPrice = subData.yearly_price;
-
-            let today = new Date();
-            let expiryDate = new Date(subData.current_period_end);
-
-            if (subData.status === 'expired' || today > expiryDate) {
-                displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
-                return false;
-            }
-        } else {
-            // Agar subscription record hi nahi hai
-            displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
-            return false;
-        }
-
-        return true;
-    } catch (err) {
-        console.error("verifySubscriptionGatekeeper error:", err);
-        return true;
-    }
-}
-window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
-        
+      
         // ===================================================================
         // 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
         // ===================================================================
