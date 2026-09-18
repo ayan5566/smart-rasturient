@@ -2204,174 +2204,156 @@ window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
                 alert("❌ Identity Unverified! Security protocol triggered.");
             }
         }
-
         // ===================================================================
-        // 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
-        // ===================================================================
+// 👑 FIXED: MASTER CONTROL ACCOUNT LIST & INSTANT PRICE SYNC
+// ===================================================================
 
-        async function fetchGlobalSaaSAccountNetworkList() {
-            const listWrapper = document.getElementById('superAdminClientsListWrapper');
-            if (!listWrapper) return;
-            listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
+// Helper: Form auto-fill
+function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
+    document.getElementById('saTargetUserUUID').value = userId || '';
+    document.getElementById('saTargetHotelName').value = (hotelName && hotelName !== 'Unnamed Outlet Space') ? hotelName : '';
+    document.getElementById('saCustomMonthlyRate').value = mRate || 0;
+    document.getElementById('saCustomYearlyRate').value = yRate || 0;
+    showOnScreenNotification("📋 Loaded account: " + userId);
+}
+window.populateSuperAdminFormFields = populateSuperAdminFormFields;
 
-            try {
-                // 🔥 FIX: select query ke andar 'founder_label' ko bhi add kiya
-                const { data: subList, error } = await supabaseClient
-                    .from('subscriptions')
-                    .select('id, user_phone, status, current_period_end, monthly_price, yearly_price, founder_label')
-                    .order('current_period_end', { ascending: false });
+// 1. Saare Accounts Fetch & Display Karein
+async function fetchGlobalSaaSAccountNetworkList() {
+    const listWrapper = document.getElementById('superAdminClientsListWrapper');
+    if (!listWrapper) return;
+    listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
-                if (error) throw error;
+    try {
+        // Direct subscriptions fetch
+        const { data: subList, error } = await supabaseClient
+            .from('subscriptions')
+            .select('*')
+            .order('current_period_end', { ascending: false });
 
-                const { data: configList } = await supabaseClient
-                    .from('hotel_config')
-                    .select('id, hotel_name');
+        if (error) throw error;
 
-                if (!subList || subList.length === 0) {
-                    listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
-                    return;
-                }
+        const { data: configList } = await supabaseClient
+            .from('hotel_config')
+            .select('id, hotel_name');
 
-                listWrapper.innerHTML = '';
-                subList.forEach(sub => {
-                    let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
-                    let formattedExpiry = new Date(sub.current_period_end).toLocaleDateString();
+        if (!subList || subList.length === 0) {
+            listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
+            return;
+        }
 
-                    let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
-                    let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
+        let fullHTML = '';
+        subList.forEach(sub => {
+            let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
+            let formattedExpiry = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'No Expiry';
 
-                    // 🔥 FIX: Agar founder ne koi custom label diya hai toh display ke liye vahi use hoga, warna original name
-                    let administrativeTitle = sub.founder_label || hotelDisplayName;
+            let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
+            let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
+            let administrativeTitle = sub.founder_label || hotelDisplayName;
 
-                    let currentMonthlyPrice = sub.monthly_price || 0;
-                    let currentYearlyPrice = sub.yearly_price || 0;
-                    let clientPhone = sub.user_phone || "No Mobile Logged";
-                    let clientEmail = sub.id;
+            let currentMonthlyPrice = parseInt(sub.monthly_price) || 0;
+            let currentYearlyPrice = parseInt(sub.yearly_price) || 0;
+            let clientPhone = sub.user_phone || "No Mobile";
+            let clientEmail = sub.id || '';
 
-                    let sanitizedAdminTitle = administrativeTitle.replace(/'/g, "\\'");
-
-                    listWrapper.innerHTML += `
+            fullHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="populateSuperAdminFormFields('${clientEmail}', '${sanitizedAdminTitle}', ${currentMonthlyPrice}, ${currentYearlyPrice});"
+                     onclick="populateSuperAdminFormFields('${clientEmail}', '${administrativeTitle.replace(/'/g, "\\'")}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span> ${sub.founder_label ? `<small style="color:#7f8c8d; font-style:italic;">(${hotelDisplayName})</small>` : ''}<br>
-                        <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Contact Mobile Number: ${clientPhone}</span><br>
-                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Identity Email: ${clientEmail}</span><br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span><br>
+                        <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Mobile: ${clientPhone}</span><br>
+                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Email ID: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
-                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
+                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:2px; font-size:11px; font-weight:bold;">
+                            💰 Monthly: ₹${currentMonthlyPrice} | Yearly: ₹${currentYearlyPrice}
+                        </span>
                     </div>
-                    <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
+                    <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">
+                        ${(sub.status || 'ACTIVE').toUpperCase()}
+                    </span>
                 </div>`;
-                });
+        });
 
-            } catch (err) {
-                console.error("Super Admin Interface Mapping Failure:", err);
-                listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link account stream templates logs.</span>`;
-            }
+        listWrapper.innerHTML = fullHTML;
+
+    } catch (err) {
+        console.error("Super Admin List Failure:", err);
+        listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link accounts: ${err.message}</span>`;
+    }
+}
+window.fetchGlobalSaaSAccountNetworkList = fetchGlobalSaaSAccountNetworkList;
+
+// 2. Exact Selected Hotel Ka Price Update Karein
+async function executeSuperAdminManualActivationSequence(targetStatusState) {
+    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
+    let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
+    let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
+    let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
+
+    // Agar email select nahi hai, toh Global Defaults update karo
+    if (!targetId || !targetId.includes('@')) {
+        let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
+        let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
+
+        if (gMonthlyInput && gYearlyInput) {
+            dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
+            dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
+            localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
+            localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
+            showOnScreenNotification("🌐 Global Default Rates Saved!");
+            return;
         }
-       // Helper function to auto-fill inputs instantly when a hotel row is clicked
-        function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
-            if (document.getElementById('saTargetUserUUID')) document.getElementById('saTargetUserUUID').value = userId || '';
-            if (document.getElementById('saTargetHotelName')) document.getElementById('saTargetHotelName').value = hotelName || '';
-            if (document.getElementById('saCustomMonthlyRate')) document.getElementById('saCustomMonthlyRate').value = (mRate && parseInt(mRate) > 0) ? mRate : '';
-            if (document.getElementById('saCustomYearlyRate')) document.getElementById('saCustomYearlyRate').value = (yRate && parseInt(yRate) > 0) ? yRate : '';
-            showOnScreenNotification("📋 Loaded: " + (hotelName || userId));
+        alert("⚠️ Please select an account from the list above first!");
+        return;
+    }
+
+    try {
+        showOnScreenNotification("⚡ Updating price & status on Supabase...", false);
+
+        let updatePayload = {
+            status: targetStatusState,
+            monthly_price: allocatedMonthlyPrice,
+            yearly_price: allocatedYearlyPrice
+        };
+
+        if (updatedHotelName) {
+            updatePayload.founder_label = updatedHotelName;
         }
-        window.populateSuperAdminFormFields = populateSuperAdminFormFields;
 
-        // ===================================================================
-        // 👑 UPGRADED SUPER ADMIN SEQUENCE: RECOGNIZES GLOBAL BASE DEFAULTS
-        // ===================================================================
-        async function executeSuperAdminManualActivationSequence(targetStatusState) {
-            let targetId = document.getElementById('saTargetUserUUID').value.trim();
-            let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
-            let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
-            let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
-            let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
-
-            // 🔥 🔥 THE FIX: Agar aap individual details nahi bhar rahe ho, toh checks ko bypass karke sidhe global defaults save karo!
-            if (!targetId || targetId.length < 10) {
-                // Super Admin dashboard ke inputs se live default variables sync karo
-                let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
-                let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
-
-                if (gMonthlyInput && gYearlyInput) {
-                    dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
-                    dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
-
-                    // Local disk backup update
-                    localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
-                    localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
-
-                    showOnScreenNotification("🌐 Global Default Package Rates Saved Successfully!");
-                    alert("🌐 Success! Global Baseline Rates updated across the network. Jin templates par ₹0 set hai, wahan ab ye rates lagenge.");
-                    fetchGlobalSaaSAccountNetworkList();
-                    return; // Execution block safe return
-                }
-
-                alert("❌ Invalid user classification identifier code string pattern.");
-                return;
-            }
-
-            // Individual Restaurant activation sequence logic below (Untouched and Safe)
-            try {
-                showOnScreenNotification("⚡ Processing security write override data...", false);
-
-                const { data: existingRecord } = await supabaseClient
-                    .from('subscriptions')
-                    .select('id')
-                    .eq('id', targetId)
-                    .maybeSingle();
-
-                let syncOperationError = null;
-
-                let subscriptionPayload = {
-                    status: targetStatusState,
-                    monthly_price: allocatedMonthlyPrice,
-                    yearly_price: allocatedYearlyPrice,
-                    founder_label: updatedHotelName
-                };
-
-                if (validityDays > 0) {
-                    let startTime = new Date();
-                    let endTime = new Date();
-                    endTime.setDate(startTime.getDate() + validityDays);
-                    subscriptionPayload.current_period_start = startTime.toISOString();
-                    subscriptionPayload.current_period_end = endTime.toISOString();
-                }
-
-                if (existingRecord) {
-                    const { error } = await supabaseClient
-                        .from('subscriptions')
-                        .update(subscriptionPayload)
-                        .eq('id', targetId);
-                    syncOperationError = error;
-                } else {
-                    subscriptionPayload.id = targetId;
-                    const { error } = await supabaseClient
-                        .from('subscriptions')
-                        .insert(subscriptionPayload);
-                    syncOperationError = error;
-                }
-
-                if (syncOperationError) {
-                    alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
-                } else {
-                    showOnScreenNotification(`👑 Scoped Parameters updated successfully!`);
-
-                    document.getElementById('saTargetUserUUID').value = '';
-                    document.getElementById('saTargetHotelName').value = '';
-                    document.getElementById('saPlanValidityDays').value = '';
-                    document.getElementById('saCustomMonthlyRate').value = '';
-                    document.getElementById('saCustomYearlyRate').value = '';
-
-                    fetchGlobalSaaSAccountNetworkList();
-                }
-
-            } catch (err) {
-                console.error("Super Admin Operation Exception:", err);
-            }
+        if (validityDays > 0) {
+            let startTime = new Date();
+            let endTime = new Date();
+            endTime.setDate(startTime.getDate() + validityDays);
+            updatePayload.current_period_start = startTime.toISOString();
+            updatePayload.current_period_end = endTime.toISOString();
         }
+
+        // Supabase update query
+        const { data, error } = await supabaseClient
+            .from('subscriptions')
+            .update(updatePayload)
+            .eq('id', targetId)
+            .select();
+
+        if (error) {
+            alert("❌ Database Update Failed: " + error.message);
+            return;
+        }
+
+        showOnScreenNotification(`✅ Updated! Monthly: ₹${allocatedMonthlyPrice}, Yearly: ₹${allocatedYearlyPrice}`);
+        alert(`🎉 Success!\n\nAccount: ${targetId}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}\nStatus: ${targetStatusState.toUpperCase()}`);
+
+        // Inputs reset aur list reload
+        document.getElementById('saPlanValidityDays').value = '';
+        fetchGlobalSaaSAccountNetworkList();
+
+    } catch (err) {
+        console.error("Super Admin Operation Exception:", err);
+        alert("System error updating subscription: " + err.message);
+    }
+}
+window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActivationSequence;
         function exitSuperAdminDashboardConsole() {
             document.getElementById('superAdminDashboard').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
