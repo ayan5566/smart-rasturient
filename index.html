@@ -2283,15 +2283,17 @@ async function fetchGlobalSaaSAccountNetworkList() {
 }
 window.fetchGlobalSaaSAccountNetworkList = fetchGlobalSaaSAccountNetworkList;
 
-// 2. Exact Selected Hotel Ka Price Update Karein
+// ===================================================================
+// 👑 FIXED: CUMULATIVE EXPIRY EXTENSION ENGINE (END DATE + DAYS)
+// ===================================================================
 async function executeSuperAdminManualActivationSequence(targetStatusState) {
     let targetId = document.getElementById('saTargetUserUUID').value.trim();
     let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
-    let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
+    let extraValidityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
     let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
     let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-    // Agar email select nahi hai, toh Global Defaults update karo
+    // Agar target email blank hai, toh global fallback defaults update karein
     if (!targetId || !targetId.includes('@')) {
         let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
         let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
@@ -2304,12 +2306,21 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
             showOnScreenNotification("🌐 Global Default Rates Saved!");
             return;
         }
-        alert("⚠️ Please select an account from the list above first!");
+        alert("⚠️ Kripya upar list me se kisi account par click karein!");
         return;
     }
 
     try {
-        showOnScreenNotification("⚡ Updating price & status on Supabase...", false);
+        showOnScreenNotification("⏳ Syncing validity and pricing...", false);
+
+        // 1. Current user ka existing record fetch karein (purani expiry dekhne ke liye)
+        const { data: currentSub, error: fetchErr } = await supabaseClient
+            .from('subscriptions')
+            .select('current_period_end, current_period_start')
+            .eq('id', targetId)
+            .maybeSingle();
+
+        if (fetchErr) throw fetchErr;
 
         let updatePayload = {
             status: targetStatusState,
@@ -2321,36 +2332,50 @@ async function executeSuperAdminManualActivationSequence(targetStatusState) {
             updatePayload.founder_label = updatedHotelName;
         }
 
-        if (validityDays > 0) {
-            let startTime = new Date();
-            let endTime = new Date();
-            endTime.setDate(startTime.getDate() + validityDays);
-            updatePayload.current_period_start = startTime.toISOString();
-            updatePayload.current_period_end = endTime.toISOString();
+        // 2. 🔥 CUMULATIVE DATE CALCULATION LOGIC
+        if (extraValidityDays > 0) {
+            let baseDate = new Date();
+            let now = new Date();
+
+            if (currentSub && currentSub.current_period_end) {
+                let existingEnd = new Date(currentSub.current_period_end);
+                // Agar purani expiry date abhi bachi hui hai, toh usi end date ke aage jodein
+                if (existingEnd > now) {
+                    baseDate = existingEnd;
+                }
+            }
+
+            // End date me din add karein (e.g. 15 + 2 = 17)
+            baseDate.setDate(baseDate.getDate() + extraValidityDays);
+            updatePayload.current_period_end = baseDate.toISOString();
+
+            // Agar start date pehle se nahi hai tabhi start date aaj ki set karein
+            if (!currentSub || !currentSub.current_period_start) {
+                updatePayload.current_period_start = now.toISOString();
+            }
         }
 
-        // Supabase update query
-        const { data, error } = await supabaseClient
+        // 3. Update query execute karein
+        const { error: updateErr } = await supabaseClient
             .from('subscriptions')
             .update(updatePayload)
-            .eq('id', targetId)
-            .select();
+            .eq('id', targetId);
 
-        if (error) {
-            alert("❌ Database Update Failed: " + error.message);
+        if (updateErr) {
+            alert("❌ Database Update Failed: " + updateErr.message);
             return;
         }
 
-        showOnScreenNotification(`✅ Updated! Monthly: ₹${allocatedMonthlyPrice}, Yearly: ₹${allocatedYearlyPrice}`);
-        alert(`🎉 Success!\n\nAccount: ${targetId}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}\nStatus: ${targetStatusState.toUpperCase()}`);
+        showOnScreenNotification(`✅ Account updated! Validity extended by +${extraValidityDays} days.`);
+        alert(`🎉 Success!\n\nAccount: ${targetId}\nStatus: ${targetStatusState.toUpperCase()}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}${extraValidityDays > 0 ? `\nNew Expiry: ${new Date(updatePayload.current_period_end).toLocaleDateString()}` : ''}`);
 
-        // Inputs reset aur list reload
+        // Reset & Refresh
         document.getElementById('saPlanValidityDays').value = '';
         fetchGlobalSaaSAccountNetworkList();
 
     } catch (err) {
-        console.error("Super Admin Operation Exception:", err);
-        alert("System error updating subscription: " + err.message);
+        console.error("Super Admin Update Error:", err);
+        alert("System Error: " + err.message);
     }
 }
 window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActivationSequence;
