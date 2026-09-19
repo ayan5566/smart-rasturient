@@ -2249,7 +2249,14 @@ async function fetchGlobalSaaSAccountNetworkList() {
 
             let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
             let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
-            let administrativeTitle = sub.founder_label || hotelDisplayName;
+            // Token ko filter karke sirf original hotel brand name display karein
+            let cleanLabel = sub.founder_label || '';
+            if (cleanLabel.includes('||')) {
+                cleanLabel = cleanLabel.split('||')[0].trim();
+            } else if (cleanLabel.startsWith('VPA_EDIT_')) {
+                cleanLabel = '';
+            }
+            let administrativeTitle = cleanLabel || hotelDisplayName || "Unnamed Outlet Space";
 
             let currentMonthlyPrice = parseInt(sub.monthly_price) || 0;
             let currentYearlyPrice = parseInt(sub.yearly_price) || 0;
@@ -4086,109 +4093,151 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
             }
         }
         // ===================================================================
-        // 📡 STEPS 1-4 ENGINE: REQUEST OVERRIDE, AUTO-SAVE, AND DISAPPEAR CONTAINER
-        // ===================================================================
-        async function requestRemoteFounderVpaUnlockToken() {
-            let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
-            let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-            let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+// 🔓 FIXED: CLIENT VPA PERMISSION CHECK (PRESERVES HOTEL NAME)
+// ===================================================================
+async function requestRemoteFounderVpaUnlockToken() {
+    let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
+    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
 
-            if (!vpaContainer) {
-                console.error("❌ Error: secHotelVpaOperationalContainer DOM element not found!");
-                return;
-            }
+    if (!vpaContainer) return;
 
-            // 💥 STEP 3 & 4: Agar dabba pehle se screen par open hai, toh is click par SAVE & DISAPPEAR kerna hai
-            if (vpaContainer.style.display === 'block') {
-                if (!vpaInput || vpaInput.value.trim() === "") {
-                    alert("⚠️ Please enter a valid UPI VPA Address before saving!");
-                    return;
-                }
-
-                showOnScreenNotification("实时 💾 Saving VPA parameters and locking section...", false);
-
-                // Local state validation saves trigger
-                localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
-
-                // Global config database sync calls
-                if (typeof saveAdminConfig === "function") saveAdminConfig();
-                if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
-
-                // 🔥 STEP 4: Section screen se instantly gayab (disappear)
-                vpaContainer.style.display = 'none';
-
-                try {
-                    // Cloud token burn database mutation layer
-                    await supabaseClient
-                        .from('subscriptions')
-                        .update({ founder_label: 'VPA_EDIT_LOCKED' })
-                        .eq('id', hotelGlobalScopeID);
-                    console.log("🔒 Security Core: Token consumed and burned successfully.");
-                } catch (err) { console.error(err); }
-
-                alert("🗑️ Success! VPA Saved and configuration panel disappeared from screen securely.");
-                return;
-            }
-
-            // 💥 STEP 1 & 2: Agar dabba band thha, toh cloud check karke screen par show karo
-            try {
-                showOnScreenNotification("📡 Syncing tokens with RestroFlow Cloud...", false);
-
-                const { data: subData } = await supabaseClient
-                    .from('subscriptions')
-                    .select('founder_label')
-                    .eq('id', hotelGlobalScopeID)
-                    .maybeSingle();
-
-                // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
-                if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
-                    vpaContainer.style.styleWithJS = "block"; // Safe tracking variable
-                    vpaContainer.style.display = 'block'; // 🔥 Core visibility trigger: Dabba samne laye!
-
-                    if (vpaInput) {
-                        vpaInput.removeAttribute('disabled');
-                        vpaInput.removeAttribute('readonly');
-                        vpaInput.focus();
-                    }
-                    if (noticeLabel) {
-                        noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click button to save.";
-                        noticeLabel.style.color = "var(--neon-green)";
-                    }
-                    showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
-                } else {
-                    alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
-                }
-            } catch (err) { console.error(err); }
+    // Agar section pehle se khula hai toh Save & Lock karein
+    if (vpaContainer.style.display === 'block') {
+        if (!vpaInput || vpaInput.value.trim() === "") {
+            alert("⚠️ Please enter a valid UPI VPA Address before saving!");
+            return;
         }
 
-        // ===================================================================
-        // 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
-        // ===================================================================
-        async function executeRemoteVpaAccessGrantPipeline(permissionState) {
-            let targetId = document.getElementById('saTargetUserUUID').value.trim();
-            if (!targetId || targetId.length < 10) {
-                alert("❌ Target Verification Error: Please select/click a valid restaurant account row from the network list first!");
-                return;
+        showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
+        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
+
+        if (typeof saveAdminConfig === "function") saveAdminConfig();
+        if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
+
+        vpaContainer.style.display = 'none';
+
+        try {
+            // Lock lagate waqt bhi hotel ka naam bacha kar rakhein
+            const { data: cur } = await supabaseClient
+                .from('subscriptions')
+                .select('founder_label')
+                .eq('id', hotelGlobalScopeID)
+                .maybeSingle();
+
+            let origName = "";
+            if (cur && cur.founder_label && cur.founder_label.includes('||')) {
+                origName = cur.founder_label.split('||')[0].trim();
+            } else if (cur && cur.founder_label && !cur.founder_label.startsWith('VPA_EDIT_')) {
+                origName = cur.founder_label.trim();
             }
 
-            try {
-                showOnScreenNotification("⏳ Syncing remote authorization parameters...", false);
-                let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
-
-                const { error } = await supabaseClient
-                    .from('subscriptions')
-                    .update({ founder_label: tokenFlag })
-                    .eq('id', targetId);
-
-                if (error) {
-                    alert("❌ Cloud Write Violation: " + error.message);
-                } else {
-                    showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
-                    alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request VPA Edit Permission' button daba kar account edit kar sakte hain.`);
-                    fetchGlobalSaaSAccountNetworkList();
-                }
-            } catch (err) { console.error(err); }
+            let lockedLabel = origName ? `${origName} || VPA_EDIT_LOCKED` : 'VPA_EDIT_LOCKED';
+            await supabaseClient
+                .from('subscriptions')
+                .update({ founder_label: lockedLabel })
+                .eq('id', hotelGlobalScopeID);
+        } catch (err) {
+            console.error(err);
         }
+
+        alert("✅ Success! VPA Saved and panel locked securely.");
+        return;
+    }
+
+    // Permission Check
+    try {
+        showOnScreenNotification("📡 Verifying VPA edit permission with Cloud...", false);
+
+        const { data: subData } = await supabaseClient
+            .from('subscriptions')
+            .select('founder_label')
+            .eq('id', hotelGlobalScopeID)
+            .maybeSingle();
+
+        // Check karein ki label me VPA_EDIT_GRANTED token maujood hai ya nahi
+        let isGranted = subData && subData.founder_label && subData.founder_label.includes('VPA_EDIT_GRANTED');
+
+        if (isGranted) {
+            vpaContainer.style.display = 'block';
+
+            if (vpaInput) {
+                vpaInput.removeAttribute('disabled');
+                vpaInput.removeAttribute('readonly');
+                vpaInput.focus();
+            }
+            if (noticeLabel) {
+                noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click save.";
+                noticeLabel.style.color = "var(--neon-green)";
+            }
+            showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
+        } else {
+            alert(`🔒 Access Intercepted!\n\nRestroFlow HQ has locked this UPI setting. Please request a 1-Time Edit Permission Token from Founder Master Control.\n\nIdentity: ${hotelGlobalScopeID}`);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+window.requestRemoteFounderVpaUnlockToken = requestRemoteFounderVpaUnlockToken;
+
+        // ===================================================================
+// 👑 FIXED: VPA PERMISSION PIPELINE (NAME KO SAFE RAKHTA HAI)
+// ===================================================================
+async function executeRemoteVpaAccessGrantPipeline(permissionState) {
+    let targetId = document.getElementById('saTargetUserUUID').value.trim();
+    if (!targetId || targetId.length < 5) {
+        alert("❌ Target Verification Error: Kripya list me se account select karein!");
+        return;
+    }
+
+    try {
+        showOnScreenNotification("⏳ Updating VPA permission token...", false);
+        let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
+
+        // 1. Current hotel name retrieve karein taaki naam delete na ho
+        const { data: currentSub } = await supabaseClient
+            .from('subscriptions')
+            .select('founder_label')
+            .eq('id', targetId)
+            .maybeSingle();
+
+        let preservedName = "";
+        if (currentSub && currentSub.founder_label) {
+            // Agar purana label me token laga tha, toh sirf asli naam nikalo
+            let rawLabel = currentSub.founder_label;
+            if (rawLabel.includes('||')) {
+                preservedName = rawLabel.split('||')[0].trim();
+            } else if (!rawLabel.startsWith('VPA_EDIT_')) {
+                preservedName = rawLabel.trim();
+            }
+        }
+
+        // Form me agar naya naam type kiya hai toh wo use karo
+        let typedName = document.getElementById('saTargetHotelName').value.trim();
+        if (typedName && !typedName.startsWith('VPA_EDIT_')) {
+            preservedName = typedName;
+        }
+
+        // 2. Format: "HotelName || TOKEN"
+        let compositeLabel = preservedName ? `${preservedName} || ${tokenFlag}` : tokenFlag;
+
+        const { error } = await supabaseClient
+            .from('subscriptions')
+            .update({ founder_label: compositeLabel })
+            .eq('id', targetId);
+
+        if (error) {
+            alert("❌ Database Error: " + error.message);
+        } else {
+            showOnScreenNotification(`👑 VPA Permission: ${permissionState.toUpperCase()}!`);
+            alert(`🎉 Success!\n\nAccount: ${targetId}\nHotel Name: ${preservedName || 'Default'}\nVPA Token: ${tokenFlag}`);
+            fetchGlobalSaaSAccountNetworkList();
+        }
+    } catch (err) {
+        console.error("VPA Grant Exception:", err);
+    }
+}
+window.executeRemoteVpaAccessGrantPipeline = executeRemoteVpaAccessGrantPipeline;
 
         // ===================================================================
         // 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (AIRTIGHT UPDATED)
