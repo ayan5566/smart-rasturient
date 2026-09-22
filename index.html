@@ -971,7 +971,7 @@
     <div id="customToastNotification"
         style="position: fixed; top: 20px; max-width: 320px; width: 85%; background: #2c3e50; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 99999; display: none; font-weight: 600; font-size: 14px; border-left: 6px solid #2ecc71; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
     </div>
-    <div class="floating-action-container">
+    <div class="floating-action-container" id="customerFloatingActionBox">
         <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">🔔</div>
         <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">🧾</div>
     </div>
@@ -2198,6 +2198,8 @@ window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
             if (keyInput === SECRET_FOUNDER_PASSPHRASE_KEY) {
                 document.getElementById('customerView').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'none';
+                const floatBox = document.getElementById('customerFloatingActionBox');
+                if (floatBox) floatBox.style.display = 'none';
                 document.getElementById('superAdminDashboard').style.display = 'block';
                 fetchGlobalSaaSAccountNetworkList();
             } else if (keyInput) {
@@ -5139,6 +5141,8 @@ window.uploadMenuToCloud = uploadMenuToCloud;
 
                 document.getElementById('adminDashboard').style.display = 'none';
                 document.getElementById('customerView').style.display = 'block';
+                const floatBox = document.getElementById('customerFloatingActionBox');
+                if (floatBox) floatBox.style.display = 'flex';
 
                 renderCustomerMenu();
                 showOnScreenNotification("🚪 Logged out successfully!");
