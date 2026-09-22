@@ -2150,10 +2150,8 @@ window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
                                 floor.tables.forEach(t => {
                                     let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
 
-                                    // Map row with unique target table key structures
                                     let targetCloudRow = globalCloudSessions.find(s =>
-                                        s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` ||
-                                        s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`
+                                        s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}`
                                     );
 
                                     if (targetCloudRow) {
@@ -2441,7 +2439,7 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
             { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
         ];
-        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 0, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
         let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
         // 🛡️ LEVEL 3: Core Configurations arrays data streams retrieval bindings
@@ -4668,7 +4666,7 @@ try {
                                 let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
 
                                 // Cloud map lookup scanning table strings natively
-                                let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` || s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`);
+                                let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}`);
 
                                 if (targetCloudRow) {
                                     t.waiterBell = targetCloudRow.waiter_bell || false;
