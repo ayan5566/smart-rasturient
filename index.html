@@ -4623,7 +4623,7 @@ try {
     } catch (err) { 
         console.error(err); 
     }
-            // 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
+// 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
             try {
                 const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
                     .from('table_sessions')
@@ -4639,22 +4639,17 @@ try {
                                 let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}`);
 
                                 if (targetCloudRow) {
-                                        t.waiterBell = targetCloudRow.waiter_bell || false;
+                                    t.waiterBell = targetCloudRow.waiter_bell || false;
 
-                                        if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
-                                            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
-                                        } else {
-                                            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
-
-                                            let serverBillPayload = targetCloudRow.live_bill || [];
-                                            t.state = (serverBillPayload.length > 0) ? 1 : 0;
-                                        }
+                                    if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
+                                        localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
                                     } else {
-                                        // 🔥 FIX: Agar cloud database me is table ka koi active bill nahi hai toh compulsory Empty (0) rahegi
-                                        t.state = 0;
-                                        t.waiterBell = false;
                                         localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
+
+                                        let serverBillPayload = targetCloudRow.live_bill || [];
+                                        t.state = (serverBillPayload.length > 0) ? 1 : 0;
                                     }
+
                                     // Active view synchronization parameters context allocation logic
                                     if (currentCompoundKey === clientCurrentActiveTable || t.id.trim() === clientCurrentActiveTable) {
                                         localLiveRunningBill = targetCloudRow.live_bill || [];
@@ -4666,6 +4661,11 @@ try {
                                             localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
                                         }
                                     }
+                                } else {
+                                    // 🔥 FIX: Agar cloud database me is table ka koi active bill nahi hai toh compulsory Empty (0) rahegi
+                                    t.state = 0;
+                                    t.waiterBell = false;
+                                    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
                                 }
                             });
                         }
@@ -4698,7 +4698,6 @@ try {
                 console.error("🏁 Structural safe engine alert execution context handled:", renderError.message);
             }
         }
-
         // ===================================================================
         // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
         // ===================================================================
