@@ -1714,130 +1714,130 @@
 
 
         // Helper: Target hotel ke verified deal prices resolve karein
-async function resolveHotelSubscriptionPricing(hotelScopeId) {
-    let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
-    let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
+        async function resolveHotelSubscriptionPricing(hotelScopeId) {
+            let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
+            let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
 
-    try {
-        const { data: subData, error } = await supabaseClient
-            .from('subscriptions')
-            .select('monthly_price, yearly_price')
-            .eq('id', hotelScopeId)
-            .maybeSingle();
+            try {
+                const { data: subData, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('monthly_price, yearly_price')
+                    .eq('id', hotelScopeId)
+                    .maybeSingle();
 
-        if (!error && subData) {
-            let mVal = parseInt(subData.monthly_price);
-            let yVal = parseInt(subData.yearly_price);
+                if (!error && subData) {
+                    let mVal = parseInt(subData.monthly_price);
+                    let yVal = parseInt(subData.yearly_price);
 
-            if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
-            if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
-        }
-    } catch (err) {
-        console.error("Pricing resolution fallback triggered:", err);
-    }
-
-    return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
-}
-
-// 1. Paywall Modal me exact deal price display karein (Button Trigger)
-async function revealSaaSPricingTiersMatrix() {
-    try {
-        const targetScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-        const pricing = await resolveHotelSubscriptionPricing(targetScope);
-
-        const monthlyDisplay = document.getElementById('paywallMonthlyPriceDisplay');
-        const yearlyDisplay = document.getElementById('paywallYearlyPriceDisplay');
-
-        if (monthlyDisplay) monthlyDisplay.innerText = "₹" + pricing.monthlyPrice;
-        if (yearlyDisplay) yearlyDisplay.innerText = "₹" + pricing.yearlyPrice;
-
-        const tiersContainer = document.getElementById('saasPricingTiersContainer');
-        const triggerBtn = document.getElementById('activatePlanTriggerBtn');
-
-        if (tiersContainer) tiersContainer.style.display = 'block';
-        if (triggerBtn) triggerBtn.style.display = 'none';
-    } catch (err) {
-        console.error("Pricing Fetch Error:", err);
-    }
-}
-window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
-// ===================================================================
-// 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
-// ===================================================================
-
-// Helper: Target hotel ke verified deal prices resolve karein
-async function resolveHotelSubscriptionPricing(hotelScopeId) {
-    let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
-    let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
-
-    try {
-        const { data: subData, error } = await supabaseClient
-            .from('subscriptions')
-            .select('monthly_price, yearly_price')
-            .eq('id', hotelScopeId)
-            .maybeSingle();
-
-        if (!error && subData) {
-            let mVal = parseInt(subData.monthly_price);
-            let yVal = parseInt(subData.yearly_price);
-
-            if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
-            if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
-        }
-    } catch (err) {
-        console.error("Pricing resolution fallback triggered:", err);
-    }
-
-    return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
-}
-
-// 2. Gatekeeper: Expiry check karein aur custom deal price ke sath paywall show karein
-async function verifySubscriptionGatekeeper(ownerEmail) {
-    try {
-        if (!ownerEmail) return true;
-
-        const { data: subData, error } = await supabaseClient
-            .from('subscriptions')
-            .select('status, current_period_end, monthly_price, yearly_price')
-            .eq('id', ownerEmail)
-            .maybeSingle();
-
-        if (error) {
-            console.warn("verifySubscriptionGatekeeper warning:", error.message);
-            return true;
-        }
-
-        // Deal rates extract karein (fallback defaults active rahenge)
-        let mPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
-        let yPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
-
-        if (subData) {
-            let mVal = parseInt(subData.monthly_price);
-            let yVal = parseInt(subData.yearly_price);
-
-            if (!isNaN(mVal) && mVal > 0) mPrice = mVal;
-            if (!isNaN(yVal) && yVal > 0) yPrice = yVal;
-
-            let today = new Date();
-            let expiryDate = new Date(subData.current_period_end);
-
-            if (subData.status === 'expired' || (subData.current_period_end && today > expiryDate)) {
-                displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
-                return false;
+                    if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
+                    if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
+                }
+            } catch (err) {
+                console.error("Pricing resolution fallback triggered:", err);
             }
-        } else {
-            // Subscription missing hone par fallback paywall dikhayein
-            displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
-            return false;
+
+            return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
         }
 
-        return true;
-    } catch (err) {
-        console.error("verifySubscriptionGatekeeper error:", err);
-        return true;
-    }
-}
-window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
+        // 1. Paywall Modal me exact deal price display karein (Button Trigger)
+        async function revealSaaSPricingTiersMatrix() {
+            try {
+                const targetScope = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+                const pricing = await resolveHotelSubscriptionPricing(targetScope);
+
+                const monthlyDisplay = document.getElementById('paywallMonthlyPriceDisplay');
+                const yearlyDisplay = document.getElementById('paywallYearlyPriceDisplay');
+
+                if (monthlyDisplay) monthlyDisplay.innerText = "₹" + pricing.monthlyPrice;
+                if (yearlyDisplay) yearlyDisplay.innerText = "₹" + pricing.yearlyPrice;
+
+                const tiersContainer = document.getElementById('saasPricingTiersContainer');
+                const triggerBtn = document.getElementById('activatePlanTriggerBtn');
+
+                if (tiersContainer) tiersContainer.style.display = 'block';
+                if (triggerBtn) triggerBtn.style.display = 'none';
+            } catch (err) {
+                console.error("Pricing Fetch Error:", err);
+            }
+        }
+        window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
+        // ===================================================================
+        // 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
+        // ===================================================================
+
+        // Helper: Target hotel ke verified deal prices resolve karein
+        async function resolveHotelSubscriptionPricing(hotelScopeId) {
+            let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
+            let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
+
+            try {
+                const { data: subData, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('monthly_price, yearly_price')
+                    .eq('id', hotelScopeId)
+                    .maybeSingle();
+
+                if (!error && subData) {
+                    let mVal = parseInt(subData.monthly_price);
+                    let yVal = parseInt(subData.yearly_price);
+
+                    if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
+                    if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
+                }
+            } catch (err) {
+                console.error("Pricing resolution fallback triggered:", err);
+            }
+
+            return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
+        }
+
+        // 2. Gatekeeper: Expiry check karein aur custom deal price ke sath paywall show karein
+        async function verifySubscriptionGatekeeper(ownerEmail) {
+            try {
+                if (!ownerEmail) return true;
+
+                const { data: subData, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('status, current_period_end, monthly_price, yearly_price')
+                    .eq('id', ownerEmail)
+                    .maybeSingle();
+
+                if (error) {
+                    console.warn("verifySubscriptionGatekeeper warning:", error.message);
+                    return true;
+                }
+
+                // Deal rates extract karein (fallback defaults active rahenge)
+                let mPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
+                let yPrice = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
+
+                if (subData) {
+                    let mVal = parseInt(subData.monthly_price);
+                    let yVal = parseInt(subData.yearly_price);
+
+                    if (!isNaN(mVal) && mVal > 0) mPrice = mVal;
+                    if (!isNaN(yVal) && yVal > 0) yPrice = yVal;
+
+                    let today = new Date();
+                    let expiryDate = new Date(subData.current_period_end);
+
+                    if (subData.status === 'expired' || (subData.current_period_end && today > expiryDate)) {
+                        displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+                        return false;
+                    }
+                } else {
+                    // Subscription missing hone par fallback paywall dikhayein
+                    displaySubscriptionExpiredPaywallModal(mPrice, yPrice);
+                    return false;
+                }
+
+                return true;
+            } catch (err) {
+                console.error("verifySubscriptionGatekeeper error:", err);
+                return true;
+            }
+        }
+        window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
         // ===================================================================
         // 💳 BROADCAST INTEGRATION: HOSTED GATEWAY ROUTER (STRIPE/RAZORPAY READY)
         // ===================================================================
@@ -2128,7 +2128,7 @@ window.verifySubscriptionGatekeeper = verifySubscriptionGatekeeper;
         // ===================================================================
         // 🔄 REALTIME LIVE DEBOUNCE ENGINE: AUTO-PULLS CLOUD STATES WITHOUT REFRESH
         // ===================================================================
-let isBillingSyncInProgress = false;
+        let isBillingSyncInProgress = false;
 
         function queueDebouncedBillRender() {
             clearTimeout(realtimeRenderTimeout);
@@ -2223,65 +2223,65 @@ let isBillingSyncInProgress = false;
             }
         }
         // ===================================================================
-// 👑 FIXED: MASTER CONTROL ACCOUNT LIST & INSTANT PRICE SYNC
-// ===================================================================
+        // 👑 FIXED: MASTER CONTROL ACCOUNT LIST & INSTANT PRICE SYNC
+        // ===================================================================
 
-// Helper: Form auto-fill
-function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
-    document.getElementById('saTargetUserUUID').value = userId || '';
-    document.getElementById('saTargetHotelName').value = (hotelName && hotelName !== 'Unnamed Outlet Space') ? hotelName : '';
-    document.getElementById('saCustomMonthlyRate').value = mRate || 0;
-    document.getElementById('saCustomYearlyRate').value = yRate || 0;
-    showOnScreenNotification("📋 Loaded account: " + userId);
-}
-window.populateSuperAdminFormFields = populateSuperAdminFormFields;
-
-// 1. Saare Accounts Fetch & Display Karein
-async function fetchGlobalSaaSAccountNetworkList() {
-    const listWrapper = document.getElementById('superAdminClientsListWrapper');
-    if (!listWrapper) return;
-    listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
-
-    try {
-        // Direct subscriptions fetch
-        const { data: subList, error } = await supabaseClient
-            .from('subscriptions')
-            .select('*')
-            .order('current_period_end', { ascending: false });
-
-        if (error) throw error;
-
-        const { data: configList } = await supabaseClient
-            .from('hotel_config')
-            .select('id, hotel_name');
-
-        if (!subList || subList.length === 0) {
-            listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
-            return;
+        // Helper: Form auto-fill
+        function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
+            document.getElementById('saTargetUserUUID').value = userId || '';
+            document.getElementById('saTargetHotelName').value = (hotelName && hotelName !== 'Unnamed Outlet Space') ? hotelName : '';
+            document.getElementById('saCustomMonthlyRate').value = mRate || 0;
+            document.getElementById('saCustomYearlyRate').value = yRate || 0;
+            showOnScreenNotification("📋 Loaded account: " + userId);
         }
+        window.populateSuperAdminFormFields = populateSuperAdminFormFields;
 
-        let fullHTML = '';
-        subList.forEach(sub => {
-            let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
-            let formattedExpiry = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'No Expiry';
+        // 1. Saare Accounts Fetch & Display Karein
+        async function fetchGlobalSaaSAccountNetworkList() {
+            const listWrapper = document.getElementById('superAdminClientsListWrapper');
+            if (!listWrapper) return;
+            listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
-            let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
-            let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
-            // Token ko filter karke sirf original hotel brand name display karein
-            let cleanLabel = sub.founder_label || '';
-            if (cleanLabel.includes('||')) {
-                cleanLabel = cleanLabel.split('||')[0].trim();
-            } else if (cleanLabel.startsWith('VPA_EDIT_')) {
-                cleanLabel = '';
-            }
-            let administrativeTitle = cleanLabel || hotelDisplayName || "Unnamed Outlet Space";
+            try {
+                // Direct subscriptions fetch
+                const { data: subList, error } = await supabaseClient
+                    .from('subscriptions')
+                    .select('*')
+                    .order('current_period_end', { ascending: false });
 
-            let currentMonthlyPrice = parseInt(sub.monthly_price) || 0;
-            let currentYearlyPrice = parseInt(sub.yearly_price) || 0;
-            let clientPhone = sub.user_phone || "No Mobile";
-            let clientEmail = sub.id || '';
+                if (error) throw error;
 
-            fullHTML += `
+                const { data: configList } = await supabaseClient
+                    .from('hotel_config')
+                    .select('id, hotel_name');
+
+                if (!subList || subList.length === 0) {
+                    listWrapper.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">Zero active hotel user registrations tracked on cloud.</span>`;
+                    return;
+                }
+
+                let fullHTML = '';
+                subList.forEach(sub => {
+                    let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
+                    let formattedExpiry = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'No Expiry';
+
+                    let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
+                    let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
+                    // Token ko filter karke sirf original hotel brand name display karein
+                    let cleanLabel = sub.founder_label || '';
+                    if (cleanLabel.includes('||')) {
+                        cleanLabel = cleanLabel.split('||')[0].trim();
+                    } else if (cleanLabel.startsWith('VPA_EDIT_')) {
+                        cleanLabel = '';
+                    }
+                    let administrativeTitle = cleanLabel || hotelDisplayName || "Unnamed Outlet Space";
+
+                    let currentMonthlyPrice = parseInt(sub.monthly_price) || 0;
+                    let currentYearlyPrice = parseInt(sub.yearly_price) || 0;
+                    let clientPhone = sub.user_phone || "No Mobile";
+                    let clientEmail = sub.id || '';
+
+                    fullHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
                      onclick="populateSuperAdminFormFields('${clientEmail}', '${administrativeTitle.replace(/'/g, "\\'")}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
                     <div>
@@ -2297,113 +2297,113 @@ async function fetchGlobalSaaSAccountNetworkList() {
                         ${(sub.status || 'ACTIVE').toUpperCase()}
                     </span>
                 </div>`;
-        });
+                });
 
-        listWrapper.innerHTML = fullHTML;
+                listWrapper.innerHTML = fullHTML;
 
-    } catch (err) {
-        console.error("Super Admin List Failure:", err);
-        listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link accounts: ${err.message}</span>`;
-    }
-}
-window.fetchGlobalSaaSAccountNetworkList = fetchGlobalSaaSAccountNetworkList;
-
-// ===================================================================
-// 👑 FIXED: CUMULATIVE EXPIRY EXTENSION ENGINE (END DATE + DAYS)
-// ===================================================================
-async function executeSuperAdminManualActivationSequence(targetStatusState) {
-    let targetId = document.getElementById('saTargetUserUUID').value.trim();
-    let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
-    let extraValidityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
-    let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
-    let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
-
-    // Agar target email blank hai, toh global fallback defaults update karein
-    if (!targetId || !targetId.includes('@')) {
-        let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
-        let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
-
-        if (gMonthlyInput && gYearlyInput) {
-            dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
-            dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
-            localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
-            localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
-            showOnScreenNotification("🌐 Global Default Rates Saved!");
-            return;
+            } catch (err) {
+                console.error("Super Admin List Failure:", err);
+                listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link accounts: ${err.message}</span>`;
+            }
         }
-        alert("⚠️ Kripya upar list me se kisi account par click karein!");
-        return;
-    }
+        window.fetchGlobalSaaSAccountNetworkList = fetchGlobalSaaSAccountNetworkList;
 
-    try {
-        showOnScreenNotification("⏳ Syncing validity and pricing...", false);
+        // ===================================================================
+        // 👑 FIXED: CUMULATIVE EXPIRY EXTENSION ENGINE (END DATE + DAYS)
+        // ===================================================================
+        async function executeSuperAdminManualActivationSequence(targetStatusState) {
+            let targetId = document.getElementById('saTargetUserUUID').value.trim();
+            let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
+            let extraValidityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
+            let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
+            let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-        // 1. Current user ka existing record fetch karein (purani expiry dekhne ke liye)
-        const { data: currentSub, error: fetchErr } = await supabaseClient
-            .from('subscriptions')
-            .select('current_period_end, current_period_start')
-            .eq('id', targetId)
-            .maybeSingle();
+            // Agar target email blank hai, toh global fallback defaults update karein
+            if (!targetId || !targetId.includes('@')) {
+                let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
+                let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
 
-        if (fetchErr) throw fetchErr;
-
-        let updatePayload = {
-            status: targetStatusState,
-            monthly_price: allocatedMonthlyPrice,
-            yearly_price: allocatedYearlyPrice
-        };
-
-        if (updatedHotelName) {
-            updatePayload.founder_label = updatedHotelName;
-        }
-
-        // 2. 🔥 CUMULATIVE DATE CALCULATION LOGIC
-        if (extraValidityDays > 0) {
-            let baseDate = new Date();
-            let now = new Date();
-
-            if (currentSub && currentSub.current_period_end) {
-                let existingEnd = new Date(currentSub.current_period_end);
-                // Agar purani expiry date abhi bachi hui hai, toh usi end date ke aage jodein
-                if (existingEnd > now) {
-                    baseDate = existingEnd;
+                if (gMonthlyInput && gYearlyInput) {
+                    dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
+                    dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
+                    localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
+                    localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
+                    showOnScreenNotification("🌐 Global Default Rates Saved!");
+                    return;
                 }
+                alert("⚠️ Kripya upar list me se kisi account par click karein!");
+                return;
             }
 
-            // End date me din add karein (e.g. 15 + 2 = 17)
-            baseDate.setDate(baseDate.getDate() + extraValidityDays);
-            updatePayload.current_period_end = baseDate.toISOString();
+            try {
+                showOnScreenNotification("⏳ Syncing validity and pricing...", false);
 
-            // Agar start date pehle se nahi hai tabhi start date aaj ki set karein
-            if (!currentSub || !currentSub.current_period_start) {
-                updatePayload.current_period_start = now.toISOString();
+                // 1. Current user ka existing record fetch karein (purani expiry dekhne ke liye)
+                const { data: currentSub, error: fetchErr } = await supabaseClient
+                    .from('subscriptions')
+                    .select('current_period_end, current_period_start')
+                    .eq('id', targetId)
+                    .maybeSingle();
+
+                if (fetchErr) throw fetchErr;
+
+                let updatePayload = {
+                    status: targetStatusState,
+                    monthly_price: allocatedMonthlyPrice,
+                    yearly_price: allocatedYearlyPrice
+                };
+
+                if (updatedHotelName) {
+                    updatePayload.founder_label = updatedHotelName;
+                }
+
+                // 2. 🔥 CUMULATIVE DATE CALCULATION LOGIC
+                if (extraValidityDays > 0) {
+                    let baseDate = new Date();
+                    let now = new Date();
+
+                    if (currentSub && currentSub.current_period_end) {
+                        let existingEnd = new Date(currentSub.current_period_end);
+                        // Agar purani expiry date abhi bachi hui hai, toh usi end date ke aage jodein
+                        if (existingEnd > now) {
+                            baseDate = existingEnd;
+                        }
+                    }
+
+                    // End date me din add karein (e.g. 15 + 2 = 17)
+                    baseDate.setDate(baseDate.getDate() + extraValidityDays);
+                    updatePayload.current_period_end = baseDate.toISOString();
+
+                    // Agar start date pehle se nahi hai tabhi start date aaj ki set karein
+                    if (!currentSub || !currentSub.current_period_start) {
+                        updatePayload.current_period_start = now.toISOString();
+                    }
+                }
+
+                // 3. Update query execute karein
+                const { error: updateErr } = await supabaseClient
+                    .from('subscriptions')
+                    .update(updatePayload)
+                    .eq('id', targetId);
+
+                if (updateErr) {
+                    alert("❌ Database Update Failed: " + updateErr.message);
+                    return;
+                }
+
+                showOnScreenNotification(`✅ Account updated! Validity extended by +${extraValidityDays} days.`);
+                alert(`🎉 Success!\n\nAccount: ${targetId}\nStatus: ${targetStatusState.toUpperCase()}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}${extraValidityDays > 0 ? `\nNew Expiry: ${new Date(updatePayload.current_period_end).toLocaleDateString()}` : ''}`);
+
+                // Reset & Refresh
+                document.getElementById('saPlanValidityDays').value = '';
+                fetchGlobalSaaSAccountNetworkList();
+
+            } catch (err) {
+                console.error("Super Admin Update Error:", err);
+                alert("System Error: " + err.message);
             }
         }
-
-        // 3. Update query execute karein
-        const { error: updateErr } = await supabaseClient
-            .from('subscriptions')
-            .update(updatePayload)
-            .eq('id', targetId);
-
-        if (updateErr) {
-            alert("❌ Database Update Failed: " + updateErr.message);
-            return;
-        }
-
-        showOnScreenNotification(`✅ Account updated! Validity extended by +${extraValidityDays} days.`);
-        alert(`🎉 Success!\n\nAccount: ${targetId}\nStatus: ${targetStatusState.toUpperCase()}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}${extraValidityDays > 0 ? `\nNew Expiry: ${new Date(updatePayload.current_period_end).toLocaleDateString()}` : ''}`);
-
-        // Reset & Refresh
-        document.getElementById('saPlanValidityDays').value = '';
-        fetchGlobalSaaSAccountNetworkList();
-
-    } catch (err) {
-        console.error("Super Admin Update Error:", err);
-        alert("System Error: " + err.message);
-    }
-}
-window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActivationSequence;
+        window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActivationSequence;
         function exitSuperAdminDashboardConsole() {
             document.getElementById('superAdminDashboard').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
@@ -2465,7 +2465,7 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
             }
         } catch (e) { console.log("Local menu parsing fallback active:", e); }
 
-// 🛡️ MULTI-TENANT ISOLATED STORAGE INITIALIZER (EMAIL SCOPED)
+        // 🛡️ MULTI-TENANT ISOLATED STORAGE INITIALIZER (EMAIL SCOPED)
         let floorData = defaultFloors;
         try {
             let scopedFloorRaw = localStorage.getItem('restaurantFloors_' + hotelGlobalScopeID);
@@ -2475,8 +2475,8 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
                     floorData = parsedFloors;
                 }
             }
-        } catch (e) { 
-            floorData = defaultFloors; 
+        } catch (e) {
+            floorData = defaultFloors;
         }
         window.floorData = floorData;
 
@@ -4000,7 +4000,7 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
             }
         }
 
-// ===================================================================
+        // ===================================================================
         // 🛡️ RE-BUILT ADMIN FORMS ENGINE (WITH SAFE INPUT FALLBACKS & IN-STOCK)
         // ===================================================================
         function populateAdminForms() {
@@ -4111,151 +4111,151 @@ window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActiva
             }
         }
         // ===================================================================
-// 🔓 FIXED: CLIENT VPA PERMISSION CHECK (PRESERVES HOTEL NAME)
-// ===================================================================
-async function requestRemoteFounderVpaUnlockToken() {
-    let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
-    let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
-    let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
+        // 🔓 FIXED: CLIENT VPA PERMISSION CHECK (PRESERVES HOTEL NAME)
+        // ===================================================================
+        async function requestRemoteFounderVpaUnlockToken() {
+            let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
+            let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
+            let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
 
-    if (!vpaContainer) return;
+            if (!vpaContainer) return;
 
-    // Agar section pehle se khula hai toh Save & Lock karein
-    if (vpaContainer.style.display === 'block') {
-        if (!vpaInput || vpaInput.value.trim() === "") {
-            alert("⚠️ Please enter a valid UPI VPA Address before saving!");
-            return;
-        }
+            // Agar section pehle se khula hai toh Save & Lock karein
+            if (vpaContainer.style.display === 'block') {
+                if (!vpaInput || vpaInput.value.trim() === "") {
+                    alert("⚠️ Please enter a valid UPI VPA Address before saving!");
+                    return;
+                }
 
-        showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
-        localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
+                showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
+                localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
 
-        if (typeof saveAdminConfig === "function") saveAdminConfig();
-        if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
+                if (typeof saveAdminConfig === "function") saveAdminConfig();
+                if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
 
-        vpaContainer.style.display = 'none';
+                vpaContainer.style.display = 'none';
 
-        try {
-            // Lock lagate waqt bhi hotel ka naam bacha kar rakhein
-            const { data: cur } = await supabaseClient
-                .from('subscriptions')
-                .select('founder_label')
-                .eq('id', hotelGlobalScopeID)
-                .maybeSingle();
+                try {
+                    // Lock lagate waqt bhi hotel ka naam bacha kar rakhein
+                    const { data: cur } = await supabaseClient
+                        .from('subscriptions')
+                        .select('founder_label')
+                        .eq('id', hotelGlobalScopeID)
+                        .maybeSingle();
 
-            let origName = "";
-            if (cur && cur.founder_label && cur.founder_label.includes('||')) {
-                origName = cur.founder_label.split('||')[0].trim();
-            } else if (cur && cur.founder_label && !cur.founder_label.startsWith('VPA_EDIT_')) {
-                origName = cur.founder_label.trim();
+                    let origName = "";
+                    if (cur && cur.founder_label && cur.founder_label.includes('||')) {
+                        origName = cur.founder_label.split('||')[0].trim();
+                    } else if (cur && cur.founder_label && !cur.founder_label.startsWith('VPA_EDIT_')) {
+                        origName = cur.founder_label.trim();
+                    }
+
+                    let lockedLabel = origName ? `${origName} || VPA_EDIT_LOCKED` : 'VPA_EDIT_LOCKED';
+                    await supabaseClient
+                        .from('subscriptions')
+                        .update({ founder_label: lockedLabel })
+                        .eq('id', hotelGlobalScopeID);
+                } catch (err) {
+                    console.error(err);
+                }
+
+                alert("✅ Success! VPA Saved and panel locked securely.");
+                return;
             }
 
-            let lockedLabel = origName ? `${origName} || VPA_EDIT_LOCKED` : 'VPA_EDIT_LOCKED';
-            await supabaseClient
-                .from('subscriptions')
-                .update({ founder_label: lockedLabel })
-                .eq('id', hotelGlobalScopeID);
-        } catch (err) {
-            console.error(err);
-        }
+            // Permission Check
+            try {
+                showOnScreenNotification("📡 Verifying VPA edit permission with Cloud...", false);
 
-        alert("✅ Success! VPA Saved and panel locked securely.");
-        return;
-    }
+                const { data: subData } = await supabaseClient
+                    .from('subscriptions')
+                    .select('founder_label')
+                    .eq('id', hotelGlobalScopeID)
+                    .maybeSingle();
 
-    // Permission Check
-    try {
-        showOnScreenNotification("📡 Verifying VPA edit permission with Cloud...", false);
+                // Check karein ki label me VPA_EDIT_GRANTED token maujood hai ya nahi
+                let isGranted = subData && subData.founder_label && subData.founder_label.includes('VPA_EDIT_GRANTED');
 
-        const { data: subData } = await supabaseClient
-            .from('subscriptions')
-            .select('founder_label')
-            .eq('id', hotelGlobalScopeID)
-            .maybeSingle();
+                if (isGranted) {
+                    vpaContainer.style.display = 'block';
 
-        // Check karein ki label me VPA_EDIT_GRANTED token maujood hai ya nahi
-        let isGranted = subData && subData.founder_label && subData.founder_label.includes('VPA_EDIT_GRANTED');
-
-        if (isGranted) {
-            vpaContainer.style.display = 'block';
-
-            if (vpaInput) {
-                vpaInput.removeAttribute('disabled');
-                vpaInput.removeAttribute('readonly');
-                vpaInput.focus();
+                    if (vpaInput) {
+                        vpaInput.removeAttribute('disabled');
+                        vpaInput.removeAttribute('readonly');
+                        vpaInput.focus();
+                    }
+                    if (noticeLabel) {
+                        noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click save.";
+                        noticeLabel.style.color = "var(--neon-green)";
+                    }
+                    showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
+                } else {
+                    alert(`🔒 Access Intercepted!\n\nRestroFlow HQ has locked this UPI setting. Please request a 1-Time Edit Permission Token from Founder Master Control.\n\nIdentity: ${hotelGlobalScopeID}`);
+                }
+            } catch (err) {
+                console.error(err);
             }
-            if (noticeLabel) {
-                noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click save.";
-                noticeLabel.style.color = "var(--neon-green)";
-            }
-            showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
-        } else {
-            alert(`🔒 Access Intercepted!\n\nRestroFlow HQ has locked this UPI setting. Please request a 1-Time Edit Permission Token from Founder Master Control.\n\nIdentity: ${hotelGlobalScopeID}`);
         }
-    } catch (err) {
-        console.error(err);
-    }
-}
-window.requestRemoteFounderVpaUnlockToken = requestRemoteFounderVpaUnlockToken;
+        window.requestRemoteFounderVpaUnlockToken = requestRemoteFounderVpaUnlockToken;
 
         // ===================================================================
-// 👑 FIXED: VPA PERMISSION PIPELINE (NAME KO SAFE RAKHTA HAI)
-// ===================================================================
-async function executeRemoteVpaAccessGrantPipeline(permissionState) {
-    let targetId = document.getElementById('saTargetUserUUID').value.trim();
-    if (!targetId || targetId.length < 5) {
-        alert("❌ Target Verification Error: Kripya list me se account select karein!");
-        return;
-    }
+        // 👑 FIXED: VPA PERMISSION PIPELINE (NAME KO SAFE RAKHTA HAI)
+        // ===================================================================
+        async function executeRemoteVpaAccessGrantPipeline(permissionState) {
+            let targetId = document.getElementById('saTargetUserUUID').value.trim();
+            if (!targetId || targetId.length < 5) {
+                alert("❌ Target Verification Error: Kripya list me se account select karein!");
+                return;
+            }
 
-    try {
-        showOnScreenNotification("⏳ Updating VPA permission token...", false);
-        let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
+            try {
+                showOnScreenNotification("⏳ Updating VPA permission token...", false);
+                let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
 
-        // 1. Current hotel name retrieve karein taaki naam delete na ho
-        const { data: currentSub } = await supabaseClient
-            .from('subscriptions')
-            .select('founder_label')
-            .eq('id', targetId)
-            .maybeSingle();
+                // 1. Current hotel name retrieve karein taaki naam delete na ho
+                const { data: currentSub } = await supabaseClient
+                    .from('subscriptions')
+                    .select('founder_label')
+                    .eq('id', targetId)
+                    .maybeSingle();
 
-        let preservedName = "";
-        if (currentSub && currentSub.founder_label) {
-            // Agar purana label me token laga tha, toh sirf asli naam nikalo
-            let rawLabel = currentSub.founder_label;
-            if (rawLabel.includes('||')) {
-                preservedName = rawLabel.split('||')[0].trim();
-            } else if (!rawLabel.startsWith('VPA_EDIT_')) {
-                preservedName = rawLabel.trim();
+                let preservedName = "";
+                if (currentSub && currentSub.founder_label) {
+                    // Agar purana label me token laga tha, toh sirf asli naam nikalo
+                    let rawLabel = currentSub.founder_label;
+                    if (rawLabel.includes('||')) {
+                        preservedName = rawLabel.split('||')[0].trim();
+                    } else if (!rawLabel.startsWith('VPA_EDIT_')) {
+                        preservedName = rawLabel.trim();
+                    }
+                }
+
+                // Form me agar naya naam type kiya hai toh wo use karo
+                let typedName = document.getElementById('saTargetHotelName').value.trim();
+                if (typedName && !typedName.startsWith('VPA_EDIT_')) {
+                    preservedName = typedName;
+                }
+
+                // 2. Format: "HotelName || TOKEN"
+                let compositeLabel = preservedName ? `${preservedName} || ${tokenFlag}` : tokenFlag;
+
+                const { error } = await supabaseClient
+                    .from('subscriptions')
+                    .update({ founder_label: compositeLabel })
+                    .eq('id', targetId);
+
+                if (error) {
+                    alert("❌ Database Error: " + error.message);
+                } else {
+                    showOnScreenNotification(`👑 VPA Permission: ${permissionState.toUpperCase()}!`);
+                    alert(`🎉 Success!\n\nAccount: ${targetId}\nHotel Name: ${preservedName || 'Default'}\nVPA Token: ${tokenFlag}`);
+                    fetchGlobalSaaSAccountNetworkList();
+                }
+            } catch (err) {
+                console.error("VPA Grant Exception:", err);
             }
         }
-
-        // Form me agar naya naam type kiya hai toh wo use karo
-        let typedName = document.getElementById('saTargetHotelName').value.trim();
-        if (typedName && !typedName.startsWith('VPA_EDIT_')) {
-            preservedName = typedName;
-        }
-
-        // 2. Format: "HotelName || TOKEN"
-        let compositeLabel = preservedName ? `${preservedName} || ${tokenFlag}` : tokenFlag;
-
-        const { error } = await supabaseClient
-            .from('subscriptions')
-            .update({ founder_label: compositeLabel })
-            .eq('id', targetId);
-
-        if (error) {
-            alert("❌ Database Error: " + error.message);
-        } else {
-            showOnScreenNotification(`👑 VPA Permission: ${permissionState.toUpperCase()}!`);
-            alert(`🎉 Success!\n\nAccount: ${targetId}\nHotel Name: ${preservedName || 'Default'}\nVPA Token: ${tokenFlag}`);
-            fetchGlobalSaaSAccountNetworkList();
-        }
-    } catch (err) {
-        console.error("VPA Grant Exception:", err);
-    }
-}
-window.executeRemoteVpaAccessGrantPipeline = executeRemoteVpaAccessGrantPipeline;
+        window.executeRemoteVpaAccessGrantPipeline = executeRemoteVpaAccessGrantPipeline;
 
         // ===================================================================
         // 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (AIRTIGHT UPDATED)
@@ -4509,29 +4509,29 @@ window.executeRemoteVpaAccessGrantPipeline = executeRemoteVpaAccessGrantPipeline
 
 
 
-// ===================================================================
-// 🎮 FIXED: PASS FULL URL CONTEXT TO GAME.HTML (ZERO LOSS)
-// ===================================================================
-function switchGameMode(selectedTargetMode) {
-    const currentParams = new URLSearchParams(window.location.search);
+        // ===================================================================
+        // 🎮 FIXED: PASS FULL URL CONTEXT TO GAME.HTML (ZERO LOSS)
+        // ===================================================================
+        function switchGameMode(selectedTargetMode) {
+            const currentParams = new URLSearchParams(window.location.search);
 
-    const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-    const floorName = currentParams.get('floor') || '';
-    const tableId = currentParams.get('table') || window.clientCurrentActiveTable || 'T1';
-    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
+            const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+            const floorName = currentParams.get('floor') || '';
+            const tableId = currentParams.get('table') || window.clientCurrentActiveTable || 'T1';
+            const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
-    const targetUrl = new URL('game.html', window.location.href);
-    targetUrl.searchParams.set('mode', selectedTargetMode);
-    targetUrl.searchParams.set('hotel', hotelScope);
-    if (floorName) {
-        targetUrl.searchParams.set('floor', floorName);
-    }
-    targetUrl.searchParams.set('table', tableId);
-    targetUrl.searchParams.set('discount', maxDisc);
+            const targetUrl = new URL('game.html', window.location.href);
+            targetUrl.searchParams.set('mode', selectedTargetMode);
+            targetUrl.searchParams.set('hotel', hotelScope);
+            if (floorName) {
+                targetUrl.searchParams.set('floor', floorName);
+            }
+            targetUrl.searchParams.set('table', tableId);
+            targetUrl.searchParams.set('discount', maxDisc);
 
-    window.location.href = targetUrl.toString();
-}
-window.switchGameMode = switchGameMode;
+            window.location.href = targetUrl.toString();
+        }
+        window.switchGameMode = switchGameMode;
 
         // ===================================================================
         // ===================================================================
@@ -4600,84 +4600,84 @@ window.switchGameMode = switchGameMode;
                 menuCategories = urlHotel ? [] : fallbackMenu;
             }
 
-try {
-        // 🔥 select ke andar 'floors_data' mangwaya gaya hai
-        const { data, error } = await supabaseClient
-            .from('hotel_config')
-            .select('menu_data, hotel_name, tax_data, rules_data, floors_data')
-            .eq('id', hotelGlobalScopeID)
-            .limit(1);
+            try {
+                // 🔥 select ke andar 'floors_data' mangwaya gaya hai
+                const { data, error } = await supabaseClient
+                    .from('hotel_config')
+                    .select('menu_data, hotel_name, tax_data, rules_data, floors_data')
+                    .eq('id', hotelGlobalScopeID)
+                    .limit(1);
 
-        if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
+                if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
 
-        const activeConfigRow = data?.[0];
-        if (!error && activeConfigRow) {
-            // 1. Menu Load
-            let cloudMenu = activeConfigRow.menu_data;
-            if (typeof cloudMenu === 'string') {
-                try { cloudMenu = JSON.parse(cloudMenu); } catch (jsonErr) { console.error(jsonErr); }
-            }
-            if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                menuCategories = cloudMenu;
-                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-            }
+                const activeConfigRow = data?.[0];
+                if (!error && activeConfigRow) {
+                    // 1. Menu Load
+                    let cloudMenu = activeConfigRow.menu_data;
+                    if (typeof cloudMenu === 'string') {
+                        try { cloudMenu = JSON.parse(cloudMenu); } catch (jsonErr) { console.error(jsonErr); }
+                    }
+                    if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
+                        menuCategories = cloudMenu;
+                        localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+                    }
 
-           // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation & T2 Reset Guard)
-            if (activeConfigRow && activeConfigRow.floors_data) {
-                let cloudFloors = activeConfigRow.floors_data;
-                if (typeof cloudFloors === 'string') {
-                    try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
-                }
-                if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
-                    floorData = cloudFloors;
-                } else {
-                    floorData = JSON.parse(JSON.stringify(defaultFloors));
-                }
-            } else {
-                floorData = JSON.parse(JSON.stringify(defaultFloors));
-            }
+                    // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation & T2 Reset Guard)
+                    if (activeConfigRow && activeConfigRow.floors_data) {
+                        let cloudFloors = activeConfigRow.floors_data;
+                        if (typeof cloudFloors === 'string') {
+                            try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
+                        }
+                        if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
+                            floorData = cloudFloors;
+                        } else {
+                            floorData = JSON.parse(JSON.stringify(defaultFloors));
+                        }
+                    } else {
+                        floorData = JSON.parse(JSON.stringify(defaultFloors));
+                    }
 
-            // 🛡️ RESET GHOST STATES: Sabhi tables ko initially baseline 0 (Empty/Orange) karo
-            // Jab tak neeche cloud session se real bill na mile, tab tak koi bhi table green nahi hogi
-            if (Array.isArray(floorData)) {
-                floorData.forEach(floor => {
-                    if (floor && Array.isArray(floor.tables)) {
-                        floor.tables.forEach(t => {
-                            t.state = 0;
-                            t.waiterBell = false;
+                    // 🛡️ RESET GHOST STATES: Sabhi tables ko initially baseline 0 (Empty/Orange) karo
+                    // Jab tak neeche cloud session se real bill na mile, tab tak koi bhi table green nahi hogi
+                    if (Array.isArray(floorData)) {
+                        floorData.forEach(floor => {
+                            if (floor && Array.isArray(floor.tables)) {
+                                floor.tables.forEach(t => {
+                                    t.state = 0;
+                                    t.waiterBell = false;
+                                });
+                            }
                         });
                     }
-                });
-            }
-            
-            // Email-scoped key par hi save karein
-            window.floorData = floorData;
-            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
 
-            // 3. Brand Name Load
-            if (activeConfigRow.hotel_name) {
-                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
-            }
+                    // Email-scoped key par hi save karein
+                    window.floorData = floorData;
+                    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
 
-            // 4. Taxes & Rules Load
-            if (activeConfigRow.tax_data) {
-                taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
-                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-            }
+                    // 3. Brand Name Load
+                    if (activeConfigRow.hotel_name) {
+                        localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
+                    }
 
-            if (activeConfigRow.rules_data) {
-                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
-                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-            }
+                    // 4. Taxes & Rules Load
+                    if (activeConfigRow.tax_data) {
+                        taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
+                        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+                    }
 
-            renderCustomerMenu();
-            generateAdminTableGrid();
-            updateFrontEndClassificationLabels();
-        }
-    } catch (err) { 
-        console.error(err); 
-    }
-// 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
+                    if (activeConfigRow.rules_data) {
+                        rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
+                        localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+                    }
+
+                    renderCustomerMenu();
+                    generateAdminTableGrid();
+                    updateFrontEndClassificationLabels();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+            // 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
             try {
                 const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
                     .from('table_sessions')
@@ -4916,53 +4916,53 @@ try {
             }
         }
 
-       // ===================================================================
-// 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
-// ===================================================================
-function generateAdminTableGrid() {
-    const container = document.getElementById('adminTableLayoutGrid'); 
-    if(!container) return; 
-    container.innerHTML = '';
-    
-    floorData.forEach((floor, fIdx) => {
-        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
-        
-        floor.tables.forEach((tbl, tIdx) => {
-            let baseThemeColor = tbl.custom_color;
-            let currentLabel = 'Empty';
-            let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
-            
-            if(tbl.state === 0) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                currentLabel = 'Empty';
-            } else if(tbl.state === 1) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
-                currentLabel = 'Full';
-            } else if(tbl.state === 2) {
-                if(!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
-                currentLabel = 'Booked';
-            }
-            
-            // Scoped payment tracking prevents duplicate mapping bugs
-            if(localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') { 
-                baseThemeColor = '#2196f3'; 
-                currentLabel = '💰 Paid UPI'; 
-            }
-            
-            let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+        // ===================================================================
+        // 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
+        // ===================================================================
+        function generateAdminTableGrid() {
+            const container = document.getElementById('adminTableLayoutGrid');
+            if (!container) return;
+            container.innerHTML = '';
 
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+            floorData.forEach((floor, fIdx) => {
+                let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+
+                floor.tables.forEach((tbl, tIdx) => {
+                    let baseThemeColor = tbl.custom_color;
+                    let currentLabel = 'Empty';
+                    let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
+
+                    if (tbl.state === 0) {
+                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
+                        currentLabel = 'Empty';
+                    } else if (tbl.state === 1) {
+                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                        currentLabel = 'Full';
+                    } else if (tbl.state === 2) {
+                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                        currentLabel = 'Booked';
+                    }
+
+                    // Scoped payment tracking prevents duplicate mapping bugs
+                    if (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') {
+                        baseThemeColor = '#2196f3';
+                        currentLabel = '💰 Paid UPI';
+                    }
+
+                    let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+
+                    floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
                 <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
                 ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
-        });
-        
-        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`; 
-        container.innerHTML += floorHTML;
-    });
-}
-        
+                });
+
+                floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`;
+                container.innerHTML += floorHTML;
+            });
+        }
+
         // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
         function showOnScreenNotification(message, isError = false) {
             let toast = document.getElementById('customToastNotification');
@@ -4987,121 +4987,121 @@ function generateAdminTableGrid() {
             siblingButtons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
-// ===================================================================
-// ⚙️ GLOBAL RULES SAVER: LOCKS TARGET VARIABLES CROSS-DEVICE
-// ===================================================================
-function saveAdminConfig() {
-    // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
-    if (document.getElementById('adminDashboard').style.display !== 'block') {
-        console.log("🛡️ Shield Active: Prevented customer profile from overwriting global dataset.");
-        return;
-    }
+        // ===================================================================
+        // ⚙️ GLOBAL RULES SAVER: LOCKS TARGET VARIABLES CROSS-DEVICE
+        // ===================================================================
+        function saveAdminConfig() {
+            // 🛡️ ANTI-CORRUPTION SAFETY SHIELD: Only execute if the admin panel dashboard is actively displayed
+            if (document.getElementById('adminDashboard').style.display !== 'block') {
+                console.log("🛡️ Shield Active: Prevented customer profile from overwriting global dataset.");
+                return;
+            }
 
-    // 🎯 Capturing form values straight into the global rules state manager object
-    rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5; 
-    rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
-    rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3; 
-    rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
-    rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;  
-    rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
+            // 🎯 Capturing form values straight into the global rules state manager object
+            rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5;
+            rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
+            rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3;
+            rules.spaceDisc = parseInt(document.getElementById('cfgSpaceDisc').value) || 0;
+            rules.snakeTar = parseInt(document.getElementById('cfgSnakeTar').value) || 10;
+            rules.snakeDisc = parseInt(document.getElementById('cfgSnakeDisc').value) || 0;
 
-    if (document.getElementById('cfgBrickTar')) {
-        rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 3;
-    }
-    if (document.getElementById('cfgBrickDisc')) {
-        rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 8;
-    }
-    if (document.getElementById('cfgTowerTar')) {
-        rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
-    }
-    if (document.getElementById('cfgTowerDisc')) {
-        rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 15;
-    }
+            if (document.getElementById('cfgBrickTar')) {
+                rules.brickTar = parseInt(document.getElementById('cfgBrickTar').value) || 3;
+            }
+            if (document.getElementById('cfgBrickDisc')) {
+                rules.brickDisc = parseInt(document.getElementById('cfgBrickDisc').value) || 8;
+            }
+            if (document.getElementById('cfgTowerTar')) {
+                rules.towerTar = parseInt(document.getElementById('cfgTowerTar').value) || 3;
+            }
+            if (document.getElementById('cfgTowerDisc')) {
+                rules.towerDisc = parseInt(document.getElementById('cfgTowerDisc').value) || 15;
+            }
 
-    let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value.trim() || "RestroFlow";
-    localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName); 
-    
-    if (document.getElementById('cfgTaxCGSTActive')) {
-        taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked;
-        taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
-        taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked; 
-        taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
-        taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked; 
-        taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
-    }
+            let typedBrandName = document.getElementById('cfgHotelIdentityScopeKey').value.trim() || "RestroFlow";
+            localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
 
-    // Atomic disk saves
-    localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
-    localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-    
-    clearTimeout(configSaveTimeout);
-    configSaveTimeout = setTimeout(() => {
-        uploadMenuToCloud();
-    }, 500);
-}
+            if (document.getElementById('cfgTaxCGSTActive')) {
+                taxConfig.cgstActive = document.getElementById('cfgTaxCGSTActive').checked;
+                taxConfig.cgstRate = parseFloat(document.getElementById('cfgTaxCGSTRate').value) || 0;
+                taxConfig.sgstActive = document.getElementById('cfgTaxSGSTActive').checked;
+                taxConfig.sgstRate = parseFloat(document.getElementById('cfgTaxSGSTRate').value) || 0;
+                taxConfig.serviceActive = document.getElementById('cfgTaxServiceActive').checked;
+                taxConfig.serviceRate = parseFloat(document.getElementById('cfgTaxServiceRate').value) || 0;
+            }
 
-// ===================================================================
-// 📡 CLOUD SYNC: MENU + TABLES/FLOORS DATA SYNC TO SUPABASE
-// ===================================================================
-async function uploadMenuToCloud() {
-    const currentActiveSaveId = String(hotelGlobalScopeID || "Default_HQ_Arena").trim();
-    const identityInput = document.getElementById('cfgHotelIdentityScopeKey');
-    const currentBrandName = (identityInput && identityInput.value.trim()) 
-        ? identityInput.value.trim() 
-        : (localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow");
+            // Atomic disk saves
+            localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
+            localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
 
-    try {
-        // 1. Base64 image bloat clean-up
-        if (Array.isArray(menuCategories)) {
-            menuCategories.forEach(cat => {
-                if (cat && Array.isArray(cat.items)) {
-                    cat.items.forEach(item => {
-                        if (item && item.image && item.image.startsWith('data:image')) {
-                            item.image = ''; 
+            clearTimeout(configSaveTimeout);
+            configSaveTimeout = setTimeout(() => {
+                uploadMenuToCloud();
+            }, 500);
+        }
+
+        // ===================================================================
+        // 📡 CLOUD SYNC: MENU + TABLES/FLOORS DATA SYNC TO SUPABASE
+        // ===================================================================
+        async function uploadMenuToCloud() {
+            const currentActiveSaveId = String(hotelGlobalScopeID || "Default_HQ_Arena").trim();
+            const identityInput = document.getElementById('cfgHotelIdentityScopeKey');
+            const currentBrandName = (identityInput && identityInput.value.trim())
+                ? identityInput.value.trim()
+                : (localStorage.getItem('restroflow_actual_brand_name_' + currentActiveSaveId) || "RestroFlow");
+
+            try {
+                // 1. Base64 image bloat clean-up
+                if (Array.isArray(menuCategories)) {
+                    menuCategories.forEach(cat => {
+                        if (cat && Array.isArray(cat.items)) {
+                            cat.items.forEach(item => {
+                                if (item && item.image && item.image.startsWith('data:image')) {
+                                    item.image = '';
+                                }
+                            });
                         }
                     });
+                    localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
                 }
-            });
-            localStorage.setItem('restaurantMenuCat_' + currentActiveSaveId, JSON.stringify(menuCategories));
-        }
 
-        // Local storage par floor data backup
-        localStorage.setItem('restaurantFloors_' + currentActiveSaveId, JSON.stringify(floorData));
+                // Local storage par floor data backup
+                localStorage.setItem('restaurantFloors_' + currentActiveSaveId, JSON.stringify(floorData));
 
-        // 2. Supabase Cloud Payload (Menu + Floor/Tables Dono Sath Me)
-        const cleanPayload = {
-            id: currentActiveSaveId,
-            hotel_name: currentBrandName,
-            menu_data: Array.isArray(menuCategories) ? menuCategories : [],
-            floors_data: Array.isArray(floorData) ? floorData : defaultFloors, // 👈 Table data cloud me sync hoga
-            tax_data: taxConfig || {},
-            rules_data: rules || {}
-        };
+                // 2. Supabase Cloud Payload (Menu + Floor/Tables Dono Sath Me)
+                const cleanPayload = {
+                    id: currentActiveSaveId,
+                    hotel_name: currentBrandName,
+                    menu_data: Array.isArray(menuCategories) ? menuCategories : [],
+                    floors_data: Array.isArray(floorData) ? floorData : defaultFloors, // 👈 Table data cloud me sync hoga
+                    tax_data: taxConfig || {},
+                    rules_data: rules || {}
+                };
 
-        const { data, error: upsertError } = await supabaseClient
-            .from('hotel_config')
-            .upsert(cleanPayload, { onConflict: 'id' })
-            .select();
+                const { data, error: upsertError } = await supabaseClient
+                    .from('hotel_config')
+                    .upsert(cleanPayload, { onConflict: 'id' })
+                    .select();
 
-        if (upsertError) {
-            console.error("🚨 Cloud Save Failed:", upsertError.message);
-            if (typeof showOnScreenNotification === 'function') {
-                showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
+                if (upsertError) {
+                    console.error("🚨 Cloud Save Failed:", upsertError.message);
+                    if (typeof showOnScreenNotification === 'function') {
+                        showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
+                    }
+                } else {
+                    console.log("☁️ Menu, Settings & Tables successfully saved to Supabase!");
+                    if (typeof updateFrontEndClassificationLabels === 'function') {
+                        updateFrontEndClassificationLabels();
+                    }
+                }
+            } catch (e) {
+                console.error("Critical Cloud Save Exception:", e);
             }
-        } else {
-            console.log("☁️ Menu, Settings & Tables successfully saved to Supabase!");
-            if (typeof updateFrontEndClassificationLabels === 'function') {
-                updateFrontEndClassificationLabels();
-            }
         }
-    } catch(e) { 
-        console.error("Critical Cloud Save Exception:", e); 
-    }
-}
-window.uploadMenuToCloud = uploadMenuToCloud;
-      
+        window.uploadMenuToCloud = uploadMenuToCloud;
+
         // ===================================================================
         // 💾 FIXED TASK 1: FORCES IMMEDIATE SYNCHRONOUS CLOUD persisted FLUSH
         // ===================================================================
@@ -5643,7 +5643,7 @@ window.uploadMenuToCloud = uploadMenuToCloud;
 
             // Open the premium modal screen view
             document.getElementById('subscriptionExpiredPaywallModal').style.display = 'flex';
-        }    
+        }
         async function closePaywallAndExitToHub() {
             document.getElementById('subscriptionExpiredPaywallModal').style.display = 'none';
             document.getElementById('saasPricingTiersContainer').style.display = 'none';
@@ -5654,7 +5654,7 @@ window.uploadMenuToCloud = uploadMenuToCloud;
             document.getElementById('customerView').style.display = 'block';
             renderCustomerMenu();
         }
-    initApp();
+        initApp();
     </script>
 </body>
 
