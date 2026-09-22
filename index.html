@@ -233,7 +233,6 @@
             animation: goldPopAnimation 0.5s ease-in-out;
         }
 
-        /* Floating Interactive Action Badges */
         .floating-action-container {
             position: fixed;
             bottom: 25px;
@@ -242,6 +241,13 @@
             flex-direction: column;
             gap: 12px;
             z-index: 999;
+        }
+
+        /* Admin, Kitchen Display ya Super Admin screen khulte hi dono floating icons turant gayab ho jayenge */
+        body:has(#adminDashboard[style*="display: block"]) #customerFloatingActionBox,
+        body:has(#kitchenDashboard[style*="display: block"]) #customerFloatingActionBox,
+        body:has(#superAdminDashboard[style*="display: block"]) #customerFloatingActionBox {
+            display: none !important;
         }
 
         .floating-btn {
@@ -4561,6 +4567,8 @@ window.switchGameMode = switchGameMode;
                     } else {
                         document.getElementById('customerView').style.display = 'none';
                         document.getElementById('adminDashboard').style.display = 'block';
+                        const floatBox = document.getElementById('customerFloatingActionBox');
+                        if (floatBox) floatBox.style.display = 'none';
                         if (typeof populateAdminForms === 'function') populateAdminForms();
                         if (typeof generateAdminTableGrid === 'function') generateAdminTableGrid();
                         console.log("🔐 RestroFlow: Active Owner email verified successfully!");
