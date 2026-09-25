@@ -445,11 +445,7 @@
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="color: black;">🎁 Game Reward Matrix</h3>
             <ul class="rules-list" id="rulesListDisplay">
-                <li style="color: black;">🧱 Brick Breaker: Clear 3 Levels = 10% OFF</li>
-                <li style="color: black;">🐦 Flappy Bird: Score 10 Points = 15% OFF</li>
-                <li style="color: black;">🚀 Space Shooter: Destroy 20 Aliens = 15% OFF</li>
-                <li style="color: black;">🐍 Snake: Eat 15 Apples = 10% OFF</li>
-                <li style="color: black;">🏢 Tower Bloxx: Stack 10 Floors = 20% OFF</li>
+                <!-- 🛡️ Rules are dynamically populated from DB — see refreshDiscountRulesUI() below -->
             </ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'"
                 style="background:#2c3e50; color:white;">Start Playing!</button>
@@ -600,10 +596,9 @@
         window.clientCurrentActiveTable = clientCurrentActiveTable;
         var localLiveRunningBill = window.localLiveRunningBill || [];
         window.localLiveRunningBill = localLiveRunningBill;
-        var maximumClaimedDisc = parseInt(urlParamsGame.get('discount')) ||
-            parseInt(localStorage.getItem('restroflow_max_discount')) ||
-            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena') + '_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) ||
-            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) || 0;
+        // 🛡️ SECURITY FIX: discount_claimed sirf Supabase cloud session se aata hai.
+        // URL ?discount= parameter ko kabhi bhi nahi padha jayega — yeh tampering vector tha.
+        var maximumClaimedDisc = 0; // Always start at 0; cloud session on win will set the real value.
         window.maximumClaimedDisc = maximumClaimedDisc;
         var globalRunningInvoiceSumTotal = window.globalRunningInvoiceSumTotal || 0;
         window.globalRunningInvoiceSumTotal = globalRunningInvoiceSumTotal;
@@ -931,18 +926,19 @@ function exitGameEngine() {
         if (targetElement) targetElement.style.display = 'none';
     });
 
-    // 4. Resolve session identifiers
+    // 4. Resolve session identifiers (NO discount in URL — prevents tampering)
     const targetTable = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
     const targetHotel = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-    const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
+    const urlFloorParam = urlParamsGame.get('floor') || '';
 
-    // 5. 🛡️ BULLETPROOF REDIRECT: Resolves relative path seamlessly on GitHub Pages and Localhost
+    // 5. 🛡️ BULLETPROOF REDIRECT: No discount param — index.html reads from Supabase directly
     const isSubfolder = window.location.pathname.includes('/modules/');
     const homeRel = isSubfolder ? '../index.html' : 'index.html';
     const homeUrl = new URL(homeRel, window.location.href);
     homeUrl.searchParams.set('table', targetTable);
     homeUrl.searchParams.set('hotel', targetHotel);
-    homeUrl.searchParams.set('discount', maxDisc);
+    if (urlFloorParam) homeUrl.searchParams.set('floor', urlFloorParam);
+    // 🚨 NOTE: No 'discount' param — cloud session is the single source of truth
 
     window.location.href = homeUrl.toString();
 }
@@ -965,6 +961,66 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ===================================================================
+    // 🌐 CLOUD BOOTSTRAP: Load rules + table discount from Supabase on page load
+    // ===================================================================
+    (async function cloudBootstrap() {
+        try {
+            // Wait briefly for Supabase client to be available (loaded via CDN)
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            const hotelId = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+            const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
+
+            let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
+            if (!client) {
+                const iframe = document.getElementById('supabaseServiceFrame');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.supabaseClient) {
+                    client = iframe.contentWindow.supabaseClient;
+                }
+            }
+
+            if (client) {
+                // 1. Fetch game rules from hotel_config
+                const { data: configRow } = await client
+                    .from('hotel_config')
+                    .select('rules_data')
+                    .eq('id', hotelId)
+                    .maybeSingle();
+
+                if (configRow && configRow.rules_data) {
+                    let cloudRules = typeof configRow.rules_data === 'string'
+                        ? JSON.parse(configRow.rules_data)
+                        : configRow.rules_data;
+                    window.rules = Object.assign(window.rules || {}, cloudRules);
+                    rules = window.rules;
+                    localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+                    if (typeof refreshDiscountRulesUI === 'function') refreshDiscountRulesUI();
+                    console.log('🎮 Cloud rules loaded into game.html');
+                }
+
+                // 2. Fetch current table's active discount from table_sessions (DB is source of truth)
+                const compositeKey = `${hotelId}_${tableId}`;
+                const { data: sessionRow } = await client
+                    .from('table_sessions')
+                    .select('discount_claimed')
+                    .eq('table_id', compositeKey)
+                    .maybeSingle();
+
+                if (sessionRow) {
+                    let cloudDiscount = parseInt(sessionRow.discount_claimed) || 0;
+                    maximumClaimedDisc = cloudDiscount;
+                    window.maximumClaimedDisc = cloudDiscount;
+                    const badge = document.getElementById('liveCoinBadge');
+                    if (badge) badge.innerText = cloudDiscount + '%';
+                    console.log(`🔐 Cloud discount loaded for ${compositeKey}: ${cloudDiscount}%`);
+                }
+            }
+        } catch (err) {
+            console.warn('Cloud bootstrap non-critical warning:', err);
+        }
+    })();
 });
 
         // ===================================================================
@@ -1060,13 +1116,11 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('discount_map_' + tableId, earnedPercent.toString());
             localStorage.setItem('discount_map_' + hotelId + '_' + tableId, earnedPercent.toString());
 
-            let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + hotelId + '_' + tableId)) || 0;
-            if (earnedPercent > activeTableDiscount) {
-                activeTableDiscount = earnedPercent;
-            }
-            maximumClaimedDisc = Math.max(window.maximumClaimedDisc || 0, activeTableDiscount, earnedPercent);
+            // 🛡️ FREEZE FIX: Direct assignment — no Math.max() so cleared/settled tables reset to 0%
+            maximumClaimedDisc = earnedPercent;
             window.maximumClaimedDisc = maximumClaimedDisc;
-            localStorage.setItem('restroflow_max_discount', maximumClaimedDisc.toString());
+            // Scoped localStorage key for offline fallback only (cloud is the source of truth)
+            localStorage.setItem('discount_map_' + hotelId + '_' + tableId, earnedPercent.toString());
 
             let badge = document.getElementById('liveCoinBadge');
             if (badge) {
