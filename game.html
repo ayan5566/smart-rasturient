@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestroFlow - Arcade Game Engines</title>
-    <link rel="icon" type="image/jpeg" href="../favicon.jpg">
+    <link rel="icon" type="image/jpeg" href="favicon.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <!-- ================================================================= -->
@@ -592,7 +592,11 @@
         customPaymentQRData = window.customPaymentQRData;
 
         // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
-        var clientCurrentActiveTable = urlParamsGame.get('table') || window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || "T1";
+        // 🛡️ FIX 1: Compound key matches index.html exactly.
+        // index.html (line 4454): clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase()
+        const _rawTable = (urlParamsGame.get('table') || 'T1').toUpperCase();
+        const _rawFloor = urlParamsGame.get('floor') || '';
+        var clientCurrentActiveTable = _rawFloor ? `${_rawFloor}_${_rawTable}` : _rawTable;
         window.clientCurrentActiveTable = clientCurrentActiveTable;
         var localLiveRunningBill = window.localLiveRunningBill || [];
         window.localLiveRunningBill = localLiveRunningBill;
@@ -1024,23 +1028,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
         // ===================================================================
-        // 🔒 ANTI-409 SHIELD: ATOMIC SESSIONS UPSERT ENGINE (CONFLICT PROOF)
+        // 🔒 SAFE PARTIAL UPDATER: Only updates discount_claimed in Supabase
+        // NEVER touches live_bill so existing bill items are preserved.
+        // This replaces the old full-upsert which was wiping the bill.
         // ===================================================================
-        async function syncLiveSessionToSupabase(tableId, bill, discount, bellStatus, payStatus) {
+        async function syncLiveSessionToSupabase(tableId, _unusedBill, discount, _unusedBell, _unusedPayStatus) {
             try {
                 const scopeID = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
                 const compositeTableKey = `${scopeID}_${tableId}`;
-
-                // Safety Fallback: Ensure empty arrays are forced encoded as clean parameters
-                const cleanBillPayload = Array.isArray(bill) ? bill : [];
-
-                const sessionPayload = {
-                    table_id: compositeTableKey,
-                    live_bill: cleanBillPayload, // Overwrites old data seamlessly
-                    discount_claimed: parseInt(discount) || 0,
-                    waiter_bell: bellStatus || false,
-                    payment_status: payStatus || 'PENDING'
-                };
+                const cleanDiscount = parseInt(discount) || 0;
 
                 let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
                 if (!client) {
@@ -1051,37 +1047,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (client) {
-                    // 🔥 ATOMIC HANDSHAKE: Automatic update if exists, else insert in 1 single statement
-                    const { error: upsertError } = await client
+                    // 🔥 FIX 2: Sirf discount_claimed update karo — live_bill, waiter_bell, payment_status
+                    // kabhi touch mat karo. Isse pehle se placed orders safe rahenge.
+                    const { error } = await client
                         .from('table_sessions')
-                        .upsert(sessionPayload, { onConflict: 'table_id' }); // Binds tightly to your primary key
+                        .update({ discount_claimed: cleanDiscount })
+                        .eq('table_id', compositeTableKey);
 
-                    if (upsertError) {
-                        console.error("🚨 Supabase Sync 409 Shield Interrupted:", upsertError.message);
-                        if (typeof showOnScreenNotification === 'function') {
-                            showOnScreenNotification("⚠️ Database conflict captured!", true);
-                        }
+                    if (error) {
+                        console.error("🚨 Discount-only update failed:", error.message);
                     } else {
-                        console.log(`🚀 Cloud Sync: Composite Table ${compositeTableKey} securely synchronized.`);
+                        console.log(`✅ Discount ${cleanDiscount}% written to [${compositeTableKey}] without touching live_bill.`);
                     }
                 } else {
                     console.warn("⚠️ Supabase Client not yet ready for session sync.");
                 }
             } catch (err) {
-                console.error("System Error during table session sync:", err);
+                console.error("System Error during discount sync:", err);
             }
         }
         window.syncLiveSessionToSupabase = syncLiveSessionToSupabase;
 
+        // 🔥 FIX 3: syncDiscountToCloud routes directly to the safe partial updater.
+        // No more full-payload passthrough that was carrying empty bill arrays.
         function syncDiscountToCloud(tableId, discountPercent) {
-            try {
-                const liveBill = window.localLiveRunningBill || window.clientActiveBillArray || [];
-                const bell = window.isWaiterBellActive || false;
-                const payStatus = window.currentTablePaymentStatus || 'PENDING';
-                syncLiveSessionToSupabase(tableId, liveBill, discountPercent, bell, payStatus);
-            } catch (err) {
-                console.warn("Cloud sync warning for game discount:", err);
-            }
+            syncLiveSessionToSupabase(tableId, null, discountPercent, null, null);
         }
         window.syncDiscountToCloud = syncDiscountToCloud;
 
