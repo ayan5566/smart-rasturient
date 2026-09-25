@@ -233,6 +233,7 @@
             animation: goldPopAnimation 0.5s ease-in-out;
         }
 
+        /* Floating Interactive Action Badges */
         .floating-action-container {
             position: fixed;
             bottom: 25px;
@@ -241,13 +242,6 @@
             flex-direction: column;
             gap: 12px;
             z-index: 999;
-        }
-
-        /* Admin, Kitchen Display ya Super Admin screen khulte hi dono floating icons turant gayab ho jayenge */
-        body:has(#adminDashboard[style*="display: block"]) #customerFloatingActionBox,
-        body:has(#kitchenDashboard[style*="display: block"]) #customerFloatingActionBox,
-        body:has(#superAdminDashboard[style*="display: block"]) #customerFloatingActionBox {
-            display: none !important;
         }
 
         .floating-btn {
@@ -977,10 +971,7 @@
     <div id="customToastNotification"
         style="position: fixed; top: 20px; max-width: 320px; width: 85%; background: #2c3e50; color: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); z-index: 99999; display: none; font-weight: 600; font-size: 14px; border-left: 6px solid #2ecc71; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
     </div>
-    <div class="floating-action-container" id="customerFloatingActionBox">
-        <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">🔔</div>
-        <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">🧾</div>
-    </div>
+
 
     <div class="modal-overlay" id="invoiceBillModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -1158,6 +1149,10 @@
     </div>
 
     <div class="container" id="customerView">
+        <div class="floating-action-container">
+            <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">🔔</div>
+            <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">🧾</div>
+        </div>
         <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
         <div
             style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 20px; width: 100%; background: transparent;">
@@ -1764,32 +1759,7 @@
         // ===================================================================
         // 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
         // ===================================================================
-
-        // Helper: Target hotel ke verified deal prices resolve karein
-        async function resolveHotelSubscriptionPricing(hotelScopeId) {
-            let resolvedMonthly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.monthly) ? window.dynamicGlobalSaaSDefaults.monthly : 499;
-            let resolvedYearly = (window.dynamicGlobalSaaSDefaults && window.dynamicGlobalSaaSDefaults.yearly) ? window.dynamicGlobalSaaSDefaults.yearly : 4999;
-
-            try {
-                const { data: subData, error } = await supabaseClient
-                    .from('subscriptions')
-                    .select('monthly_price, yearly_price')
-                    .eq('id', hotelScopeId)
-                    .maybeSingle();
-
-                if (!error && subData) {
-                    let mVal = parseInt(subData.monthly_price);
-                    let yVal = parseInt(subData.yearly_price);
-
-                    if (!isNaN(mVal) && mVal > 0) resolvedMonthly = mVal;
-                    if (!isNaN(yVal) && yVal > 0) resolvedYearly = yVal;
-                }
-            } catch (err) {
-                console.error("Pricing resolution fallback triggered:", err);
-            }
-
-            return { monthlyPrice: resolvedMonthly, yearlyPrice: resolvedYearly };
-        }
+        // 🛡️ DEDUP FIX: resolveHotelSubscriptionPricing is already defined above — no duplicate needed here.
 
         // 2. Gatekeeper: Expiry check karein aur custom deal price ke sath paywall show karein
         async function verifySubscriptionGatekeeper(ownerEmail) {
@@ -2076,9 +2046,8 @@
                         table: 'active_orders',
                         filter: 'hotel_id=eq.' + hotelGlobalScopeID
                     }, () => {
-                        if (isKDSActive && typeof fetchActiveKitchenOrdersQueue === "function") {
-                            fetchActiveKitchenOrdersQueue();
-                        }
+                        console.log("🔔 Tracker Trigger: Active order state mutation captured!");
+                        fetchActiveKitchenOrdersQueue();
                         if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
                     })
                     .subscribe((status) => {
@@ -2093,9 +2062,9 @@
                         table: 'table_sessions'
                     }, (payload) => {
                         console.log("🔔 GRID ENGINE: Financial ledger modification captured real-time!", payload);
-                        if (typeof generateAdminTableGrid === "function") {
-                            generateAdminTableGrid();
-                        }
+                        // 🛡️ FIX: generateAdminTableGrid() yahan seedha nahi call karo — yeh stale
+                        // in-memory state se table colors galat draw karta tha.
+                        // queueDebouncedBillRender() khud cloud se fresh state fetch karke grid redraw karta hai.
                         if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
                     })
                     .subscribe((status) => {
@@ -2128,14 +2097,10 @@
         // ===================================================================
         // 🔄 REALTIME LIVE DEBOUNCE ENGINE: AUTO-PULLS CLOUD STATES WITHOUT REFRESH
         // ===================================================================
-        let isBillingSyncInProgress = false;
-
         function queueDebouncedBillRender() {
             clearTimeout(realtimeRenderTimeout);
-            // 800ms debounce taaki har millisecond par trigger na ho
             realtimeRenderTimeout = setTimeout(async () => {
-                if (isBillingSyncInProgress) return;
-                isBillingSyncInProgress = true;
+                console.log("⚡ Auto-Refreshing Live Billing Dashboard & Table Grid...");
 
                 // 1. Selected table ka live invoice tracker box refresh karo
                 const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
@@ -2143,13 +2108,7 @@
                     await auditSelectedTableBillInvoiceLive();
                 }
 
-                // 2. Sirf tabhi fetch karein jab admin dashboard khula ho
-                const isAdminOpen = document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block';
-                if (!isAdminOpen) {
-                    isBillingSyncInProgress = false;
-                    return;
-                }
-
+                // 2. 🔥 🔥 THE LIVE INJECTION TRIGGER: Bina page refresh kiye, piche se saari tables ka state direct pull karo
                 try {
                     const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
                         .from('table_sessions')
@@ -2161,8 +2120,10 @@
                                 floor.tables.forEach(t => {
                                     let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
 
+                                    // Map row with unique target table key structures
                                     let targetCloudRow = globalCloudSessions.find(s =>
-                                        s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}`
+                                        s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` ||
+                                        s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`
                                     );
 
                                     if (targetCloudRow) {
@@ -2173,10 +2134,14 @@
                                         } else {
                                             localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
 
+                                            // Live state update layers: Agar items hain toh Green (1), warna Orange (0)
                                             let serverBillPayload = targetCloudRow.live_bill || [];
                                             t.state = (serverBillPayload.length > 0) ? 1 : 0;
                                         }
                                     } else {
+                                        // 🛡️ BUG FIX: Agar realtime polling me is table ka session record nahi mila,
+                                        // matlab koi active order nahi — state 0 (Orange/Empty) par reset karo.
+                                        // Yeh stale green state ko prevent karta hai jab admin login karta hai.
                                         t.state = 0;
                                         t.waiterBell = false;
                                         localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
@@ -2185,22 +2150,24 @@
                             }
                         });
 
+                        // Trigger reactive reference state refresh inside JavaScript engine
                         if (typeof window.floorData !== 'undefined') {
                             window.floorData = [...floorData];
                         }
                         floorData = [...floorData];
+
+                        // Local storage memory update backup
                         localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     }
                 } catch (cloudErr) {
                     console.log("Error auto-syncing table grid states:", cloudErr);
                 }
 
+                // 3. Fresh array ke saath grid matric design ko screen par redraw karo
                 if (typeof generateAdminTableGrid === "function") {
                     generateAdminTableGrid();
                 }
-
-                isBillingSyncInProgress = false;
-            }, 800);
+            }, 400); // 400ms setup window to let relational rows settle securely
         }
 
         // =================================================================
@@ -2214,39 +2181,27 @@
             if (keyInput === SECRET_FOUNDER_PASSPHRASE_KEY) {
                 document.getElementById('customerView').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'none';
-                const floatBox = document.getElementById('customerFloatingActionBox');
-                if (floatBox) floatBox.style.display = 'none';
                 document.getElementById('superAdminDashboard').style.display = 'block';
                 fetchGlobalSaaSAccountNetworkList();
             } else if (keyInput) {
                 alert("❌ Identity Unverified! Security protocol triggered.");
             }
         }
+
         // ===================================================================
-        // 👑 FIXED: MASTER CONTROL ACCOUNT LIST & INSTANT PRICE SYNC
+        // 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
         // ===================================================================
 
-        // Helper: Form auto-fill
-        function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
-            document.getElementById('saTargetUserUUID').value = userId || '';
-            document.getElementById('saTargetHotelName').value = (hotelName && hotelName !== 'Unnamed Outlet Space') ? hotelName : '';
-            document.getElementById('saCustomMonthlyRate').value = mRate || 0;
-            document.getElementById('saCustomYearlyRate').value = yRate || 0;
-            showOnScreenNotification("📋 Loaded account: " + userId);
-        }
-        window.populateSuperAdminFormFields = populateSuperAdminFormFields;
-
-        // 1. Saare Accounts Fetch & Display Karein
         async function fetchGlobalSaaSAccountNetworkList() {
             const listWrapper = document.getElementById('superAdminClientsListWrapper');
             if (!listWrapper) return;
             listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
             try {
-                // Direct subscriptions fetch
+                // 🔥 FIX: select query ke andar 'founder_label' ko bhi add kiya
                 const { data: subList, error } = await supabaseClient
                     .from('subscriptions')
-                    .select('*')
+                    .select('id, user_phone, status, current_period_end, monthly_price, yearly_price, founder_label')
                     .order('current_period_end', { ascending: false });
 
                 if (error) throw error;
@@ -2260,150 +2215,146 @@
                     return;
                 }
 
-                let fullHTML = '';
+                listWrapper.innerHTML = '';
                 subList.forEach(sub => {
                     let statusBadgeColor = sub.status === 'active' ? '#2ecc71' : '#e74c3c';
-                    let formattedExpiry = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'No Expiry';
+                    let formattedExpiry = new Date(sub.current_period_end).toLocaleDateString();
 
                     let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
                     let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
-                    // Token ko filter karke sirf original hotel brand name display karein
-                    let cleanLabel = sub.founder_label || '';
-                    if (cleanLabel.includes('||')) {
-                        cleanLabel = cleanLabel.split('||')[0].trim();
-                    } else if (cleanLabel.startsWith('VPA_EDIT_')) {
-                        cleanLabel = '';
-                    }
-                    let administrativeTitle = cleanLabel || hotelDisplayName || "Unnamed Outlet Space";
 
-                    let currentMonthlyPrice = parseInt(sub.monthly_price) || 0;
-                    let currentYearlyPrice = parseInt(sub.yearly_price) || 0;
-                    let clientPhone = sub.user_phone || "No Mobile";
-                    let clientEmail = sub.id || '';
+                    // 🔥 FIX: Agar founder ne koi custom label diya hai toh display ke liye vahi use hoga, warna original name
+                    let administrativeTitle = sub.founder_label || hotelDisplayName;
 
-                    fullHTML += `
+                    let currentMonthlyPrice = sub.monthly_price || 0;
+                    let currentYearlyPrice = sub.yearly_price || 0;
+                    let clientPhone = sub.user_phone || "No Mobile Logged";
+                    let clientEmail = sub.id;
+
+                    let sanitizedAdminTitle = administrativeTitle.replace(/'/g, "\\'");
+
+                    listWrapper.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
-                     onclick="populateSuperAdminFormFields('${clientEmail}', '${administrativeTitle.replace(/'/g, "\\'")}', ${currentMonthlyPrice}, ${currentYearlyPrice})">
+                     onclick="populateSuperAdminFormFields('${clientEmail}', '${sanitizedAdminTitle}', ${currentMonthlyPrice}, ${currentYearlyPrice});"
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span><br>
-                        <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Mobile: ${clientPhone}</span><br>
-                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Email ID: ${clientEmail}</span><br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span> ${sub.founder_label ? `<small style="color:#7f8c8d; font-style:italic;">(${hotelDisplayName})</small>` : ''}<br>
+                        <span style="font-weight:bold; color:#3498db; font-size:11px;">📱 Contact Mobile Number: ${clientPhone}</span><br>
+                        <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">📩 Identity Email: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
-                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:2px; font-size:11px; font-weight:bold;">
-                            💰 Monthly: ₹${currentMonthlyPrice} | Yearly: ₹${currentYearlyPrice}
-                        </span>
+                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
                     </div>
-                    <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">
-                        ${(sub.status || 'ACTIVE').toUpperCase()}
-                    </span>
+                    <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
                 </div>`;
                 });
 
-                listWrapper.innerHTML = fullHTML;
-
             } catch (err) {
-                console.error("Super Admin List Failure:", err);
-                listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link accounts: ${err.message}</span>`;
+                console.error("Super Admin Interface Mapping Failure:", err);
+                listWrapper.innerHTML = `<span style="color:var(--danger-red); font-size:12px;">Failed to link account stream templates logs.</span>`;
             }
         }
-        window.fetchGlobalSaaSAccountNetworkList = fetchGlobalSaaSAccountNetworkList;
+        // Helper function to auto-fill inputs instantly when a hotel row is clicked
+        function populateSuperAdminFormFields(userId, hotelName, mRate, yRate) {
+            if (document.getElementById('saTargetUserUUID')) document.getElementById('saTargetUserUUID').value = userId || '';
+            if (document.getElementById('saTargetHotelName')) document.getElementById('saTargetHotelName').value = hotelName || '';
+            if (document.getElementById('saCustomMonthlyRate')) document.getElementById('saCustomMonthlyRate').value = (mRate && parseInt(mRate) > 0) ? mRate : '';
+            if (document.getElementById('saCustomYearlyRate')) document.getElementById('saCustomYearlyRate').value = (yRate && parseInt(yRate) > 0) ? yRate : '';
+            showOnScreenNotification("📋 Loaded: " + (hotelName || userId));
+        }
+        window.populateSuperAdminFormFields = populateSuperAdminFormFields;
 
         // ===================================================================
-        // 👑 FIXED: CUMULATIVE EXPIRY EXTENSION ENGINE (END DATE + DAYS)
+        // 👑 UPGRADED SUPER ADMIN SEQUENCE: RECOGNIZES GLOBAL BASE DEFAULTS
         // ===================================================================
         async function executeSuperAdminManualActivationSequence(targetStatusState) {
             let targetId = document.getElementById('saTargetUserUUID').value.trim();
             let updatedHotelName = document.getElementById('saTargetHotelName').value.trim();
-            let extraValidityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
+            let validityDays = parseInt(document.getElementById('saPlanValidityDays').value) || 0;
             let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
             let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-            // Agar target email blank hai, toh global fallback defaults update karein
-            if (!targetId || !targetId.includes('@')) {
+            // 🔥 🔥 THE FIX: Agar aap individual details nahi bhar rahe ho, toh checks ko bypass karke sidhe global defaults save karo!
+            if (!targetId || targetId.length < 10) {
+                // Super Admin dashboard ke inputs se live default variables sync karo
                 let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
                 let gYearlyInput = document.getElementById('saGlobalDefaultYearlyInput');
 
                 if (gMonthlyInput && gYearlyInput) {
                     dynamicGlobalSaaSDefaults.monthly = parseInt(gMonthlyInput.value) || 499;
                     dynamicGlobalSaaSDefaults.yearly = parseInt(gYearlyInput.value) || 4999;
+
+                    // Local disk backup update
                     localStorage.setItem('saas_global_default_monthly', dynamicGlobalSaaSDefaults.monthly);
                     localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
-                    showOnScreenNotification("🌐 Global Default Rates Saved!");
-                    return;
+
+                    showOnScreenNotification("🌐 Global Default Package Rates Saved Successfully!");
+                    alert("🌐 Success! Global Baseline Rates updated across the network. Jin templates par ₹0 set hai, wahan ab ye rates lagenge.");
+                    fetchGlobalSaaSAccountNetworkList();
+                    return; // Execution block safe return
                 }
-                alert("⚠️ Kripya upar list me se kisi account par click karein!");
+
+                alert("❌ Invalid user classification identifier code string pattern.");
                 return;
             }
 
+            // Individual Restaurant activation sequence logic below (Untouched and Safe)
             try {
-                showOnScreenNotification("⏳ Syncing validity and pricing...", false);
+                showOnScreenNotification("⚡ Processing security write override data...", false);
 
-                // 1. Current user ka existing record fetch karein (purani expiry dekhne ke liye)
-                const { data: currentSub, error: fetchErr } = await supabaseClient
+                const { data: existingRecord } = await supabaseClient
                     .from('subscriptions')
-                    .select('current_period_end, current_period_start')
+                    .select('id')
                     .eq('id', targetId)
                     .maybeSingle();
 
-                if (fetchErr) throw fetchErr;
+                let syncOperationError = null;
 
-                let updatePayload = {
+                let subscriptionPayload = {
                     status: targetStatusState,
                     monthly_price: allocatedMonthlyPrice,
-                    yearly_price: allocatedYearlyPrice
+                    yearly_price: allocatedYearlyPrice,
+                    founder_label: updatedHotelName
                 };
 
-                if (updatedHotelName) {
-                    updatePayload.founder_label = updatedHotelName;
+                if (validityDays > 0) {
+                    let startTime = new Date();
+                    let endTime = new Date();
+                    endTime.setDate(startTime.getDate() + validityDays);
+                    subscriptionPayload.current_period_start = startTime.toISOString();
+                    subscriptionPayload.current_period_end = endTime.toISOString();
                 }
 
-                // 2. 🔥 CUMULATIVE DATE CALCULATION LOGIC
-                if (extraValidityDays > 0) {
-                    let baseDate = new Date();
-                    let now = new Date();
-
-                    if (currentSub && currentSub.current_period_end) {
-                        let existingEnd = new Date(currentSub.current_period_end);
-                        // Agar purani expiry date abhi bachi hui hai, toh usi end date ke aage jodein
-                        if (existingEnd > now) {
-                            baseDate = existingEnd;
-                        }
-                    }
-
-                    // End date me din add karein (e.g. 15 + 2 = 17)
-                    baseDate.setDate(baseDate.getDate() + extraValidityDays);
-                    updatePayload.current_period_end = baseDate.toISOString();
-
-                    // Agar start date pehle se nahi hai tabhi start date aaj ki set karein
-                    if (!currentSub || !currentSub.current_period_start) {
-                        updatePayload.current_period_start = now.toISOString();
-                    }
+                if (existingRecord) {
+                    const { error } = await supabaseClient
+                        .from('subscriptions')
+                        .update(subscriptionPayload)
+                        .eq('id', targetId);
+                    syncOperationError = error;
+                } else {
+                    subscriptionPayload.id = targetId;
+                    const { error } = await supabaseClient
+                        .from('subscriptions')
+                        .insert(subscriptionPayload);
+                    syncOperationError = error;
                 }
 
-                // 3. Update query execute karein
-                const { error: updateErr } = await supabaseClient
-                    .from('subscriptions')
-                    .update(updatePayload)
-                    .eq('id', targetId);
+                if (syncOperationError) {
+                    alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
+                } else {
+                    showOnScreenNotification(`👑 Scoped Parameters updated successfully!`);
 
-                if (updateErr) {
-                    alert("❌ Database Update Failed: " + updateErr.message);
-                    return;
+                    document.getElementById('saTargetUserUUID').value = '';
+                    document.getElementById('saTargetHotelName').value = '';
+                    document.getElementById('saPlanValidityDays').value = '';
+                    document.getElementById('saCustomMonthlyRate').value = '';
+                    document.getElementById('saCustomYearlyRate').value = '';
+
+                    fetchGlobalSaaSAccountNetworkList();
                 }
-
-                showOnScreenNotification(`✅ Account updated! Validity extended by +${extraValidityDays} days.`);
-                alert(`🎉 Success!\n\nAccount: ${targetId}\nStatus: ${targetStatusState.toUpperCase()}\nMonthly Price: ₹${allocatedMonthlyPrice}\nYearly Price: ₹${allocatedYearlyPrice}${extraValidityDays > 0 ? `\nNew Expiry: ${new Date(updatePayload.current_period_end).toLocaleDateString()}` : ''}`);
-
-                // Reset & Refresh
-                document.getElementById('saPlanValidityDays').value = '';
-                fetchGlobalSaaSAccountNetworkList();
 
             } catch (err) {
-                console.error("Super Admin Update Error:", err);
-                alert("System Error: " + err.message);
+                console.error("Super Admin Operation Exception:", err);
             }
         }
-        window.executeSuperAdminManualActivationSequence = executeSuperAdminManualActivationSequence;
         function exitSuperAdminDashboardConsole() {
             document.getElementById('superAdminDashboard').style.display = 'none';
             document.getElementById('customerView').style.display = 'block';
@@ -2451,7 +2402,7 @@
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
             { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
         ];
-        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 0, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
         let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
         // 🛡️ LEVEL 3: Core Configurations arrays data streams retrieval bindings
@@ -2543,10 +2494,7 @@
         // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         let clientCurrentActiveTable = "T1";
         let localLiveRunningBill = [];
-        let maximumClaimedDisc = parseInt(new URLSearchParams(window.location.search).get('discount')) ||
-            parseInt(localStorage.getItem('restroflow_max_discount')) ||
-            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena') + '_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) ||
-            parseInt(localStorage.getItem('discount_map_' + (localStorage.getItem('restroflow_active_table') || 'T1'))) || 0;
+        let maximumClaimedDisc = 0; // 🛡️ FIX: Always start clean — cloud session is the single source of truth
         let globalRunningInvoiceSumTotal = 0;
 
         // Canvas context initialization pointers explicitly binded
@@ -2793,12 +2741,13 @@
             let overlay = document.getElementById('rulesListDisplay');
             if (!overlay) return;
 
-            // Yahan rules load karo
+            // 🔥 FIX 5: All 5 games dynamically rendered — no hardcoded missing entries
             overlay.innerHTML = `
-       
-        <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar} points = <b>${rules.flappyDisc}% Code Coin</b></li>
-        <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar} = <b>${rules.spaceDisc}% Code Coin</b></li>
-        <li>🐍 <b>Classic Snake Game:</b> Secure ${rules.snakeTar} apples = <b>${rules.snakeDisc}% Code Coin</b></li>
+        <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar || 5} points = <b>${rules.flappyDisc || 0}% Code Coin</b></li>
+        <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar || 3} = <b>${rules.spaceDisc || 0}% Code Coin</b></li>
+        <li>🐍 <b>Classic Snake Game:</b> Secure ${rules.snakeTar || 10} apples = <b>${rules.snakeDisc || 0}% Code Coin</b></li>
+        <li>🧱 <b>Brick Breaker:</b> Complete ${rules.brickTar || 3} levels = <b>${rules.brickDisc || 0}% Code Coin</b></li>
+        <li>🏢 <b>Tower Bloxx:</b> Build ${rules.towerTar || 3} levels = <b>${rules.towerDisc || 0}% Code Coin</b></li>
     `;
             document.getElementById('discountSheetModal').style.display = 'flex';
         }
@@ -2973,11 +2922,11 @@
                     auditSelectedTableBillInvoiceLive();
                 }
 
-                let finalDiscountToPush = Math.max(maximumClaimedDisc, existingCloudDiscount);
-                maximumClaimedDisc = finalDiscountToPush;
+                // 🛡️ FIX: Direct assignment from cloud — no Math.max() so settled bills reset cleanly to 0%
+                maximumClaimedDisc = existingCloudDiscount;
 
                 // 🔥 ONLY ONE CHANNEL SYNC: Database session sync chalega jo backend trigger ko manage karega
-                await syncLiveSessionToSupabase(activeTableId, targetTableBill, finalDiscountToPush, false, 'PENDING');
+                await syncLiveSessionToSupabase(activeTableId, targetTableBill, existingCloudDiscount, false, 'PENDING');
 
             } catch (err) {
                 console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
@@ -3173,9 +3122,11 @@
 
                 try {
                     // STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY (INCLUDING DISCOUNTS)
+                    // 🔥 FIX 4: Remove ALL loose + scoped discount keys so customer page cannot restore stale discount
                     localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
                     localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
                     localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
+                    localStorage.removeItem('restroflow_max_discount'); // Global loose key purge
 
                     // Scoped keys ko bhi safaya karo
                     localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
@@ -3185,14 +3136,13 @@
                     let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
                     let floorName = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[0] : "";
 
-                    if (activeOwnerAuditTable === clientCurrentActiveTable || cleanTableId === clientCurrentActiveTable) {
-                        localLiveRunningBill = [];
-                        maximumClaimedDisc = 0;
-                        globalRunningInvoiceSumTotal = 0;
+                    // 🔥 FIX 4: Always reset memory — not just when admin and customer are on same table
+                    localLiveRunningBill = [];
+                    maximumClaimedDisc = 0;
+                    globalRunningInvoiceSumTotal = 0;
 
-                        let badge = document.getElementById('liveCoinBadge');
-                        if (badge) badge.innerText = "0%";
-                    }
+                    let badge = document.getElementById('liveCoinBadge');
+                    if (badge) badge.innerText = "0%";
 
                     // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Supabase se permanent delete)
                     const compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable}`;
@@ -3712,13 +3662,15 @@
                     if (sessionData) {
                         targetBill = sessionData.live_bill || [];
 
-                        // 1. Cloud aur local memory dono mein se jo bada discount ho use pakdo (Anti-Lag check)
-                        let localSavedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
-                        targetDisc = Math.max(parseInt(sessionData.discount_claimed) || 0, localSavedDisc, maximumClaimedDisc);
+                        // 🔥 FIX 3: Cloud session is the ONLY source of truth — no Math.max freeze
+                        targetDisc = parseInt(sessionData.discount_claimed) || 0;
                         paymentStatusToken = sessionData.payment_status || 'UNPAID';
 
-                        // 🔥 🔥 THE INVERTER FIX: Cloud se aaye discount ko poore phone ki global memory aur main coin badge mein force sync karo
-                        maximumClaimedDisc = Math.max(maximumClaimedDisc, targetDisc);
+                        // Sync scoped localStorage key to match cloud (for offline fallback only)
+                        localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, targetDisc.toString());
+
+                        // Directly assign — never take max of old memory value
+                        maximumClaimedDisc = targetDisc;
                         let badge = document.getElementById('liveCoinBadge');
                         if (badge) badge.innerText = maximumClaimedDisc + "%";
                     }
@@ -3910,15 +3862,11 @@
             // Coupon applied hone ke baad cloud par discount sync karein
             syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earnedPercent, false, 'PENDING');
 
-            // 🔥 🔥 THE FIX: Dono dynamic storage keys ko ek sath update karo taaki pipeline sync loose na ho
-            localStorage.setItem('discount_map_' + clientCurrentActiveTable, earnedPercent);
-            localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent);
+            // 🔥 FIX 2: Only ONE scoped key — no loose global key that bleeds across tables
+            localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent.toString());
 
-            let activeTableDiscount = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
-            if (earnedPercent > activeTableDiscount) {
-                activeTableDiscount = earnedPercent;
-            }
-            maximumClaimedDisc = Math.max(maximumClaimedDisc, activeTableDiscount, earnedPercent);
+            // Direct assign — no Math.max so discount can be reset cleanly by admin
+            maximumClaimedDisc = earnedPercent;
 
             let badge = document.getElementById('liveCoinBadge');
             if (badge) {
@@ -4103,69 +4051,62 @@
                 floorData.forEach(floor => { floor.tables.forEach(t => { if (t.id === scannedID) { t.state = 1; isExist = true; } }); });
                 if (isExist) {
                     clientCurrentActiveTable = scannedID; document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
-                    localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + clientCurrentActiveTable)) || [];
-                    maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + clientCurrentActiveTable)) || 0;
+                    localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
+                    // 🔥 FIX 2: Use scoped key only
+                    maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
                     saveAdminConfig(); updateFrontEndClassificationLabels();
                     alert(` View context swapped to Table ${scannedID}.`);
                 } else { alert("❌ Unknown QR Code Target!"); }
             }
         }
         // ===================================================================
-        // 🔓 FIXED: CLIENT VPA PERMISSION CHECK (PRESERVES HOTEL NAME)
+        // 📡 STEPS 1-4 ENGINE: REQUEST OVERRIDE, AUTO-SAVE, AND DISAPPEAR CONTAINER
         // ===================================================================
         async function requestRemoteFounderVpaUnlockToken() {
             let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
             let vpaInput = document.getElementById('cfgHotelTargetVpaAddressField');
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
 
-            if (!vpaContainer) return;
+            if (!vpaContainer) {
+                console.error("❌ Error: secHotelVpaOperationalContainer DOM element not found!");
+                return;
+            }
 
-            // Agar section pehle se khula hai toh Save & Lock karein
+            // 💥 STEP 3 & 4: Agar dabba pehle se screen par open hai, toh is click par SAVE & DISAPPEAR kerna hai
             if (vpaContainer.style.display === 'block') {
                 if (!vpaInput || vpaInput.value.trim() === "") {
                     alert("⚠️ Please enter a valid UPI VPA Address before saving!");
                     return;
                 }
 
-                showOnScreenNotification("💾 Saving VPA parameters and locking section...", false);
+                showOnScreenNotification("实时 💾 Saving VPA parameters and locking section...", false);
+
+                // Local state validation saves trigger
                 localStorage.setItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID, vpaInput.value.trim());
 
+                // Global config database sync calls
                 if (typeof saveAdminConfig === "function") saveAdminConfig();
                 if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
 
+                // 🔥 STEP 4: Section screen se instantly gayab (disappear)
                 vpaContainer.style.display = 'none';
 
                 try {
-                    // Lock lagate waqt bhi hotel ka naam bacha kar rakhein
-                    const { data: cur } = await supabaseClient
-                        .from('subscriptions')
-                        .select('founder_label')
-                        .eq('id', hotelGlobalScopeID)
-                        .maybeSingle();
-
-                    let origName = "";
-                    if (cur && cur.founder_label && cur.founder_label.includes('||')) {
-                        origName = cur.founder_label.split('||')[0].trim();
-                    } else if (cur && cur.founder_label && !cur.founder_label.startsWith('VPA_EDIT_')) {
-                        origName = cur.founder_label.trim();
-                    }
-
-                    let lockedLabel = origName ? `${origName} || VPA_EDIT_LOCKED` : 'VPA_EDIT_LOCKED';
+                    // Cloud token burn database mutation layer
                     await supabaseClient
                         .from('subscriptions')
-                        .update({ founder_label: lockedLabel })
+                        .update({ founder_label: 'VPA_EDIT_LOCKED' })
                         .eq('id', hotelGlobalScopeID);
-                } catch (err) {
-                    console.error(err);
-                }
+                    console.log("🔒 Security Core: Token consumed and burned successfully.");
+                } catch (err) { console.error(err); }
 
-                alert("✅ Success! VPA Saved and panel locked securely.");
+                alert("🗑️ Success! VPA Saved and configuration panel disappeared from screen securely.");
                 return;
             }
 
-            // Permission Check
+            // 💥 STEP 1 & 2: Agar dabba band thha, toh cloud check karke screen par show karo
             try {
-                showOnScreenNotification("📡 Verifying VPA edit permission with Cloud...", false);
+                showOnScreenNotification("📡 Syncing tokens with RestroFlow Cloud...", false);
 
                 const { data: subData } = await supabaseClient
                     .from('subscriptions')
@@ -4173,11 +4114,10 @@
                     .eq('id', hotelGlobalScopeID)
                     .maybeSingle();
 
-                // Check karein ki label me VPA_EDIT_GRANTED token maujood hai ya nahi
-                let isGranted = subData && subData.founder_label && subData.founder_label.includes('VPA_EDIT_GRANTED');
-
-                if (isGranted) {
-                    vpaContainer.style.display = 'block';
+                // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
+                if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
+                    vpaContainer.style.styleWithJS = "block"; // Safe tracking variable
+                    vpaContainer.style.display = 'block'; // 🔥 Core visibility trigger: Dabba samne laye!
 
                     if (vpaInput) {
                         vpaInput.removeAttribute('disabled');
@@ -4185,77 +4125,44 @@
                         vpaInput.focus();
                     }
                     if (noticeLabel) {
-                        noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click save.";
+                        noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click button to save.";
                         noticeLabel.style.color = "var(--neon-green)";
                     }
                     showOnScreenNotification("🔓 Access Granted! VPA section unlocked.");
                 } else {
-                    alert(`🔒 Access Intercepted!\n\nRestroFlow HQ has locked this UPI setting. Please request a 1-Time Edit Permission Token from Founder Master Control.\n\nIdentity: ${hotelGlobalScopeID}`);
+                    alert(`🔒 Access Intercepted!\n\nRestroFlow HQ Security System has locked this bank asset. Please text/call the founder to request a '1-Time Edit Permission Token'.\n\nYour Identity Reference String: ${hotelGlobalScopeID}`);
                 }
-            } catch (err) {
-                console.error(err);
-            }
+            } catch (err) { console.error(err); }
         }
-        window.requestRemoteFounderVpaUnlockToken = requestRemoteFounderVpaUnlockToken;
 
         // ===================================================================
-        // 👑 FIXED: VPA PERMISSION PIPELINE (NAME KO SAFE RAKHTA HAI)
+        // 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
         // ===================================================================
         async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             let targetId = document.getElementById('saTargetUserUUID').value.trim();
-            if (!targetId || targetId.length < 5) {
-                alert("❌ Target Verification Error: Kripya list me se account select karein!");
+            if (!targetId || targetId.length < 10) {
+                alert("❌ Target Verification Error: Please select/click a valid restaurant account row from the network list first!");
                 return;
             }
 
             try {
-                showOnScreenNotification("⏳ Updating VPA permission token...", false);
+                showOnScreenNotification("⏳ Syncing remote authorization parameters...", false);
                 let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
-
-                // 1. Current hotel name retrieve karein taaki naam delete na ho
-                const { data: currentSub } = await supabaseClient
-                    .from('subscriptions')
-                    .select('founder_label')
-                    .eq('id', targetId)
-                    .maybeSingle();
-
-                let preservedName = "";
-                if (currentSub && currentSub.founder_label) {
-                    // Agar purana label me token laga tha, toh sirf asli naam nikalo
-                    let rawLabel = currentSub.founder_label;
-                    if (rawLabel.includes('||')) {
-                        preservedName = rawLabel.split('||')[0].trim();
-                    } else if (!rawLabel.startsWith('VPA_EDIT_')) {
-                        preservedName = rawLabel.trim();
-                    }
-                }
-
-                // Form me agar naya naam type kiya hai toh wo use karo
-                let typedName = document.getElementById('saTargetHotelName').value.trim();
-                if (typedName && !typedName.startsWith('VPA_EDIT_')) {
-                    preservedName = typedName;
-                }
-
-                // 2. Format: "HotelName || TOKEN"
-                let compositeLabel = preservedName ? `${preservedName} || ${tokenFlag}` : tokenFlag;
 
                 const { error } = await supabaseClient
                     .from('subscriptions')
-                    .update({ founder_label: compositeLabel })
+                    .update({ founder_label: tokenFlag })
                     .eq('id', targetId);
 
                 if (error) {
-                    alert("❌ Database Error: " + error.message);
+                    alert("❌ Cloud Write Violation: " + error.message);
                 } else {
-                    showOnScreenNotification(`👑 VPA Permission: ${permissionState.toUpperCase()}!`);
-                    alert(`🎉 Success!\n\nAccount: ${targetId}\nHotel Name: ${preservedName || 'Default'}\nVPA Token: ${tokenFlag}`);
+                    showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
+                    alert(`🎉 Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request VPA Edit Permission' button daba kar account edit kar sakte hain.`);
                     fetchGlobalSaaSAccountNetworkList();
                 }
-            } catch (err) {
-                console.error("VPA Grant Exception:", err);
-            }
+            } catch (err) { console.error(err); }
         }
-        window.executeRemoteVpaAccessGrantPipeline = executeRemoteVpaAccessGrantPipeline;
 
         // ===================================================================
         // 🛡️ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (AIRTIGHT UPDATED)
@@ -4518,8 +4425,9 @@
             const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
             const floorName = currentParams.get('floor') || '';
             const tableId = currentParams.get('table') || window.clientCurrentActiveTable || 'T1';
-            const maxDisc = window.maximumClaimedDisc || localStorage.getItem('restroflow_max_discount') || 0;
 
+            // 🔥 FIX 1: Discount is NOT passed in URL — game.html reads rules from cloud/localStorage
+            // This blocks URL tampering: no more ?discount=90 loophole
             const targetUrl = new URL('game.html', window.location.href);
             targetUrl.searchParams.set('mode', selectedTargetMode);
             targetUrl.searchParams.set('hotel', hotelScope);
@@ -4527,7 +4435,6 @@
                 targetUrl.searchParams.set('floor', floorName);
             }
             targetUrl.searchParams.set('table', tableId);
-            targetUrl.searchParams.set('discount', maxDisc);
 
             window.location.href = targetUrl.toString();
         }
@@ -4541,14 +4448,7 @@
             const urlTable = urlParams.get('table');
             const urlHotel = urlParams.get('hotel');
             const urlFloor = urlParams.get('floor');
-            const urlDiscount = urlParams.get('discount');
-
-            if (urlDiscount) {
-                let parsedDisc = parseInt(urlDiscount) || 0;
-                maximumClaimedDisc = Math.max(maximumClaimedDisc, parsedDisc);
-                localStorage.setItem('restroflow_max_discount', maximumClaimedDisc.toString());
-                localStorage.setItem('discount_map_' + (urlTable || 'T1'), maximumClaimedDisc.toString());
-            }
+            // 🔥 FIX 1: URL discount parameter completely removed — no tampering possible
 
             if (urlTable) {
                 clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
@@ -4577,8 +4477,6 @@
                     } else {
                         document.getElementById('customerView').style.display = 'none';
                         document.getElementById('adminDashboard').style.display = 'block';
-                        const floatBox = document.getElementById('customerFloatingActionBox');
-                        if (floatBox) floatBox.style.display = 'none';
                         if (typeof populateAdminForms === 'function') populateAdminForms();
                         if (typeof generateAdminTableGrid === 'function') generateAdminTableGrid();
                         console.log("🔐 RestroFlow: Active Owner email verified successfully!");
@@ -4622,32 +4520,31 @@
                         localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
                     }
 
-                    // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation & T2 Reset Guard)
+                    // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation)
                     if (activeConfigRow && activeConfigRow.floors_data) {
                         let cloudFloors = activeConfigRow.floors_data;
                         if (typeof cloudFloors === 'string') {
                             try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
                         }
                         if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
+                            // 🛡️ ROOT FIX: Cloud se load hote waqt har table ka state reset karo (state:0).
+                            // Live state sirf table_sessions se aata hai, floors_data se nahi.
+                            // Yeh purani stale green state ko load hone se rokta hai.
+                            cloudFloors.forEach(floor => {
+                                if (floor && Array.isArray(floor.tables)) {
+                                    floor.tables.forEach(tbl => {
+                                        tbl.state = 0;
+                                        tbl.waiterBell = false;
+                                    });
+                                }
+                            });
                             floorData = cloudFloors;
                         } else {
                             floorData = JSON.parse(JSON.stringify(defaultFloors));
                         }
                     } else {
+                        // Agar is email ka database me koi custom floor data nahi hai, toh fresh default assign karo
                         floorData = JSON.parse(JSON.stringify(defaultFloors));
-                    }
-
-                    // 🛡️ RESET GHOST STATES: Sabhi tables ko initially baseline 0 (Empty/Orange) karo
-                    // Jab tak neeche cloud session se real bill na mile, tab tak koi bhi table green nahi hogi
-                    if (Array.isArray(floorData)) {
-                        floorData.forEach(floor => {
-                            if (floor && Array.isArray(floor.tables)) {
-                                floor.tables.forEach(t => {
-                                    t.state = 0;
-                                    t.waiterBell = false;
-                                });
-                            }
-                        });
                     }
 
                     // Email-scoped key par hi save karein
@@ -4671,7 +4568,9 @@
                     }
 
                     renderCustomerMenu();
-                    generateAdminTableGrid();
+                    // ⚠️ NOTE: generateAdminTableGrid() yahan nahi call hogi — iska correct call
+                    // neeche session sync complete hone ke baad hota hai (line ~4663).
+                    // Premature call stale state render karti thi, isliye hatayi gayi.
                     updateFrontEndClassificationLabels();
                 }
             } catch (err) {
@@ -4690,7 +4589,7 @@
                                 let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
 
                                 // Cloud map lookup scanning table strings natively
-                                let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}`);
+                                let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` || s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`);
 
                                 if (targetCloudRow) {
                                     t.waiterBell = targetCloudRow.waiter_bell || false;
@@ -4700,6 +4599,7 @@
                                     } else {
                                         localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
 
+                                        // 🔥 MULTI-FLOOR OVERRIDE LAYER: Agar cloud bill data records empty nahi hain, toh state 1 (Green), warna 0 (Orange)
                                         let serverBillPayload = targetCloudRow.live_bill || [];
                                         t.state = (serverBillPayload.length > 0) ? 1 : 0;
                                     }
@@ -4716,7 +4616,9 @@
                                         }
                                     }
                                 } else {
-                                    // 🔥 FIX: Agar cloud database me is table ka koi active bill nahi hai toh compulsory Empty (0) rahegi
+                                    // 🛡️ BUG FIX: Agar is table ka koi cloud session record nahi mila,
+                                    // matlab koi order nahi hai — state ko 0 (Orange/Empty) par reset karo.
+                                    // Yeh stale green state ko prevent karta hai jab admin login karta hai.
                                     t.state = 0;
                                     t.waiterBell = false;
                                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
@@ -4752,21 +4654,25 @@
                 console.error("🏁 Structural safe engine alert execution context handled:", renderError.message);
             }
         }
+
         // ===================================================================
         // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
         // ===================================================================
         function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
             let floor = floorData[floorIdx];
             let tbl = floor.tables[tableIdx];
-            let compoundKey = `${floor.floorName}_${tbl.id}`;
 
+            // 🛡️ STEP 3 FIX: Table state is now purely driven by live_bill in Supabase.
+            // Clicking a table card ONLY clears the waiter bell alert and opens the color palette.
+            // We do NOT cycle tbl.state here — that would override the DB-driven green/orange state.
             if (tbl.waiterBell) {
                 tbl.waiterBell = false;
-                showOnScreenNotification(`🔔 Waiter notification clear for Floor ${floor.floorName} Table ${tbl.id}`);
-            } else {
-                tbl.state = (tbl.state + 1) % 3;
+                showOnScreenNotification(`🔔 Waiter notification cleared for Floor ${floor.floorName} Table ${tbl.id}`);
+                // Sync bell-clear to cloud
+                syncLiveSessionToSupabase(`${floor.floorName}_${tbl.id}`, [], maximumClaimedDisc, false, 'PENDING');
             }
 
+            // Always open the color palette regardless of bell state
             currentActiveStylingTargetFloorIdx = floorIdx;
             currentActiveStylingTargetTableIdx = tableIdx;
 
@@ -5071,11 +4977,28 @@
                 localStorage.setItem('restaurantFloors_' + currentActiveSaveId, JSON.stringify(floorData));
 
                 // 2. Supabase Cloud Payload (Menu + Floor/Tables Dono Sath Me)
+                // 🛡️ ROOT FIX: floors_data cloud me save karne se pehle, har table ka
+                // `state` aur `waiterBell` ko reset karo (state:0, waiterBell:false).
+                // Yeh ensure karta hai ke cloud me kabhi bhi stale green/occupied state
+                // save na ho. Live state sirf `table_sessions` se aata hai — floor config se nahi.
+                const floorsDataForCloud = Array.isArray(floorData)
+                    ? floorData.map(floor => ({
+                        ...floor,
+                        tables: Array.isArray(floor.tables)
+                            ? floor.tables.map(tbl => ({
+                                ...tbl,
+                                state: 0,        // Always reset to Empty before cloud save
+                                waiterBell: false // Always reset bell before cloud save
+                            }))
+                            : floor.tables
+                    }))
+                    : defaultFloors;
+
                 const cleanPayload = {
                     id: currentActiveSaveId,
                     hotel_name: currentBrandName,
                     menu_data: Array.isArray(menuCategories) ? menuCategories : [],
-                    floors_data: Array.isArray(floorData) ? floorData : defaultFloors, // 👈 Table data cloud me sync hoga
+                    floors_data: floorsDataForCloud, // 👈 State-stripped floor data cloud me sync hoga
                     tax_data: taxConfig || {},
                     rules_data: rules || {}
                 };
@@ -5174,8 +5097,6 @@
 
                 document.getElementById('adminDashboard').style.display = 'none';
                 document.getElementById('customerView').style.display = 'block';
-                const floatBox = document.getElementById('customerFloatingActionBox');
-                if (floatBox) floatBox.style.display = 'flex';
 
                 renderCustomerMenu();
                 showOnScreenNotification("🚪 Logged out successfully!");
