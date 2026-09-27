@@ -2905,15 +2905,17 @@
                     floorData.forEach(floor => {
                         if (floor && floor.tables) {
                             floor.tables.forEach(t => {
-                                if (t.id === activeTableId || `${floor.floorName}_${t.id}` === activeTableId) {
-                                    t.state = 1;
+                                let cKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                                if (t.id.trim() === activeTableId.trim() || cKey === activeTableId.trim()) {
+                                    t.state = 1; // 🟢 Set specific floor table to Green (Full)
+                                    delete t.custom_color;
                                 }
                             });
                         }
                     });
+                    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
                     localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                 }
-
                 if (typeof generateAdminTableGrid === "function") {
                     generateAdminTableGrid();
                 }
@@ -3170,26 +3172,28 @@
                         await supabaseClient.from('active_orders').delete().in('id', orderIds);
                     }
 
-                    // STEP 4: UPDATE UI STATE TO EMPTY (ORANGE)
+// STEP 4: UPDATE UI STATE TO EMPTY (ORANGE)
                     floorData.forEach(floor => {
                         if (floor && floor.tables) {
                             floor.tables.forEach(t => {
-                                let currentCompoundKey = `${floor.floorName}_${t.id}`;
-                                if (t.id === activeOwnerAuditTable || currentCompoundKey === activeOwnerAuditTable) {
-                                    t.state = 0;
+                                let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
+                                if (t.id.trim() === activeOwnerAuditTable.trim() || currentCompoundKey === activeOwnerAuditTable.trim()) {
+                                    t.state = 0; // 🍊 Set back to Orange (Empty)
                                     t.waiterBell = false;
                                     delete t.custom_color;
+                                    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
+                                    localStorage.removeItem('payment_status_map_' + currentCompoundKey);
                                 }
                             });
                         }
                     });
 
                     // STEP 5: ATOMIC ENGINE RE-BALANCING & RE-RENDERING
+                    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
                     localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                     saveAdminConfig();
                     generateAdminTableGrid();
                     auditSelectedTableBillInvoiceLive();
-
                     showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
                     alert(`🧹 Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
 
@@ -4822,9 +4826,6 @@
             }
         }
 
-        // ===================================================================
-        // 🏢 INTERACTIVE GRID MATRIX: WITH DYNAMIC REALTIME STATE MAPPINGS
-        // ===================================================================
         function generateAdminTableGrid() {
             const container = document.getElementById('adminTableLayoutGrid');
             if (!container) return;
@@ -4834,34 +4835,34 @@
                 let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
 
                 floor.tables.forEach((tbl, tIdx) => {
+                    let compoundKey = `${floor.floorName.trim()}_${tbl.id.trim()}`;
                     let baseThemeColor = tbl.custom_color;
                     let currentLabel = 'Empty';
-                    let compoundKey = `${floor.floorName}_${tbl.id}`; // 🛡️ Airtight floor identifier key
 
-                    if (tbl.state === 0) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-orange)';
-                        currentLabel = 'Empty';
+                    // 1. Online Payment (Blue)
+                    let isPaid = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID';
+
+                    if (isPaid) {
+                        baseThemeColor = '#2196f3'; // 🔵 Paid Online UPI
+                        currentLabel = '💰 Paid UPI';
                     } else if (tbl.state === 1) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-green)';
+                        baseThemeColor = 'var(--tbl-green)'; // 🟢 Full (Order Placed)
                         currentLabel = 'Full';
                     } else if (tbl.state === 2) {
-                        if (!baseThemeColor) baseThemeColor = 'var(--tbl-grey)';
+                        baseThemeColor = 'var(--tbl-grey)'; // ⚪ Booked
                         currentLabel = 'Booked';
-                    }
-
-                    // Scoped payment tracking prevents duplicate mapping bugs
-                    if (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') {
-                        baseThemeColor = '#2196f3';
-                        currentLabel = '💰 Paid UPI';
+                    } else {
+                        baseThemeColor = 'var(--tbl-orange)'; // 🍊 Empty (No Order)
+                        currentLabel = 'Empty';
                     }
 
                     let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
                     floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
-                <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
-            </div>`;
+                        <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
+                        <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                        ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+                    </div>`;
                 });
 
                 floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`;
