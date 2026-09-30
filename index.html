@@ -2906,8 +2906,8 @@
                         if (floor && floor.tables) {
                             floor.tables.forEach(t => {
                                 let cKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                                if (t.id.trim() === activeTableId.trim() || cKey === activeTableId.trim()) {
-                                    t.state = 1; // 🟢 Set specific floor table to Green (Full)
+                                if (t.id.trim() === activeTableId.trim() || cKey === activeTableId.trim() || activeTableId.trim().endsWith('_' + t.id.trim())) {
+                                    t.state = 1; // 🟢 Order placed = Green
                                     delete t.custom_color;
                                 }
                             });
@@ -3045,15 +3045,19 @@
         function executeSimulatedMobilePaymentSuccessSequence() {
             updateDishOrderAnalytics();
 
-            // Clear tokens matching exact compound structure parameters boundaries
-            localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
-            localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
-            localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable);
-            localStorage.removeItem('bill_map_' + clientCurrentActiveTable);
+            // 🔵 Set Paid Status for Grid to turn Blue
+            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 'SUCCESS_PAID');
+            localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
 
-            localLiveRunningBill = [];
-            maximumClaimedDisc = 0;
-            globalRunningInvoiceSumTotal = 0;
+            document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
+            document.getElementById('invoiceBillModal').style.display = 'none';
+
+            // Sync Paid Status directly to Supabase
+            syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'SUCCESS_PAID');
+
+            generateAdminTableGrid();
+            showOnScreenNotification(`💰 Payment received! Table ${clientCurrentActiveTable} is now Paid.`);
+        }
 
             // 🍊 AUTOMATIC RESET: Instantly turn current active table status to 0 (Empty) via compound keys
             floorData.forEach(floor => {
@@ -3172,28 +3176,43 @@
                         await supabaseClient.from('active_orders').delete().in('id', orderIds);
                     }
 
-// STEP 4: UPDATE UI STATE TO EMPTY (ORANGE)
+// STEP 4: UPDATE UI STATE TO EMPTY (ORANGE) & FLUSH ALL PAYMENT TOKENS
                     floorData.forEach(floor => {
                         if (floor && floor.tables) {
                             floor.tables.forEach(t => {
                                 let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                                if (t.id.trim() === activeOwnerAuditTable.trim() || currentCompoundKey === activeOwnerAuditTable.trim()) {
-                                    t.state = 0; // 🍊 Set back to Orange (Empty)
+                                let targetAuditClean = activeOwnerAuditTable.trim();
+
+                                // Har possible match format ko catch karein (T1, Floor_T1, ya compound)
+                                if (t.id.trim() === targetAuditClean || 
+                                    currentCompoundKey === targetAuditClean || 
+                                    targetAuditClean.endsWith('_' + t.id.trim())) {
+                                    
+                                    t.state = 0; // 🍊 Compulsory Set to Orange (Empty)
                                     t.waiterBell = false;
                                     delete t.custom_color;
+
+                                    // Saare purane Blue/Payment flags jadh se saaf karo
                                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
                                     localStorage.removeItem('payment_status_map_' + currentCompoundKey);
+                                    localStorage.removeItem('payment_status_map_' + t.id.trim());
+                                    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + t.id.trim());
                                 }
                             });
                         }
                     });
 
+                    // 🔥 CLOUD RESET: Supabase session table ko turant Empty (0) bill sync karo taaki background sync ise dubara Green na banaye
+                    await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+
                     // STEP 5: ATOMIC ENGINE RE-BALANCING & RE-RENDERING
                     localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
                     localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+                    
                     saveAdminConfig();
                     generateAdminTableGrid();
                     auditSelectedTableBillInvoiceLive();
+                    
                     showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
                     alert(`🧹 Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
 
