@@ -4858,20 +4858,22 @@
                     let baseThemeColor = tbl.custom_color;
                     let currentLabel = 'Empty';
 
-                    // 1. Online Payment (Blue)
-                    let isPaid = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID';
+                    // 1. Online Payment Check (Blue)
+                    let isPaid = (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') ||
+                                 (localStorage.getItem('payment_status_map_' + compoundKey) === 'SUCCESS_PAID') ||
+                                 (localStorage.getItem('payment_status_map_' + tbl.id.trim()) === 'SUCCESS_PAID');
 
                     if (isPaid) {
-                        baseThemeColor = '#2196f3'; // 🔵 Paid Online UPI
+                        baseThemeColor = '#2196f3'; // 🔵 Paid Online UPI = Blue
                         currentLabel = '💰 Paid UPI';
                     } else if (tbl.state === 1) {
-                        baseThemeColor = 'var(--tbl-green)'; // 🟢 Full (Order Placed)
+                        baseThemeColor = 'var(--tbl-green)'; // 🟢 Active Order = Green
                         currentLabel = 'Full';
                     } else if (tbl.state === 2) {
-                        baseThemeColor = 'var(--tbl-grey)'; // ⚪ Booked
+                        baseThemeColor = 'var(--tbl-grey)'; // ⚪ Booked = Grey
                         currentLabel = 'Booked';
                     } else {
-                        baseThemeColor = 'var(--tbl-orange)'; // 🍊 Empty (No Order)
+                        baseThemeColor = 'var(--tbl-orange)'; // 🍊 No Order = Orange
                         currentLabel = 'Empty';
                     }
 
