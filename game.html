@@ -1075,74 +1075,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         window.syncDiscountToCloud = syncDiscountToCloud;
 
-        function triggerRewardCoupon(arg1, arg2) {
-            let earnedPercent = (arg2 !== undefined) ? parseInt(arg2) : parseInt(arg1);
-            if (isNaN(earnedPercent)) earnedPercent = 0;
+        async function triggerRewardCoupon(arg1, arg2) {
+    let earnedPercent = (arg2 !== undefined) ? parseInt(arg2) : parseInt(arg1);
+    if (isNaN(earnedPercent)) earnedPercent = 0;
 
-            let tableId = window.clientCurrentActiveTable || (typeof clientCurrentActiveTable !== 'undefined' ? clientCurrentActiveTable : "T1");
-            let hotelId = window.hotelGlobalScopeID || (typeof hotelGlobalScopeID !== 'undefined' ? hotelGlobalScopeID : "Default_HQ_Arena");
+    let hotelId = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+    
+    // URL se exact table aur floor extract karein
+    const urlParams = new URLSearchParams(window.location.search);
+    let floorParam = urlParams.get('floor') ? urlParams.get('floor').trim() : '';
+    let tableParam = (urlParams.get('table') || 'T1').trim();
 
-            // Coupon applied hone ke baad cloud par discount sync karein
-            let liveBillPayload = window.localLiveRunningBill || window.clientActiveBillArray || [];
+    // Agar tableParam me pehle se floor juda hua hai ya alag se aaya hai:
+    let cleanTableTarget = tableParam;
+    if (floorParam && !cleanTableTarget.startsWith(floorParam)) {
+        cleanTableTarget = `${floorParam}_${tableParam}`;
+    }
 
-            // Direct function execution
-            syncLiveSessionToSupabase(tableId, liveBillPayload, earnedPercent, false, 'PENDING');
+    const compositeTableKey = `${hotelId}_${cleanTableTarget}`;
 
-            // Cross-Frame PostMessage backup trigger to supabase.html service
-            const iframe = document.getElementById('supabaseServiceFrame');
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage({
-                    type: 'CLAIM_DISCOUNT',
-                    action: 'SYNC_LIVE_SESSION',
-                    tableId: tableId,
-                    bill: liveBillPayload,
-                    discount: earnedPercent,
-                    bellStatus: false,
-                    payStatus: 'PENDING'
-                }, '*');
-            }
+    // UI aur Local storage update
+    maximumClaimedDisc = earnedPercent;
+    window.maximumClaimedDisc = earnedPercent;
+    localStorage.setItem('discount_map_' + hotelId + '_' + cleanTableTarget, earnedPercent.toString());
+    localStorage.setItem('discount_map_' + cleanTableTarget, earnedPercent.toString());
 
-            // 🔥 🔥 THE FIX: Dono dynamic storage keys ko ek sath update karo taaki pipeline sync loose na ho
-            localStorage.setItem('discount_map_' + tableId, earnedPercent.toString());
-            localStorage.setItem('discount_map_' + hotelId + '_' + tableId, earnedPercent.toString());
+    let badge = document.getElementById('liveCoinBadge');
+    if (badge) badge.innerText = earnedPercent + "%";
 
-            // 🛡️ FREEZE FIX: Direct assignment — no Math.max() so cleared/settled tables reset to 0%
-            maximumClaimedDisc = earnedPercent;
-            window.maximumClaimedDisc = maximumClaimedDisc;
-            // Scoped localStorage key for offline fallback only (cloud is the source of truth)
-            localStorage.setItem('discount_map_' + hotelId + '_' + tableId, earnedPercent.toString());
+    let displayBox = document.getElementById('couponDisplay');
+    if (displayBox) {
+        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${earnedPercent}% OFF</strong> applied!`;
+        displayBox.style.display = "block";
+    }
 
-            let badge = document.getElementById('liveCoinBadge');
-            if (badge) {
-                badge.innerText = maximumClaimedDisc + "%";
-                badge.classList.remove('coin-pop');
-                void badge.offsetWidth;
-                badge.classList.add('coin-pop');
-            }
-
-            let displayBox = document.getElementById('couponDisplay');
-            if (displayBox) {
-                displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${tableId} Invoice!`;
-                displayBox.style.display = "block";
-            }
-
-            // 🔥 🔥 THE FIX: Bina refresh kiye modal screen data ko turant fresh calculation loops par bhejo
-            let invoiceModal = document.getElementById('invoiceBillModal');
-            if (invoiceModal && invoiceModal.style.display === 'flex') {
-                if (typeof renderLiveCalculatedBill === 'function') {
-                    renderLiveCalculatedBill();
-                }
-            }
-
-            if (typeof updateFrontEndClassificationLabels === 'function') {
-                updateFrontEndClassificationLabels();
-            }
-
-            if (typeof calculateUnifiedMasterInvoice === 'function') {
-                calculateUnifiedMasterInvoice(window.globalSubtotalSum || 0);
-            }
+    // 🔥 SUPABASE MEIN EXACT ROW UPDATE / UPSERT
+    try {
+        let client = window.supabaseClient;
+        if (!client && typeof supabase !== 'undefined') {
+            const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
+            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
+            client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            window.supabaseClient = client;
         }
-        window.triggerRewardCoupon = triggerRewardCoupon;
+
+        if (client) {
+            // Check karein agar row already exist karti hai toh update karein
+            const { data: existingSession } = await client
+                .from('table_sessions')
+                .select('table_id')
+                .eq('table_id', compositeTableKey)
+                .maybeSingle();
+
+            if (existingSession) {
+                await client
+                    .from('table_sessions')
+                    .update({ discount_claimed: earnedPercent })
+                    .eq('table_id', compositeTableKey);
+            } else {
+                await client
+                    .from('table_sessions')
+                    .insert({
+                        table_id: compositeTableKey,
+                        live_bill: [],
+                        discount_claimed: earnedPercent,
+                        waiter_bell: false,
+                        payment_status: 'PENDING'
+                    });
+            }
+            console.log(`✅ Supabase Updated: ${compositeTableKey} -> discount: ${earnedPercent}%`);
+        }
+    } catch (err) {
+        console.error("🚨 Supabase discount sync error:", err);
+    }
+}
+window.triggerRewardCoupon = triggerRewardCoupon;
 
         function refreshDiscountRulesUI() {
             const listDisplay = document.getElementById('rulesListDisplay');
