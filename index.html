@@ -3626,132 +3626,100 @@
 
 
 
-        // ===================================================================
-        // 🧾 FIXED CORE BILLING ENGINE: ANTI-DOUBLE COUNTING & LIVE ACCURATE CALCULATION
-        // ===================================================================
-        async function renderLiveCalculatedBill() {
+async function renderLiveCalculatedBill() {
             let targetBill = [];
-            let kitchenOrders = [];
             let targetDisc = 0;
             let paymentStatusToken = 'UNPAID';
 
-            document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${clientCurrentActiveTable}`;
-
-            // 🛡️ SECURITY SHIELD: Check if the current view context is the admin control room
-            const isOwnerViewingDashboard = document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block';
-            const uploadControlsBlock = document.getElementById('adminQrUploadControls');
-            if (uploadControlsBlock) {
-                uploadControlsBlock.style.display = isOwnerViewingDashboard ? 'block' : 'none';
-            }
-
-            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
+            // Active Table Identity
+            let activeTableId = clientCurrentActiveTable.trim();
+            document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${activeTableId}`;
 
             try {
-                if (isUUID || hotelGlobalScopeID.includes("@")) {
-                    // 1. Fetch official financial items row ledger straight from cloud table sessions
-                    const { data: sessionData } = await supabaseClient
-                        .from('table_sessions')
-                        .select('*')
-                        .eq('table_id', `${hotelGlobalScopeID}_${clientCurrentActiveTable}`)
-                        .maybeSingle();
+                // 1. Clean Table IDs resolve karein (Har format catch karne ke liye)
+                let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
+                let possibleKeys = [
+                    `${hotelGlobalScopeID}_${activeTableId}`,
+                    `${hotelGlobalScopeID}_${cleanTbl}`
+                ];
 
-                    // 2. Fetch parallel running kitchen preparation status logs
+                // 2. 🔥 CLOUD SE DIRECT SESSION FETCH (Source of Truth)
+                const { data: sessionRows } = await supabaseClient
+                    .from('table_sessions')
+                    .select('*')
+                    .in('table_id', possibleKeys);
+
+                let matchedSession = sessionRows && sessionRows.length > 0 ? sessionRows[0] : null;
+
+                if (matchedSession) {
+                    targetBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : [];
+                    targetDisc = parseInt(matchedSession.discount_claimed) || 0;
+                    paymentStatusToken = matchedSession.payment_status || 'UNPAID';
+                }
+
+                // 3. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
+                if (targetBill.length === 0) {
                     const { data: kOrders } = await supabaseClient
                         .from('active_orders')
-                        .select(`id, status, created_at`)
+                        .select('id')
                         .eq('hotel_id', hotelGlobalScopeID)
-                        .eq('table_id', clientCurrentActiveTable);
+                        .or(`table_id.eq.${activeTableId},table_id.eq.${cleanTbl}`);
 
                     if (kOrders && kOrders.length > 0) {
                         const orderIds = kOrders.map(o => o.id);
                         const { data: items } = await supabaseClient
                             .from('order_items')
-                            .select('order_id, dish_name, size, qty')
+                            .select('dish_name, size, qty')
                             .in('order_id', orderIds);
 
-                        if (items) {
-                            kOrders.forEach(order => {
-                                order.order_items = items.filter(item => item.order_id === order.id);
+                        if (items && items.length > 0) {
+                            items.forEach(item => {
+                                let calculatedPrice = 100;
+                                let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                                (menuCategories || []).forEach(cat => {
+                                    let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                                    if (matched) calculatedPrice = parseFloat(matched[szKey]) || parseFloat(matched.m) || 100;
+                                });
+
+                                let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
+                                if (existing) {
+                                    existing.qty += item.qty;
+                                } else {
+                                    targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedPrice, qty: item.qty });
+                                }
                             });
                         }
-                        kitchenOrders = kOrders;
                     }
-
-                    if (sessionData) {
-                        targetBill = sessionData.live_bill || [];
-
-                        // 🔥 FIX 3: Cloud session is the ONLY source of truth — no Math.max freeze
-                        targetDisc = parseInt(sessionData.discount_claimed) || 0;
-                        paymentStatusToken = sessionData.payment_status || 'UNPAID';
-
-                        // Sync scoped localStorage key to match cloud (for offline fallback only)
-                        localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, targetDisc.toString());
-
-                        // Directly assign — never take max of old memory value
-                        maximumClaimedDisc = targetDisc;
-                        let badge = document.getElementById('liveCoinBadge');
-                        if (badge) badge.innerText = maximumClaimedDisc + "%";
-                    }
-                } else {
-                    // Offline No-Login Cache LocalStorage Fallback matrix loops
-                    targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-                    targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
-                    paymentStatusToken = localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable) || 'UNPAID';
                 }
-            } catch (err) {
-                console.error("🚨 Cloud Sync Core Handshake Exception:", err);
-                targetBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-                targetDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
-            }
 
-            // 🔥 HIGH-PRIORITY PIPELINE: Place fallback data rebuilding BEFORE the calculation loop starts
-            if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
-                kitchenOrders.forEach(order => {
-                    if (order.order_items) {
-                        order.order_items.forEach(item => {
-                            let liveItemPrice = 200;
-                            let szKey = item.size ? item.size.toLowerCase() : 'm';
-                            menuCategories.forEach(cat => {
-                                let matchedDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                                if (matchedDish) liveItemPrice = matchedDish[szKey] || matchedDish.m || 200;
-                            });
-
-                            let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
-                            if (existing) {
-                                existing.qty += item.qty;
-                            } else {
-                                targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: liveItemPrice, qty: item.qty });
-                            }
-                        });
-                    }
-                });
+                // Memory sync
                 localLiveRunningBill = targetBill;
                 maximumClaimedDisc = targetDisc;
+
+                let badge = document.getElementById('liveCoinBadge');
+                if (badge) badge.innerText = maximumClaimedDisc + "%";
+
+            } catch (err) {
+                console.error("🚨 Cloud Bill Fetch Failed:", err);
+                targetBill = localLiveRunningBill || [];
             }
 
+            // --- HTML RENDER ---
             const rowsContainer = document.getElementById('invoiceRowsContainer');
             if (rowsContainer) {
                 rowsContainer.innerHTML = '';
-                let accumulatedSubtotal = 0;
-
-                // 🧾 MATHEMATICAL LOOP: Reconstruct subtotal with accurate database sync references
-                targetBill.forEach((row, rIdx) => {
-                    let rowCost = row.price * row.qty;
-                    accumulatedSubtotal += rowCost; // Subtotal adds up perfectly now!
+                targetBill.forEach(row => {
+                    let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
                     rowsContainer.innerHTML += `
-                <div class="bill-item-row" style="margin-bottom: 8px;">
-                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
-                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span></div>
-                </div>`;
+                        <div class="bill-item-row" style="margin-bottom: 8px;">
+                            <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
+                            <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span></div>
+                        </div>`;
                 });
 
                 if (targetBill.length === 0) {
                     rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
                 }
-
-                // ===================================================================
-                // 🔌 CONNECTED TO INVERTER: CUSTOMER PANEL DISPLAY NODE
-                // ===================================================================
 
                 let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
@@ -3766,7 +3734,6 @@
                     document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
                 }
 
-                // Global total update straight from the master inverter engine
                 globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
 
                 document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
@@ -3775,10 +3742,17 @@
 
                 let payButton = document.getElementById('payOnlineInvoiceMainBtn');
                 if (paymentStatusToken === 'SUCCESS_PAID') {
-                    payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI"; payButton.style.background = "#7f8c8d"; payButton.disabled = true; payButton.onclick = null;
+                    payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI";
+                    payButton.style.background = "#7f8c8d";
+                    payButton.disabled = true;
+                    payButton.onclick = null;
                 } else {
-                    payButton.innerText = "💳 Pay Online from Mobile (UPI)"; payButton.style.background = "var(--neon-green)"; payButton.disabled = false; payButton.onclick = openSmartMobilePaymentGatewayGateway;
+                    payButton.innerText = "💳 Pay Online from Mobile (UPI)";
+                    payButton.style.background = "var(--neon-green)";
+                    payButton.disabled = false;
+                    payButton.onclick = openSmartMobilePaymentGatewayGateway;
                 }
+
                 document.getElementById('invoiceBillModal').style.display = 'flex';
             }
         }
@@ -4469,7 +4443,17 @@
             // 🔥 FIX 1: URL discount parameter completely removed — no tampering possible
 
             if (urlTable) {
-                clientCurrentActiveTable = urlFloor ? `${urlFloor}_${urlTable.toUpperCase()}` : urlTable.toUpperCase();
+                let cleanT = urlTable.toUpperCase().trim();
+                let cleanF = urlFloor ? urlFloor.trim() : '';
+                
+                // Agar table name me pehle se floor juda hua hai toh dubara mat jodo
+                if (cleanF && cleanT.startsWith(cleanF.toUpperCase() + '_')) {
+                    clientCurrentActiveTable = cleanT;
+                } else if (cleanF) {
+                    clientCurrentActiveTable = `${cleanF}_${cleanT}`;
+                } else {
+                    clientCurrentActiveTable = cleanT;
+                }
             }
 
             if (urlHotel) {
