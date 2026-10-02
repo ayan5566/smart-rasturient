@@ -4444,7 +4444,6 @@ async function renderLiveCalculatedBill() {
                 let cleanT = urlTable.toUpperCase().trim();
                 let cleanF = urlFloor ? urlFloor.trim() : '';
                 
-                // Agar table name me pehle se floor juda hua hai toh dubara mat jodo
                 if (cleanF && cleanT.startsWith(cleanF.toUpperCase() + '_')) {
                     clientCurrentActiveTable = cleanT;
                 } else if (cleanF) {
@@ -4454,12 +4453,16 @@ async function renderLiveCalculatedBill() {
                 }
             }
 
+            // 🔥 HOTEL IDENTITY SCOPE LOCK
             if (urlHotel) {
-                hotelGlobalScopeID = urlHotel;
-                console.log("🎯 QR Parameter Detected! Scope Key:", hotelGlobalScopeID);
-
-                // 🔥 THE FINAL HANDSHAKE: Is line ko yahan inject karo taaki customer device live sync ho jaye
+                hotelGlobalScopeID = urlHotel.trim();
+                localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+                window.hotelGlobalScopeID = hotelGlobalScopeID;
+                console.log("🎯 Hotel Scope Locked:", hotelGlobalScopeID);
                 initializeCustomerRealtimeTracker();
+            } else {
+                hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+                window.hotelGlobalScopeID = hotelGlobalScopeID;
             }
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
@@ -4604,16 +4607,17 @@ async function renderLiveCalculatedBill() {
                                         t.state = (serverBillPayload.length > 0) ? 1 : 0;
                                     }
 
-                                    // Active view synchronization parameters context allocation logic
-                                    if (currentCompoundKey === clientCurrentActiveTable || t.id.trim() === clientCurrentActiveTable) {
-                                        localLiveRunningBill = targetCloudRow.live_bill || [];
+                                    // 🔥 RESTORE BILL AND DISCOUNT FOR CUSTOMER TABLE
+                                    let activeClean = clientCurrentActiveTable.trim();
+                                    if (activeClean === currentCompoundKey || activeClean === tblClean || activeClean.endsWith(`_${tblClean}`)) {
+                                        localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
                                         maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
 
-                                        // Ghost reset mechanism for cleared tables
-                                        if (maximumClaimedDisc === 0 && localLiveRunningBill.length === 0) {
-                                            localStorage.setItem('discount_map_' + clientCurrentActiveTable, 0);
-                                            localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 0);
-                                        }
+                                        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, JSON.stringify(localLiveRunningBill));
+                                        localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, maximumClaimedDisc);
+
+                                        let badge = document.getElementById('liveCoinBadge');
+                                        if (badge) badge.innerText = maximumClaimedDisc + "%";
                                     }
                                 } else {
                                     // 🛡️ BUG FIX: Agar is table ka koi cloud session record nahi mila,
