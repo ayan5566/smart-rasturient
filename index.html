@@ -3151,8 +3151,7 @@
                     if (badge) badge.innerText = "0%";
 
                     // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Permanent Row Delete)
-                    let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
-                    let compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
+                    cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable; // ✅ Sahi hai                    let compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
                     let plainCompositeKey = `${hotelGlobalScopeID}_${cleanTableId.trim()}`;
 
                     // Supabase me dono keys se check karke permanent DELETE karo (Row gayab ho jayegi)
