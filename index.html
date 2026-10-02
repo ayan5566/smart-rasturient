@@ -3127,43 +3127,29 @@
             if (confirm(`⚠️ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
 
                 try {
-                    // STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY (INCLUDING DISCOUNTS)
-                    // 🔥 FIX 4: Remove ALL loose + scoped discount keys so customer page cannot restore stale discount
+                    // 🔥 DECLARE THE MISSING KEYS AT THE TOP OF TRY BLOCK
+                    let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
+                    let floorName = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[0] : "";
+                    const compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
+                    const plainCompositeKey = `${hotelGlobalScopeID}_${cleanTableId.trim()}`;
+
+                    // STEP 1: FORCE-PURGE FRONTEND MEMORY POINTERS IMMEDIATELY
                     localStorage.removeItem('bill_map_' + activeOwnerAuditTable);
                     localStorage.removeItem('discount_map_' + activeOwnerAuditTable);
                     localStorage.removeItem('payment_status_map_' + activeOwnerAuditTable);
-                    localStorage.removeItem('restroflow_max_discount'); // Global loose key purge
+                    localStorage.removeItem('restroflow_max_discount');
 
-                    // Scoped keys ko bhi safaya karo
                     localStorage.removeItem('bill_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
                     localStorage.removeItem('discount_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + activeOwnerAuditTable);
 
-                    let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
-                    let floorName = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[0] : "";
-
-                    // 🔥 FIX 4: Always reset memory — not just when admin and customer are on same table
-                    localLiveRunningBill = [];
-                    maximumClaimedDisc = 0;
-                    globalRunningInvoiceSumTotal = 0;
-
-                    let badge = document.getElementById('liveCoinBadge');
-                    if (badge) badge.innerText = "0%";
-
-                    // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Permanent Row Delete)
-                    cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable; // ✅ Sahi hai                    let compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
-                    let plainCompositeKey = `${hotelGlobalScopeID}_${cleanTableId.trim()}`;
-
-                    // Supabase me dono keys se check karke permanent DELETE karo (Row gayab ho jayegi)
+                    // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD
                     await supabaseClient
                         .from('table_sessions')
                         .delete()
                         .or(`table_id.eq.${compositeTableKey},table_id.eq.${plainCompositeKey}`);
 
-                    console.log("🧹 Row permanently deleted from table_sessions in Supabase");
-
                     // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN (KDS)
-                    // Fix: Catch all formats (Floor_T1, Floor-T1, T1) to ensure zero ghost tickets left in DB
                     const possibleTableIds = [
                         activeOwnerAuditTable,
                         cleanTableId,
@@ -3178,29 +3164,25 @@
 
                     if (ordersToClear && ordersToClear.length > 0) {
                         const orderIds = ordersToClear.map(o => o.id);
-                        // Pehle order_items delete karo (Foreign key policy avoid karne ke liye)
                         await supabaseClient.from('order_items').delete().in('order_id', orderIds);
-                        // Phir active_orders delete karo
                         await supabaseClient.from('active_orders').delete().in('id', orderIds);
                     }
 
-// STEP 4: UPDATE UI STATE TO EMPTY (ORANGE) & FLUSH ALL PAYMENT TOKENS
+                    // STEP 4: UPDATE UI STATE TO EMPTY (ORANGE) & FLUSH ALL PAYMENT TOKENS
                     floorData.forEach(floor => {
                         if (floor && floor.tables) {
                             floor.tables.forEach(t => {
                                 let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
                                 let targetAuditClean = activeOwnerAuditTable.trim();
 
-                                // Har possible match format ko catch karein (T1, Floor_T1, ya compound)
                                 if (t.id.trim() === targetAuditClean || 
                                     currentCompoundKey === targetAuditClean || 
                                     targetAuditClean.endsWith('_' + t.id.trim())) {
                                     
-                                    t.state = 0; // 🍊 Compulsory Set to Orange (Empty)
+                                    t.state = 0; // 🍊 Set back to Orange (Empty)
                                     t.waiterBell = false;
                                     delete t.custom_color;
 
-                                    // Saare purane Blue/Payment flags jadh se saaf karo
                                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
                                     localStorage.removeItem('payment_status_map_' + currentCompoundKey);
                                     localStorage.removeItem('payment_status_map_' + t.id.trim());
@@ -3210,17 +3192,22 @@
                         }
                     });
 
-                    // 🔥 CLOUD RESET: Supabase session table ko turant Empty (0) bill sync karo taaki background sync ise dubara Green na banaye
-                    await syncLiveSessionToSupabase(activeOwnerAuditTable, [], 0, false, 'PENDING');
+                    // Local memory variables reset
+                    localLiveRunningBill = [];
+                    maximumClaimedDisc = 0;
+                    globalRunningInvoiceSumTotal = 0;
 
-                    // STEP 5: ATOMIC ENGINE RE-BALANCING & RE-RENDERING
+                    let badge = document.getElementById('liveCoinBadge');
+                    if (badge) badge.innerText = "0%";
+
+                    // STEP 5: SAVE & RE-RENDER
                     localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
                     localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
-                    
+
                     saveAdminConfig();
                     generateAdminTableGrid();
                     auditSelectedTableBillInvoiceLive();
-                    
+
                     showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
                     alert(`🧹 Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
 
