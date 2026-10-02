@@ -3627,133 +3627,140 @@
 
 
 async function renderLiveCalculatedBill() {
-            let targetBill = [];
-            let targetDisc = 0;
-            let paymentStatusToken = 'UNPAID';
+    let targetBill = [];
+    let targetDisc = 0;
+    let paymentStatusToken = 'UNPAID';
 
-            let activeTableId = clientCurrentActiveTable.trim();
-            document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${activeTableId}`;
+    let activeTableId = clientCurrentActiveTable.trim();
+    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${activeTableId}`;
 
-            try {
-                let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
-                let possibleKeys = [
-                    `${hotelGlobalScopeID}_${activeTableId}`,
-                    `${hotelGlobalScopeID}_${cleanTbl}`
-                ];
+    try {
+        let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
 
-                // 1. Direct Cloud Session Lookup
-                const { data: sessionRows } = await supabaseClient
-                    .from('table_sessions')
-                    .select('*')
-                    .in('table_id', possibleKeys);
+        // 1. Direct Cloud Session Lookup (Case-Insensitive Match)
+        const { data: sessionRows } = await supabaseClient
+            .from('table_sessions')
+            .select('*');
 
-                let matchedSession = sessionRows && sessionRows.length > 0 ? sessionRows[0] : null;
+        let matchedSession = null;
+        if (sessionRows && sessionRows.length > 0) {
+            let targetCleanLower = activeTableId.toLowerCase();
+            let cleanTblLower = cleanTbl.toLowerCase();
 
-                if (matchedSession) {
-                    targetBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : [];
-                    targetDisc = parseInt(matchedSession.discount_claimed) || 0;
-                    paymentStatusToken = matchedSession.payment_status || 'UNPAID';
-                }
+            matchedSession = sessionRows.find(s => {
+                let sId = (s.table_id || '').trim().toLowerCase();
+                return sId === `${hotelGlobalScopeID}_${targetCleanLower}`.toLowerCase() ||
+                       sId.endsWith(`_${targetCleanLower}`) ||
+                       sId.endsWith(`_${cleanTblLower}`);
+            });
+        }
 
-                // 2. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
-                if (targetBill.length === 0) {
-                    const { data: kOrders } = await supabaseClient
-                        .from('active_orders')
-                        .select('id')
-                        .eq('hotel_id', hotelGlobalScopeID)
-                        .or(`table_id.eq.${activeTableId},table_id.eq.${cleanTbl}`);
+        if (matchedSession) {
+            targetBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : [];
+            targetDisc = parseInt(matchedSession.discount_claimed) || 0;
+            paymentStatusToken = matchedSession.payment_status || 'UNPAID';
+        }
 
-                    if (kOrders && kOrders.length > 0) {
-                        const orderIds = kOrders.map(o => o.id);
-                        const { data: items } = await supabaseClient
-                            .from('order_items')
-                            .select('dish_name, size, qty')
-                            .in('order_id', orderIds);
+        // 2. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
+        if (targetBill.length === 0) {
+            const { data: kOrders } = await supabaseClient
+                .from('active_orders')
+                .select('id')
+                .eq('hotel_id', hotelGlobalScopeID)
+                .or(`table_id.ilike.%${cleanTbl}%`);
 
-                        if (items && items.length > 0) {
-                            items.forEach(item => {
-                                let calculatedPrice = 100;
-                                let sizeKey = item.size ? item.size.toLowerCase() : 'm';
-                                (menuCategories || []).forEach(cat => {
-                                    let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                                    if (matched) calculatedPrice = parseFloat(matched[sizeKey]) || parseFloat(matched.m) || 100;
-                                });
+            if (kOrders && kOrders.length > 0) {
+                const orderIds = kOrders.map(o => o.id);
+                const { data: items } = await supabaseClient
+                    .from('order_items')
+                    .select('dish_name, size, qty')
+                    .in('order_id', orderIds);
 
-                                let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
-                                if (existing) {
-                                    existing.qty += item.qty;
-                                } else {
-                                    targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedPrice, qty: item.qty });
-                                }
-                            });
+                if (items && items.length > 0) {
+                    items.forEach(item => {
+                        let calculatedPrice = 100;
+                        let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+                        (menuCategories || []).forEach(cat => {
+                            let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                            if (matched) calculatedPrice = parseFloat(matched[sizeKey]) || parseFloat(matched.m) || 100;
+                        });
+
+                        let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
+                        if (existing) {
+                            existing.qty += item.qty;
+                        } else {
+                            targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedPrice, qty: item.qty });
                         }
-                    }
+                    });
                 }
-
-                // Memory sync
-                localLiveRunningBill = targetBill;
-                maximumClaimedDisc = targetDisc;
-
-                let badge = document.getElementById('liveCoinBadge');
-                if (badge) badge.innerText = maximumClaimedDisc + "%";
-
-            } catch (err) {
-                console.error("🚨 Cloud Bill Fetch Failed:", err);
-                targetBill = localLiveRunningBill || [];
-            }
-
-            // HTML RENDER
-            const rowsContainer = document.getElementById('invoiceRowsContainer');
-            if (rowsContainer) {
-                rowsContainer.innerHTML = '';
-                targetBill.forEach(row => {
-                    let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
-                    rowsContainer.innerHTML += `
-                        <div class="bill-item-row" style="margin-bottom: 8px;">
-                            <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
-                            <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span></div>
-                        </div>`;
-                });
-
-                if (targetBill.length === 0) {
-                    rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
-                }
-
-                let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
-
-                document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
-                document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
-                document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
-                document.getElementById('billSGSTVal').innerText = "₹" + invoiceMath.sgst.toFixed(2);
-
-                let srvTaxRow = document.getElementById('taxRowService');
-                if (srvTaxRow) {
-                    srvTaxRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
-                    document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
-                }
-
-                globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
-
-                document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
-                document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "%";
-                document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
-
-                let payButton = document.getElementById('payOnlineInvoiceMainBtn');
-                if (paymentStatusToken === 'SUCCESS_PAID') {
-                    payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI";
-                    payButton.style.background = "#7f8c8d";
-                    payButton.disabled = true;
-                    payButton.onclick = null;
-                } else {
-                    payButton.innerText = "💳 Pay Online from Mobile (UPI)";
-                    payButton.style.background = "var(--neon-green)";
-                    payButton.disabled = false;
-                    payButton.onclick = openSmartMobilePaymentGatewayGateway;
-                }
-
-                document.getElementById('invoiceBillModal').style.display = 'flex';
             }
         }
+
+        // Memory & Coin Badge sync with Supabase Real Data
+        localLiveRunningBill = targetBill;
+        maximumClaimedDisc = targetDisc;
+
+        let badge = document.getElementById('liveCoinBadge');
+        if (badge) badge.innerText = maximumClaimedDisc + "%";
+
+    } catch (err) {
+        console.error("🚨 Cloud Bill Fetch Failed:", err);
+        targetBill = localLiveRunningBill || [];
+    }
+
+    // HTML RENDER
+    const rowsContainer = document.getElementById('invoiceRowsContainer');
+    if (rowsContainer) {
+        rowsContainer.innerHTML = '';
+        targetBill.forEach(row => {
+            let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
+            rowsContainer.innerHTML += `
+                <div class="bill-item-row" style="margin-bottom: 8px;">
+                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
+                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span></div>
+                </div>`;
+        });
+
+        if (targetBill.length === 0) {
+            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
+        }
+
+        // Unified Calculation Engine
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
+
+        document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
+        document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
+        document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
+        document.getElementById('billSGSTVal').innerText = "₹" + invoiceMath.sgst.toFixed(2);
+
+        let srvTaxRow = document.getElementById('taxRowService');
+        if (srvTaxRow) {
+            srvTaxRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
+            document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
+        }
+
+        globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
+
+        document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
+        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-₹" + invoiceMath.discountValue.toFixed(2) + ")";
+        document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
+
+        let payButton = document.getElementById('payOnlineInvoiceMainBtn');
+        if (paymentStatusToken === 'SUCCESS_PAID') {
+            payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI";
+            payButton.style.background = "#7f8c8d";
+            payButton.disabled = true;
+            payButton.onclick = null;
+        } else {
+            payButton.innerText = "💳 Pay Online from Mobile (UPI)";
+            payButton.style.background = "var(--neon-green)";
+            payButton.disabled = false;
+            payButton.onclick = openSmartMobilePaymentGatewayGateway;
+        }
+
+        document.getElementById('invoiceBillModal').style.display = 'flex';
+    }
+}
         // ===================================================================
         // 🗑️ UPGRADED: ITEM REMOVAL ENGINE (WITH KDS SYNC & AUTO-RECALCULATE)
         // ===================================================================
@@ -3848,36 +3855,89 @@ async function renderLiveCalculatedBill() {
             }
         }
 
-        function triggerRewardCoupon(earnedPercent) {
-            // Coupon applied hone ke baad cloud par discount sync karein
-            syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, earnedPercent, false, 'PENDING');
+        async function triggerRewardCoupon(earnedPercent) {
+    let earnedVal = parseInt(earnedPercent) || 0;
+    let hotelId = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+    let activeTableId = (window.clientCurrentActiveTable || "T1").trim();
 
-            // 🔥 FIX 2: Only ONE scoped key — no loose global key that bleeds across tables
-            localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, earnedPercent.toString());
+    try {
+        // 1. Supabase Cloud se saari sessions fetch karke case-insensitive match karein
+        const { data: allSessions } = await supabaseClient
+            .from('table_sessions')
+            .select('*');
 
-            // Direct assign — no Math.max so discount can be reset cleanly by admin
-            maximumClaimedDisc = earnedPercent;
+        let targetCompositeKey = `${hotelId}_${activeTableId}`;
+        let existingBill = Array.isArray(localLiveRunningBill) ? localLiveRunningBill : [];
+        let existingBell = false;
+        let existingPayStatus = 'PENDING';
 
-            let badge = document.getElementById('liveCoinBadge');
-            if (badge) {
-                badge.innerText = maximumClaimedDisc + "%";
-                badge.classList.remove('coin-pop');
-                void badge.offsetWidth;
-                badge.classList.add('coin-pop');
+        if (allSessions && allSessions.length > 0) {
+            let activeTargetClean = activeTableId.toLowerCase();
+            let cleanTblOnly = activeTargetClean.includes('_') ? activeTargetClean.split('_')[1] : activeTargetClean;
+
+            let matchedSession = allSessions.find(s => {
+                let sid = (s.table_id || '').trim().toLowerCase();
+                return sid === `${hotelId}_${activeTargetClean}`.toLowerCase() ||
+                       sid.endsWith(`_${activeTargetClean}`) ||
+                       sid.endsWith(`_${cleanTblOnly}`);
+            });
+
+            if (matchedSession) {
+                targetCompositeKey = matchedSession.table_id; // Database ki exact key use karein
+                existingBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : existingBill;
+                existingBell = matchedSession.waiter_bell || false;
+                existingPayStatus = matchedSession.payment_status || 'PENDING';
             }
-
-            let displayBox = document.getElementById('couponDisplay');
-            if (displayBox) {
-                displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${clientCurrentActiveTable} Invoice!`;
-                displayBox.style.display = "block";
-            }
-
-            // 🔥 🔥 THE FIX: Bina refresh kiye modal screen data ko turant fresh calculation loops par bhejo
-            if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                renderLiveCalculatedBill();
-            }
-            updateFrontEndClassificationLabels();
         }
+
+        // 2. 🔥 SUPABASE MEIN DIRECT DISCOUNT UPSERT/SAVE
+        const { error: upsertErr } = await supabaseClient
+            .from('table_sessions')
+            .upsert({
+                table_id: targetCompositeKey,
+                live_bill: existingBill,
+                discount_claimed: earnedVal,
+                waiter_bell: existingBell,
+                payment_status: existingPayStatus
+            }, { onConflict: 'table_id' });
+
+        if (upsertErr) {
+            console.error("🚨 Supabase Discount Save Error:", upsertErr.message);
+        } else {
+            console.log(`✅ Supabase Discount Locked: ${earnedVal}% on [${targetCompositeKey}]`);
+        }
+
+    } catch (err) {
+        console.error("🚨 Cloud Discount Save Exception:", err);
+    }
+
+    // 3. Local Memory & UI Updates
+    maximumClaimedDisc = earnedVal;
+    localStorage.setItem('discount_map_' + hotelId + '_' + activeTableId, earnedVal.toString());
+
+    let badge = document.getElementById('liveCoinBadge');
+    if (badge) {
+        badge.innerText = maximumClaimedDisc + "%";
+        badge.classList.remove('coin-pop');
+        void badge.offsetWidth;
+        badge.classList.add('coin-pop');
+    }
+
+    let displayBox = document.getElementById('couponDisplay');
+    if (displayBox) {
+        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${activeTableId} Invoice!`;
+        displayBox.style.display = "block";
+    }
+
+    // 4. Modal khula ho toh turant re-calculate karo
+    if (document.getElementById('invoiceBillModal') && document.getElementById('invoiceBillModal').style.display === 'flex') {
+        renderLiveCalculatedBill();
+    }
+
+    if (typeof updateFrontEndClassificationLabels === 'function') {
+        updateFrontEndClassificationLabels();
+    }
+}
         // ===================================================================
         // 🛡️ RE-BUILT WAITER PANEL DROPDOWN (ANTI-CRASH DEEP GUARD)
         // ===================================================================
@@ -4592,7 +4652,12 @@ async function renderLiveCalculatedBill() {
                                 let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
 
                                 // Cloud map lookup scanning table strings natively
-                                let targetCloudRow = globalCloudSessions.find(s => s.table_id === `${hotelGlobalScopeID}_${currentCompoundKey}` || s.table_id === `${hotelGlobalScopeID}_${t.id.trim()}`);
+                                let targetCloudRow = globalCloudSessions.find(s => {
+                                    let sid = (s.table_id || '').trim().toLowerCase();
+                                    return sid === `${hotelGlobalScopeID}_${currentCompoundKey}`.toLowerCase() ||
+                                           sid === `${hotelGlobalScopeID}_${t.id.trim()}`.toLowerCase() ||
+                                           sid.endsWith(`_${t.id.trim().toLowerCase()}`);
+                                });
 
                                 if (targetCloudRow) {
                                     t.waiterBell = targetCloudRow.waiter_bell || false;
