@@ -3150,9 +3150,18 @@
                     let badge = document.getElementById('liveCoinBadge');
                     if (badge) badge.innerText = "0%";
 
-                    // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Supabase se permanent delete)
-                    const compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable}`;
-                    await supabaseClient.from('table_sessions').delete().eq('table_id', compositeTableKey);
+                    // STEP 2: HARD DELETE FROM TABLE SESSIONS IN CLOUD (Permanent Row Delete)
+                    let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
+                    let compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
+                    let plainCompositeKey = `${hotelGlobalScopeID}_${cleanTableId.trim()}`;
+
+                    // Supabase me dono keys se check karke permanent DELETE karo (Row gayab ho jayegi)
+                    await supabaseClient
+                        .from('table_sessions')
+                        .delete()
+                        .or(`table_id.eq.${compositeTableKey},table_id.eq.${plainCompositeKey}`);
+
+                    console.log("🧹 Row permanently deleted from table_sessions in Supabase");
 
                     // STEP 3: DELETE ALL ACTIVE ORDERS FROM KITCHEN (KDS)
                     // Fix: Catch all formats (Floor_T1, Floor-T1, T1) to ensure zero ghost tickets left in DB
