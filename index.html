@@ -3631,19 +3631,17 @@ async function renderLiveCalculatedBill() {
             let targetDisc = 0;
             let paymentStatusToken = 'UNPAID';
 
-            // Active Table Identity
             let activeTableId = clientCurrentActiveTable.trim();
             document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${activeTableId}`;
 
             try {
-                // 1. Clean Table IDs resolve karein (Har format catch karne ke liye)
                 let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
                 let possibleKeys = [
                     `${hotelGlobalScopeID}_${activeTableId}`,
                     `${hotelGlobalScopeID}_${cleanTbl}`
                 ];
 
-                // 2. 🔥 CLOUD SE DIRECT SESSION FETCH (Source of Truth)
+                // 1. Direct Cloud Session Lookup
                 const { data: sessionRows } = await supabaseClient
                     .from('table_sessions')
                     .select('*')
@@ -3657,7 +3655,7 @@ async function renderLiveCalculatedBill() {
                     paymentStatusToken = matchedSession.payment_status || 'UNPAID';
                 }
 
-                // 3. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
+                // 2. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
                 if (targetBill.length === 0) {
                     const { data: kOrders } = await supabaseClient
                         .from('active_orders')
@@ -3678,7 +3676,7 @@ async function renderLiveCalculatedBill() {
                                 let sizeKey = item.size ? item.size.toLowerCase() : 'm';
                                 (menuCategories || []).forEach(cat => {
                                     let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                                    if (matched) calculatedPrice = parseFloat(matched[szKey]) || parseFloat(matched.m) || 100;
+                                    if (matched) calculatedPrice = parseFloat(matched[sizeKey]) || parseFloat(matched.m) || 100;
                                 });
 
                                 let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
@@ -3704,7 +3702,7 @@ async function renderLiveCalculatedBill() {
                 targetBill = localLiveRunningBill || [];
             }
 
-            // --- HTML RENDER ---
+            // HTML RENDER
             const rowsContainer = document.getElementById('invoiceRowsContainer');
             if (rowsContainer) {
                 rowsContainer.innerHTML = '';
