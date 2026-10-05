@@ -2871,36 +2871,63 @@
         }
 
         // ===================================================================
-        // 🧾 REALTIME INSTANT INBOUND ORDER FLOW (DUPLICATE TICKET FIXED)
+        // 🧾 CLOUD-FIRST DISH APPEND PIPELINE (100% SUPABASE SYNC, NO LOCALSTORAGE)
         // ===================================================================
         async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
             let activeTableId = targetTableOverride || clientCurrentActiveTable;
             let parsedItemQty = parseInt(customQty) || 1;
+            const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId.trim()}`;
 
             try {
-                const { data: cloudSession } = await supabaseClient
+                // 1. Direct Cloud Session Lookup: Supabase se fresh live bill aur discount uthao
+                const { data: cloudSession, error: fetchErr } = await supabaseClient
                     .from('table_sessions')
-                    .select('live_bill, discount_claimed')
-                    .eq('table_id', `${hotelGlobalScopeID}_${activeTableId}`)
+                    .select('live_bill, discount_claimed, waiter_bell, payment_status')
+                    .eq('table_id', compositeTableKey)
                     .maybeSingle();
 
-                let targetTableBill = (cloudSession && cloudSession.live_bill) ? cloudSession.live_bill : [];
-                let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
+                if (fetchErr) {
+                    console.error("🚨 Cloud Fetch Error in appendDish:", fetchErr.message);
+                }
 
-                let matchingRecord = targetTableBill.find(row => row.name === dishName && row.size === selectedSize.toUpperCase());
+                let targetTableBill = (cloudSession && Array.isArray(cloudSession.live_bill)) ? cloudSession.live_bill : [];
+                let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
+                let existingBellStatus = cloudSession ? (cloudSession.waiter_bell || false) : false;
+                let existingPayStatus = cloudSession ? (cloudSession.payment_status || 'PENDING') : 'PENDING';
+
+                // 2. Dish Matching & Quantity Increment
+                let matchingRecord = targetTableBill.find(row => 
+                    row.name.trim().toLowerCase() === dishName.trim().toLowerCase() && 
+                    row.size.toUpperCase() === selectedSize.toUpperCase()
+                );
 
                 if (matchingRecord) {
                     matchingRecord.qty += parsedItemQty;
                 } else {
-                    targetTableBill.push({ name: dishName, size: selectedSize.toUpperCase(), price: fixedUnitPrice, qty: parsedItemQty });
+                    targetTableBill.push({ 
+                        name: dishName, 
+                        size: selectedSize.toUpperCase(), 
+                        price: fixedUnitPrice, 
+                        qty: parsedItemQty 
+                    });
                 }
 
-                localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + activeTableId, JSON.stringify(targetTableBill));
+                // 3. 🔥 DIRECT SUPABASE UPSERT (Single Source of Truth)
+                await syncLiveSessionToSupabase(
+                    activeTableId, 
+                    targetTableBill, 
+                    existingCloudDiscount, 
+                    existingBellStatus, 
+                    existingPayStatus
+                );
 
+                // 4. Runtime In-Memory Pointers Update (Instant Clicks ke liye)
                 if (activeTableId === clientCurrentActiveTable) {
                     localLiveRunningBill = targetTableBill;
+                    maximumClaimedDisc = existingCloudDiscount;
                 }
 
+                // 5. Admin Table UI Card Grid ko Green (Occupied) karo
                 if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
                     floorData.forEach(floor => {
                         if (floor && floor.tables) {
@@ -2916,19 +2943,16 @@
                     localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
                     localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                 }
+
                 if (typeof generateAdminTableGrid === "function") {
                     generateAdminTableGrid();
                 }
 
-                if (document.getElementById('adminDashboard').style.display === 'block') {
+                if (document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block') {
                     auditSelectedTableBillInvoiceLive();
                 }
 
-                // 🛡️ FIX: Direct assignment from cloud — no Math.max() so settled bills reset cleanly to 0%
-                maximumClaimedDisc = existingCloudDiscount;
-
-                // 🔥 ONLY ONE CHANNEL SYNC: Database session sync chalega jo backend trigger ko manage karega
-                await syncLiveSessionToSupabase(activeTableId, targetTableBill, existingCloudDiscount, false, 'PENDING');
+                console.log(`✅ Cloud Append Success: [${dishName} x${parsedItemQty}] committed directly to Supabase for ${compositeTableKey}`);
 
             } catch (err) {
                 console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
@@ -3626,34 +3650,33 @@
 
 
 
+// ===================================================================
+// 🧾 100% PURE SUPABASE CLOUD-DRIVEN LIVE INVOICE ENGINE (NO LOCALSTORAGE)
+// ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
     let targetDisc = 0;
     let paymentStatusToken = 'UNPAID';
 
-    let activeTableId = clientCurrentActiveTable.trim();
-    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active Table ${activeTableId}`;
+    // 🔒 1. Current Active Floor + Table exact scope pakdo (e.g., ayah_T3)
+    let activeTableId = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
+    const compositeTargetKey = `${hotelGlobalScopeID}_${activeTableId}`;
+
+    // Scope Header formatting
+    let displayScope = activeTableId.includes('_') 
+        ? `${activeTableId.split('_')[0]} - Table ${activeTableId.split('_')[1]}` 
+        : `Table ${activeTableId}`;
+    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active ${displayScope}`;
+
+    showOnScreenNotification("⏳ Fetching live invoice directly from cloud...", false);
 
     try {
-        let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
-
-        // 1. Direct Cloud Session Lookup (Case-Insensitive Match)
-        const { data: sessionRows } = await supabaseClient
+        // 🔒 2. DIRECT SUPABASE TABLE SESSION LOOKUP (Sirf aur sirf is exact table ka session)
+        const { data: matchedSession, error: sErr } = await supabaseClient
             .from('table_sessions')
-            .select('*');
-
-        let matchedSession = null;
-        if (sessionRows && sessionRows.length > 0) {
-            let targetCleanLower = activeTableId.toLowerCase();
-            let cleanTblLower = cleanTbl.toLowerCase();
-
-            matchedSession = sessionRows.find(s => {
-                let sId = (s.table_id || '').trim().toLowerCase();
-                return sId === `${hotelGlobalScopeID}_${targetCleanLower}`.toLowerCase() ||
-                       sId.endsWith(`_${targetCleanLower}`) ||
-                       sId.endsWith(`_${cleanTblLower}`);
-            });
-        }
+            .select('live_bill, discount_claimed, payment_status')
+            .eq('table_id', compositeTargetKey)
+            .maybeSingle();
 
         if (matchedSession) {
             targetBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : [];
@@ -3661,13 +3684,16 @@ async function renderLiveCalculatedBill() {
             paymentStatusToken = matchedSession.payment_status || 'UNPAID';
         }
 
-        // 2. Fallback: Agar session live_bill khali ho par kitchen me active orders hon
+        // 🔒 3. STRICT KITCHEN FALLBACK (Mix hone se bachane ke liye sirf is exact section-table ko filter karein)
+        // 🛑 Purana .or(`table_id.ilike.%${cleanTbl}%`) hata diya hai taaki ayah_T3 aur oooh_T3 mix na ho
         if (targetBill.length === 0) {
+            let kdsFormattedKey = activeTableId.includes('_') ? activeTableId.replace('_', '-') : activeTableId;
+
             const { data: kOrders } = await supabaseClient
                 .from('active_orders')
                 .select('id')
                 .eq('hotel_id', hotelGlobalScopeID)
-                .or(`table_id.ilike.%${cleanTbl}%`);
+                .in('table_id', [activeTableId, kdsFormattedKey]);
 
             if (kOrders && kOrders.length > 0) {
                 const orderIds = kOrders.map(o => o.id);
@@ -3696,7 +3722,7 @@ async function renderLiveCalculatedBill() {
             }
         }
 
-        // Memory & Coin Badge sync with Supabase Real Data
+        // Memory runtime update (Sirf is function ke turant use ke liye — LocalStorage me kuch save nahi hoga)
         localLiveRunningBill = targetBill;
         maximumClaimedDisc = targetDisc;
 
@@ -3705,15 +3731,18 @@ async function renderLiveCalculatedBill() {
 
     } catch (err) {
         console.error("🚨 Cloud Bill Fetch Failed:", err);
-        targetBill = localLiveRunningBill || [];
+        targetBill = [];
     }
 
-    // HTML RENDER
+    // 4. HTML RENDER
     const rowsContainer = document.getElementById('invoiceRowsContainer');
     if (rowsContainer) {
         rowsContainer.innerHTML = '';
+        let accumulatedSubtotal = 0;
+
         targetBill.forEach(row => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
+            accumulatedSubtotal += rowCost;
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 8px;">
                     <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
@@ -3722,7 +3751,7 @@ async function renderLiveCalculatedBill() {
         });
 
         if (targetBill.length === 0) {
-            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet.</p>`;
+            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet in cloud database.</p>`;
         }
 
         // Unified Calculation Engine
