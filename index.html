@@ -2891,25 +2891,15 @@
                 size = bluePrint.mActive && bluePrint.m > 0 ? 'm' : (bluePrint.sActive && bluePrint.s > 0 ? 's' : 'l');
                 price = bluePrint[size];
             }
+            // 🔒 Standard Table Identity (ayah_T1 format - matches Admin Panel & KDS 1:1)
+            let standardTableKey = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
 
-            // 🔥 🔥 THE KDS SECTION PREFIX FIX: URL parameters se floor/section ka naam uthao
-            const urlParams = new URLSearchParams(window.location.search);
-            let currentFloorName = urlParams.get('floor') ? urlParams.get('floor').trim() : "";
+            // Core billing matrix me direct push
+            await appendDishToBillInvoice(dishName, size, price, standardTableKey, selectedQuantityToken);
 
-            let cleanTableId = clientCurrentActiveTable;
-            // Agar clientCurrentActiveTable mein pehle se floor name juda hai, toh use saaf karke table ID nikalte hain
-            if (clientCurrentActiveTable.includes('_')) {
-                cleanTableId = clientCurrentActiveTable.split('_')[1];
-            }
+            // 🔥 KDS Ticket par bhi exact same table ID jayegi taaki admin panel par turant live dikhe
+            await dispatchKdsTicketDirectly(standardTableKey, dishName, size, selectedQuantityToken);
 
-            // 🎯 If floor name available hai, toh kitchen ke liye format "section-T1" banao, warna sirf "T1" rehte do
-            let kdsFormattedTableIdentity = currentFloorName ? `${currentFloorName}-${cleanTableId}` : cleanTableId;
-
-            // Core billing matrix mein original table token hi jayega bina chhede
-            await appendDishToBillInvoice(dishName, size, price, null, selectedQuantityToken);
-
-            // 🔥 KDS Tracker Stream par ab section-prefix ke sath sateek data packet cleanly transmit hoga!
-            await dispatchKdsTicketDirectly(kdsFormattedTableIdentity, dishName, size, selectedQuantityToken);
 
             showOnScreenNotification(`🛒 Added: ${dishName} [${size.toUpperCase()}] × ${selectedQuantityToken} directly to your bill!`);
 
@@ -4482,29 +4472,26 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
 
 
-        // ===================================================================
-        // 🎮 FIXED: PASS FULL URL CONTEXT TO GAME.HTML (ZERO LOSS)
-        // ===================================================================
         function switchGameMode(selectedTargetMode) {
             const currentParams = new URLSearchParams(window.location.search);
 
             const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            const floorName = currentParams.get('floor') || '';
-            const tableId = currentParams.get('table') || window.clientCurrentActiveTable || 'T1';
+            
+            // 🔒 Clean Table & Floor resolve (Duplicate prefix block)
+            let active = (window.clientCurrentActiveTable || clientCurrentActiveTable || 'T1').trim();
+            let floorName = currentParams.get('floor') || (active.includes('_') ? active.split('_')[0] : '');
+            let pureTable = active.includes('_') ? active.split('_')[1] : active;
 
-            // 🔥 FIX 1: Discount is NOT passed in URL — game.html reads rules from cloud/localStorage
-            // This blocks URL tampering: no more ?discount=90 loophole
             const targetUrl = new URL('game.html', window.location.href);
             targetUrl.searchParams.set('mode', selectedTargetMode);
             targetUrl.searchParams.set('hotel', hotelScope);
             if (floorName) {
                 targetUrl.searchParams.set('floor', floorName);
             }
-            targetUrl.searchParams.set('table', tableId);
+            targetUrl.searchParams.set('table', pureTable);
 
             window.location.href = targetUrl.toString();
         }
-        window.switchGameMode = switchGameMode;
 
         // ===================================================================
         // ===================================================================
@@ -4517,16 +4504,16 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             // 🔥 FIX 1: URL discount parameter completely removed — no tampering possible
 
             if (urlTable) {
-                let cleanT = urlTable.toUpperCase().trim();
-                let cleanF = urlFloor ? urlFloor.trim() : '';
-                
-                if (cleanF && cleanT.startsWith(cleanF.toUpperCase() + '_')) {
-                    clientCurrentActiveTable = cleanT;
-                } else if (cleanF) {
-                    clientCurrentActiveTable = `${cleanF}_${cleanT}`;
-                } else {
-                    clientCurrentActiveTable = cleanT;
+                let rawT = urlTable.trim().toUpperCase();
+                let rawF = urlFloor ? urlFloor.trim() : '';
+
+                // Double prefix hone se roko (e.g., ayah_ayah_T1 -> T1)
+                if (rawF && rawT.toLowerCase().startsWith(rawF.toLowerCase() + '_')) {
+                    rawT = rawT.substring(rawF.length + 1).trim();
                 }
+
+                clientCurrentActiveTable = rawF ? `${rawF}_${rawT}` : rawT;
+                window.clientCurrentActiveTable = clientCurrentActiveTable;
             }
 
             // 🔥 HOTEL IDENTITY SCOPE LOCK
