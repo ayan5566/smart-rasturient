@@ -3557,7 +3557,7 @@ async function renderLiveCalculatedBill() {
     let targetDisc = 0;
     let paymentStatusToken = 'UNPAID';
 
-    // 🔒 1. Strict Floor + Table identity context (e.g., "ayah_T3")
+    // 🔒 1. Current Active Floor + Table exact scope pakdo
     let activeTableId = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
     const compositeTargetKey = `${hotelGlobalScopeID}_${activeTableId}`;
 
@@ -3570,7 +3570,7 @@ async function renderLiveCalculatedBill() {
     showOnScreenNotification("⏳ Fetching live invoice directly from cloud...", false);
 
     try {
-        // 🔒 2. DIRECT SUPABASE CLOUD LOOKUP (Sirf aur sirf is exact table row ka session)
+        // 🔒 2. DIRECT SUPABASE CLOUD LOOKUP
         const { data: matchedSession, error: sErr } = await supabaseClient
             .from('table_sessions')
             .select('live_bill, discount_claimed, payment_status')
@@ -3583,8 +3583,7 @@ async function renderLiveCalculatedBill() {
             paymentStatusToken = matchedSession.payment_status || 'UNPAID';
         }
 
-        // 🔒 3. STRICT KITCHEN FALLBACK (Sirf isi exact section aur table ko fetch karega)
-        // 🛑 Purana %cleanTbl% search hataya hai taaki alag floors ke T3 mix na hon
+        // 🔒 3. STRICT KITCHEN FALLBACK
         if (targetBill.length === 0) {
             let kdsFormattedKey = activeTableId.includes('_') ? activeTableId.replace('_', '-') : activeTableId;
 
@@ -3621,7 +3620,7 @@ async function renderLiveCalculatedBill() {
             }
         }
 
-        // In-memory runtime sync (Sirf modal render ke liye, localStorage me zero storage)
+        // In-memory runtime sync
         localLiveRunningBill = targetBill;
         maximumClaimedDisc = targetDisc;
 
@@ -3656,6 +3655,9 @@ async function renderLiveCalculatedBill() {
         // Unified Calculation Engine
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
+        // ✅ FIXED: discountValue ko invoiceMath se sahi tarike se define kiya gaya hai
+        const calculatedDiscountVal = invoiceMath.discountValue || 0;
+
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
         document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
         document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
@@ -3670,7 +3672,8 @@ async function renderLiveCalculatedBill() {
         globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
 
         document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
-        document.getElementById('billDiscountApplied').innerText = targetDisc + "% (-₹" + discountValue.toFixed(2) + ")";
+        // ✅ FIXED: yahan calculatedDiscountVal ka use kiya hai
+        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-₹" + calculatedDiscountVal.toFixed(2) + ")";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
@@ -4490,19 +4493,20 @@ async function initializeCustomerRealtimeTracker() {
 
 
 // ===================================================================
-// 🎮 FIXED: PASS CLEAN URL CONTEXT TO GAME.HTML (ZERO DUPLICATE PREFIX)
+// 🎮 FIXED: PASS CLEAN URL CONTEXT TO GAME.HTML (404 PATH FIXED)
 // ===================================================================
 function switchGameMode(selectedTargetMode) {
     const currentParams = new URLSearchParams(window.location.search);
 
     const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
     
-    // 🔒 Clean Table & Floor resolve (Prevents double prefixing like ayah_ayah_T1)
+    // 🔒 Clean Table & Floor resolve (Duplicate prefix block)
     let active = (window.clientCurrentActiveTable || clientCurrentActiveTable || 'T1').trim();
     let floorName = currentParams.get('floor') || (active.includes('_') ? active.split('_')[0] : '');
     let pureTable = active.includes('_') ? active.split('_')[1] : active;
 
-    const targetUrl = new URL('modules/game.html', window.location.href);
+    // ✅ FIXED: 'modules/game.html' ki jagah direct 'game.html' kiya gaya hai
+    const targetUrl = new URL('game.html', window.location.href);
     targetUrl.searchParams.set('mode', selectedTargetMode);
     targetUrl.searchParams.set('hotel', hotelScope);
     if (floorName) {
@@ -4513,7 +4517,6 @@ function switchGameMode(selectedTargetMode) {
     window.location.href = targetUrl.toString();
 }
 window.switchGameMode = switchGameMode;
-
         // ===================================================================
 // 🚀 SURGICALLY FIXED APP BOOT ENGINE (HYBRID CLOUD-FIRST NO-RESET)
 // ===================================================================
