@@ -3549,60 +3549,50 @@
                 grandTotal: finalGrandTotal
             };
         }
-        // ===================================================================
-// 🧾 FIXED: 100% PURE SUPABASE CLOUD-DRIVEN LIVE INVOICE ENGINE
+// ===================================================================
+// 🧾 100% PURE SUPABASE CLOUD-DRIVEN LIVE INVOICE ENGINE (NO LOCALSTORAGE)
 // ===================================================================
 async function renderLiveCalculatedBill() {
     let targetBill = [];
     let targetDisc = 0;
     let paymentStatusToken = 'UNPAID';
 
-    // 1. Current active table aur composite key resolve karo
+    // 🔒 1. Strict Floor + Table identity context (e.g., "ayah_T3")
     let activeTableId = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
-    
-    // Header label update
+    const compositeTargetKey = `${hotelGlobalScopeID}_${activeTableId}`;
+
+    // Scope Header Title formatting
     let displayScope = activeTableId.includes('_') 
         ? `${activeTableId.split('_')[0]} - Table ${activeTableId.split('_')[1]}` 
         : `Table ${activeTableId}`;
-    
-    const scopeElem = document.getElementById('billTableScopeText');
-    if (scopeElem) scopeElem.innerText = `Invoice Scope: Active ${displayScope}`;
+    document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active ${displayScope}`;
 
-    showOnScreenNotification("⏳ Fetching live bill directly from database...", false);
+    showOnScreenNotification("⏳ Fetching live invoice directly from cloud...", false);
 
     try {
-        // 2. Direct Database Query: exact hotel aur table session uthao (No localStorage)
-        const { data: allSessions, error: sErr } = await supabaseClient
+        // 🔒 2. DIRECT SUPABASE CLOUD LOOKUP (Sirf aur sirf is exact table row ka session)
+        const { data: matchedSession, error: sErr } = await supabaseClient
             .from('table_sessions')
-            .select('*');
+            .select('live_bill, discount_claimed, payment_status')
+            .eq('table_id', compositeTargetKey)
+            .maybeSingle();
 
-        if (!sErr && allSessions && allSessions.length > 0) {
-            let activeClean = activeTableId.toLowerCase();
-            let cleanTblOnly = activeClean.includes('_') ? activeClean.split('_')[1] : activeClean;
-
-            let matched = allSessions.find(s => {
-                let sid = (s.table_id || '').trim().toLowerCase();
-                return sid === `${hotelGlobalScopeID}_${activeClean}`.toLowerCase() ||
-                       sid === `${hotelGlobalScopeID}_${cleanTblOnly}`.toLowerCase() ||
-                       sid.endsWith(`_${activeClean}`) ||
-                       sid.endsWith(`_${cleanTblOnly}`);
-            });
-
-            if (matched) {
-                targetBill = Array.isArray(matched.live_bill) ? matched.live_bill : [];
-                targetDisc = parseInt(matched.discount_claimed) || 0;
-                paymentStatusToken = matched.payment_status || 'UNPAID';
-            }
+        if (matchedSession) {
+            targetBill = Array.isArray(matchedSession.live_bill) ? matchedSession.live_bill : [];
+            targetDisc = parseInt(matchedSession.discount_claimed) || 0;
+            paymentStatusToken = matchedSession.payment_status || 'UNPAID';
         }
 
-        // 3. Fallback: Agar session record nahi mila toh active_orders se fetch karo
+        // 🔒 3. STRICT KITCHEN FALLBACK (Sirf isi exact section aur table ko fetch karega)
+        // 🛑 Purana %cleanTbl% search hataya hai taaki alag floors ke T3 mix na hon
         if (targetBill.length === 0) {
-            let cleanTbl = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
+            let kdsFormattedKey = activeTableId.includes('_') ? activeTableId.replace('_', '-') : activeTableId;
+
             const { data: kOrders } = await supabaseClient
                 .from('active_orders')
                 .select('id')
                 .eq('hotel_id', hotelGlobalScopeID)
-                .or(`table_id.eq.${activeTableId},table_id.eq.${cleanTbl}`);
+                .in('table_id', [activeTableId, kdsFormattedKey]);
 
             if (kOrders && kOrders.length > 0) {
                 const orderIds = kOrders.map(o => o.id);
@@ -3616,8 +3606,8 @@ async function renderLiveCalculatedBill() {
                         let calculatedPrice = 100;
                         let sizeKey = item.size ? item.size.toLowerCase() : 'm';
                         (menuCategories || []).forEach(cat => {
-                            let matchedDish = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                            if (matchedDish) calculatedPrice = parseFloat(matchedDish[sizeKey]) || parseFloat(matchedDish.m) || 100;
+                            let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                            if (matched) calculatedPrice = parseFloat(matched[sizeKey]) || parseFloat(matched.m) || 100;
                         });
 
                         let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
@@ -3631,7 +3621,7 @@ async function renderLiveCalculatedBill() {
             }
         }
 
-        // In-memory runtime update
+        // In-memory runtime sync (Sirf modal render ke liye, localStorage me zero storage)
         localLiveRunningBill = targetBill;
         maximumClaimedDisc = targetDisc;
 
@@ -3639,16 +3629,19 @@ async function renderLiveCalculatedBill() {
         if (badge) badge.innerText = maximumClaimedDisc + "%";
 
     } catch (err) {
-        console.error("🚨 Cloud Bill Fetch Error:", err);
+        console.error("🚨 Cloud Bill Fetch Failed:", err);
         targetBill = [];
     }
 
-    // 4. Render HTML in Bill Modal
+    // 4. HTML RENDER
     const rowsContainer = document.getElementById('invoiceRowsContainer');
     if (rowsContainer) {
         rowsContainer.innerHTML = '';
+        let accumulatedSubtotal = 0;
+
         targetBill.forEach(row => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
+            accumulatedSubtotal += rowCost;
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 8px;">
                     <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
@@ -3657,9 +3650,10 @@ async function renderLiveCalculatedBill() {
         });
 
         if (targetBill.length === 0) {
-            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No active orders found in live database for this table.</p>`;
+            rowsContainer.innerHTML = `<p style="font-size:13px; color:#999; text-align:center;">No items allocated to bill yet in cloud database.</p>`;
         }
 
+        // Unified Calculation Engine
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
 
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
@@ -3676,7 +3670,7 @@ async function renderLiveCalculatedBill() {
         globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
 
         document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
-        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-₹" + invoiceMath.discountValue.toFixed(2) + ")";
+        document.getElementById('billDiscountApplied').innerText = targetDisc + "% (-₹" + discountValue.toFixed(2) + ")";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
@@ -3684,36 +3678,43 @@ async function renderLiveCalculatedBill() {
             payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI";
             payButton.style.background = "#7f8c8d";
             payButton.disabled = true;
+            payButton.onclick = null;
         } else {
             payButton.innerText = "💳 Pay Online from Mobile (UPI)";
             payButton.style.background = "var(--neon-green)";
             payButton.disabled = false;
+            payButton.onclick = openSmartMobilePaymentGatewayGateway;
         }
 
         document.getElementById('invoiceBillModal').style.display = 'flex';
     }
 }
-
 // ===================================================================
-// 🛒 FIXED: APPEND DISH DIRECTLY TO SUPABASE WITH ACCURATE TABLE SCOPE
+// 🧾 CLOUD-FIRST DISH APPEND PIPELINE (100% SUPABASE SYNC, NO LOCALSTORAGE)
 // ===================================================================
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
-    let activeTableId = (targetTableOverride || clientCurrentActiveTable || "T1").trim();
+    let activeTableId = targetTableOverride || clientCurrentActiveTable;
     let parsedItemQty = parseInt(customQty) || 1;
-    const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId}`;
+    const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId.trim()}`;
 
     try {
-        // 1. Database se existing live bill fetch karo
-        const { data: cloudSession } = await supabaseClient
+        // 1. Direct Supabase Cloud se table ka current data uthao
+        const { data: cloudSession, error: fetchErr } = await supabaseClient
             .from('table_sessions')
-            .select('*')
+            .select('live_bill, discount_claimed, waiter_bell, payment_status')
             .eq('table_id', compositeTableKey)
             .maybeSingle();
 
-        let targetTableBill = (cloudSession && Array.isArray(cloudSession.live_bill)) ? cloudSession.live_bill : [];
-        let existingDiscount = cloudSession ? (parseInt(cloudSession.discount_claimed) || 0) : maximumClaimedDisc;
+        if (fetchErr) {
+            console.error("🚨 Cloud Fetch Error in appendDish:", fetchErr.message);
+        }
 
-        // 2. Quantity add ya increment karo
+        let targetTableBill = (cloudSession && Array.isArray(cloudSession.live_bill)) ? cloudSession.live_bill : [];
+        let existingCloudDiscount = (cloudSession && cloudSession.discount_claimed) ? parseInt(cloudSession.discount_claimed) : 0;
+        let existingBellStatus = cloudSession ? (cloudSession.waiter_bell || false) : false;
+        let existingPayStatus = cloudSession ? (cloudSession.payment_status || 'PENDING') : 'PENDING';
+
+        // 2. Dish match karke quantity update ya naya item append karo
         let matchingRecord = targetTableBill.find(row => 
             row.name.trim().toLowerCase() === dishName.trim().toLowerCase() && 
             row.size.toUpperCase() === selectedSize.toUpperCase()
@@ -3730,43 +3731,53 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             });
         }
 
-        // 3. Supabase par session update karo
+        // 3. 🔥 PURE CLOUD UPSERT (localStorage.setItem 100% blocked)
         await syncLiveSessionToSupabase(
             activeTableId, 
             targetTableBill, 
-            existingDiscount, 
-            false, 
-            'PENDING'
+            existingCloudDiscount, 
+            existingBellStatus, 
+            existingPayStatus
         );
 
-        // 4. In-memory update
-        localLiveRunningBill = targetTableBill;
-        maximumClaimedDisc = existingDiscount;
+        // 4. In-Memory runtime variable sync (Current active screen context)
+        if (activeTableId === clientCurrentActiveTable) {
+            localLiveRunningBill = targetTableBill;
+            maximumClaimedDisc = existingCloudDiscount;
+        }
 
-        // 5. Admin floor grid update
+        // 5. Admin Grid UI state ko Green (Occupied) karo
         if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
                         let cKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                        if (t.id.trim() === activeTableId || cKey === activeTableId || activeTableId.endsWith('_' + t.id.trim())) {
-                            t.state = 1;
+                        if (t.id.trim() === activeTableId.trim() || cKey === activeTableId.trim() || activeTableId.trim().endsWith('_' + t.id.trim())) {
+                            t.state = 1; // 🟢 Order placed = Green
+                            delete t.custom_color;
                         }
                     });
                 }
             });
+            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
 
-        if (typeof generateAdminTableGrid === "function") generateAdminTableGrid();
+        if (typeof generateAdminTableGrid === "function") {
+            generateAdminTableGrid();
+        }
+
+        if (document.getElementById('adminDashboard') && document.getElementById('adminDashboard').style.display === 'block') {
+            auditSelectedTableBillInvoiceLive();
+        }
+
+        console.log(`✅ Cloud Append Success: [${dishName} x${parsedItemQty}] saved to Supabase for ${compositeTableKey}`);
 
     } catch (err) {
-        console.error("🚨 Append dish sync error:", err);
+        console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
+        showOnScreenNotification("❌ Cloud transmission broken!", true);
     }
 }
-
-
-
-
         // ===================================================================
         // 🗑️ UPGRADED: ITEM REMOVAL ENGINE (WITH KDS SYNC & AUTO-RECALCULATE)
         // ===================================================================
@@ -4413,319 +4424,303 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             };
             reader.readAsDataURL(file);
         }
-        async function initializeCustomerRealtimeTracker() {
-            // 🛡️ SAFE WEBSOCKET TEARDOWN: Async safe removal
-            if (window.customerSessionsChannel) {
-                await supabaseClient.removeChannel(window.customerSessionsChannel);
-                window.customerSessionsChannel = null;
+// ===================================================================
+// 📡 CUSTOMER REALTIME TRACKER (PURE SUPABASE SYNC, NO LOCALSTORAGE)
+// ===================================================================
+async function initializeCustomerRealtimeTracker() {
+    // 🛡️ SAFE WEBSOCKET TEARDOWN
+    if (window.customerSessionsChannel) {
+        await supabaseClient.removeChannel(window.customerSessionsChannel);
+        window.customerSessionsChannel = null;
+    }
+    if (window.customerConfigChannel) {
+        await supabaseClient.removeChannel(window.customerConfigChannel);
+        window.customerConfigChannel = null;
+    }
+
+    let activeTableId = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
+    const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId}`;
+    console.log("📡 Customer WebSocket: Listening live on Cloud Session:", compositeTableKey);
+
+    // 1. Table Session Stream (Bill & Discount changes)
+    window.customerSessionsChannel = supabaseClient
+        .channel('customer-session-stream-node')
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'table_sessions',
+            filter: `table_id=eq.${compositeTableKey}`
+        }, (payload) => {
+            if (payload.new) {
+                // 🔥 ZERO LOCALSTORAGE: Seedha memory aur UI update
+                localLiveRunningBill = Array.isArray(payload.new.live_bill) ? payload.new.live_bill : [];
+                maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
+
+                let badge = document.getElementById('liveCoinBadge');
+                if (badge) badge.innerText = maximumClaimedDisc + "%";
+
+                if (document.getElementById('invoiceBillModal') && document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
+                updateFrontEndClassificationLabels();
             }
-            if (window.customerConfigChannel) {
-                await supabaseClient.removeChannel(window.customerConfigChannel);
-                window.customerConfigChannel = null;
+        })
+        .subscribe();
+
+    // 2. Hotel Config Stream (Taxes/GST updates from Admin)
+    window.customerConfigChannel = supabaseClient
+        .channel('customer-config-stream-node')
+        .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'hotel_config',
+            filter: `id=eq.${hotelGlobalScopeID}`
+        }, (payload) => {
+            if (payload.new && payload.new.tax_data) {
+                taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+
+                if (document.getElementById('invoiceBillModal') && document.getElementById('invoiceBillModal').style.display === 'flex') {
+                    renderLiveCalculatedBill();
+                }
             }
-
-            const compositeTableKey = `${hotelGlobalScopeID}_${clientCurrentActiveTable}`;
-            console.log("📡 Customer WebSocket: Registering handshake node boundaries for:", compositeTableKey);
-
-            window.customerSessionsChannel = supabaseClient
-                .channel('customer-session-stream-node')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'table_sessions',
-                    filter: `table_id=eq.${compositeTableKey}`
-                }, (payload) => {
-                    if (payload.new) {
-                        localLiveRunningBill = payload.new.live_bill || [];
-                        maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
-
-                        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, JSON.stringify(localLiveRunningBill));
-                        localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, maximumClaimedDisc);
-
-                        if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                            renderLiveCalculatedBill();
-                        }
-                        updateFrontEndClassificationLabels();
-                    }
-                })
-                .subscribe();
-
-            window.customerConfigChannel = supabaseClient
-                .channel('customer-config-stream-node')
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'hotel_config',
-                    filter: `id=eq.${hotelGlobalScopeID}`
-                }, (payload) => {
-                    if (payload.new && payload.new.tax_data) {
-                        taxConfig = typeof payload.new.tax_data === 'string' ? JSON.parse(payload.new.tax_data) : payload.new.tax_data;
-                        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-
-                        if (document.getElementById('invoiceBillModal').style.display === 'flex') {
-                            renderLiveCalculatedBill();
-                        }
-                    }
-                })
-                .subscribe();
-        }
+        })
+        .subscribe();
+}
 
 
+// ===================================================================
+// 🎮 FIXED: PASS CLEAN URL CONTEXT TO GAME.HTML (ZERO DUPLICATE PREFIX)
+// ===================================================================
+function switchGameMode(selectedTargetMode) {
+    const currentParams = new URLSearchParams(window.location.search);
 
-        function switchGameMode(selectedTargetMode) {
-            const currentParams = new URLSearchParams(window.location.search);
+    const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
+    
+    // 🔒 Clean Table & Floor resolve (Prevents double prefixing like ayah_ayah_T1)
+    let active = (window.clientCurrentActiveTable || clientCurrentActiveTable || 'T1').trim();
+    let floorName = currentParams.get('floor') || (active.includes('_') ? active.split('_')[0] : '');
+    let pureTable = active.includes('_') ? active.split('_')[1] : active;
 
-            const hotelScope = currentParams.get('hotel') || window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
-            
-            // 🔒 Clean Table & Floor resolve (Duplicate prefix block)
-            let active = (window.clientCurrentActiveTable || clientCurrentActiveTable || 'T1').trim();
-            let floorName = currentParams.get('floor') || (active.includes('_') ? active.split('_')[0] : '');
-            let pureTable = active.includes('_') ? active.split('_')[1] : active;
+    const targetUrl = new URL('modules/game.html', window.location.href);
+    targetUrl.searchParams.set('mode', selectedTargetMode);
+    targetUrl.searchParams.set('hotel', hotelScope);
+    if (floorName) {
+        targetUrl.searchParams.set('floor', floorName);
+    }
+    targetUrl.searchParams.set('table', pureTable);
 
-            const targetUrl = new URL('game.html', window.location.href);
-            targetUrl.searchParams.set('mode', selectedTargetMode);
-            targetUrl.searchParams.set('hotel', hotelScope);
-            if (floorName) {
-                targetUrl.searchParams.set('floor', floorName);
-            }
-            targetUrl.searchParams.set('table', pureTable);
-
-            window.location.href = targetUrl.toString();
-        }
+    window.location.href = targetUrl.toString();
+}
+window.switchGameMode = switchGameMode;
 
         // ===================================================================
-        // ===================================================================
-        async function initApp() {
-            console.log("📡 RestroFlow Core: Initializing App Boot Engine via Email Identity...");
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlTable = urlParams.get('table');
-            const urlHotel = urlParams.get('hotel');
-            const urlFloor = urlParams.get('floor');
-            // 🔥 FIX 1: URL discount parameter completely removed — no tampering possible
+// 🚀 SURGICALLY FIXED APP BOOT ENGINE (HYBRID CLOUD-FIRST NO-RESET)
+// ===================================================================
+async function initApp() {
+    console.log("📡 RestroFlow Core: Initializing App Boot Engine via Cloud Scope...");
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlTable = urlParams.get('table');
+    const urlHotel = urlParams.get('hotel');
+    const urlFloor = urlParams.get('floor');
 
-            if (urlTable) {
-                let rawT = urlTable.trim().toUpperCase();
-                let rawF = urlFloor ? urlFloor.trim() : '';
+    // 🔒 1. STRICT TABLE & SECTION ISOLATION LOCK
+    if (urlTable) {
+        let rawT = urlTable.trim().toUpperCase();
+        let rawF = urlFloor ? urlFloor.trim() : '';
 
-                // Double prefix hone se roko (e.g., ayah_ayah_T1 -> T1)
-                if (rawF && rawT.toLowerCase().startsWith(rawF.toLowerCase() + '_')) {
-                    rawT = rawT.substring(rawF.length + 1).trim();
-                }
+        // Prevent double prefixing (e.g. ayah_ayah_T1 -> T1)
+        if (rawF && rawT.toLowerCase().startsWith(rawF.toLowerCase() + '_')) {
+            rawT = rawT.substring(rawF.length + 1).trim();
+        }
 
-                clientCurrentActiveTable = rawF ? `${rawF}_${rawT}` : rawT;
-                window.clientCurrentActiveTable = clientCurrentActiveTable;
-            }
+        // Standard single key: "ayah_T1"
+        clientCurrentActiveTable = rawF ? `${rawF}_${rawT}` : rawT;
+        window.clientCurrentActiveTable = clientCurrentActiveTable;
+    }
 
-            // 🔥 HOTEL IDENTITY SCOPE LOCK
-            if (urlHotel) {
-                hotelGlobalScopeID = urlHotel.trim();
-                localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-                window.hotelGlobalScopeID = hotelGlobalScopeID;
-                console.log("🎯 Hotel Scope Locked:", hotelGlobalScopeID);
-                initializeCustomerRealtimeTracker();
+    // 🔒 2. HOTEL IDENTITY SCOPE LOCK
+    if (urlHotel) {
+        hotelGlobalScopeID = urlHotel.trim();
+        localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+        window.hotelGlobalScopeID = hotelGlobalScopeID;
+        console.log("🎯 Hotel Scope Locked:", hotelGlobalScopeID);
+        initializeCustomerRealtimeTracker();
+    } else {
+        hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
+        window.hotelGlobalScopeID = hotelGlobalScopeID;
+    }
+
+    // 🔒 3. AUTH / ADMIN ROLE CHECK
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
+
+        if (currentSession && !urlHotel) {
+            let ownerEmail = currentSession.user.email;
+            hotelGlobalScopeID = ownerEmail;
+            localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
+            initializeAdminRealtimeBillingTracker();
+
+            const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
+            if (!isPlanValid) {
+                console.log("⏳ SaaS Notice: Inactive profile routed to paywall.");
             } else {
-                hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
-                window.hotelGlobalScopeID = hotelGlobalScopeID;
+                document.getElementById('customerView').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                console.log("🔐 RestroFlow: Active Owner email verified successfully!");
             }
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                const currentSession = session || (await supabaseClient.auth.getSession()).data?.session;
+        } else if (!urlHotel) {
+            hotelGlobalScopeID = "Default_HQ_Arena";
+            localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('customerView').style.display = 'block';
+        }
+    } catch (sessionErr) {
+        console.log("No session pipeline active:", sessionErr);
+    }
 
-                if (currentSession && !urlHotel) {
-                    let ownerEmail = currentSession.user.email;
-                    hotelGlobalScopeID = ownerEmail;
-                    localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
-                    initializeAdminRealtimeBillingTracker();
+    // 🔒 4. CLOUD CONFIG FETCH (Menu, Brand Name, Taxes, Floors)
+    try {
+        const { data, error } = await supabaseClient
+            .from('hotel_config')
+            .select('menu_data, hotel_name, tax_data, rules_data, floors_data')
+            .eq('id', hotelGlobalScopeID)
+            .limit(1);
 
-                    const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
-                    if (!isPlanValid) {
-                        console.log("⏳ SaaS Notice: Inactive profile routed seamlessly to payment view nodes.");
-                    } else {
-                        document.getElementById('customerView').style.display = 'none';
-                        document.getElementById('adminDashboard').style.display = 'block';
-                        if (typeof populateAdminForms === 'function') populateAdminForms();
-                        if (typeof generateAdminTableGrid === 'function') generateAdminTableGrid();
-                        console.log("🔐 RestroFlow: Active Owner email verified successfully!");
-                    }
-                } else if (!urlHotel) {
-                    hotelGlobalScopeID = "Default_HQ_Arena";
-                    localStorage.setItem('restaurantHotelClassificationID', "Default_HQ_Arena");
-                    document.getElementById('adminDashboard').style.display = 'none';
-                    document.getElementById('customerView').style.display = 'block';
+        const activeConfigRow = data?.[0];
+        if (!error && activeConfigRow) {
+            // Menu
+            let cloudMenu = activeConfigRow.menu_data;
+            if (typeof cloudMenu === 'string') {
+                try { cloudMenu = JSON.parse(cloudMenu); } catch (e) {}
+            }
+            if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
+                menuCategories = cloudMenu;
+                localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
+            }
+
+            // Floors & Tables
+            if (activeConfigRow.floors_data) {
+                let cloudFloors = activeConfigRow.floors_data;
+                if (typeof cloudFloors === 'string') {
+                    try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
                 }
-            } catch (sessionErr) {
-                console.log("No session pipeline active:", sessionErr);
+                if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
+                    floorData = cloudFloors;
+                }
             }
 
-            let localScopedMenu = localStorage.getItem('restaurantMenuCat_' + hotelGlobalScopeID);
-            if (localScopedMenu) {
-                try { menuCategories = JSON.parse(localScopedMenu); } catch (e) { menuCategories = urlHotel ? [] : fallbackMenu; }
-            } else {
-                menuCategories = urlHotel ? [] : fallbackMenu;
+            // Brand Name
+            if (activeConfigRow.hotel_name) {
+                localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
             }
 
-            try {
-                // 🔥 select ke andar 'floors_data' mangwaya gaya hai
-                const { data, error } = await supabaseClient
-                    .from('hotel_config')
-                    .select('menu_data, hotel_name, tax_data, rules_data, floors_data')
-                    .eq('id', hotelGlobalScopeID)
-                    .limit(1);
+            // Tax & Rules
+            if (activeConfigRow.tax_data) {
+                taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
+                localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
+            }
+            if (activeConfigRow.rules_data) {
+                rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
+                localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
+            }
+        }
+    } catch (err) {
+        console.error("Config fetch error:", err);
+    }
 
-                if (error) console.error("🚨 Supabase Configuration Refusal Exception:", error.message);
+    // 🔒 5. 🔥 PURE CLOUD STATE SYNC FOR ALL TABLES & CUSTOMER BILL RESTORATION
+    try {
+        const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
+            .from('table_sessions')
+            .select('*');
 
-                const activeConfigRow = data?.[0];
-                if (!error && activeConfigRow) {
-                    // 1. Menu Load
-                    let cloudMenu = activeConfigRow.menu_data;
-                    if (typeof cloudMenu === 'string') {
-                        try { cloudMenu = JSON.parse(cloudMenu); } catch (jsonErr) { console.error(jsonErr); }
-                    }
-                    if (cloudMenu && (Array.isArray(cloudMenu) || typeof cloudMenu === 'object')) {
-                        menuCategories = cloudMenu;
-                        localStorage.setItem('restaurantMenuCat_' + hotelGlobalScopeID, JSON.stringify(menuCategories));
-                    }
+        const { data: globalActiveOrders } = await supabaseClient
+            .from('active_orders')
+            .select('table_id, status')
+            .eq('hotel_id', hotelGlobalScopeID)
+            .neq('status', 'COMPLETED');
 
-                    // 2. 🔥 Cloud se Tables & Floors Load (With Clean Account Isolation)
-                    if (activeConfigRow && activeConfigRow.floors_data) {
-                        let cloudFloors = activeConfigRow.floors_data;
-                        if (typeof cloudFloors === 'string') {
-                            try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
-                        }
-                        if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
-                            // 🛡️ ROOT FIX: Cloud se load hote waqt har table ka state reset karo (state:0).
-                            // Live state sirf table_sessions se aata hai, floors_data se nahi.
-                            // Yeh purani stale green state ko load hone se rokta hai.
-                            cloudFloors.forEach(floor => {
-                                if (floor && Array.isArray(floor.tables)) {
-                                    floor.tables.forEach(tbl => {
-                                        tbl.state = 0;
-                                        tbl.waiterBell = false;
-                                    });
-                                }
-                            });
-                            floorData = cloudFloors;
+        if (!sessionFetchErr && globalCloudSessions && Array.isArray(globalCloudSessions)) {
+            floorData.forEach(floor => {
+                if (floor && floor.tables) {
+                    floor.tables.forEach(t => {
+                        let fNameClean = floor.floorName.trim();
+                        let tIdClean = t.id.trim();
+                        let compoundKey = `${fNameClean}_${tIdClean}`;
+                        let dashKey = `${fNameClean}-${tIdClean}`;
+
+                        // Match exact session row with Floor + Table
+                        let targetCloudRow = globalCloudSessions.find(s => {
+                            let sId = (s.table_id || '').trim();
+                            return sId === `${hotelGlobalScopeID}_${compoundKey}` ||
+                                   sId.toLowerCase() === `${hotelGlobalScopeID}_${compoundKey}`.toLowerCase();
+                        });
+
+                        // Check active kitchen orders
+                        let hasKitchenOrders = globalActiveOrders && globalActiveOrders.some(k => 
+                            k.table_id === compoundKey || 
+                            k.table_id === dashKey || 
+                            k.table_id === `${hotelGlobalScopeID}_${compoundKey}`
+                        );
+
+                        if (targetCloudRow) {
+                            t.waiterBell = targetCloudRow.waiter_bell || false;
+
+                            if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
+                                localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey, 'SUCCESS_PAID');
+                            } else {
+                                localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey);
+
+                                let serverBillPayload = targetCloudRow.live_bill || [];
+                                // 🟢 Active order = Green (1), Empty = Orange (0)
+                                t.state = (serverBillPayload.length > 0 || hasKitchenOrders) ? 1 : 0;
+                            }
+
+                            // 🔥 RESTORE BILL DIRECTLY FROM SUPABASE FOR THIS CUSTOMER (NO LOCALSTORAGE)
+                            let activeClean = clientCurrentActiveTable.trim().toLowerCase();
+                            if (activeClean === compoundKey.toLowerCase() || activeClean === tIdClean.toLowerCase()) {
+                                localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
+                                maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
+
+                                let badge = document.getElementById('liveCoinBadge');
+                                if (badge) badge.innerText = maximumClaimedDisc + "%";
+                            }
+                        } else if (hasKitchenOrders) {
+                            t.state = 1; // 🟢 Kitchen order present = Green
                         } else {
-                            floorData = JSON.parse(JSON.stringify(defaultFloors));
-                        }
-                    } else {
-                        // Agar is email ka database me koi custom floor data nahi hai, toh fresh default assign karo
-                        floorData = JSON.parse(JSON.stringify(defaultFloors));
-                    }
-
-                    // Email-scoped key par hi save karein
-                    window.floorData = floorData;
-                    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
-
-                    // 3. Brand Name Load
-                    if (activeConfigRow.hotel_name) {
-                        localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, activeConfigRow.hotel_name);
-                    }
-
-                    // 4. Taxes & Rules Load
-                    if (activeConfigRow.tax_data) {
-                        taxConfig = typeof activeConfigRow.tax_data === 'string' ? JSON.parse(activeConfigRow.tax_data) : activeConfigRow.tax_data;
-                        localStorage.setItem('restaurantTaxSettings', JSON.stringify(taxConfig));
-                    }
-
-                    if (activeConfigRow.rules_data) {
-                        rules = typeof activeConfigRow.rules_data === 'string' ? JSON.parse(activeConfigRow.rules_data) : activeConfigRow.rules_data;
-                        localStorage.setItem('gameRulesConfig', JSON.stringify(rules));
-                    }
-
-                    renderCustomerMenu();
-                    // ⚠️ NOTE: generateAdminTableGrid() yahan nahi call hogi — iska correct call
-                    // neeche session sync complete hone ke baad hota hai (line ~4663).
-                    // Premature call stale state render karti thi, isliye hatayi gayi.
-                    updateFrontEndClassificationLabels();
-                }
-            } catch (err) {
-                console.error(err);
-            }
-            // 🔥 🔥 THE AIRTIGHT VISUAL ENGINE FIXED HANDSHAKE: Page load hotey hi Cloud sessions se saari tables ka live state scan karo!
-            try {
-                const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
-                    .from('table_sessions')
-                    .select('*');
-
-                if (!sessionFetchErr && globalCloudSessions && Array.isArray(globalCloudSessions)) {
-                    floorData.forEach(floor => {
-                        if (floor && floor.tables) {
-                            floor.tables.forEach(t => {
-                                let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-
-                                // Cloud map lookup scanning table strings natively
-                                let targetCloudRow = globalCloudSessions.find(s => {
-                                    let sid = (s.table_id || '').trim().toLowerCase();
-                                    return sid === `${hotelGlobalScopeID}_${currentCompoundKey}`.toLowerCase() ||
-                                           sid === `${hotelGlobalScopeID}_${t.id.trim()}`.toLowerCase() ||
-                                           sid.endsWith(`_${t.id.trim().toLowerCase()}`);
-                                });
-
-                                if (targetCloudRow) {
-                                    t.waiterBell = targetCloudRow.waiter_bell || false;
-
-                                    if (targetCloudRow.payment_status === 'SUCCESS_PAID') {
-                                        localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, 'SUCCESS_PAID');
-                                    } else {
-                                        localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
-
-                                        // 🔥 MULTI-FLOOR OVERRIDE LAYER: Agar cloud bill data records empty nahi hain, toh state 1 (Green), warna 0 (Orange)
-                                        let serverBillPayload = targetCloudRow.live_bill || [];
-                                        t.state = (serverBillPayload.length > 0) ? 1 : 0;
-                                    }
-
-                                    // 🔥 RESTORE BILL AND DISCOUNT FOR CUSTOMER TABLE
-                                    let activeClean = clientCurrentActiveTable.trim();
-                                    if (activeClean === currentCompoundKey || activeClean === tblClean || activeClean.endsWith(`_${tblClean}`)) {
-                                        localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
-                                        maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
-
-                                        localStorage.setItem('bill_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, JSON.stringify(localLiveRunningBill));
-                                        localStorage.setItem('discount_map_' + hotelGlobalScopeID + '_' + currentCompoundKey, maximumClaimedDisc);
-
-                                        let badge = document.getElementById('liveCoinBadge');
-                                        if (badge) badge.innerText = maximumClaimedDisc + "%";
-                                    }
-                                } else {
-                                    // 🛡️ BUG FIX: Agar is table ka koi cloud session record nahi mila,
-                                    // matlab koi order nahi hai — state ko 0 (Orange/Empty) par reset karo.
-                                    // Yeh stale green state ko prevent karta hai jab admin login karta hai.
-                                    t.state = 0;
-                                    t.waiterBell = false;
-                                    localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKey);
-                                }
-                            });
+                            t.state = 0; // 🍊 Empty = Orange
+                            t.waiterBell = false;
                         }
                     });
-
-                    // 🔥 🔥 THE BOOT MUTATION RE-TRIGGER HOOK: Force matrix copy mapping arrays
-                    if (typeof window.floorData !== 'undefined') {
-                        window.floorData = [...floorData];
-                    }
-                    floorData = [...floorData];
-
-                    // Update local memory footprint to synchronize with visual tables grid renders
-                    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
                 }
-            } catch (cloudInitErr) {
-                console.log("Cloud matrix recovery fallback logs:", cloudInitErr);
-            }
+            });
 
-            cosmicBackgroundStars = [];
-            for (let s = 0; s < 45; s++) { cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() }); }
-
-            try {
-                renderCustomerMenu();
-                generateAdminTableGrid();
-                updateFrontEndClassificationLabels();
-                setupGlobalKeyboardBindings();
-                populateWaiterPanelDropdownList();
-                if (document.getElementById('adminDashboard').style.display === 'block') populateAdminForms();
-            } catch (renderError) {
-                console.error("🏁 Structural safe engine alert execution context handled:", renderError.message);
-            }
+            window.floorData = [...floorData];
+            localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+            localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
         }
+    } catch (cloudInitErr) {
+        console.log("Cloud matrix recovery fallback logs:", cloudInitErr);
+    }
+
+    cosmicBackgroundStars = [];
+    for (let s = 0; s < 45; s++) {
+        cosmicBackgroundStars.push({ x: Math.random() * 320, y: Math.random() * 400, size: Math.random() * 2, alpha: Math.random() });
+    }
+
+    try {
+        renderCustomerMenu();
+        generateAdminTableGrid();
+        updateFrontEndClassificationLabels();
+        setupGlobalKeyboardBindings();
+        populateWaiterPanelDropdownList();
+        if (document.getElementById('adminDashboard').style.display === 'block') populateAdminForms();
+    } catch (renderError) {
+        console.error("Structural engine alert execution handled:", renderError.message);
+    }
+}
 
         // ===================================================================
         // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
