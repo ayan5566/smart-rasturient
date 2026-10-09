@@ -3702,12 +3702,12 @@ async function renderLiveCalculatedBill() {
     }
 }
 // ===================================================================
-// 🧾 CLOUD-FIRST DISH APPEND PIPELINE (100% SUPABASE SYNC, NO LOCALSTORAGE)
+// 🧾 CLOUD-FIRST DISH APPEND PIPELINE (STRICT FLOOR + TABLE ISOLATION)
 // ===================================================================
 async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, targetTableOverride, customQty) {
-    let activeTableId = targetTableOverride || clientCurrentActiveTable;
+    let activeTableId = (targetTableOverride || clientCurrentActiveTable || "T1").trim();
     let parsedItemQty = parseInt(customQty) || 1;
-    const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId.trim()}`;
+    const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId}`;
 
     try {
         // 1. Direct Supabase Cloud se table ka current data uthao
@@ -3743,7 +3743,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             });
         }
 
-        // 3. 🔥 PURE CLOUD UPSERT (localStorage.setItem 100% blocked)
+        // 3. Supabase Cloud Sync
         await syncLiveSessionToSupabase(
             activeTableId, 
             targetTableBill, 
@@ -3752,25 +3752,38 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             existingPayStatus
         );
 
-        // 4. In-Memory runtime variable sync (Current active screen context)
+        // 4. In-Memory runtime variable sync
         if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
             maximumClaimedDisc = existingCloudDiscount;
         }
 
-        // 5. Admin Grid UI state ko Green (Occupied) karo
+        // 5. ✅ FIXED: STRICT FLOOR-SPECIFIC TABLE ISOLATION (No Cross-Floor Green Leaks)
         if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
             floorData.forEach(floor => {
-                if (floor && floor.tables) {
+                if (floor && Array.isArray(floor.tables)) {
                     floor.tables.forEach(t => {
-                        let cKey = `${floor.floorName.trim()}_${t.id.trim()}`;
-                        if (t.id.trim() === activeTableId.trim() || cKey === activeTableId.trim() || activeTableId.trim().endsWith('_' + t.id.trim())) {
-                            t.state = 1; // 🟢 Order placed = Green
+                        let currentCompoundKey = `${floor.floorName.trim()}_${t.id.trim()}`.toLowerCase();
+                        let targetCleanKey = activeTableId.trim().toLowerCase();
+
+                        // Exact single table match: floor name aur table ID dono strictly match hone chahiye
+                        let isExactMatch = false;
+                        if (targetCleanKey.includes('_')) {
+                            isExactMatch = (currentCompoundKey === targetCleanKey);
+                        } else {
+                            // Agar bina floor prefix ke aaya ho, tabhi simple table id check karein
+                            isExactMatch = (t.id.trim().toLowerCase() === targetCleanKey);
+                        }
+
+                        if (isExactMatch) {
+                            t.state = 1; // 🟢 Sirf aur sirf target section waali table Green hogi
                             delete t.custom_color;
                         }
                     });
                 }
             });
+
+            window.floorData = [...floorData];
             localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
         }
@@ -3783,7 +3796,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             auditSelectedTableBillInvoiceLive();
         }
 
-        console.log(`✅ Cloud Append Success: [${dishName} x${parsedItemQty}] saved to Supabase for ${compositeTableKey}`);
+        console.log(`✅ Cloud Append Success: [${dishName} x${parsedItemQty}] saved for ${compositeTableKey}`);
 
     } catch (err) {
         console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
