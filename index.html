@@ -2095,22 +2095,18 @@
         }
 
 // ===================================================================
-// 🔄 REALTIME LIVE DEBOUNCE ENGINE: ACCURATE TABLE STATUS SYNC
+// 🔄 CLOUD REALTIME SYNC ENGINE (MATCHES SPECIFIC FLOOR + TABLE TO DB)
 // ===================================================================
 function queueDebouncedBillRender() {
     clearTimeout(realtimeRenderTimeout);
     realtimeRenderTimeout = setTimeout(async () => {
-        console.log("⚡ Auto-Refreshing Live Billing Dashboard & Table Grid...");
-
-        // 1. Selected table viewer refresh
         const currentSelectedTable = document.getElementById('adminBillingViewerTableSelect');
         if (currentSelectedTable && currentSelectedTable.value) {
             await auditSelectedTableBillInvoiceLive();
         }
 
-        // 2. 🔥 LIVE TABLE STATUS SYNC FROM CLOUD
         try {
-            const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
+            const { data: globalCloudSessions } = await supabaseClient
                 .from('table_sessions')
                 .select('*');
 
@@ -2120,32 +2116,29 @@ function queueDebouncedBillRender() {
                 .eq('hotel_id', hotelGlobalScopeID)
                 .neq('status', 'COMPLETED');
 
-            if (!sessionFetchErr && globalCloudSessions && Array.isArray(globalCloudSessions)) {
+            if (globalCloudSessions && Array.isArray(globalCloudSessions)) {
                 floorData.forEach(floor => {
                     if (floor && floor.tables) {
                         floor.tables.forEach(t => {
                             let fNameClean = floor.floorName.trim().toLowerCase();
                             let tIdClean = t.id.trim().toLowerCase();
                             let compoundKey = `${fNameClean}_${tIdClean}`;
+                            let currentCompoundKeyExact = `${floor.floorName.trim()}_${t.id.trim()}`;
 
-                            // 🔍 Case-Insensitive Smart Match
+                            // Exact Database Row Match
                             let targetCloudRow = globalCloudSessions.find(s => {
                                 let sId = (s.table_id || '').trim().toLowerCase();
                                 return sId === `${hotelGlobalScopeID.toLowerCase()}_${compoundKey}` ||
-                                       sId.endsWith(`_${compoundKey}`) ||
-                                       sId.endsWith(`_${tIdClean}`);
+                                       sId.endsWith(`_${compoundKey}`);
                             });
 
-                            // Check active KDS kitchen orders
-                            let hasKitchenOrders = globalActiveOrders && globalActiveOrders.some(k => {
+                            // Active Kitchen Order Check
+                            let hasActiveOrder = globalActiveOrders && globalActiveOrders.some(k => {
                                 let kId = (k.table_id || '').trim().toLowerCase();
                                 return kId === compoundKey || 
                                        kId === `${fNameClean}-${tIdClean}` || 
-                                       kId.endsWith(`_${tIdClean}`) ||
-                                       kId === tIdClean;
+                                       kId === `${hotelGlobalScopeID.toLowerCase()}_${compoundKey}`;
                             });
-
-                            let currentCompoundKeyExact = `${floor.floorName.trim()}_${t.id.trim()}`;
 
                             if (targetCloudRow) {
                                 t.waiterBell = targetCloudRow.waiter_bell || false;
@@ -2154,14 +2147,17 @@ function queueDebouncedBillRender() {
                                     localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKeyExact, 'SUCCESS_PAID');
                                 } else {
                                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKeyExact);
-                                    let serverBillPayload = targetCloudRow.live_bill || [];
-                                    // 🟢 Agar live bill mein items hain ya kitchen order hai -> Green (1), warna Orange (0)
-                                    t.state = (serverBillPayload.length > 0 || hasKitchenOrders) ? 1 : 0;
+                                    let serverBill = targetCloudRow.live_bill || [];
+                                    // 🟢 Items hain ya KDS order hai -> Green (1), warna Orange (0)
+                                    t.state = (serverBill.length > 0 || hasActiveOrder) ? 1 : (t.state === 2 || t.state === 3 ? t.state : 0);
                                 }
-                            } else if (hasKitchenOrders) {
-                                t.state = 1; // 🟢 Kitchen order present = Green
+                            } else if (hasActiveOrder) {
+                                t.state = 1; // 🟢 Kitchen Order running = Green
                             } else {
-                                t.state = 0; // 🍊 Empty = Orange
+                                // Agar state manually Booked (2) ya Cleaning (3) nahi hai, toh Empty (0) karo
+                                if (t.state !== 2 && t.state !== 3) {
+                                    t.state = 0; // 🍊 Empty = Orange
+                                }
                                 t.waiterBell = false;
                                 localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKeyExact);
                             }
@@ -2174,14 +2170,13 @@ function queueDebouncedBillRender() {
                 localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
             }
         } catch (cloudErr) {
-            console.log("Error auto-syncing table grid states:", cloudErr);
+            console.log("Error syncing table grid:", cloudErr);
         }
 
-        // 3. Grid redraw with correct colors
         if (typeof generateAdminTableGrid === "function") {
             generateAdminTableGrid();
         }
-    }, 400);
+    }, 300);
 }
 
         // =================================================================
@@ -4740,35 +4735,30 @@ async function initApp() {
 }
 
         // ===================================================================
-        // 🚪 INTERACTIVE TABLE CLICK MANAGER: RESOLVES ALERTS & OPENS COLOR MENUS
-        // ===================================================================
-        function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
-            let floor = floorData[floorIdx];
-            let tbl = floor.tables[tableIdx];
+// 🔄 INTERACTIVE STATE CYCLER & BELL DISMISS (ORANGE -> GREEN -> GREY -> BROWN)
+// ===================================================================
+function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
+    let floor = floorData[floorIdx];
+    let tbl = floor.tables[tableIdx];
+    let compoundKey = `${floor.floorName.trim()}_${tbl.id.trim()}`;
 
-            // 🛡️ STEP 3 FIX: Table state is now purely driven by live_bill in Supabase.
-            // Clicking a table card ONLY clears the waiter bell alert and opens the color palette.
-            // We do NOT cycle tbl.state here — that would override the DB-driven green/orange state.
-            if (tbl.waiterBell) {
-                tbl.waiterBell = false;
-                showOnScreenNotification(`🔔 Waiter notification cleared for Floor ${floor.floorName} Table ${tbl.id}`);
-                // Sync bell-clear to cloud
-                syncLiveSessionToSupabase(`${floor.floorName}_${tbl.id}`, [], maximumClaimedDisc, false, 'PENDING');
-            }
+    // 1. Waiter Calling Bell Dismiss
+    if (tbl.waiterBell) {
+        tbl.waiterBell = false;
+        showOnScreenNotification(`🔔 Waiter notification cleared for ${floor.floorName} Table ${tbl.id}`);
+        syncLiveSessionToSupabase(compoundKey, [], 0, false, 'PENDING');
+    } else {
+        // 2. Cycle States: 0 (Empty) -> 1 (Full) -> 2 (Booked) -> 3 (Cleaning) -> 0 (Empty)
+        tbl.state = ((tbl.state || 0) + 1) % 4;
+        delete tbl.custom_color; // Manual cycle par custom color override hata do
+    }
 
-            // Always open the color palette regardless of bell state
-            currentActiveStylingTargetFloorIdx = floorIdx;
-            currentActiveStylingTargetTableIdx = tableIdx;
-
-            const colorModal = document.getElementById('tableColorPickerContextModal');
-            if (colorModal) {
-                document.getElementById('ctxSelectedTableColorHexValue').value = tbl.custom_color || "";
-                colorModal.style.display = 'flex';
-            }
-
-            saveAdminConfig();
-            generateAdminTableGrid();
-        }
+    // 3. Save & Draw
+    localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
+    localStorage.setItem('restaurantFloors_' + hotelGlobalScopeID, JSON.stringify(floorData));
+    saveAdminConfig();
+    generateAdminTableGrid();
+}
         function commitCustomTableColorPreference() {
             let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
 
@@ -4906,8 +4896,8 @@ async function initApp() {
             }
         }
 
-        // ===================================================================
-// 🎨 ADMIN TABLE GRID: ROCK-SOLID COLOR & STATUS VISUALIZER
+// ===================================================================
+// 🏢 MASTER TABLE GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid');
@@ -4915,47 +4905,60 @@ function generateAdminTableGrid() {
     container.innerHTML = '';
 
     floorData.forEach((floor, fIdx) => {
-        let floorHTML = `<div class="floor-block"><div class="floor-header"><input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();"><button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button></div><div class="table-grid-container">`;
+        let floorHTML = `
+        <div class="floor-block">
+            <div class="floor-header">
+                <input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();">
+                <button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button>
+            </div>
+            <div class="table-grid-container">`;
 
         floor.tables.forEach((tbl, tIdx) => {
-            let fNameClean = floor.floorName.trim();
-            let tIdClean = tbl.id.trim();
+            let fNameClean = (floor.floorName || '').trim();
+            let tIdClean = (tbl.id || '').trim();
             let compoundKey = `${fNameClean}_${tIdClean}`;
-            let baseThemeColor = tbl.custom_color;
+
+            let baseThemeColor = 'var(--tbl-orange)';
             let currentLabel = 'Empty';
 
-            // 1. Online Payment Check (Blue)
+            // 1. Online Paid Check (Blue Priority)
             let isPaid = (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') ||
-                         (localStorage.getItem('payment_status_map_' + compoundKey) === 'SUCCESS_PAID') ||
-                         (localStorage.getItem('payment_status_map_' + tIdClean) === 'SUCCESS_PAID');
+                         (localStorage.getItem('payment_status_map_' + compoundKey) === 'SUCCESS_PAID');
 
             if (isPaid) {
-                baseThemeColor = '#2196f3';          // 🔵 Paid Online UPI = Blue
+                baseThemeColor = '#2196f3';
                 currentLabel = '💰 Paid UPI';
             } else if (tbl.custom_color) {
-                baseThemeColor = tbl.custom_color;    // Custom Palette color agar user ne set kiya ho
-                currentLabel = tbl.state === 1 ? 'Full' : 'Custom';
+                baseThemeColor = tbl.custom_color;
+                currentLabel = tbl.state === 1 ? 'Full' : (tbl.state === 2 ? 'Booked' : (tbl.state === 3 ? 'Cleaning' : 'Empty'));
             } else if (tbl.state === 1) {
-                baseThemeColor = 'var(--tbl-green)';  // 🟢 Active Order = Green (Full)
+                baseThemeColor = 'var(--tbl-green)';  // 🟢 Green = Full
                 currentLabel = 'Full';
             } else if (tbl.state === 2) {
-                baseThemeColor = 'var(--tbl-grey)';   // ⚪ Booked = Grey
+                baseThemeColor = 'var(--tbl-grey)';   // ⚪ Grey = Booked
                 currentLabel = 'Booked';
+            } else if (tbl.state === 3) {
+                baseThemeColor = 'var(--tbl-brown)';  // 🟤 Brown = Cleaning
+                currentLabel = 'Cleaning';
             } else {
-                baseThemeColor = 'var(--tbl-orange)'; // 🍊 No Order = Orange (Empty)
+                baseThemeColor = 'var(--tbl-orange)'; // 🍊 Orange = Empty
                 currentLabel = 'Empty';
             }
 
             let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
 
-            floorHTML += `<div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${floor.floorName}', '${tbl.id}')">🖨️ QR</button>
+            floorHTML += `
+            <div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${fNameClean}', '${tIdClean}')">🖨️ QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
-                ${tbl.id}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
+                ${tIdClean}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
         });
 
-        floorHTML += `</div><button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button></div>`;
+        floorHTML += `
+            </div>
+            <button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button>
+        </div>`;
         container.innerHTML += floorHTML;
     });
 }
