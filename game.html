@@ -200,6 +200,9 @@
             border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
             background: #111;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .control-pad {
@@ -415,22 +418,9 @@
                 <button class="ctrl-btn" id="brickRightBtn">Right ▶</button>
             </div>
 
-            <div class="control-pad" id="spaceControls">
-                <button class="ctrl-btn" onmousedown="spaceMoveDir=-6" onmouseup="spaceMoveDir=0"
-                    ontouchstart="spaceMoveDir=-6" ontouchend="spaceMoveDir=0">◀ Move Left</button>
-                <button class="ctrl-btn" onmousedown="spaceMoveDir=6" onmouseup="spaceMoveDir=0"
-                    ontouchstart="spaceMoveDir=6" ontouchend="spaceMoveDir=0">Move Right ▶</button>
-            </div>
-
-            <div class="snake-grid-pad" id="snakeControls">
-                <button class="snk-btn" onclick="setSnakeDirection('UP')">▲</button>
-                <div class="snake-row">
-                    <button class="snk-btn" onclick="setSnakeDirection('LEFT')">◀</button>
-                    <button class="snk-btn" style="background:#7f8c8d; cursor:default;">•</button>
-                    <button class="snk-btn" onclick="setSnakeDirection('RIGHT')">▶</button>
-                </div>
-                <button class="snk-btn" onclick="setSnakeDirection('DOWN')">▼</button>
-            </div>
+            <!-- Touch Controls: direct screen drag & swipe replace button pads -->
+            <!-- spaceControls removed: Space Shooter is controlled directly by screen drag -->
+            <!-- snakeControls removed: Snake game is controlled directly by canvas swipe -->
 
             <button id="startBtn" class="action-btn" onclick="startSelectedGame()"
                 style="display:inline-block; margin-top:15px; background: var(--accent-gold, #f1c40f); color:black; max-width: 220px;">Launch
@@ -652,6 +642,9 @@
         // -------------------------------------------------------------------
         var spCanvasElement = null, spCtx = null;
         var spaceMoveDir = 0;
+        var spaceTouchActive = false;
+        var spaceTouchTargetX = 0;
+        var spaceCanvasTouchBound = false;
         var spaceFrameTracker = 0;
         var spaceTransitionCount = 0;
         var currentLevelState = 1;
@@ -671,6 +664,9 @@
         // 🐍 SNAKE GAME VARIABLES
         // -------------------------------------------------------------------
         var snakeCanvasElement = null, snCtx = null;
+        var snakeSwipeStartX = 0;
+        var snakeSwipeStartY = 0;
+        var snakeCanvasTouchBound = false;
         var snakeArr = [];
         var snakeFoodUnit = { x: 0, y: 0 };
         var snakeScoreCounter = 0;
@@ -760,9 +756,7 @@
                 document.getElementById('nav' + selectedTargetMode).classList.add('active');
             }
 
-            // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain
-            if (document.getElementById('spaceControls')) document.getElementById('spaceControls').style.display = (selectedTargetMode === 'SPACE') ? 'flex' : 'none';
-            if (document.getElementById('snakeControls')) document.getElementById('snakeControls').style.display = (selectedTargetMode === 'SNAKE') ? 'flex' : 'none';
+            // 🔥 EXACT INJECTION POINT: Game controls toggles manage ho rahe hain (Space/Snake buttons removed)
             if (document.getElementById('brickControls')) document.getElementById('brickControls').style.display = (selectedTargetMode === 'BRICK') ? 'flex' : 'none';
 
             // Baki games ke liye engine direct launch ready rahega
@@ -808,13 +802,7 @@ function startSelectedGame() {
         if (targetElement) targetElement.style.display = 'none';
     });
 
-    // 4. Toggle specific mobile touch controls
-    const spaceControls = document.getElementById('spaceControls');
-    if (spaceControls) spaceControls.style.display = (activeGameMode === 'SPACE') ? 'flex' : 'none';
-
-    const snakeControls = document.getElementById('snakeControls');
-    if (snakeControls) snakeControls.style.display = (activeGameMode === 'SNAKE') ? 'flex' : 'none';
-
+    // 4. Toggle specific mobile touch controls (Space & Snake handled via direct screen touch/swipe)
     const brickControls = document.getElementById('brickControls');
     if (brickControls) brickControls.style.display = (activeGameMode === 'BRICK') ? 'flex' : 'none';
 
@@ -1220,32 +1208,7 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             if (brickLeftBtn) bindTouchEvents(brickLeftBtn, -7);
             if (brickRightBtn) bindTouchEvents(brickRightBtn, 7);
 
-            // 🚀 SPACE SHOOTER CONTROLS
-            const spaceLeftBtn = document.querySelector("#spaceControls button:first-child");
-            const spaceRightBtn = document.querySelector("#spaceControls button:last-child");
-
-            if (spaceLeftBtn) {
-                spaceLeftBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = -6; }, { passive: false });
-                spaceLeftBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
-            }
-            if (spaceRightBtn) {
-                spaceRightBtn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 6; }, { passive: false });
-                spaceRightBtn.addEventListener('touchend', (e) => { if (e.cancelable) e.preventDefault(); spaceMoveDir = 0; }, { passive: false });
-            }
-
-            // 🐍 SNAKE CONTROLS
-            document.querySelectorAll('.snk-btn').forEach(btn => {
-                if (btn) {
-                    const clickAttr = btn.getAttribute('onclick');
-                    if (clickAttr && clickAttr.includes('setSnakeDirection')) {
-                        const directionToken = clickAttr.match(/'([^']+)'/)[1];
-                        btn.addEventListener('touchstart', (e) => {
-                            if (e.cancelable) e.preventDefault();
-                            setSnakeDirection(directionToken);
-                        }, { passive: false });
-                    }
-                }
-            });
+            // Space & Snake button listeners removed (handled via direct canvas touch/drag and swipe)
 
             setupGlobalKeyboardBindings();
         }
@@ -1356,6 +1319,37 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                 snCtx = sCanvas.getContext('2d');
             }
             if (!snakeCanvasElement) return;
+
+            // Bind direct swipe gestures to snakeCanvas
+            if (!snakeCanvasTouchBound && snakeCanvasElement) {
+                snakeCanvasElement.addEventListener('touchstart', function (e) {
+                    if (e.touches && e.touches.length > 0) {
+                        snakeSwipeStartX = e.touches[0].clientX;
+                        snakeSwipeStartY = e.touches[0].clientY;
+                    }
+                }, { passive: true });
+
+                snakeCanvasElement.addEventListener('touchmove', function (e) {
+                    if (e.cancelable) e.preventDefault();
+                }, { passive: false });
+
+                snakeCanvasElement.addEventListener('touchend', function (e) {
+                    if (e.changedTouches && e.changedTouches.length > 0) {
+                        const dx = e.changedTouches[0].clientX - snakeSwipeStartX;
+                        const dy = e.changedTouches[0].clientY - snakeSwipeStartY;
+                        const absX = Math.abs(dx);
+                        const absY = Math.abs(dy);
+                        if (Math.max(absX, absY) > 25) {
+                            if (absX > absY) {
+                                setSnakeDirection(dx > 0 ? 'RIGHT' : 'LEFT');
+                            } else {
+                                setSnakeDirection(dy > 0 ? 'DOWN' : 'UP');
+                            }
+                        }
+                    }
+                }, { passive: true });
+                snakeCanvasTouchBound = true;
+            }
 
             // Include px, py to store previous grid locations for 60FPS smooth interpolation
             snakeArr = [
@@ -3650,6 +3644,7 @@ function initSpaceShooterGame() {
     // Top-level global variables reset
     currentLevelState = 1;
     spaceMoveDir = 0;
+    spaceTouchActive = false;
     spaceFrameTracker = 0;
     spaceTransitionCount = 0;
 
@@ -3664,6 +3659,56 @@ function initSpaceShooterGame() {
     
     spCanvasElement = sCanvas;
     spCtx = sCanvas.getContext('2d');
+
+    // Reset touch target position to ship center
+    spaceTouchTargetX = (sCanvas.width / 2) - 20;
+
+    // Bind canvas direct touch/drag follow system
+    if (!spaceCanvasTouchBound) {
+        const getCanvasTouchX = (e) => {
+            const rect = spCanvasElement.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+            }
+            const scaleX = spCanvasElement.width / (rect.width || 1);
+            return (clientX - rect.left) * scaleX;
+        };
+
+        const onTouchStart = (e) => {
+            if (e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+            spaceTouchActive = true;
+            spaceTouchTargetX = getCanvasTouchX(e) - (pShipObj.w / 2);
+        };
+
+        const onTouchMove = (e) => {
+            if (!spaceTouchActive) return;
+            if (e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+            spaceTouchTargetX = getCanvasTouchX(e) - (pShipObj.w / 2);
+        };
+
+        const onTouchEnd = (e) => {
+            spaceTouchActive = false;
+        };
+
+        // Touch events on canvas and window
+        spCanvasElement.addEventListener('touchstart', onTouchStart, { passive: false });
+        spCanvasElement.addEventListener('touchmove', onTouchMove, { passive: false });
+        spCanvasElement.addEventListener('touchend', onTouchEnd, { passive: false });
+        spCanvasElement.addEventListener('touchcancel', onTouchEnd, { passive: false });
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
+        window.addEventListener('touchend', onTouchEnd, { passive: false });
+        window.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+        // Pointer/Mouse events for desktop & browser testing
+        spCanvasElement.addEventListener('mousedown', onTouchStart);
+        window.addEventListener('mousemove', onTouchMove);
+        window.addEventListener('mouseup', onTouchEnd);
+
+        spaceCanvasTouchBound = true;
+    }
 
     // Player ship properties reset
     pShipObj = { 
@@ -3763,7 +3808,12 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             if (sMultiTimer > 0) sMultiTimer--;
             spaceFrameTracker++;
 
-            pShipObj.x += spaceMoveDir;
+            // Smooth touch drag follow (lerp 0.18) with keyboard fallback
+            if (spaceTouchActive) {
+                pShipObj.x += (spaceTouchTargetX - pShipObj.x) * 0.18;
+            } else if (spaceMoveDir !== 0) {
+                pShipObj.x += spaceMoveDir;
+            }
             if (pShipObj.x < 0) pShipObj.x = 0;
             if (pShipObj.x > spCanvasElement.width - pShipObj.w) pShipObj.x = spCanvasElement.width - pShipObj.w;
 
@@ -3772,7 +3822,8 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             spCtx.translate(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2);
 
             // Thruster Flames
-            let flameLen = 12 + Math.random() * 8 + (Math.abs(spaceMoveDir) * 1.5);
+            let currentVel = spaceTouchActive ? Math.abs(spaceTouchTargetX - pShipObj.x) * 0.1 : Math.abs(spaceMoveDir);
+            let flameLen = 12 + Math.random() * 8 + (currentVel * 1.5);
             spCtx.fillStyle = sMultiTimer > 0 ? "#e74c3c" : "#00d2d3"; // Thruster changes color with powerup
             spCtx.shadowColor = spCtx.fillStyle;
             spCtx.shadowBlur = 15;
