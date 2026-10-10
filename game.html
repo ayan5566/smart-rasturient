@@ -371,16 +371,7 @@
 </head>
 
 <body>
-    <!-- Hidden Supabase Service Frame -->
-    <iframe src="supabase.html" style="display:none;" id="supabaseServiceFrame"></iframe>
-    <script>
-(function ensureSupabaseServiceFramePath() {
-    const iframe = document.getElementById('supabaseServiceFrame');
-    if (iframe) {
-        iframe.src = 'supabase.html';
-    }
-    })();
-    </script>
+    
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
@@ -444,6 +435,15 @@
 
     <!-- ⚙️ JAVASCRIPT LOGIC -->
     <script>
+        // ===================================================================
+        // 🌐 DIRECT SUPABASE INITIALIZATION (NO IFRAME / NO 404)
+        // ===================================================================
+        const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
+
+        if (typeof supabase !== 'undefined') {
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
 
         // ===================================================================
         // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
@@ -965,13 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const hotelId = window.hotelGlobalScopeID || localStorage.getItem('restaurantHotelClassificationID') || 'Default_HQ_Arena';
             const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
 
-            let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-            if (!client) {
-                const iframe = document.getElementById('supabaseServiceFrame');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.supabaseClient) {
-                    client = iframe.contentWindow.supabaseClient;
-                }
-            }
+            let client = window.supabaseClient;
 
             if (client) {
                 // 1. Fetch game rules from hotel_config
@@ -1026,17 +1020,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const compositeTableKey = `${scopeID}_${tableId}`;
                 const cleanDiscount = parseInt(discount) || 0;
 
-                let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-                if (!client) {
-                    const iframe = document.getElementById('supabaseServiceFrame');
-                    if (iframe && iframe.contentWindow && iframe.contentWindow.supabaseClient) {
-                        client = iframe.contentWindow.supabaseClient;
-                    }
-                }
+                let client = window.supabaseClient;
 
                 if (client) {
-                    // 🔥 FIX 2: Sirf discount_claimed update karo — live_bill, waiter_bell, payment_status
-                    // kabhi touch mat karo. Isse pehle se placed orders safe rahenge.
                     const { error } = await client
                         .from('table_sessions')
                         .update({ discount_claimed: cleanDiscount })
@@ -1045,10 +1031,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error) {
                         console.error("🚨 Discount-only update failed:", error.message);
                     } else {
-                        console.log(`✅ Discount ${cleanDiscount}% written to [${compositeTableKey}] without touching live_bill.`);
+                        console.log(`✅ Discount ${cleanDiscount}% written to [${compositeTableKey}].`);
                     }
-                } else {
-                    console.warn("⚠️ Supabase Client not yet ready for session sync.");
                 }
             } catch (err) {
                 console.error("System Error during discount sync:", err);
