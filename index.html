@@ -3261,145 +3261,191 @@ function queueDebouncedBillRender() {
             }
         }
         // ===================================================================
-        // 📊 FIXED: ADMIN BILL TRACKER WITH AUTOMATIC KITCHEN FALLBACK MATH
-        // ===================================================================
-        async function auditSelectedTableBillInvoiceLive() {
-            let selectElement = document.getElementById('adminBillingViewerTableSelect'); if (!selectElement) return;
-            let selectedAdminTable = selectElement.value; let outputBox = document.getElementById('adminLiveBillItemOutputBox');
-            let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput'); let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
-            let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox'); if (!selectedAdminTable || !outputBox) return;
+// 📊 ADMIN LIVE BILL TRACKER WITH REALTIME KDS STATUS BADGES
+// ===================================================================
+async function auditSelectedTableBillInvoiceLive() {
+    let selectElement = document.getElementById('adminBillingViewerTableSelect');
+    if (!selectElement) return;
+    let selectedAdminTable = selectElement.value;
+    let outputBox = document.getElementById('adminLiveBillItemOutputBox');
+    let grandTotalBox = document.getElementById('adminLiveBillGrandTotalOutput');
+    let paymentBanner = document.getElementById('adminPaymentLiveAuditNotificationBanner');
+    let taxBox = document.getElementById('adminLiveBillTaxBreakdownBox');
+    if (!selectedAdminTable || !outputBox) return;
 
-            try {
-                let sessionData = null;
-                let kitchenOrders = [];
-                let targetBill = [];
-                let targetDisc = 0;
-                let paymentStatusToken = 'PENDING';
+    try {
+        let sessionData = null;
+        let kitchenOrders = [];
+        let targetBill = [];
+        let targetDisc = 0;
+        let paymentStatusToken = 'PENDING';
 
-                const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\$/i.test(hotelGlobalScopeID);
 
-                if (isUUID || hotelGlobalScopeID.includes("@")) {
-                    // 1. Cloud table sessions registry mapping rows straight from cloud database
-                    const { data: sData } = await supabaseClient
-                        .from('table_sessions')
-                        .select('*')
-                        .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
-                        .maybeSingle();
-                    sessionData = sData;
+        // Clean table identifiers
+        let cleanTableId = selectedAdminTable.includes('_') ? selectedAdminTable.split('_')[1] : selectedAdminTable;
+        let floorName = selectedAdminTable.includes('_') ? selectedAdminTable.split('_')[0] : "";
+        let kdsHyphenKey = floorName ? `${floorName}-${cleanTableId}` : cleanTableId;
 
-                    // 2. Parallel kitchen preparation lines monitoring nodes lookup
-                    const { data: kOrders, error: kOrdersErr } = await supabaseClient
-                        .from('active_orders')
-                        .select(`id, status, created_at`)
-                        .eq('hotel_id', hotelGlobalScopeID)
-                        .eq('table_id', selectedAdminTable);
+        if (isUUID || hotelGlobalScopeID.includes("@")) {
+            // 1. Cloud table session fetch
+            const { data: sData } = await supabaseClient
+                .from('table_sessions')
+                .select('*')
+                .eq('table_id', `${hotelGlobalScopeID}_${selectedAdminTable}`)
+                .maybeSingle();
+            sessionData = sData;
 
-                    if (!kOrdersErr && kOrders && kOrders.length > 0) {
-                        const orderIds = kOrders.map(o => o.id);
-                        const { data: items, error: itemsErr } = await supabaseClient
-                            .from('order_items')
-                            .select('order_id, dish_name, size, qty')
-                            .in('order_id', orderIds);
+            // 2. Kitchen orders status fetch (All possible matches for this table)
+            const { data: kOrders, error: kOrdersErr } = await supabaseClient
+                .from('active_orders')
+                .select(`id, status, created_at, table_id`)
+                .eq('hotel_id', hotelGlobalScopeID)
+                .in('table_id', [selectedAdminTable, cleanTableId, kdsHyphenKey, `${hotelGlobalScopeID}_${selectedAdminTable}`]);
 
-                        if (!itemsErr && items) {
-                            kOrders.forEach(order => {
-                                order.order_items = items.filter(item => item.order_id === order.id);
-                            });
-                        }
-                        kitchenOrders = kOrders;
-                    }
+            if (!kOrdersErr && kOrders && kOrders.length > 0) {
+                const orderIds = kOrders.map(o => o.id);
+                const { data: items, error: itemsErr } = await supabaseClient
+                    .from('order_items')
+                    .select('order_id, dish_name, size, qty')
+                    .in('order_id', orderIds);
 
-                    if (sessionData) {
-                        targetBill = sessionData.live_bill || [];
-                        targetDisc = parseInt(sessionData.discount_claimed) || 0;
-                        paymentStatusToken = sessionData.payment_status || 'PENDING';
-                    }
-                } else {
-                    // Offline localStorage cached data stream matrices tracking loop fallback
-                    targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
-                    targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
-                    paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+                if (!itemsErr && items) {
+                    kOrders.forEach(order => {
+                        order.order_items = items.filter(item => item.order_id === order.id);
+                    });
                 }
+                kitchenOrders = kOrders;
+            }
 
-                // 🧠 AUTOMATIC FALLBACK: Agar cloud ledger khali hai par kitchen mein items hain, toh unhe math mein shamil karo!
-                if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
-                    kitchenOrders.forEach(order => {
-                        if (order.order_items) {
-                            order.order_items.forEach(item => {
-                                let calculatedLivePrice = 200;
-                                let sizeKey = item.size ? item.size.toLowerCase() : 'm';
+            if (sessionData) {
+                targetBill = sessionData.live_bill || [];
+                targetDisc = parseInt(sessionData.discount_claimed) || 0;
+                paymentStatusToken = sessionData.payment_status || 'PENDING';
+            }
+        } else {
+            targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedAdminTable)) || [];
+            targetDisc = parseInt(localStorage.getItem('discount_map_' + selectedAdminTable)) || 0;
+            paymentStatusToken = localStorage.getItem('payment_status_map_' + selectedAdminTable) || 'PENDING';
+        }
 
-                                menuCategories.forEach(cat => {
-                                    let matchedMenuDish = cat.items.find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
-                                    if (matchedMenuDish) {
-                                        calculatedLivePrice = parseFloat(matchedMenuDish[sizeKey]) || parseFloat(matchedMenuDish.m) || 200;
-                                    }
-                                });
+        // 🧠 Fallback agar ledger khali ho par kitchen me orders hon
+        if (targetBill.length === 0 && kitchenOrders && kitchenOrders.length > 0) {
+            kitchenOrders.forEach(order => {
+                if (order.order_items) {
+                    order.order_items.forEach(item => {
+                        let calculatedLivePrice = 200;
+                        let sizeKey = item.size ? item.size.toLowerCase() : 'm';
 
-                                let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
-                                if (existing) {
-                                    existing.qty += item.qty;
-                                } else {
-                                    targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedLivePrice, qty: item.qty });
-                                }
-                            });
+                        (menuCategories || []).forEach(cat => {
+                            let matched = (cat.items || []).find(d => d.name.trim().toLowerCase() === item.dish_name.trim().toLowerCase());
+                            if (matched) {
+                                calculatedLivePrice = parseFloat(matched[sizeKey]) || parseFloat(matched.m) || 200;
+                            }
+                        });
+
+                        let existing = targetBill.find(b => b.name === item.dish_name && b.size === item.size.toUpperCase());
+                        if (existing) {
+                            existing.qty += item.qty;
+                        } else {
+                            targetBill.push({ name: item.dish_name, size: item.size.toUpperCase(), price: calculatedLivePrice, qty: item.qty });
                         }
                     });
                 }
+            });
+        }
 
-                // Cashier dashboard color banner alerts router mapping tokens
-                if (paymentStatusToken === 'SUCCESS_PAID') {
-                    paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI"; paymentBanner.style.background = "#eef9f5"; paymentBanner.style.color = "#27ae60"; paymentBanner.style.display = "block";
-                } else {
-                    paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT"; paymentBanner.style.background = "#fff3cd"; paymentBanner.style.color = "#856404"; paymentBanner.style.display = "block";
+        // Payment Banner Update
+        if (paymentStatusToken === 'SUCCESS_PAID') {
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI";
+            paymentBanner.style.background = "#eef9f5";
+            paymentBanner.style.color = "#27ae60";
+            paymentBanner.style.display = "block";
+        } else {
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT";
+            paymentBanner.style.background = "#fff3cd";
+            paymentBanner.style.color = "#856404";
+            paymentBanner.style.display = "block";
+        }
+
+        outputBox.innerHTML = '';
+        let subtotal = 0;
+
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
+
+        // 🎯 DISH RENDERING WITH LIVE KDS STATUS BADGES
+        targetBill.forEach((row, rIdx) => {
+            let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
+            subtotal += rowCost;
+
+            // 🔍 Lookup live KDS status for this exact dish & size
+            let kdsStatus = null;
+            if (kitchenOrders && kitchenOrders.length > 0) {
+                for (let ko of kitchenOrders) {
+                    if (ko.order_items && Array.isArray(ko.order_items)) {
+                        let matchedKdsItem = ko.order_items.find(ki => 
+                            ki.dish_name.trim().toLowerCase() === row.name.trim().toLowerCase() && 
+                            ki.size.toUpperCase() === row.size.toUpperCase()
+                        );
+                        if (matchedKdsItem) {
+                            kdsStatus = ko.status;
+                            break;
+                        }
+                    }
                 }
-
-                outputBox.innerHTML = '';
-                let subtotal = 0;
-
-                outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
-                targetBill.forEach((row, rIdx) => {
-                    let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
-                    subtotal += rowCost;
-                    outputBox.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; font-size:13px;">
-                    <span>• ${row.name} [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <b>₹${rowCost}</b>
-                        <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">❌</button>
-                    </div>
-                </div>`;
-                });
-
-                if (targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) {
-                    outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`;
-                    paymentBanner.style.display = "none"; if (taxBox) taxBox.style.display = "none"; grandTotalBox.innerText = "₹0"; return;
-                }
-
-                // ===================================================================
-                // 🔌 CONNECTED TO INVERTER: ADMIN DASHBOARD DISPLAY NODE
-                // ===================================================================
-                // Database data processed natively through the single math engine pipeline
-                let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
-
-                if (taxBox) {
-                    taxBox.style.display = "block";
-                    taxBox.innerHTML = `
-                <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${invoiceMath.subtotal.toFixed(2)}</span></div>
-                <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-₹${invoiceMath.discountValue.toFixed(2)}</span></div>
-                ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}%):</span><span>₹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
-                ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}%):</span><span>₹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
-                ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}%):</span><span>₹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
-            `;
-                }
-                grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
-
-            } catch (err) {
-                // 🛡️ SYNTAX SHIELD: Properly catching backend query exceptions inside engine context
-                console.error("🚨 Admin Invoice Tracker Exception:", err);
             }
-        } // <--- ✅ PEHLA FUNCTION YAHAN KHATAM HOGA! Iske baad naya function shuru hoga.
 
+            // Status Badge HTML & Colors
+            let statusBadgeHtml = '';
+            if (kdsStatus === 'PENDING') {
+                statusBadgeHtml = `<span style="background: #fff3cd; color: #d35400; border: 1px solid #f39c12; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">⏳ Pending</span>`;
+            } else if (kdsStatus === 'PREPARING') {
+                statusBadgeHtml = `<span style="background: #e8f4fd; color: #2980b9; border: 1px solid #3498db; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">🍳 Preparing</span>`;
+            } else if (kdsStatus === 'COMPLETED') {
+                statusBadgeHtml = `<span style="background: #eafaf1; color: #27ae60; border: 1px solid #2ecc71; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">🍽️ Dispatched</span>`;
+            } else {
+                statusBadgeHtml = `<span style="background: #f1f2f6; color: #7f8c8d; border: 1px solid #ccc; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">📋 Bill Only</span>`;
+            }
+
+            outputBox.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; padding: 4px 0; border-bottom: 1px dashed #eee;">
+                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                    <span>• <b>${row.name}</b> [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
+                    ${statusBadgeHtml}
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <b>₹${rowCost}</b>
+                    <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">❌</button>
+                </div>
+            </div>`;
+        });
+
+        if (targetBill.length === 0 && (!kitchenOrders || kitchenOrders.length === 0)) {
+            outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`;
+            paymentBanner.style.display = "none";
+            if (taxBox) taxBox.style.display = "none";
+            grandTotalBox.innerText = "₹0";
+            return;
+        }
+
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
+
+        if (taxBox) {
+            taxBox.style.display = "block";
+            taxBox.innerHTML = `
+            <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${invoiceMath.subtotal.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-₹${invoiceMath.discountValue.toFixed(2)}</span></div>
+            ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}\%):</span><span>₹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
+            ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}\%):</span><span>₹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
+            ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}\%):</span><span>₹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
+            `;
+        }
+        grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
+
+    } catch (err) {
+        console.error("🚨 Admin Invoice Tracker Exception:", err);
+    }
+}
 
         // ===================================================================
         // 🗑️ ADVANCED: SINGLE DISH DELETION ENGINE (LEDGER & KDS SYNCHRONIZED)
@@ -5554,10 +5600,18 @@ function generateAdminTableGrid() {
             upgradeCustomerSideRealtimePaymentListener(currentTableCompositeKey);
         };
 
-        async function updateKdsTicketState(orderId, nextStatusState) {
-            await supabaseClient.from('active_orders').update({ status: nextStatusState }).eq('id', orderId);
-            fetchActiveKitchenOrdersQueue();
-        }
+        // ===================================================================
+// 👨‍🍳 KDS TICKET STATUS UPDATER WITH INSTANT ADMIN BILL REFRESH
+// ===================================================================
+async function updateKdsTicketState(orderId, nextStatusState) {
+    await supabaseClient.from('active_orders').update({ status: nextStatusState }).eq('id', orderId);
+    fetchActiveKitchenOrdersQueue();
+
+    // 🔥 Realtime Refresh: Admin live billing card agar open hai toh badge instantly change hoga
+    if (typeof auditSelectedTableBillInvoiceLive === "function" && document.getElementById('adminDashboard').style.display === 'block') {
+        auditSelectedTableBillInvoiceLive();
+    }
+}
 
         // ===================================================================
         // 👨‍🍳 FIXED: ANTI-FREEZE KDS COMPLETION ROUTER WITH QUANTITY SYSTEM SYNC
