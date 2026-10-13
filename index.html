@@ -1372,6 +1372,17 @@
         <div id="adminTableLayoutGrid"></div>
         <button class="action-btn" onclick="addNewFloor()"
             style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
+        <h3>🛏️ Room current status section </h3>
+        <div class="table-legend-bar">
+            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
+            <span class="legend-dot" style="background:var(--tbl-green)">Green: full </span>
+            <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
+            <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
+        </div>
+        <div id="adminRoomLayoutGrid"></div>
+        <button class="action-btn" onclick="addNewRoomFloor()"
+            style="background:#2980b9; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Room Floor / Wing</button>
+        
         <h3>📊 Live Customer Billing Tracker Map</h3>
         <div
             style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
@@ -2703,16 +2714,15 @@ function queueDebouncedBillRender() {
                 realBrandName = urlParams.get('hotel') ? "Welcome to Our Restaurant" : "RestroFlow";
             }
 
-            let tableNameElem = document.getElementById('displayTableName');
-            if (tableNameElem) {
-                // 🔥 FRONTEND DECORATOR: Parse compound names to read clean formats natively
-                if (clientCurrentActiveTable.includes('_')) {
-                    let parts = clientCurrentActiveTable.split('_');
-                    tableNameElem.innerText = `${parts[0]} - Table ${parts[1]}`;
-                } else {
-                    tableNameElem.innerText = "Table " + clientCurrentActiveTable;
-                }
-            }
+            let displayTableTitle = order.table_id;
+            if (displayTableTitle.includes('_')) {
+            let parts = displayTableTitle.split('_');
+            let unitWord = parts[1].toUpperCase().startsWith('R') ? 'Room' : 'Table';
+            displayTableTitle = `${parts[0]} - ${unitWord} ${parts[1]}`;
+     } else {
+       let unitWord = displayTableTitle.toUpperCase().startsWith('R') ? 'Room' : 'Table';
+       displayTableTitle = `${unitWord} ${displayTableTitle}`;
+}
 
             let hotelLabelElem = document.getElementById('displayHotelRegistryScopeLabel');
             if (hotelLabelElem) hotelLabelElem.innerText = realBrandName;
@@ -4052,8 +4062,10 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     if (!floor || !Array.isArray(floor.tables)) return;
                     floor.tables.forEach(t => {
                         if (!t) return;
+                        // ✅ NAYA CODE (Room ke liye 'Room R1' aur Table ke liye 'Table T1' dikhayega):
                         let compoundValue = `${floor.floorName}_${t.id}`;
-                        let displayLabel = `${floor.floorName} - Table ${t.id}`;
+                        let unitTypeLabel = (floor.isRoom || String(t.id).toUpperCase().startsWith('R')) ? 'Room' : 'Table';
+                        let displayLabel = `${floor.floorName} - ${unitTypeLabel} ${t.id}`;
                         let markupOption = `<option value="${compoundValue}">${displayLabel}</option>`;
                         tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
                     });
@@ -4899,76 +4911,111 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         // 🏢 FLOOR & TABLE MANAGEMENT FUNCTIONS
         // ===================================================================
 
+        // ===================================================================
+        // 🏢 FLOOR, TABLE & ROOM MANAGEMENT FUNCTIONS
+        // ===================================================================
+
         function addNewFloor() {
-            let fName = prompt("🏢 Enter new floor name (e.g., Rooftop, 1st Floor):");
+            let fName = prompt("🏢 Enter new Table Floor name (e.g., Ground Hall, Rooftop):");
             if (fName && fName.trim() !== "") {
-                floorData.push({ floorName: fName.trim(), tables: [] });
+                floorData.push({ floorName: fName.trim(), isRoom: false, tables: [{ id: "T1", state: 0, waiterBell: false }] });
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("✅ New floor added successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification("✅ New Table floor added successfully!");
+            }
+        }
+
+        function addNewRoomFloor() {
+            let fName = prompt("🛏️ Enter new Room Floor / Wing name (e.g., 1st Floor Rooms, VIP Wing):");
+            if (fName && fName.trim() !== "") {
+                floorData.push({ floorName: fName.trim(), isRoom: true, tables: [{ id: "R1", state: 0, waiterBell: false }] });
+                saveAdminConfig();
+                generateAdminTableGrid();
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification("✅ New Room floor added successfully!");
             }
         }
 
         function removeFloor(fIdx) {
-            if (confirm(`⚠️ Are you sure you want to delete the entire '${floorData[fIdx].floorName}' floor and all its tables?`)) {
+            let targetFloor = floorData[fIdx];
+            let sectionType = targetFloor.isRoom ? "Room Floor" : "Table Floor";
+            if (confirm(`⚠️ Are you sure you want to delete the entire '${targetFloor.floorName}' ${sectionType} and all its units?`)) {
                 floorData.splice(fIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("🗑️ Floor removed successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification(`🗑️ ${sectionType} removed successfully!`);
             }
         }
 
         function addTableToFloor(fIdx) {
-            // 1. Us floor ke saare tables mein se sabse bada 'T' number dhundho
+            let isRoomFloor = !!floorData[fIdx].isRoom;
+            let prefix = isRoomFloor ? 'R' : 'T';
+            let unitName = isRoomFloor ? 'Room' : 'Table';
+
+            // 1. Us floor ke saare units mein se sabse bada number dhundho (T1, T2 ya R1, R2)
             let maxNum = 0;
+            let regex = new RegExp(`^${prefix}(\\d+)$`, 'i');
             floorData[fIdx].tables.forEach(t => {
-                // Check karega ki kya naam T1, T2 format mein hai
-                let match = t.id.match(/^T(\d+)$/i);
+                let match = t.id.match(regex);
                 if (match) {
                     let num = parseInt(match[1]);
                     if (num > maxNum) maxNum = num;
                 }
             });
 
-            // 2. Naya table ID automatically generate karo (jaise T4, T5)
-            let newTableId = `T${maxNum + 1}`;
+            // 2. Naya ID automatically generate karo (T4 ya R4)
+            let newUnitId = `${prefix}${maxNum + 1}`;
 
-            // 3. Table ko array mein add karo
+            // 3. Array mein add karo
             floorData[fIdx].tables.push({
-                id: newTableId,
+                id: newUnitId,
                 state: 0,
                 waiterBell: false
             });
 
-            // 4. Save karke grid refresh karo
+            // 4. Save karke grid aur dropdowns refresh karo
             saveAdminConfig();
             generateAdminTableGrid();
-            showOnScreenNotification(`✅ Table ${newTableId} added successfully!`);
+            populateWaiterPanelDropdownList();
+            showOnScreenNotification(`✅ ${unitName} ${newUnitId} added successfully!`);
         }
+
         function removeTable(fIdx, tIdx) {
-            let targetTable = floorData[fIdx].tables[tIdx];
-            if (confirm(`⚠️ Are you sure you want to delete Table ${targetTable.id}?`)) {
+            let isRoomFloor = !!floorData[fIdx].isRoom;
+            let unitName = isRoomFloor ? 'Room' : 'Table';
+            let targetUnit = floorData[fIdx].tables[tIdx];
+
+            if (confirm(`⚠️ Are you sure you want to delete ${unitName} ${targetUnit.id}?`)) {
                 floorData[fIdx].tables.splice(tIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("🗑️ Table removed successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification(`🗑️ ${unitName} removed successfully!`);
             }
         }
 
 // ===================================================================
-// 🏢 MASTER TABLE GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
+// 🏢 MASTER TABLE & ROOM GRID RENDERER (DUAL SECTION ARCHITECTURE)
 // ===================================================================
 function generateAdminTableGrid() {
-    const container = document.getElementById('adminTableLayoutGrid');
-    if (!container) return;
-    container.innerHTML = '';
+    const tableContainer = document.getElementById('adminTableLayoutGrid');
+    const roomContainer = document.getElementById('adminRoomLayoutGrid');
+    if (tableContainer) tableContainer.innerHTML = '';
+    if (roomContainer) roomContainer.innerHTML = '';
 
     floorData.forEach((floor, fIdx) => {
+        let isRoomFloor = !!floor.isRoom;
+        let unitLabel = isRoomFloor ? 'Room' : 'Table';
+        let deleteBtnLabel = isRoomFloor ? 'Delete Room Floor' : 'Delete Floor';
+        let addBtnLabel = isRoomFloor ? '+ Add Room' : '+ Add Table';
+
         let floorHTML = `
         <div class="floor-block">
             <div class="floor-header">
                 <input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();">
-                <button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button>
+                <button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">${deleteBtnLabel}</button>
             </div>
             <div class="table-grid-container">`;
 
@@ -5016,9 +5063,15 @@ function generateAdminTableGrid() {
 
         floorHTML += `
             </div>
-            <button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button>
+            <button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">${addBtnLabel}</button>
         </div>`;
-        container.innerHTML += floorHTML;
+
+        // Agar Room Floor hai toh Room section mein daalo, warna Table section mein
+        if (isRoomFloor && roomContainer) {
+            roomContainer.innerHTML += floorHTML;
+        } else if (tableContainer) {
+            tableContainer.innerHTML += floorHTML;
+        }
     });
 }
 
