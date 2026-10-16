@@ -256,46 +256,50 @@
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            background: #0f111a !important;
+            background: #0b0d14 !important;
             z-index: 99999 !important;
             margin: 0 !important;
-            padding: 40px 12px 12px 12px !important;
+            padding: 10px 10px 8px 10px !important;
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            gap: 25px !important;
-            overflow: hidden !important;
+            gap: 8px !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
 
         .game-box.fullscreen-arcade-active .game-nav {
             display: flex !important;
             width: 100% !important;
-            max-width: 440px !important;
+            max-width: 580px !important;
             gap: 4px !important;
-            padding: 4px !important;
+            padding: 3px !important;
             background: rgba(255, 255, 255, 0.06) !important;
             border-radius: 12px !important;
+            margin-bottom: 2px !important;
         }
 
         .game-box.fullscreen-arcade-active .game-nav button {
             font-size: 11px !important;
-            padding: 8px 2px !important;
+            padding: 7px 2px !important;
             border-radius: 8px !important;
             white-space: nowrap !important;
+            min-width: 0 !important;
+            flex: 1 !important;
         }
 
         .game-box.fullscreen-arcade-active canvas {
             display: none;
-            width: 100% !important;
-            max-width: 480px !important;
+            width: auto !important;
+            max-width: min(96vw, 560px) !important;
             height: auto !important;
-            max-height: 52vh !important;
+            max-height: 76vh !important;
             border-radius: 16px !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
-            margin: auto !important;
-            object-fit: fill !important;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 255, 255, 0.2) !important;
+            margin: 4px auto !important;
+            object-fit: contain !important;
         }
 
         .game-box.fullscreen-arcade-active .control-pad,
@@ -371,7 +375,7 @@
 </head>
 
 <body>
-    
+
 
     <!-- Floating Coin Badge (Extracted from main file.html) -->
     <div class="discount-badge" id="liveCoinBadge"
@@ -382,12 +386,13 @@
     <div class="game-box fullscreen-arcade-active" id="arcadeGameWrapper">
         <h4 style="margin-top: 0; color: white; font-weight: 800;">🎮 Play Games & Earn Discounts!</h4>
         <div class="game-nav"
-            style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 440px;">
+            style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 480px;">
             <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
             <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><span style="font-size: 20px;">🐦</span> Flappy</button>
             <button id="navSPACE" onclick="switchGameMode('SPACE')"><span style="font-size: 20px;">🚀</span> Space</button>
             <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><span style="font-size: 20px;">🐍</span> Snake</button>
             <button id="navTOWER" onclick="switchGameMode('TOWER')"><span style="font-size: 20px;">🏢</span> Tower</button>
+            <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')"><span style="font-size: 20px;">🏒</span> Hockey</button>
         </div>
         <div id="gameWindow" style="text-align: center; width: 100%;">
             <div id="gameScreenStatusMsg" style="color: white; font-weight: bold; margin-bottom: 10px;">Select a game
@@ -402,6 +407,7 @@
             <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
             <canvas id="brickCanvas" width="320" height="380" style="background:#0a0b10;"></canvas>
             <canvas id="towerCanvas" width="320" height="400" style="background:#1a252f;"></canvas>
+            <canvas id="hockeyCanvas" width="480" height="680" style="background:#080a14;"></canvas>
 
             <!-- Touch Controls -->
             <div class="control-pad" id="brickControls">
@@ -435,15 +441,6 @@
 
     <!-- ⚙️ JAVASCRIPT LOGIC -->
     <script>
-        // ===================================================================
-        // 🌐 DIRECT SUPABASE INITIALIZATION (NO IFRAME / NO 404)
-        // ===================================================================
-        const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
-
-        if (typeof supabase !== 'undefined') {
-            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
 
         // ===================================================================
         // 🛡️ SECURITY MODULE V9: UNLOCKED TOUCH CLICKS + ZERO FREEZE LAG
@@ -475,6 +472,13 @@
         // =================================================================
         // ⚙️ GLOBAL RULES & ARRAYS STATE (Absolute Zero-Conflict Version)
         // =================================================================
+        // 🌐 SUPABASE CLIENT TOP-LEVEL INITIALIZATION
+        const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
+        if (typeof supabase !== 'undefined' && !window.supabaseClient) {
+            window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
         window.adminMasterRealtimeChannel = window.adminMasterRealtimeChannel || null;
 
         // 🛡️ FIX 1: Bina kisi var/let/const ke seedhe window par register karo
@@ -495,7 +499,7 @@
         if (typeof window.rules === 'undefined') {
             window.rules = JSON.parse(localStorage.getItem('gameRulesConfig')) || {
                 flappyTar: 5, flappyDisc: 10, spaceTar: 3, spaceDisc: 15, snakeTar: 10, snakeDisc: 12, brickTar: 3, brickDisc: 8,
-                towerTar: 3, towerDisc: 15 // Seeded baseline default rules
+                towerTar: 3, towerDisc: 15, hockeyTar: 5, hockeyDisc: 15 // Seeded baseline default rules
             };
         }
         rules = window.rules;
@@ -748,6 +752,7 @@
             if (document.getElementById('snakeCanvas')) document.getElementById('snakeCanvas').style.display = 'none';
             if (document.getElementById('brickCanvas')) document.getElementById('brickCanvas').style.display = 'none';
             if (document.getElementById('towerCanvas')) document.getElementById('towerCanvas').style.display = 'none';
+            if (document.getElementById('hockeyCanvas')) document.getElementById('hockeyCanvas').style.display = 'none';
             if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = 'none';
 
             // Tabs ki active class update karo
@@ -796,7 +801,7 @@ function startSelectedGame() {
     if (statusMsg) statusMsg.style.display = "none";
 
     // 3. Reset and hide all game canvases to eliminate overlap
-    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas', 'hockeyCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
         if (targetElement) targetElement.style.display = 'none';
@@ -814,9 +819,9 @@ function startSelectedGame() {
         if (exitBtn) exitBtn.style.display = "block";
     }
 
-    // 6. Dynamic liquid dimensions calculation
-    const fluidBreadth = Math.min(window.innerWidth * 0.95, 500);
-    const fluidLength = Math.min(window.innerHeight * 0.50, 450);
+    // 6. Dynamic liquid dimensions calculation (Spacious, responsive court sizes)
+    const fluidBreadth = Math.min(window.innerWidth * 0.95, 540);
+    const fluidLength = Math.min(window.innerHeight * 0.68, 580);
 
     // 7. Context initialization and game-specific launch
     if (activeGameMode === 'FLAPPY') {
@@ -880,6 +885,23 @@ function startSelectedGame() {
             initTowerBloxxGame();
         }
     }
+    else if (activeGameMode === 'HOCKEY') {
+        hockeyCanvasElement = document.getElementById('hockeyCanvas');
+        if (hockeyCanvasElement) {
+            // Generous, large playing field with authentic rink aspect ratio
+            let hkW = Math.min(window.innerWidth * 0.95, 520);
+            let hkH = Math.min(window.innerHeight * 0.74, 720);
+            if (hkW < 320) hkW = 320;
+            if (hkH < 520) hkH = 520;
+            hockeyCanvasElement.width = Math.floor(hkW);
+            hockeyCanvasElement.height = Math.floor(hkH);
+            hockeyCanvasElement.style.display = 'block';
+            hkCtx = hockeyCanvasElement.getContext('2d');
+        }
+        if (typeof initAirHockeyGame === 'function') {
+            initAirHockeyGame();
+        }
+    }
 }
 
 // ===================================================================
@@ -912,7 +934,7 @@ function exitGameEngine() {
     if (statusMsg) statusMsg.style.display = "none";
 
     // 3. Hide all canvas layers
-    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas'];
+    const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas', 'hockeyCanvas'];
     allGameCanvasIds.forEach(id => {
         const targetElement = document.getElementById(id);
         if (targetElement) targetElement.style.display = 'none';
@@ -966,6 +988,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableId = window.clientCurrentActiveTable || localStorage.getItem('restroflow_active_table') || 'T1';
 
             let client = window.supabaseClient;
+            if (!client && typeof supabase !== 'undefined') {
+                client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                window.supabaseClient = client;
+            }
 
             if (client) {
                 // 1. Fetch game rules from hotel_config
@@ -1020,9 +1046,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const compositeTableKey = `${scopeID}_${tableId}`;
                 const cleanDiscount = parseInt(discount) || 0;
 
-                let client = window.supabaseClient;
+                let client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
 
                 if (client) {
+                    // 🔥 FIX 2: Sirf discount_claimed update karo — live_bill, waiter_bell, payment_status
+                    // kabhi touch mat karo. Isse pehle se placed orders safe rahenge.
                     const { error } = await client
                         .from('table_sessions')
                         .update({ discount_claimed: cleanDiscount })
@@ -1031,8 +1059,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (error) {
                         console.error("🚨 Discount-only update failed:", error.message);
                     } else {
-                        console.log(`✅ Discount ${cleanDiscount}% written to [${compositeTableKey}].`);
+                        console.log(`✅ Discount ${cleanDiscount}% written to [${compositeTableKey}] without touching live_bill.`);
                     }
+                } else {
+                    console.warn("⚠️ Supabase Client not yet ready for session sync.");
                 }
             } catch (err) {
                 console.error("System Error during discount sync:", err);
@@ -1095,15 +1125,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check karein agar row already exist karti hai toh update karein
             const { data: existingSession } = await client
                 .from('table_sessions')
-                .select('table_id')
+                .select('table_id, discount_claimed')
                 .eq('table_id', compositeTableKey)
                 .maybeSingle();
 
             if (existingSession) {
+                const currentDisc = parseInt(existingSession.discount_claimed) || 0;
+                const bestDisc = Math.max(currentDisc, earnedPercent);
                 await client
                     .from('table_sessions')
-                    .update({ discount_claimed: earnedPercent })
+                    .update({ discount_claimed: bestDisc })
                     .eq('table_id', compositeTableKey);
+                console.log(`✅ Supabase Updated: ${compositeTableKey} -> discount: ${bestDisc}% (best of ${currentDisc}% and ${earnedPercent}%)`);
             } else {
                 await client
                     .from('table_sessions')
@@ -1114,8 +1147,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         waiter_bell: false,
                         payment_status: 'PENDING'
                     });
+                console.log(`✅ Supabase Created: ${compositeTableKey} -> discount: ${earnedPercent}%`);
             }
-            console.log(`✅ Supabase Updated: ${compositeTableKey} -> discount: ${earnedPercent}%`);
         }
     } catch (err) {
         console.error("🚨 Supabase discount sync error:", err);
@@ -1133,6 +1166,7 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                 <li style="color: black;">🚀 Space Shooter: Level ${r.spaceTar || 3} Clear = ${r.spaceDisc || 15}% OFF</li>
                 <li style="color: black;">🐍 Snake: Score ${r.snakeTar || 10} Apple(s) = ${r.snakeDisc || 12}% OFF</li>
                 <li style="color: black;">🏢 Tower Bloxx: Stack ${r.towerTar || 3} Floor(s) = ${r.towerDisc || 15}% OFF</li>
+                <li style="color: black;">🏒 Cyber Air Hockey: Score ${r.hockeyTar || 5} Goal(s) vs Chef AI = ${r.hockeyDisc || 15}% OFF</li>
             `;
         }
         window.refreshDiscountRulesUI = refreshDiscountRulesUI;
@@ -4184,7 +4218,973 @@ function returnToCustomerMenu() {
     window.location.href = returnUrl.toString();
 }
 
-window.returnToCustomerMenu = returnToCustomerMenu;
+        // ===================================================================
+        // 🏒 CYBER AIR HOCKEY: PLAYER VS CHEF AI ENGINE & STATE
+        // ===================================================================
+
+        var hockeyCanvasElement = null;
+        var hkCtx = null;
+        var isHockeyInputBound = false;
+
+        // Table & Game Elements
+        var hkTable = { width: 480, height: 680, goalWidth: 160, goalDepth: 18, cornerBevel: 42 };
+        var hkPuck = { x: 240, y: 340, vx: 0, vy: 0, radius: 14, maxSpeed: 19, friction: 0.993, trail: [] };
+        var hkPlayer = { x: 240, y: 550, vx: 0, vy: 0, targetX: 240, targetY: 550, radius: 26, isDragging: false };
+        var hkChefAI = {
+            x: 240, y: 120, vx: 0, vy: 0, targetX: 240, targetY: 120, radius: 26,
+            baseSpeed: 5.2, currentSpeed: 5.2, mood: 'ready', dialogue: 'Chef AI: Ready to face the Kitchen Master? 🍳',
+            dialogueTimer: 180
+        };
+
+        var hkScore = { player: 0, chef: 0 };
+        var hkGameState = 'PLAYING'; // 'PLAYING', 'GOAL_PAUSE'
+        var hkPauseTimer = 0;
+        var hkCameraShake = 0;
+        var hkParticles = [];
+        var hkBannerText = '';
+        var hkBannerColor = '#00ffff';
+        var hkAudioCtx = null;
+        var hkChefAuraAngle = 0;
+        var hkPuckStuckCounter = 0;
+
+        function getHkAudioCtx() {
+            try {
+                if (!hkAudioCtx) {
+                    const AudioClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioClass) hkAudioCtx = new AudioClass();
+                }
+                if (hkAudioCtx && hkAudioCtx.state === 'suspended') {
+                    hkAudioCtx.resume().catch(() => {});
+                }
+            } catch (e) {}
+            return hkAudioCtx;
+        }
+
+        function playHkSound(type, param) {
+            try {
+                const ctx = getHkAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'PUCK_HIT') {
+                    const speed = Math.min(param || 8, 20);
+                    const freq = 240 + speed * 18;
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    osc.frequency.exponentialRampToValueAtTime(70, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'WALL_BOUNCE') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.05);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'GOAL_PLAYER') {
+                    [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sawtooth';
+                        o.frequency.setValueAtTime(f, now + idx * 0.07);
+                        g.gain.setValueAtTime(0.18, now + idx * 0.07);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.22);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.07);
+                        o.stop(now + idx * 0.07 + 0.22);
+                    });
+                } else if (type === 'GOAL_CHEF') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(170, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.28);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'MILESTONE') {
+                    const notes = [440, 554.37, 659.25, 880, 1108.73];
+                    notes.forEach((f, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'square';
+                        o.frequency.setValueAtTime(f, now + idx * 0.08);
+                        g.gain.setValueAtTime(0.16, now + idx * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.28);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.08);
+                        o.stop(now + idx * 0.08 + 0.28);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function createHkSparks(x, y, color, count, speedMult) {
+            speedMult = speedMult || 1;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (Math.random() * 4 + 1.5) * speedMult;
+                hkParticles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    life: 1.0, decay: Math.random() * 0.05 + 0.025,
+                    color: color, size: Math.random() * 3.5 + 1.5
+                });
+            }
+        }
+
+        function createHkConfetti(x, y) {
+            const colors = ['#00ffff', '#ff007f', '#39ff14', '#f1c40f', '#ff7675', '#74b9ff'];
+            for (let i = 0; i < 70; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 7 + 2;
+                hkParticles.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    life: 1.0, decay: Math.random() * 0.02 + 0.012,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        function resetHkPuck(serveTowardsPlayer) {
+            hkPuck.x = hkTable.width / 2;
+            hkPuck.y = hkTable.height / 2;
+            const dirY = serveTowardsPlayer ? 2.5 : -2.5;
+            const dirX = (Math.random() - 0.5) * 2.2;
+            hkPuck.vx = dirX;
+            hkPuck.vy = dirY;
+            hkPuck.trail = [];
+        }
+
+        // ===================================================================
+        // 🏒 AIR HOCKEY ZERO-BUTTON FLUID CONTROLS & INITIALIZATION
+        // ===================================================================
+        function initAirHockeyGame() {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance);
+                if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(loopTimerInstance);
+                loopTimerInstance = null;
+            }
+
+            const canvas = document.getElementById('hockeyCanvas');
+            if (!canvas) return;
+            hockeyCanvasElement = canvas;
+            hkCtx = canvas.getContext('2d');
+
+            hkTable.width = canvas.width;
+            hkTable.height = canvas.height;
+            hkTable.goalWidth = Math.max(130, Math.floor(hkTable.width * 0.40));
+            hkTable.goalDepth = 18;
+            hkTable.cornerBevel = Math.max(38, Math.floor(hkTable.width * 0.11));
+
+            hkPlayer.radius = Math.max(22, Math.min(28, Math.floor(hkTable.width * 0.065)));
+            hkChefAI.radius = hkPlayer.radius;
+            hkPuck.radius = Math.max(12, Math.min(16, Math.floor(hkTable.width * 0.036)));
+            hkPuck.maxSpeed = 19;
+            hkPuck.friction = 0.993;
+
+            hkPlayer.x = hkTable.width / 2;
+            hkPlayer.y = hkTable.height * 0.82;
+            hkPlayer.targetX = hkPlayer.x;
+            hkPlayer.targetY = hkPlayer.y;
+            hkPlayer.vx = 0; hkPlayer.vy = 0;
+            hkPlayer.isDragging = false;
+
+            hkChefAI.x = hkTable.width / 2;
+            hkChefAI.y = hkTable.height * 0.16;
+            hkChefAI.targetX = hkChefAI.x;
+            hkChefAI.targetY = hkChefAI.y;
+            hkChefAI.vx = 0; hkChefAI.vy = 0;
+            hkChefAI.baseSpeed = 5.2;
+            hkChefAI.currentSpeed = 5.2;
+            hkChefAI.dialogue = 'Chef AI: Ready to face the Kitchen Master? 🍳';
+            hkChefAI.dialogueTimer = 180;
+
+            hkScore.player = 0;
+            hkScore.chef = 0;
+            hkGameState = 'PLAYING';
+            hkPauseTimer = 0;
+            hkCameraShake = 0;
+            hkParticles = [];
+            hkBannerText = '';
+            hkPuckStuckCounter = 0;
+
+            resetHkPuck(true);
+
+            // Bind Zero-Button Direct Touch / Pointer Controls
+            if (!isHockeyInputBound) {
+                const updatePointerPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : hkPlayer.x);
+                    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : hkPlayer.y);
+                    const canvasX = (clientX - rect.left) * scaleX;
+                    const canvasY = (clientY - rect.top) * scaleY;
+
+                    const minX = hkPlayer.radius + 10;
+                    const maxX = hkTable.width - hkPlayer.radius - 10;
+                    const minY = hkTable.height / 2 + hkPlayer.radius + 6;
+                    const maxY = hkTable.height - hkPlayer.radius - 8;
+
+                    hkPlayer.targetX = Math.max(minX, Math.min(maxX, canvasX));
+                    hkPlayer.targetY = Math.max(minY, Math.min(maxY, canvasY));
+                };
+
+                const handleStart = (e) => {
+                    if (activeGameMode !== 'HOCKEY') return;
+                    if (e.cancelable) e.preventDefault();
+                    getHkAudioCtx();
+                    hkPlayer.isDragging = true;
+                    updatePointerPos(e);
+                };
+
+                const handleMove = (e) => {
+                    if (activeGameMode !== 'HOCKEY') return;
+                    if (e.cancelable) e.preventDefault();
+                    if (hkPlayer.isDragging || e.pointerType === 'mouse' || e.type === 'mousemove') {
+                        updatePointerPos(e);
+                    }
+                };
+
+                const handleEnd = (e) => {
+                    if (activeGameMode !== 'HOCKEY') return;
+                    hkPlayer.isDragging = false;
+                    hkPlayer.vx = 0;
+                    hkPlayer.vy = 0;
+                };
+
+                canvas.addEventListener('pointerdown', handleStart, { passive: false });
+                window.addEventListener('pointermove', handleMove, { passive: false });
+                window.addEventListener('pointerup', handleEnd, { passive: false });
+                window.addEventListener('pointercancel', handleEnd, { passive: false });
+
+                canvas.addEventListener('touchstart', handleStart, { passive: false });
+                canvas.addEventListener('touchmove', handleMove, { passive: false });
+                canvas.addEventListener('touchend', handleEnd, { passive: false });
+
+                isHockeyInputBound = true;
+            }
+
+            loopTimerInstance = setInterval(frameUpdateAirHockey, 16);
+        }
+
+        // ===================================================================
+        // 🏒 AIR HOCKEY MAIN LOOP: PHYSICS, CHEF AI & RENDERING
+        // ===================================================================
+        function frameUpdateAirHockey() {
+            if (!hockeyCanvasElement || !hkCtx || activeGameMode !== 'HOCKEY') return;
+
+            hkChefAuraAngle += 0.05;
+            if (hkChefAI.dialogueTimer > 0) hkChefAI.dialogueTimer--;
+
+            // 1. Handle Pause / Celebration
+            if (hkGameState === 'GOAL_PAUSE') {
+                hkPauseTimer--;
+                if (hkPauseTimer <= 0) {
+                    hkGameState = 'PLAYING';
+                    hkBannerText = '';
+                }
+            }
+
+            // 2. Player Striker Physics Update
+            if (hkGameState === 'PLAYING') {
+                const targetX = hkPlayer.targetX;
+                const targetY = hkPlayer.targetY;
+                hkPlayer.vx = (targetX - hkPlayer.x);
+                hkPlayer.vy = (targetY - hkPlayer.y);
+                hkPlayer.x = targetX;
+                hkPlayer.y = targetY;
+            }
+
+            // 3. Smart Chef AI Logic (Corner-Aware & Dynamic Scaling)
+            if (hkGameState === 'PLAYING') {
+                const speedBoost = Math.min(hkScore.player * 1.0, 4.5);
+                hkChefAI.currentSpeed = hkChefAI.baseSpeed + speedBoost;
+
+                const goalCenter = hkTable.width / 2;
+                const puckInChefZone = hkPuck.y < (hkTable.height * 0.5);
+                let aiTargetX = goalCenter;
+                let aiTargetY = hkTable.height * 0.16;
+
+                const minChefX = hkChefAI.radius + 12;
+                const maxChefX = hkTable.width - hkChefAI.radius - 12;
+                const minChefY = hkChefAI.radius + 12;
+                const maxChefY = (hkTable.height * 0.48) - hkChefAI.radius;
+
+                // Check if puck is in AI's deep corner or back zone (behind AI or near top wall)
+                const isDeepInCorner = hkPuck.y < minChefY + 35 && (hkPuck.x < hkTable.width * 0.35 || hkPuck.x > hkTable.width * 0.65);
+                const isBehindAi = hkPuck.y < hkChefAI.y + 10;
+
+                if (puckInChefZone) {
+                    if (isDeepInCorner || isBehindAi) {
+                        // FIX: When puck is in corner or behind AI, DO NOT charge into the corner/wall!
+                        // Back off slightly toward center and position laterally to sweep or let corner deflectors reflect the puck
+                        if (hkPuck.x < goalCenter) {
+                            aiTargetX = Math.max(goalCenter - 25, hkPuck.x + hkChefAI.radius + 35);
+                            aiTargetY = Math.max(minChefY + 30, hkPuck.y + 25);
+                        } else {
+                            aiTargetX = Math.min(goalCenter + 25, hkPuck.x - hkChefAI.radius - 35);
+                            aiTargetY = Math.max(minChefY + 30, hkPuck.y + 25);
+                        }
+                    } else {
+                        // Offensive / Defensive strike - keep AI slightly behind the puck to drive it forward
+                        const lateralOffset = (hkPuck.x - goalCenter) * 0.12;
+                        aiTargetX = hkPuck.x - lateralOffset;
+                        aiTargetY = Math.max(minChefY, hkPuck.y - hkChefAI.radius - 14);
+                    }
+                } else {
+                    // Puck in Player's zone: AI guards its goal
+                    const predictedX = hkPuck.x + (hkPuck.vx * 8);
+                    const goalMouthLeft = goalCenter - (hkTable.goalWidth / 2) + 20;
+                    const goalMouthRight = goalCenter + (hkTable.goalWidth / 2) - 20;
+                    aiTargetX = Math.max(goalMouthLeft, Math.min(goalMouthRight, predictedX));
+                    aiTargetY = hkTable.height * 0.14 + Math.sin(hkChefAuraAngle * 1.5) * 8;
+                }
+
+                // AI Movement towards target
+                const dx = aiTargetX - hkChefAI.x;
+                const dy = aiTargetY - hkChefAI.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 1.5) {
+                    const step = Math.min(dist, hkChefAI.currentSpeed);
+                    hkChefAI.vx = (dx / dist) * step;
+                    hkChefAI.vy = (dy / dist) * step;
+                    hkChefAI.x += hkChefAI.vx;
+                    hkChefAI.y += hkChefAI.vy;
+                } else {
+                    hkChefAI.vx = 0;
+                    hkChefAI.vy = 0;
+                }
+
+                // Clamp AI inside its half
+                hkChefAI.x = Math.max(minChefX, Math.min(maxChefX, hkChefAI.x));
+                hkChefAI.y = Math.max(minChefY, Math.min(maxChefY, hkChefAI.y));
+            }
+
+            // 4. Puck Physics (2 sub-steps for smooth collision and anti-tunneling)
+            if (hkGameState === 'PLAYING') {
+                const subSteps = 2;
+                const goalLeft = (hkTable.width - hkTable.goalWidth) / 2;
+                const goalRight = (hkTable.width + hkTable.goalWidth) / 2;
+                const railInset = 10;
+                const bevel = hkTable.cornerBevel || 42;
+                const nDiag = 0.70710678; // 1 / Math.sqrt(2)
+
+                for (let step = 0; step < subSteps; step++) {
+                    hkPuck.x += (hkPuck.vx / subSteps);
+                    hkPuck.y += (hkPuck.vy / subSteps);
+
+                    hkPuck.vx *= Math.pow(hkPuck.friction, 1 / subSteps);
+                    hkPuck.vy *= Math.pow(hkPuck.friction, 1 / subSteps);
+
+                    const currentVel = Math.hypot(hkPuck.vx, hkPuck.vy);
+                    if (currentVel > hkPuck.maxSpeed) {
+                        hkPuck.vx = (hkPuck.vx / currentVel) * hkPuck.maxSpeed;
+                        hkPuck.vy = (hkPuck.vy / currentVel) * hkPuck.maxSpeed;
+                    }
+
+                    // --- 4A. ANGLED CORNER DEFLECTORS (PHYSICAL BEVELS) ---
+                    // Top-Left Corner Deflector
+                    const dTopLeft = (hkPuck.x - railInset) + (hkPuck.y - railInset);
+                    if (dTopLeft < bevel + hkPuck.radius) {
+                        const overlap = (bevel + hkPuck.radius) - dTopLeft;
+                        hkPuck.x += overlap * nDiag;
+                        hkPuck.y += overlap * nDiag;
+                        const vDot = hkPuck.vx * nDiag + hkPuck.vy * nDiag;
+                        if (vDot < 0) {
+                            hkPuck.vx = (hkPuck.vx - 2 * vDot * nDiag) * 1.05;
+                            hkPuck.vy = (hkPuck.vy - 2 * vDot * nDiag) * 1.05;
+                            if (hkPuck.vx < 2) hkPuck.vx = 2.5;
+                            if (hkPuck.vy < 2) hkPuck.vy = 2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 8, 1.4);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // Top-Right Corner Deflector
+                    const dTopRight = (hkTable.width - railInset - hkPuck.x) + (hkPuck.y - railInset);
+                    if (dTopRight < bevel + hkPuck.radius) {
+                        const overlap = (bevel + hkPuck.radius) - dTopRight;
+                        hkPuck.x -= overlap * nDiag;
+                        hkPuck.y += overlap * nDiag;
+                        const vDot = -hkPuck.vx * nDiag + hkPuck.vy * nDiag;
+                        if (vDot < 0) {
+                            hkPuck.vx = (hkPuck.vx + 2 * vDot * nDiag) * 1.05;
+                            hkPuck.vy = (hkPuck.vy - 2 * vDot * nDiag) * 1.05;
+                            if (hkPuck.vx > -2) hkPuck.vx = -2.5;
+                            if (hkPuck.vy < 2) hkPuck.vy = 2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 8, 1.4);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // Bottom-Left Corner Deflector
+                    const dBotLeft = (hkPuck.x - railInset) + (hkTable.height - railInset - hkPuck.y);
+                    if (dBotLeft < bevel + hkPuck.radius) {
+                        const overlap = (bevel + hkPuck.radius) - dBotLeft;
+                        hkPuck.x += overlap * nDiag;
+                        hkPuck.y -= overlap * nDiag;
+                        const vDot = hkPuck.vx * nDiag - hkPuck.vy * nDiag;
+                        if (vDot < 0) {
+                            hkPuck.vx = (hkPuck.vx - 2 * vDot * nDiag) * 1.05;
+                            hkPuck.vy = (hkPuck.vy + 2 * vDot * nDiag) * 1.05;
+                            if (hkPuck.vx < 2) hkPuck.vx = 2.5;
+                            if (hkPuck.vy > -2) hkPuck.vy = -2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 8, 1.4);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // Bottom-Right Corner Deflector
+                    const dBotRight = (hkTable.width - railInset - hkPuck.x) + (hkTable.height - railInset - hkPuck.y);
+                    if (dBotRight < bevel + hkPuck.radius) {
+                        const overlap = (bevel + hkPuck.radius) - dBotRight;
+                        hkPuck.x -= overlap * nDiag;
+                        hkPuck.y -= overlap * nDiag;
+                        const vDot = -hkPuck.vx * nDiag - hkPuck.vy * nDiag;
+                        if (vDot < 0) {
+                            hkPuck.vx = (hkPuck.vx + 2 * vDot * nDiag) * 1.05;
+                            hkPuck.vy = (hkPuck.vy + 2 * vDot * nDiag) * 1.05;
+                            if (hkPuck.vx > -2) hkPuck.vx = -2.5;
+                            if (hkPuck.vy > -2) hkPuck.vy = -2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 8, 1.4);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // --- 4B. WALL COLLISION: SIDES ---
+                    if (hkPuck.x - hkPuck.radius < railInset) {
+                        hkPuck.x = railInset + hkPuck.radius;
+                        hkPuck.vx = Math.abs(hkPuck.vx) * 0.98;
+                        if (hkPuck.vx < 1.5) hkPuck.vx = 2.0;
+                        createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                        playHkSound('WALL_BOUNCE');
+                    } else if (hkPuck.x + hkPuck.radius > hkTable.width - railInset) {
+                        hkPuck.x = hkTable.width - railInset - hkPuck.radius;
+                        hkPuck.vx = -Math.abs(hkPuck.vx) * 0.98;
+                        if (hkPuck.vx > -1.5) hkPuck.vx = -2.0;
+                        createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                        playHkSound('WALL_BOUNCE');
+                    }
+
+                    // --- 4C. WALL COLLISION: TOP (CHEF SIDE) ---
+                    if (hkPuck.y - hkPuck.radius < railInset) {
+                        if (hkPuck.x >= goalLeft && hkPuck.x <= goalRight) {
+                            if (hkPuck.y < -4) {
+                                handleGoalScored('PLAYER');
+                                break;
+                            }
+                        } else {
+                            hkPuck.y = railInset + hkPuck.radius;
+                            hkPuck.vy = Math.abs(hkPuck.vy) * 0.98;
+                            if (hkPuck.vy < 1.5) hkPuck.vy = 2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#ff007f', 6, 1);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // --- 4D. WALL COLLISION: BOTTOM (PLAYER SIDE) ---
+                    if (hkPuck.y + hkPuck.radius > hkTable.height - railInset) {
+                        if (hkPuck.x >= goalLeft && hkPuck.x <= goalRight) {
+                            if (hkPuck.y > hkTable.height + 4) {
+                                handleGoalScored('CHEF');
+                                break;
+                            }
+                        } else {
+                            hkPuck.y = hkTable.height - railInset - hkPuck.radius;
+                            hkPuck.vy = -Math.abs(hkPuck.vy) * 0.98;
+                            if (hkPuck.vy > -1.5) hkPuck.vy = -2.5;
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                            playHkSound('WALL_BOUNCE');
+                        }
+                    }
+
+                    // --- 4E. STRIKER VS PUCK COLLISION ---
+                    function resolveStrikerPuck(striker, isPlayer) {
+                        const cdx = hkPuck.x - striker.x;
+                        const cdy = hkPuck.y - striker.y;
+                        const dist = Math.hypot(cdx, cdy);
+                        const minDist = hkPuck.radius + striker.radius;
+
+                        if (dist < minDist && dist > 0.001) {
+                            const nx = cdx / dist;
+                            const ny = cdy / dist;
+
+                            // Prevent sandwich/pinching against walls
+                            if (!isPlayer && hkPuck.y < 35 && ny < 0) {
+                                striker.y = Math.max(striker.radius + 15, striker.y + 4);
+                                hkPuck.vy = Math.max(4.0, Math.abs(hkPuck.vy) + 2.0);
+                                hkPuck.vx += (hkPuck.x < goalCenter ? 2.5 : -2.5);
+                            } else {
+                                hkPuck.x = striker.x + nx * (minDist + 1);
+                                hkPuck.y = striker.y + ny * (minDist + 1);
+                            }
+
+                            const rvx = hkPuck.vx - striker.vx;
+                            const rvy = hkPuck.vy - striker.vy;
+                            const velAlongNorm = rvx * nx + rvy * ny;
+
+                            if (velAlongNorm < 0) {
+                                const elasticity = 1.32;
+                                const impulse = -(1 + elasticity) * velAlongNorm;
+                                hkPuck.vx += nx * impulse + striker.vx * 0.65;
+                                hkPuck.vy += ny * impulse + striker.vy * 0.65;
+
+                                const hitSpeed = Math.hypot(hkPuck.vx, hkPuck.vy);
+                                playHkSound('PUCK_HIT', hitSpeed);
+                                createHkSparks(striker.x + nx * striker.radius, striker.y + ny * striker.radius, isPlayer ? '#00ffff' : '#ffaa00', 10, 1.3);
+
+                                if (hitSpeed > 10) hkCameraShake = 5;
+                            } else {
+                                hkPuck.vx += nx * 2.5;
+                                hkPuck.vy += ny * 2.5;
+                            }
+                        }
+                    }
+
+                    resolveStrikerPuck(hkPlayer, true);
+                    resolveStrikerPuck(hkChefAI, false);
+                }
+
+                // --- 4F. ANTI-STUCK CYBER AIR-JET WATCHDOG ---
+                const currentSpeed = Math.hypot(hkPuck.vx, hkPuck.vy);
+                const isNearAiCorner = hkPuck.y < 95 && (hkPuck.x < 95 || hkPuck.x > hkTable.width - 95);
+                const isNearDeadZone = hkPuck.y < 42;
+
+                if (currentSpeed < 1.0 || (isNearAiCorner && currentSpeed < 2.0) || (isNearDeadZone && currentSpeed < 1.8)) {
+                    hkPuckStuckCounter = (hkPuckStuckCounter || 0) + 1;
+                    if (hkPuckStuckCounter > 40) { // ~0.65 seconds
+                        const angleToCenter = Math.atan2((hkTable.height / 2) - hkPuck.y, (hkTable.width / 2) - hkPuck.x);
+                        const kickSpeed = 6.0 + Math.random() * 2.0;
+                        hkPuck.vx = Math.cos(angleToCenter) * kickSpeed;
+                        hkPuck.vy = Math.sin(angleToCenter) * kickSpeed;
+                        createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 18, 2.0);
+                        playHkSound('WALL_BOUNCE');
+                        hkChefAI.dialogue = "Chef AI: Corner jet activated! Puck cleared! 💨";
+                        hkChefAI.dialogueTimer = 140;
+                        hkPuckStuckCounter = 0;
+                    }
+                } else {
+                    hkPuckStuckCounter = 0;
+                }
+
+                hkPuck.trail.unshift({ x: hkPuck.x, y: hkPuck.y });
+                if (hkPuck.trail.length > 8) hkPuck.trail.pop();
+            }
+
+            // 5. Goal Scored Handler
+            function handleGoalScored(scorer) {
+                hkGameState = 'GOAL_PAUSE';
+                hkPauseTimer = 75;
+                hkCameraShake = 16;
+
+                if (scorer === 'PLAYER') {
+                    hkScore.player++;
+                    hkBannerText = '⚡ GOAL FOR PLAYER! ⚡';
+                    hkBannerColor = '#00ffff';
+                    playHkSound('GOAL_PLAYER');
+                    createHkConfetti(hkPuck.x, 20);
+
+                    const taunts = [
+                        'Chef AI: Nice shot! Let me turn up the heat! 🔥',
+                        'Chef AI: Wow, quick wrist! Time to get serious! 🔪',
+                        'Chef AI: Chef Master Mode Sizzling! ⚡👨‍🍳',
+                        'Chef AI: Incredible angle! You are good! 🍳',
+                        'Chef AI: MASTER OF THE AIR RINK! 🏆'
+                    ];
+                    hkChefAI.dialogue = taunts[Math.min(hkScore.player - 1, taunts.length - 1)];
+                    hkChefAI.dialogueTimer = 220;
+
+                    const targetTar = parseInt((window.rules && window.rules.hockeyTar) || 5);
+                    const targetDisc = parseInt((window.rules && window.rules.hockeyDisc) || 15);
+
+                    if (hkScore.player >= targetTar) {
+                        playHkSound('MILESTONE');
+                        createHkConfetti(hkTable.width / 2, hkTable.height / 2);
+                        if (typeof triggerRewardCoupon === 'function') {
+                            triggerRewardCoupon(targetDisc);
+                        }
+                        hkBannerText = `🏆 ${targetDisc}% OFF UNLOCKED! 🏆`;
+                        hkBannerColor = '#39ff14';
+                    }
+
+                    resetHkPuck(false);
+                } else {
+                    hkScore.chef++;
+                    hkBannerText = '👨‍🍳 CHEF AI SCORED! 👨‍🍳';
+                    hkBannerColor = '#ff007f';
+                    playHkSound('GOAL_CHEF');
+                    createHkSparks(hkPuck.x, hkTable.height - 20, '#ff007f', 30, 2);
+
+                    const chefBrags = [
+                        'Chef AI: Order up! Chef scores! 👨‍🍳🔥',
+                        'Chef AI: Secret recipe smash! Delicious! 🍕',
+                        'Chef AI: Too fast for you, customer! ⚡'
+                    ];
+                    hkChefAI.dialogue = chefBrags[Math.floor(Math.random() * chefBrags.length)];
+                    hkChefAI.dialogueTimer = 200;
+
+                    resetHkPuck(true);
+                }
+            }
+
+            // 6. Draw Table Scene
+            renderCyberAirHockeyScene();
+        }
+
+        // ===================================================================
+        // 🎨 AIR HOCKEY HIGH-AESTHETIC CYBER TABLE RENDERER
+        // ===================================================================
+        function renderCyberAirHockeyScene() {
+            const ctx = hkCtx;
+            const W = hkTable.width;
+            const H = hkTable.height;
+            const goalLeft = (W - hkTable.goalWidth) / 2;
+            const goalRight = (W + hkTable.goalWidth) / 2;
+
+            ctx.save();
+
+            if (hkCameraShake > 0) {
+                const sx = (Math.random() - 0.5) * hkCameraShake;
+                const sy = (Math.random() - 0.5) * hkCameraShake;
+                ctx.translate(sx, sy);
+                hkCameraShake *= 0.88;
+                if (hkCameraShake < 0.2) hkCameraShake = 0;
+            }
+
+            // Rink Gradient
+            const rinkGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, H * 0.7);
+            rinkGrad.addColorStop(0, '#0d1326');
+            rinkGrad.addColorStop(0.7, '#070a16');
+            rinkGrad.addColorStop(1, '#03050a');
+            ctx.fillStyle = rinkGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Cyber Grid Lines
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
+            ctx.lineWidth = 1;
+            const gridSize = 32;
+            for (let x = 10; x < W - 10; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 10);
+                ctx.lineTo(x, H - 10);
+                ctx.stroke();
+            }
+            for (let y = 10; y < H - 10; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(10, y);
+                ctx.lineTo(W - 10, y);
+                ctx.stroke();
+            }
+
+            // Center Line
+            const centerY = H / 2;
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.35)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(12, centerY);
+            ctx.lineTo(W - 12, centerY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Center Ring
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(W / 2, centerY, 44, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(W / 2, centerY);
+            ctx.rotate(hkChefAuraAngle);
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 26, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.shadowBlur = 0;
+            ctx.font = '22px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillText('⚡', W / 2, centerY);
+
+            // Goals
+            // Top Goal Mouth (Chef)
+            ctx.fillStyle = 'rgba(255, 0, 127, 0.25)';
+            ctx.fillRect(goalLeft, 0, hkTable.goalWidth, 14);
+            ctx.strokeStyle = '#ff007f';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 12;
+            ctx.strokeRect(goalLeft, 0, hkTable.goalWidth, 14);
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.4)';
+            ctx.lineWidth = 1;
+            for (let gx = goalLeft + 12; gx < goalRight; gx += 14) {
+                ctx.beginPath();
+                ctx.moveTo(gx, 0);
+                ctx.lineTo(gx, 14);
+                ctx.stroke();
+            }
+
+            // Bottom Goal Mouth (Player)
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.25)';
+            ctx.fillRect(goalLeft, H - 14, hkTable.goalWidth, 14);
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 12;
+            ctx.strokeRect(goalLeft, H - 14, hkTable.goalWidth, 14);
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            for (let gx = goalLeft + 12; gx < goalRight; gx += 14) {
+                ctx.beginPath();
+                ctx.moveTo(gx, H - 14);
+                ctx.lineTo(gx, H);
+                ctx.stroke();
+            }
+            ctx.shadowBlur = 0;
+
+            // Outer Rails with Angled Corner Bumpers
+            const bevel = hkTable.cornerBevel || 42;
+            const rInset = 10;
+            ctx.lineWidth = 7;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Chef Half Rails (Pink Neon)
+            ctx.strokeStyle = 'rgba(255, 0, 127, 0.85)';
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            // Top Left Rail + Corner Bevel
+            ctx.moveTo(goalLeft, rInset);
+            ctx.lineTo(rInset + bevel, rInset);
+            ctx.lineTo(rInset, rInset + bevel);
+            ctx.lineTo(rInset, centerY);
+            // Top Right Rail + Corner Bevel
+            ctx.moveTo(goalRight, rInset);
+            ctx.lineTo(W - rInset - bevel, rInset);
+            ctx.lineTo(W - rInset, rInset + bevel);
+            ctx.lineTo(W - rInset, centerY);
+            ctx.stroke();
+
+            // Player Half Rails (Cyan Neon)
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.85)';
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            // Bottom Left Rail + Corner Bevel
+            ctx.moveTo(rInset, centerY);
+            ctx.lineTo(rInset, H - rInset - bevel);
+            ctx.lineTo(rInset + bevel, H - rInset);
+            ctx.lineTo(goalLeft, H - rInset);
+            // Bottom Right Rail + Corner Bevel
+            ctx.moveTo(W - rInset, centerY);
+            ctx.lineTo(W - rInset, H - rInset - bevel);
+            ctx.lineTo(W - rInset - bevel, H - rInset);
+            ctx.lineTo(goalRight, H - rInset);
+            ctx.stroke();
+
+            // Corner Jet / Booster indicator markers
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(57, 255, 20, 0.45)';
+            [
+                { x: rInset + 8, y: rInset + 8 },
+                { x: W - rInset - 8, y: rInset + 8 },
+                { x: rInset + 8, y: H - rInset - 8 },
+                { x: W - rInset - 8, y: H - rInset - 8 }
+            ].forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Puck Trail
+            for (let i = 0; i < hkPuck.trail.length; i++) {
+                const tr = hkPuck.trail[i];
+                const trAlpha = (1 - (i / hkPuck.trail.length)) * 0.45;
+                const trRad = hkPuck.radius * (1 - (i / hkPuck.trail.length) * 0.4);
+                ctx.fillStyle = `rgba(0, 255, 255, ${trAlpha})`;
+                ctx.beginPath();
+                ctx.arc(tr.x, tr.y, trRad, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Glowing Puck
+            ctx.save();
+            ctx.shadowColor = '#f1c40f';
+            ctx.shadowBlur = 14;
+            const puckGrad = ctx.createRadialGradient(hkPuck.x, hkPuck.y, 2, hkPuck.x, hkPuck.y, hkPuck.radius);
+            puckGrad.addColorStop(0, '#ffffff');
+            puckGrad.addColorStop(0.5, '#f1c40f');
+            puckGrad.addColorStop(1, '#e67e22');
+            ctx.fillStyle = puckGrad;
+            ctx.beginPath();
+            ctx.arc(hkPuck.x, hkPuck.y, hkPuck.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(hkPuck.x - 3, hkPuck.y - 3, hkPuck.radius * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Chef AI Mallet
+            ctx.save();
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = 16;
+            const chefGrad = ctx.createRadialGradient(hkChefAI.x, hkChefAI.y, 4, hkChefAI.x, hkChefAI.y, hkChefAI.radius);
+            chefGrad.addColorStop(0, '#ffa502');
+            chefGrad.addColorStop(0.6, '#ff4757');
+            chefGrad.addColorStop(1, '#2f3542');
+            ctx.fillStyle = chefGrad;
+            ctx.beginPath();
+            ctx.arc(hkChefAI.x, hkChefAI.y, hkChefAI.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.font = '16px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👨‍🍳', hkChefAI.x, hkChefAI.y);
+            ctx.restore();
+
+            // Player Mallet
+            ctx.save();
+            ctx.shadowColor = '#00d2d3';
+            ctx.shadowBlur = 18;
+            const plyrGrad = ctx.createRadialGradient(hkPlayer.x, hkPlayer.y, 4, hkPlayer.x, hkPlayer.y, hkPlayer.radius);
+            plyrGrad.addColorStop(0, '#ffffff');
+            plyrGrad.addColorStop(0.5, '#00d2d3');
+            plyrGrad.addColorStop(1, '#0984e3');
+            ctx.fillStyle = plyrGrad;
+            ctx.beginPath();
+            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius * 0.38, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0984e3';
+            ctx.beginPath();
+            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Particles
+            for (let i = hkParticles.length - 1; i >= 0; i--) {
+                const p = hkParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                if (p.life <= 0) {
+                    hkParticles.splice(i, 1);
+                    continue;
+                }
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // HUD
+            ctx.font = '900 18px Segoe UI, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ff4757';
+            ctx.fillText(`👨‍🍳 Chef: ${hkScore.chef}`, 20, 32);
+
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#00ffff';
+            ctx.fillText(`Player: ${hkScore.player} 🏒`, W - 20, 32);
+
+            // Chef Dialogue
+            if (hkChefAI.dialogue && hkChefAI.dialogueTimer > 0) {
+                const bubbleY = 52;
+                ctx.font = 'bold 11px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                const textWidth = ctx.measureText(hkChefAI.dialogue).width;
+                const bubbleW = textWidth + 24;
+
+                ctx.fillStyle = 'rgba(20, 25, 40, 0.88)';
+                ctx.strokeStyle = 'rgba(255, 71, 87, 0.7)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect((W - bubbleW) / 2, bubbleY, bubbleW, 22, 11);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(hkChefAI.dialogue, W / 2, bubbleY + 15);
+            }
+
+            // Target Matrix Progress
+            const targetTar = parseInt((window.rules && window.rules.hockeyTar) || 5);
+            const targetDisc = parseInt((window.rules && window.rules.hockeyDisc) || 15);
+            const isCompleted = hkScore.player >= targetTar;
+
+            const footerY = H - 24;
+            ctx.font = 'bold 11px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+
+            ctx.fillStyle = isCompleted ? '#39ff14' : 'rgba(255, 255, 255, 0.75)';
+            const targetText = isCompleted
+                ? `🎉 Target Achieved: ${targetDisc}% OFF Unlocked!`
+                : `🎯 Target: Score ${targetTar} Goals for ${targetDisc}% OFF (${hkScore.player}/${targetTar})`;
+            ctx.fillText(targetText, W / 2, footerY);
+
+            // Goal / Milestone Overlay Banner
+            if (hkBannerText && hkGameState === 'GOAL_PAUSE') {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                ctx.fillRect(0, centerY - 38, W, 76);
+
+                ctx.font = '900 20px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = hkBannerColor;
+                ctx.shadowColor = hkBannerColor;
+                ctx.shadowBlur = 15;
+                ctx.fillText(hkBannerText, W / 2, centerY + 7);
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.restore();
+        }
+
+        // Global exports
+        if (typeof safeExport === 'function') {
+            safeExport('initAirHockeyGame', typeof initAirHockeyGame !== 'undefined' ? initAirHockeyGame : undefined);
+            safeExport('frameUpdateAirHockey', typeof frameUpdateAirHockey !== 'undefined' ? frameUpdateAirHockey : undefined);
+        }
+        window.initAirHockeyGame = initAirHockeyGame;
+        window.frameUpdateAirHockey = frameUpdateAirHockey;
+
+        window.returnToCustomerMenu = returnToCustomerMenu;
     </script>
 </body>
 
