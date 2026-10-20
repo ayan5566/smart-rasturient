@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
     
 <head>
     <meta charset="UTF-8">
@@ -419,39 +418,73 @@
         /* Arcade Components */
         .game-box {
             background: #ffffff;
-            padding: 20px;
+            padding: 14px;
             border-radius: 16px;
             border: 2px dashed #b9ae9f;
             text-align: center;
             margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
         }
 
         .game-nav {
-            display: flex;
-            gap: 4px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
             justify-content: center;
-            margin-bottom: 15px;
-            background: #eee;
-            padding: 4px;
-            border-radius: 10px;
+            margin-bottom: 0;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
         }
 
         .game-nav button {
-            flex: 1;
-            padding: 8px 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 4px;
             font-size: 11px;
-            background: none;
-            border: none;
-            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: bold;
-            color: #666;
+            font-weight: 700;
+            color: #334155;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .game-nav button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: #cbd5e1;
         }
 
         .game-nav button.active {
-            background: white;
-            color: black;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+            background: #fffbeb;
+            color: #b45309;
+            border-color: #f59e0b;
+            box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
+        }
+
+        .game-nav #navTOWER {
+            grid-column: 2;
+        }
+
+        .game-nav #navHOCKEY {
+            grid-column: 3;
+        }
+
+        .game-nav-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+            pointer-events: none;
+            flex-shrink: 0;
         }
 
         canvas {
@@ -804,7 +837,8 @@
 
         /* 🎯 TABS HEADER STRAP */
         .game-box.fullscreen-arcade-active .game-nav {
-            display: flex !important;
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
             width: 100% !important;
             max-width: 440px !important;
             gap: 4px !important;
@@ -815,9 +849,22 @@
 
         .game-box.fullscreen-arcade-active .game-nav button {
             font-size: 11px !important;
-            padding: 8px 2px !important;
+            font-weight: 700 !important;
+            padding: 4px 2px !important;
             border-radius: 8px !important;
             white-space: nowrap !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav #navTOWER {
+            grid-column: 2 !important;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav #navHOCKEY {
+            grid-column: 3 !important;
         }
 
         /* 🎯 LIQUID FULL-WIDTH GRAPHICS STAGE */
@@ -1181,30 +1228,30 @@
         <div class="category-tabs-wrapper" id="customerCategoryTabs"></div>
         <div id="menuContainer"></div>
 
-        <div class="game-box" style="padding: 15px; border-radius: 16px; margin-top: 25px;">
+        <div class="game-box" style="padding: 12px; border-radius: 16px; margin-top: 25px;">
             <div class="game-nav" style="margin-bottom: 0;">
                 <button id="navBRICK" onclick="switchGameMode('BRICK')">
-                    <span style="font-size: 26px;">🧱</span>
+                    <img src="assets/icons/brick.png" alt="Bricks" class="game-nav-icon">
                     <span>Bricks</span>
                 </button>
                 <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">
-                    <span style="font-size: 26px;">🐦</span>
+                    <img src="assets/icons/flappy.png" alt="Flappy" class="game-nav-icon">
                     <span>Flappy</span>
                 </button>
                 <button id="navSPACE" onclick="switchGameMode('SPACE')">
-                    <span style="font-size: 26px;">🚀</span>
+                    <img src="assets/icons/space.png" alt="Space" class="game-nav-icon">
                     <span>Space</span>
                 </button>
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">
-                    <span style="font-size: 26px;">🐍</span>
+                    <img src="assets/icons/snake.png" alt="Snake" class="game-nav-icon">
                     <span>Snake</span>
                 </button>
                 <button id="navTOWER" onclick="switchGameMode('TOWER')">
-                    <span style="font-size: 26px;">🏢</span>
+                    <img src="assets/icons/tower.png" alt="Tower" class="game-nav-icon">
                     <span>Tower</span>
                 </button>
                 <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')">
-                    <span style="font-size: 26px;">🏒</span>
+                    <img src="assets/icons/hockey.png" alt="Hockey" class="game-nav-icon">
                     <span>Hockey</span>
                 </button>
             </div>
