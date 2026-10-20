@@ -12,6 +12,37 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script>
+        function handleGameIconError(img, fallbackEmoji) {
+            if (!img) return;
+            if (!img.dataset.retried) {
+                img.dataset.retried = "1";
+                // 1. Try repo subdirectory path if hosted on GitHub Pages (e.g. /smart-rasturient/)
+                var pathParts = window.location.pathname.split('/').filter(Boolean);
+                var filename = img.getAttribute('src').split('/').pop();
+                if (pathParts.length > 0 && !window.location.pathname.endsWith('.html')) {
+                    img.src = '/' + pathParts[0] + '/assets/icons/' + filename;
+                    return;
+                } else if (pathParts.length > 1) {
+                    img.src = '/' + pathParts[0] + '/assets/icons/' + filename;
+                    return;
+                }
+            }
+            // 2. If the file is missing or not yet pushed to GitHub, show sleek fallback emoji
+            img.style.display = 'none';
+            if (img.parentNode && !img.parentNode.querySelector('.game-fallback-emoji')) {
+                var span = document.createElement('span');
+                span.className = 'game-fallback-emoji';
+                span.style.fontSize = '26px';
+                span.style.lineHeight = '1';
+                span.style.display = 'block';
+                span.style.marginBottom = '4px';
+                span.innerText = fallbackEmoji || '🎮';
+                img.parentNode.insertBefore(span, img);
+            }
+        }
+        window.handleGameIconError = handleGameIconError;
+    </script>
 
     <style>
         /* ================================================================= */
@@ -1231,27 +1262,27 @@
         <div class="game-box" style="padding: 12px; border-radius: 16px; margin-top: 25px;">
             <div class="game-nav" style="margin-bottom: 0;">
                 <button id="navBRICK" onclick="switchGameMode('BRICK')">
-                    <img src="assets/icons/brick.png" alt="Bricks" class="game-nav-icon">
+                    <img src="./assets/icons/brick.png" alt="Bricks" class="game-nav-icon" onerror="handleGameIconError(this, '🧱')">
                     <span>Bricks</span>
                 </button>
                 <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')">
-                    <img src="assets/icons/flappy.png" alt="Flappy" class="game-nav-icon">
+                    <img src="./assets/icons/flappy.png" alt="Flappy" class="game-nav-icon" onerror="handleGameIconError(this, '🐥')">
                     <span>Flappy</span>
                 </button>
                 <button id="navSPACE" onclick="switchGameMode('SPACE')">
-                    <img src="assets/icons/space.png" alt="Space" class="game-nav-icon">
+                    <img src="./assets/icons/space.png" alt="Space" class="game-nav-icon" onerror="handleGameIconError(this, '🚀')">
                     <span>Space</span>
                 </button>
                 <button id="navSNAKE" onclick="switchGameMode('SNAKE')">
-                    <img src="assets/icons/snake.png" alt="Snake" class="game-nav-icon">
+                    <img src="./assets/icons/snake.png" alt="Snake" class="game-nav-icon" onerror="handleGameIconError(this, '🐍')">
                     <span>Snake</span>
                 </button>
                 <button id="navTOWER" onclick="switchGameMode('TOWER')">
-                    <img src="assets/icons/tower.png" alt="Tower" class="game-nav-icon">
+                    <img src="./assets/icons/tower.png" alt="Tower" class="game-nav-icon" onerror="handleGameIconError(this, '🏗️')">
                     <span>Tower</span>
                 </button>
                 <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')">
-                    <img src="assets/icons/hockey.png" alt="Hockey" class="game-nav-icon">
+                    <img src="./assets/icons/hockey.png" alt="Hockey" class="game-nav-icon" onerror="handleGameIconError(this, '🏒')">
                     <span>Hockey</span>
                 </button>
             </div>
@@ -2578,8 +2609,11 @@ function queueDebouncedBillRender() {
 
         // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         let clientCurrentActiveTable = "T1";
+        window.clientCurrentActiveTable = clientCurrentActiveTable;
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
         let localLiveRunningBill = [];
         let maximumClaimedDisc = 0; // 🛡️ FIX: Always start clean — cloud session is the single source of truth
+        window.maximumClaimedDisc = maximumClaimedDisc;
         let globalRunningInvoiceSumTotal = 0;
 
         // Canvas context initialization pointers explicitly binded
@@ -3750,7 +3784,8 @@ async function renderLiveCalculatedBill() {
 
         // In-memory runtime sync
         localLiveRunningBill = targetBill;
-        maximumClaimedDisc = targetDisc;
+        maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, targetDisc);
+        window.maximumClaimedDisc = maximumClaimedDisc;
 
         let badge = document.getElementById('liveCoinBadge');
         if (badge) badge.innerText = maximumClaimedDisc + "%";
@@ -3781,7 +3816,7 @@ async function renderLiveCalculatedBill() {
         }
 
         // Unified Calculation Engine
-        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, maximumClaimedDisc, taxConfig);
 
         // ✅ FIXED: discountValue ko invoiceMath se sahi tarike se define kiya gaya hai
         const calculatedDiscountVal = invoiceMath.discountValue || 0;
@@ -3863,10 +3898,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         }
 
         // 3. Supabase Cloud Sync
+        let effectiveDiscount = Math.max(existingCloudDiscount, maximumClaimedDisc || 0);
         await syncLiveSessionToSupabase(
             activeTableId, 
             targetTableBill, 
-            existingCloudDiscount, 
+            effectiveDiscount, 
             existingBellStatus, 
             existingPayStatus
         );
@@ -3874,7 +3910,10 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         // 4. In-Memory runtime variable sync
         if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
-            maximumClaimedDisc = existingCloudDiscount;
+            maximumClaimedDisc = effectiveDiscount;
+            window.maximumClaimedDisc = effectiveDiscount;
+            let badge = document.getElementById('liveCoinBadge');
+            if (badge) badge.innerText = maximumClaimedDisc + "%";
         }
 
         // 5. ✅ FIXED: STRICT FLOOR-SPECIFIC TABLE ISOLATION (No Cross-Floor Green Leaks)
@@ -4074,6 +4113,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
     // 3. Local Memory & UI Updates
     maximumClaimedDisc = earnedVal;
+    window.maximumClaimedDisc = maximumClaimedDisc;
     localStorage.setItem('discount_map_' + hotelId + '_' + activeTableId, earnedVal.toString());
 
     let badge = document.getElementById('liveCoinBadge');
@@ -4685,6 +4725,7 @@ async function initApp() {
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
     const urlFloor = urlParams.get('floor');
+    const urlDiscount = urlParams.get('discount');
 
     // 🔒 1. STRICT TABLE & SECTION ISOLATION LOCK
     if (urlTable) {
@@ -4699,6 +4740,20 @@ async function initApp() {
         // Standard single key: "ayah_T1"
         clientCurrentActiveTable = rawF ? `${rawF}_${rawT}` : rawT;
         window.clientCurrentActiveTable = clientCurrentActiveTable;
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
+    } else {
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
+    }
+
+    // 🎁 DISCOUNT PARAM RECOVERY
+    if (urlDiscount) {
+        let parsedDisc = parseInt(urlDiscount) || 0;
+        if (parsedDisc > 0) {
+            maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, parsedDisc);
+            window.maximumClaimedDisc = maximumClaimedDisc;
+            let badge = document.getElementById('liveCoinBadge');
+            if (badge) badge.innerText = maximumClaimedDisc + "%";
+        }
     }
 
     // 🔒 2. HOTEL IDENTITY SCOPE LOCK
@@ -4844,7 +4899,8 @@ async function initApp() {
                             let activeClean = clientCurrentActiveTable.trim().toLowerCase();
                             if (activeClean === compoundKey.toLowerCase() || activeClean === tIdClean.toLowerCase()) {
                                 localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
-                                maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
+                                maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, parseInt(targetCloudRow.discount_claimed) || 0);
+                                window.maximumClaimedDisc = maximumClaimedDisc;
 
                                 let badge = document.getElementById('liveCoinBadge');
                                 if (badge) badge.innerText = maximumClaimedDisc + "%";
