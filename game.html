@@ -8,6 +8,37 @@
     <link rel="icon" type="image/jpeg" href="favicon.jpg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script>
+        function handleGameIconError(img, fallbackEmoji) {
+            if (!img) return;
+            if (!img.dataset.retried) {
+                img.dataset.retried = "1";
+                // 1. Try repo subdirectory path if hosted on GitHub Pages (e.g. /smart-rasturient/)
+                var pathParts = window.location.pathname.split('/').filter(Boolean);
+                var filename = img.getAttribute('src').split('/').pop();
+                if (pathParts.length > 0 && !window.location.pathname.endsWith('.html')) {
+                    img.src = '/' + pathParts[0] + '/assets/icons/' + filename;
+                    return;
+                } else if (pathParts.length > 1) {
+                    img.src = '/' + pathParts[0] + '/assets/icons/' + filename;
+                    return;
+                }
+            }
+            // 2. If the file is missing or not yet pushed to GitHub, show sleek fallback emoji
+            img.style.display = 'none';
+            if (img.parentNode && !img.parentNode.querySelector('.game-fallback-emoji')) {
+                var span = document.createElement('span');
+                span.className = 'game-fallback-emoji';
+                span.style.fontSize = '26px';
+                span.style.lineHeight = '1';
+                span.style.display = 'block';
+                span.style.marginBottom = '4px';
+                span.innerText = fallbackEmoji || '🎮';
+                img.parentNode.insertBefore(span, img);
+            }
+        }
+        window.handleGameIconError = handleGameIconError;
+    </script>
     <!-- ================================================================= -->
     <!-- 🎮 MODULES/GAME.HTML - ISOLATED ARCADE GAME ENGINE MODULE        -->
     <!-- Contains 100% of Flappy Bird, Space Shooter, Snake, Brick Breaker,  -->
@@ -491,12 +522,12 @@
     <!-- 🧱 HTML ELEMENTS -->
     <div class="game-box fullscreen-arcade-active" id="arcadeGameWrapper">
         <div class="game-nav">
-            <button id="navBRICK" onclick="switchGameMode('BRICK')"><img src="assets/icons/brick.png" alt="Bricks" class="game-nav-icon"><span>Bricks</span></button>
-            <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><img src="assets/icons/flappy.png" alt="Flappy" class="game-nav-icon"><span>Flappy</span></button>
-            <button id="navSPACE" onclick="switchGameMode('SPACE')"><img src="assets/icons/space.png" alt="Space" class="game-nav-icon"><span>Space</span></button>
-            <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><img src="assets/icons/snake.png" alt="Snake" class="game-nav-icon"><span>Snake</span></button>
-            <button id="navTOWER" onclick="switchGameMode('TOWER')"><img src="assets/icons/tower.png" alt="Tower" class="game-nav-icon"><span>Tower</span></button>
-            <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')"><img src="assets/icons/hockey.png" alt="Hockey" class="game-nav-icon"><span>Hockey</span></button>
+            <button id="navBRICK" onclick="switchGameMode('BRICK')"><img src="./assets/icons/brick.png" alt="Bricks" class="game-nav-icon" onerror="handleGameIconError(this, '🧱')"><span>Bricks</span></button>
+            <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><img src="./assets/icons/flappy.png" alt="Flappy" class="game-nav-icon" onerror="handleGameIconError(this, '🐥')"><span>Flappy</span></button>
+            <button id="navSPACE" onclick="switchGameMode('SPACE')"><img src="./assets/icons/space.png" alt="Space" class="game-nav-icon" onerror="handleGameIconError(this, '🚀')"><span>Space</span></button>
+            <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><img src="./assets/icons/snake.png" alt="Snake" class="game-nav-icon" onerror="handleGameIconError(this, '🐍')"><span>Snake</span></button>
+            <button id="navTOWER" onclick="switchGameMode('TOWER')"><img src="./assets/icons/tower.png" alt="Tower" class="game-nav-icon" onerror="handleGameIconError(this, '🏗️')"><span>Tower</span></button>
+            <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')"><img src="./assets/icons/hockey.png" alt="Hockey" class="game-nav-icon" onerror="handleGameIconError(this, '🏒')"><span>Hockey</span></button>
         </div>
         <button id="exitGameBtn" onclick="exitGameEngine()">🔙 Back to Table Menu</button>
         <div id="gameWindow" style="position: relative; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -1084,7 +1115,9 @@ function exitGameEngine() {
     homeUrl.searchParams.set('table', targetTable);
     homeUrl.searchParams.set('hotel', targetHotel);
     if (urlFloorParam) homeUrl.searchParams.set('floor', urlFloorParam);
-    // 🚨 NOTE: No 'discount' param — cloud session is the single source of truth
+    if (typeof maximumClaimedDisc !== 'undefined' && maximumClaimedDisc > 0) {
+        homeUrl.searchParams.set('discount', maximumClaimedDisc.toString());
+    }
 
     window.location.href = homeUrl.toString();
 }
@@ -1630,51 +1663,141 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                     osc.start(now);
                     osc.stop(now + 0.35);
                 } else if (type === 'LASER_PLAYER') {
-                    // Sci-Fi plasma laser blaster
+                    // Dual-component sci-fi plasma blaster (punchy body + high zap)
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(940, now);
-                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
+                    osc.frequency.setValueAtTime(1100, now);
+                    osc.frequency.exponentialRampToValueAtTime(160, now + 0.09);
                     const filter = ctx.createBiquadFilter();
                     filter.type = 'bandpass';
-                    filter.frequency.setValueAtTime(1200, now);
-                    filter.frequency.exponentialRampToValueAtTime(300, now + 0.08);
-                    gain.gain.setValueAtTime(0.18, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    filter.frequency.setValueAtTime(1400, now);
+                    filter.frequency.exponentialRampToValueAtTime(320, now + 0.09);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
                     osc.connect(filter);
                     filter.connect(gain);
                     gain.connect(ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.08);
+                    osc.stop(now + 0.09);
+
+                    // Sub punch click
+                    const sub = ctx.createOscillator();
+                    const sGain = ctx.createGain();
+                    sub.type = 'sine';
+                    sub.frequency.setValueAtTime(240, now);
+                    sub.frequency.exponentialRampToValueAtTime(50, now + 0.05);
+                    sGain.gain.setValueAtTime(0.2, now);
+                    sGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    sub.connect(sGain);
+                    sGain.connect(ctx.destination);
+                    sub.start(now);
+                    sub.stop(now + 0.05);
+                } else if (type === 'ENEMY_LASER' || type === 'ENEMY_FIRE') {
+                    // Menacing buzzing enemy plasma bolt
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(680, now);
+                    osc.frequency.exponentialRampToValueAtTime(180, now + 0.07);
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1600, now);
+                    filter.frequency.exponentialRampToValueAtTime(400, now + 0.07);
+                    gain.gain.setValueAtTime(0.16, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.07);
                 } else if (type === 'ENEMY_HIT') {
-                    // Armor deflection tick
+                    // Sharp armor deflection tick
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(420, now);
-                    osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
-                    gain.gain.setValueAtTime(0.15, now);
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.04);
+                    gain.gain.setValueAtTime(0.2, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     osc.start(now);
                     osc.stop(now + 0.04);
+                } else if (type === 'SHIELD_DEFLECT') {
+                    // High-tech holographic shield energy ripple
+                    [720, 1080, 1440].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.02);
+                        o.frequency.exponentialRampToValueAtTime(freq * 1.5, now + idx * 0.02 + 0.08);
+                        g.gain.setValueAtTime(0.18, now + idx * 0.02);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.02 + 0.08);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.02);
+                        o.stop(now + idx * 0.02 + 0.08);
+                    });
+                } else if (type === 'BOSS_ALARM') {
+                    // Dramatic two-tone battle klaxon alert siren
+                    [0, 0.22, 0.44].forEach((delay) => {
+                        const o1 = ctx.createOscillator();
+                        const g1 = ctx.createGain();
+                        o1.type = 'sawtooth';
+                        o1.frequency.setValueAtTime(260, now + delay);
+                        o1.frequency.exponentialRampToValueAtTime(390, now + delay + 0.1);
+                        o1.frequency.exponentialRampToValueAtTime(220, now + delay + 0.2);
+                        g1.gain.setValueAtTime(0.3, now + delay);
+                        g1.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.2);
+                        o1.connect(g1);
+                        g1.connect(ctx.destination);
+                        o1.start(now + delay);
+                        o1.stop(now + delay + 0.2);
+                    });
+                } else if (type === 'STAGE_CLEAR') {
+                    // Bright victorious 5-note space-warp fanfare
+                    [523.25, 659.25, 783.99, 1046.5, 1318.51].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.06);
+                        g.gain.setValueAtTime(0.22, now + idx * 0.06);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.06);
+                        o.stop(now + idx * 0.06 + 0.25);
+                    });
                 } else if (type === 'BOSS_BOOM') {
-                    // Massive multi-stage cinematic boss detonation
-                    [65, 45, 30].forEach((freq, idx) => {
+                    // Massive multi-stage cinematic boss detonation with deep sub-bass shockwave
+                    [70, 50, 35, 25].forEach((freq, idx) => {
                         const o = ctx.createOscillator();
                         const g = ctx.createGain();
                         o.type = 'sawtooth';
-                        o.frequency.setValueAtTime(freq * 1.5, now + idx * 0.1);
-                        o.frequency.exponentialRampToValueAtTime(20, now + idx * 0.1 + 0.6);
-                        g.gain.setValueAtTime(0.35, now + idx * 0.1);
-                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.6);
+                        o.frequency.setValueAtTime(freq * 1.8, now + idx * 0.12);
+                        o.frequency.exponentialRampToValueAtTime(15, now + idx * 0.12 + 0.7);
+                        g.gain.setValueAtTime(0.38, now + idx * 0.12);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.7);
                         o.connect(g);
                         g.connect(ctx.destination);
-                        o.start(now + idx * 0.1);
-                        o.stop(now + idx * 0.1 + 0.6);
+                        o.start(now + idx * 0.12);
+                        o.stop(now + idx * 0.12 + 0.7);
                     });
+
+                    // Extended distorted noise blast
+                    const bufSize = Math.floor(ctx.sampleRate * 0.6);
+                    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+                    const out = noiseBuf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.25));
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = noiseBuf;
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.35, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    noise.connect(nGain);
+                    nGain.connect(ctx.destination);
+                    noise.start(now);
                 }
             } catch (e) {}
         }
@@ -5302,27 +5425,61 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             if (coinBadge) coinBadge.innerText = `${window.maximumClaimedDisc || 0}%`;
         });
         // ===================================================================
-        // 🚀 SPACE SHOOTER: LEVEL SETUP & INITIALIZATION
+        // 🚀 SPACE SHOOTER: LEVEL SETUP & 10 DISTINCT ENEMY TIERS
         // ===================================================================
         function setupLevelParameters() {
-            let isBoss = (currentLevelState % 5 === 0);
-            let bHealth = isBoss ? 45 + (currentLevelState * 5) : 3 + currentLevelState * 2;
+            let isBoss = (currentLevelState === 5 || currentLevelState === 10);
+            let isFinalBoss = (currentLevelState === 10);
 
-            let shipW = isBoss ? 110 : 38 + (currentLevelState % 3) * 4;
-            let shipH = isBoss ? 80 : 28 + (currentLevelState % 3) * 4;
-            let shipSpeed = isBoss ? 1.2 : 1.8 + (Math.random() * 1.5);
+            let shipW, shipH, bHealth, shipSpeed;
+            if (isFinalBoss) { // Level 10: OMEGA WORLD-EATER DOOMSDAY TITAN
+                shipW = 154;
+                shipH = 106;
+                bHealth = 95;
+                shipSpeed = 1.05;
+            } else if (isBoss) { // Level 5: GOLIATH DREADNOUGHT MOTHERSHIP
+                shipW = 120;
+                shipH = 84;
+                bHealth = 52;
+                shipSpeed = 1.35;
+            } else {
+                // Standard ships with ascending threat, armor, and size
+                const tierConfigs = {
+                    1: { w: 38, h: 30, hp: 4, speed: 1.9 },   // Tier 1: Viper Scout Drone
+                    2: { w: 44, h: 34, hp: 7, speed: 2.05 },  // Tier 2: Shadow Interceptor
+                    3: { w: 50, h: 38, hp: 10, speed: 2.15 }, // Tier 3: Ironclad Raider Gunship
+                    4: { w: 56, h: 42, hp: 14, speed: 2.25 }, // Tier 4: Void Phantom Hunter
+                    6: { w: 64, h: 46, hp: 20, speed: 2.3 },  // Tier 6: Oblivion Marauder
+                    7: { w: 72, h: 50, hp: 25, speed: 2.4 },  // Tier 7: Plasma Vortex Cruiser
+                    8: { w: 80, h: 55, hp: 30, speed: 2.45 }, // Tier 8: Dark Harvester Battlecruiser
+                    9: { w: 88, h: 60, hp: 36, speed: 2.5 }   // Tier 9: Apex Nemesis Devastator
+                };
+                const cfg = tierConfigs[currentLevelState] || { w: 46, h: 36, hp: 12, speed: 2.1 };
+                shipW = cfg.w;
+                shipH = cfg.h;
+                bHealth = cfg.hp;
+                shipSpeed = cfg.speed;
+            }
 
             alienInvaderObj = {
-                x: 160 - (shipW / 2), y: isBoss ? -100 : 40,
+                x: (spCanvasElement ? spCanvasElement.width / 2 : 160) - (shipW / 2),
+                y: isBoss ? -120 : 35,
                 w: shipW, h: shipH,
                 health: bHealth, maxHealth: bHealth,
                 dx: shipSpeed,
-                isBoss: isBoss
+                level: currentLevelState,
+                isBoss: isBoss,
+                isFinalBoss: isFinalBoss
             };
 
             spaceBullets = []; enemyLasers = []; powerUps = [];
             spaceParticlesArray = [];
             sShieldTimer = 0; sMultiTimer = 0;
+
+            if (isBoss) {
+                applySpaceCameraShake(14);
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'BOSS_ALARM');
+            }
         }
 
 // ===================================================================
@@ -5477,18 +5634,37 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                 spCtx.restore();
             });
 
-            // --- 3. STAGE TRANSITION ---
+            // --- 3. STAGE TRANSITION (WITH BOSS ALARM & HUD BANNER) ---
             if (spaceTransitionCount > 0) {
                 spaceTransitionCount--;
-                spCtx.fillStyle = `rgba(241, 196, 15, ${Math.min(1, spaceTransitionCount / 30)})`;
-                spCtx.font = "900 24px Segoe UI";
-                spCtx.textAlign = "center";
-                spCtx.shadowColor = "#f39c12"; spCtx.shadowBlur = 15;
-                spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, spCanvasElement.width / 2, spCanvasElement.height / 2);
-                spCtx.shadowBlur = 0;
-                spCtx.font = "italic 12px Segoe UI";
-                spCtx.fillStyle = "rgba(255,255,255,0.7)";
-                spCtx.fillText("Calibrating hyperdrive vectors...", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30);
+                let nextStage = currentLevelState;
+                let isNextBoss = (nextStage === 5 || nextStage === 10);
+
+                if (isNextBoss) {
+                    let flash = Math.sin(spaceFrameTracker * 0.25) > 0;
+                    spCtx.fillStyle = flash ? "rgba(231, 76, 60, 0.95)" : "rgba(241, 196, 15, 0.95)";
+                    spCtx.font = "900 20px Segoe UI";
+                    spCtx.textAlign = "center";
+                    spCtx.shadowColor = "#e74c3c"; spCtx.shadowBlur = 18;
+                    spCtx.fillText(nextStage === 10 ? "💀 APEX FINAL BOSS DETECTED 💀" : "⚠️ LEVEL 5 DREADNOUGHT ALERT ⚠️", spCanvasElement.width / 2, spCanvasElement.height / 2 - 12);
+                    spCtx.shadowBlur = 0;
+                    spCtx.font = "bold 13px Segoe UI";
+                    spCtx.fillStyle = "#ffffff";
+                    spCtx.fillText(nextStage === 10 ? "OMEGA WORLD-EATER TITAN IS DESCENDING!" : "GOLIATH DREADNOUGHT WARPING IN!", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 14);
+                    spCtx.font = "italic 11px Segoe UI";
+                    spCtx.fillStyle = "rgba(255,255,255,0.75)";
+                    spCtx.fillText("Deploy shields and evasive maneuvers!", spCanvasElement.width / 2, (spCanvasElement.height / 2) + 34);
+                } else {
+                    spCtx.fillStyle = `rgba(241, 196, 15, ${Math.min(1, spaceTransitionCount / 30)})`;
+                    spCtx.font = "900 24px Segoe UI";
+                    spCtx.textAlign = "center";
+                    spCtx.shadowColor = "#f39c12"; spCtx.shadowBlur = 15;
+                    spCtx.fillText(`STAGE ${currentLevelState - 1} CLEARED!`, spCanvasElement.width / 2, spCanvasElement.height / 2);
+                    spCtx.shadowBlur = 0;
+                    spCtx.font = "italic 12px Segoe UI";
+                    spCtx.fillStyle = "rgba(255,255,255,0.7)";
+                    spCtx.fillText(`Warping to Sector ${currentLevelState}...`, spCanvasElement.width / 2, (spCanvasElement.height / 2) + 30);
+                }
                 spCtx.textAlign = "start";
                 if (spaceTransitionCount === 0) setupLevelParameters();
                 spCtx.restore();
@@ -5613,85 +5789,559 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                 }
             }
 
-            // --- 6. ADVANCED ENEMY AI & RENDERING ---
-            let isRage = alienInvaderObj.isBoss && alienInvaderObj.health < alienInvaderObj.maxHealth * 0.4;
+            // --- 6. ADVANCED ENEMY AI & 10 DISTINCT PROCEDURAL SPACESHIPS ---
+            let isRage = alienInvaderObj.isBoss && alienInvaderObj.health < alienInvaderObj.maxHealth * 0.42;
 
             // Boss Entrance Animation
-            if (alienInvaderObj.isBoss && alienInvaderObj.y < 40) {
-                alienInvaderObj.y += 1.5;
+            if (alienInvaderObj.isBoss && alienInvaderObj.y < 35) {
+                alienInvaderObj.y += 1.6;
             } else {
                 // Movement Logic
-                alienInvaderObj.x += alienInvaderObj.dx * (isRage ? 1.5 : 1);
-                if (alienInvaderObj.x < 0 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w) {
+                alienInvaderObj.x += alienInvaderObj.dx * (isRage ? 1.4 : 1);
+                if (alienInvaderObj.x < 4 || alienInvaderObj.x > spCanvasElement.width - alienInvaderObj.w - 4) {
                     alienInvaderObj.dx *= -1;
                 }
                 // Bobbing hover effect
                 if (!alienInvaderObj.isBoss) {
-                    alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * 0.05) * 10;
+                    alienInvaderObj.y = 35 + Math.sin(spaceFrameTracker * 0.05) * 8;
                 } else {
-                    alienInvaderObj.y = 40 + Math.sin(spaceFrameTracker * (isRage ? 0.1 : 0.03)) * (isRage ? 25 : 10);
+                    alienInvaderObj.y = 35 + Math.sin(spaceFrameTracker * (isRage ? 0.09 : 0.035)) * (isRage ? 18 : 8);
                 }
             }
 
             spCtx.save();
             spCtx.translate(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2);
 
-            if (alienInvaderObj.isBoss) {
-                // 👾 MASSIVE BOSS GRAPHICS
-                if (isRage) {
-                    spCtx.shadowColor = "#e74c3c"; spCtx.shadowBlur = 15 + Math.sin(spaceFrameTracker * 0.3) * 10;
-                }
-                // Wings
-                spCtx.fillStyle = "#2c3e50";
-                spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(-50, -20); spCtx.lineTo(-55, 30); spCtx.lineTo(-20, 10); spCtx.fill();
-                spCtx.beginPath(); spCtx.moveTo(0, 0); spCtx.lineTo(50, -20); spCtx.lineTo(55, 30); spCtx.lineTo(20, 10); spCtx.fill();
-                // Core Body
-                spCtx.fillStyle = isRage ? "#c0392b" : "#5f27cd";
-                spCtx.fillRect(-25, -20, 50, 45);
-                // Engine / Eye
-                spCtx.fillStyle = isRage ? "#f1c40f" : "#ff007f";
-                spCtx.beginPath(); spCtx.arc(0, 5, 14, 0, Math.PI * 2); spCtx.fill();
-                spCtx.fillStyle = "#fff"; spCtx.beginPath(); spCtx.arc(0, 5, 6, 0, Math.PI * 2); spCtx.fill();
-                spCtx.shadowBlur = 0;
-            } else {
-                // 🛸 ADVANCED MINION GRAPHICS
-                let minionType = currentLevelState % 3;
-                spCtx.fillStyle = minionType === 0 ? "#e67e22" : (minionType === 1 ? "#9b59b6" : "#e74c3c");
+            // ===================================================================
+            // 🛸 10 DISTINCT ENEMY SPACESHIPS (ASCENDING DANGER + UNIQUE BOSSES)
+            // ===================================================================
+            let lvl = alienInvaderObj.level || currentLevelState;
+            let w = alienInvaderObj.w;
+            let h = alienInvaderObj.h;
+            let hw = w / 2;
+            let hh = h / 2;
+
+            if (lvl === 1) {
+                // --- 1. VIPER SCOUT DRONE (Light, agile, cyan & slate) ---
+                spCtx.shadowColor = "#00d2d3"; spCtx.shadowBlur = 8;
+                spCtx.fillStyle = "#1e272e";
                 spCtx.beginPath();
-                spCtx.moveTo(0, 15); spCtx.lineTo(15, -10); spCtx.lineTo(0, -5); spCtx.lineTo(-15, -10);
+                spCtx.moveTo(0, hh); spCtx.lineTo(hw, -hh + 6); spCtx.lineTo(hw - 6, -hh); spCtx.lineTo(0, -hh + 8); spCtx.lineTo(-hw + 6, -hh); spCtx.lineTo(-hw, -hh + 6);
                 spCtx.closePath(); spCtx.fill();
-                // Engines
-                spCtx.fillStyle = "#f1c40f";
-                spCtx.beginPath(); spCtx.arc(-8, -10, 4, 0, Math.PI * 2); spCtx.arc(8, -10, 4, 0, Math.PI * 2); spCtx.fill();
+                spCtx.strokeStyle = "#00d2d3"; spCtx.lineWidth = 1.5; spCtx.stroke();
+                // Cyan sensor visor
+                spCtx.fillStyle = "#00d2d3";
+                spCtx.beginPath(); spCtx.ellipse(0, 0, 4, 8, 0, 0, Math.PI * 2); spCtx.fill();
+                // Micro thrusters
+                spCtx.fillStyle = "#54a0ff";
+                spCtx.fillRect(-7, -hh, 3, 5 + Math.sin(spaceFrameTracker * 0.3) * 3);
+                spCtx.fillRect(4, -hh, 3, 5 + Math.sin(spaceFrameTracker * 0.3) * 3);
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 2) {
+                // --- 2. SHADOW INTERCEPTOR (Stealth delta-fighter, crimson & carbon) ---
+                spCtx.shadowColor = "#ff3838"; spCtx.shadowBlur = 10;
+                spCtx.fillStyle = "#171b26";
+                spCtx.beginPath();
+                spCtx.moveTo(0, hh); spCtx.lineTo(hw, -hh + 4); spCtx.lineTo(hw * 0.6, -hh); spCtx.lineTo(0, -hh + 6); spCtx.lineTo(-hw * 0.6, -hh); spCtx.lineTo(-hw, -hh + 4);
+                spCtx.closePath(); spCtx.fill();
+                // Crimson razor wingtips
+                spCtx.fillStyle = "#c0392b";
+                spCtx.beginPath();
+                spCtx.moveTo(hw * 0.5, 0); spCtx.lineTo(hw, -hh + 4); spCtx.lineTo(hw * 0.7, -hh + 12);
+                spCtx.fill();
+                spCtx.beginPath();
+                spCtx.moveTo(-hw * 0.5, 0); spCtx.lineTo(-hw, -hh + 4); spCtx.lineTo(-hw * 0.7, -hh + 12);
+                spCtx.fill();
+                // Dual gun barrels
+                spCtx.fillStyle = "#718093";
+                spCtx.fillRect(-hw * 0.85, 0, 3, 10);
+                spCtx.fillRect(hw * 0.85 - 3, 0, 3, 10);
+                // Glowing amber cockpit
+                spCtx.fillStyle = "#ff9f43";
+                spCtx.beginPath(); spCtx.ellipse(0, -2, 3.5, 7, 0, 0, Math.PI * 2); spCtx.fill();
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 3) {
+                // --- 3. IRONCLAD RAIDER (Armored heavy gunship, gunmetal & hazard green) ---
+                spCtx.shadowColor = "#2ed573"; spCtx.shadowBlur = 10;
+                // Heavy armor chassis
+                spCtx.fillStyle = "#2f3542";
+                spCtx.fillRect(-hw * 0.7, -hh, w * 0.7, h * 0.85);
+                // Angled shoulder armor
+                spCtx.fillStyle = "#57606f";
+                spCtx.beginPath();
+                spCtx.moveTo(-hw, -hh + 4); spCtx.lineTo(-hw * 0.6, hh * 0.8); spCtx.lineTo(-hw * 0.3, hh * 0.8); spCtx.lineTo(-hw * 0.3, -hh);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.beginPath();
+                spCtx.moveTo(hw, -hh + 4); spCtx.lineTo(hw * 0.6, hh * 0.8); spCtx.lineTo(hw * 0.3, hh * 0.8); spCtx.lineTo(hw * 0.3, -hh);
+                spCtx.closePath(); spCtx.fill();
+                // Armored visor slit
+                spCtx.fillStyle = "#2ed573";
+                spCtx.fillRect(-hw * 0.4, -2, w * 0.4, 4);
+                // Heavy autocannon barrels
+                spCtx.fillStyle = "#747d8c";
+                spCtx.fillRect(-hw * 0.65, hh * 0.6, 5, 12);
+                spCtx.fillRect(hw * 0.65 - 5, hh * 0.6, 5, 12);
+                // Hazard markings
+                spCtx.fillStyle = "#ffa502";
+                spCtx.fillRect(-hw * 0.25, -hh + 3, w * 0.25, 3);
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 4) {
+                // --- 4. VOID PHANTOM (Alien bio-cruiser, curving scythes & void purple) ---
+                spCtx.shadowColor = "#a55eea"; spCtx.shadowBlur = 14;
+                // Prow scythe mandibles
+                spCtx.fillStyle = "#201235";
+                spCtx.beginPath();
+                spCtx.moveTo(0, hh * 0.2);
+                spCtx.bezierCurveTo(hw, hh * 0.3, hw, hh * 1.1, hw * 0.6, hh * 1.15);
+                spCtx.lineTo(hw * 0.5, hh * 0.5);
+                spCtx.lineTo(0, -hh * 0.3);
+                spCtx.lineTo(-hw * 0.5, hh * 0.5);
+                spCtx.lineTo(-hw * 0.6, hh * 1.15);
+                spCtx.bezierCurveTo(-hw, hh * 1.1, -hw, hh * 0.3, 0, hh * 0.2);
+                spCtx.fill();
+                spCtx.strokeStyle = "#8854d0"; spCtx.lineWidth = 1.5; spCtx.stroke();
+                // Segmented chitin carapace
+                spCtx.fillStyle = "#38184c";
+                spCtx.beginPath();
+                spCtx.ellipse(0, -hh * 0.2, hw * 0.45, hh * 0.55, 0, 0, Math.PI * 2);
+                spCtx.fill();
+                // Pulsing void hyper-core
+                let voidGlow = 6 + Math.sin(spaceFrameTracker * 0.2) * 3;
+                let voidGrad = spCtx.createRadialGradient(0, -hh * 0.2, 1, 0, -hh * 0.2, voidGlow);
+                voidGrad.addColorStop(0, '#ffffff');
+                voidGrad.addColorStop(0.5, '#e056fd');
+                voidGrad.addColorStop(1, '#686de0');
+                spCtx.fillStyle = voidGrad;
+                spCtx.beginPath(); spCtx.arc(0, -hh * 0.2, voidGlow, 0, Math.PI * 2); spCtx.fill();
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 5) {
+                // ===================================================================
+                // 💥 LEVEL 5 MID-BOSS: GOLIATH DREADNOUGHT MOTHERSHIP (TOTALLY DIFFERENT)
+                // ===================================================================
+                spCtx.shadowColor = isRage ? "#ff4757" : "#e67e22";
+                spCtx.shadowBlur = 18 + Math.sin(spaceFrameTracker * 0.2) * 8;
+
+                // 1. Massive Dreadnought Outrigger Battle Wings
+                let dreadGrad = spCtx.createLinearGradient(0, -hh, 0, hh);
+                dreadGrad.addColorStop(0, isRage ? '#401010' : '#1e272e');
+                dreadGrad.addColorStop(0.5, isRage ? '#7a1c1c' : '#2c3e50');
+                dreadGrad.addColorStop(1, '#0f172a');
+                spCtx.fillStyle = dreadGrad;
+
+                // Sweeping fortress wings
+                spCtx.beginPath();
+                spCtx.moveTo(0, -hh * 0.6);
+                spCtx.lineTo(hw * 0.5, -hh);
+                spCtx.lineTo(hw, -hh * 0.4);
+                spCtx.lineTo(hw * 0.9, hh * 0.5);
+                spCtx.lineTo(hw * 0.4, hh * 0.85);
+                spCtx.lineTo(0, hh * 0.4);
+                spCtx.lineTo(-hw * 0.4, hh * 0.85);
+                spCtx.lineTo(-hw * 0.9, hh * 0.5);
+                spCtx.lineTo(-hw, -hh * 0.4);
+                spCtx.lineTo(-hw * 0.5, -hh);
+                spCtx.closePath();
+                spCtx.fill();
+                spCtx.strokeStyle = isRage ? "#ff4757" : "#f39c12"; spCtx.lineWidth = 2; spCtx.stroke();
+
+                // 2. Heavy Dual Flank Siege Turrets
+                spCtx.fillStyle = "#718093";
+                spCtx.fillRect(-hw * 0.8, -10, 8, 28);
+                spCtx.fillRect(hw * 0.8 - 8, -10, 8, 28);
+                spCtx.fillStyle = isRage ? "#ff3838" : "#ffa502";
+                spCtx.fillRect(-hw * 0.82, 14, 12, 5);
+                spCtx.fillRect(hw * 0.82 - 4, 14, 12, 5);
+
+                // 3. Multi-tier Command Bridge Deck
+                spCtx.fillStyle = isRage ? "#b33939" : "#34495e";
+                spCtx.fillRect(-hw * 0.32, -hh * 0.4, w * 0.32, hh * 0.7);
+                spCtx.strokeStyle = "#ffffff"; spCtx.lineWidth = 1;
+                spCtx.strokeRect(-hw * 0.32, -hh * 0.4, w * 0.32, hh * 0.7);
+
+                // Command Visor Slit
+                spCtx.fillStyle = isRage ? "#ff0033" : "#00d2d3";
+                spCtx.fillRect(-hw * 0.22, -hh * 0.15, w * 0.22, 5);
+
+                // 4. Central Thermal Nuclear Reactor Core
+                let coreR = 12 + Math.sin(spaceFrameTracker * (isRage ? 0.3 : 0.12)) * 3;
+                let coreGrad = spCtx.createRadialGradient(0, hh * 0.2, 2, 0, hh * 0.2, coreR);
+                coreGrad.addColorStop(0, '#ffffff');
+                coreGrad.addColorStop(0.4, isRage ? '#ff0033' : '#ff9f43');
+                coreGrad.addColorStop(1, isRage ? '#770000' : '#c0392b');
+                spCtx.fillStyle = coreGrad;
+                spCtx.beginPath(); spCtx.arc(0, hh * 0.2, coreR, 0, Math.PI * 2); spCtx.fill();
+
+                // 5. 4 Orbiting Shield Drones (Revolving around the Boss in 3D)
+                for (let si = 0; si < 4; si++) {
+                    let sAngle = (spaceFrameTracker * 0.05) + (si * (Math.PI * 2 / 4));
+                    let sx = Math.cos(sAngle) * (hw * 0.95);
+                    let sy = Math.sin(sAngle) * (hh * 0.55);
+                    spCtx.fillStyle = isRage ? "#ff3838" : "#00d2d3";
+                    spCtx.beginPath(); spCtx.arc(sx, sy, 4.5, 0, Math.PI * 2); spCtx.fill();
+                    spCtx.strokeStyle = isRage ? "rgba(255, 71, 87, 0.4)" : "rgba(0, 210, 211, 0.4)";
+                    spCtx.lineWidth = 1;
+                    spCtx.beginPath(); spCtx.moveTo(0, hh * 0.2); spCtx.lineTo(sx, sy); spCtx.stroke();
+                }
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 6) {
+                // --- 6. OBLIVION MARAUDER (Serrated attack frigate, crimson & razor steel) ---
+                spCtx.shadowColor = "#ff1e56"; spCtx.shadowBlur = 12;
+                spCtx.fillStyle = "#2c0e14";
+                spCtx.beginPath();
+                spCtx.moveTo(0, hh);
+                spCtx.lineTo(hw * 0.2, hh * 0.6);
+                spCtx.lineTo(hw * 0.5, hh * 0.85); // Forward jagged tooth
+                spCtx.lineTo(hw * 0.4, hh * 0.3);
+                spCtx.lineTo(hw, -hh * 0.2);
+                spCtx.lineTo(hw * 0.8, -hh);
+                spCtx.lineTo(0, -hh * 0.5);
+                spCtx.lineTo(-hw * 0.8, -hh);
+                spCtx.lineTo(-hw, -hh * 0.2);
+                spCtx.lineTo(-hw * 0.4, hh * 0.3);
+                spCtx.lineTo(-hw * 0.5, hh * 0.85);
+                spCtx.lineTo(-hw * 0.2, hh * 0.6);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.strokeStyle = "#ff1e56"; spCtx.lineWidth = 1.8; spCtx.stroke();
+
+                // Heavy twin vulcan muzzles
+                spCtx.fillStyle = "#535c68";
+                spCtx.fillRect(-hw * 0.25, hh * 0.4, 4, 12);
+                spCtx.fillRect(hw * 0.25 - 4, hh * 0.4, 4, 12);
+                // Glowing crimson engine conduits
+                spCtx.fillStyle = "#ff4d4d";
+                spCtx.fillRect(-hw * 0.5, -hh * 0.3, 3, 14);
+                spCtx.fillRect(hw * 0.5 - 3, -hh * 0.3, 3, 14);
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 7) {
+                // --- 7. PLASMA VORTEX (Rotating magnetic accelerator ring & electric arcs) ---
+                spCtx.shadowColor = "#00d2d3"; spCtx.shadowBlur = 14;
+                // Dual forward lightning prongs
+                spCtx.fillStyle = "#102a43";
+                spCtx.beginPath();
+                spCtx.moveTo(-hw * 0.7, hh); spCtx.lineTo(-hw * 0.5, hh * 0.2); spCtx.lineTo(-hw * 0.2, 0);
+                spCtx.lineTo(-hw * 0.4, -hh); spCtx.lineTo(-hw, -hh * 0.3);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.beginPath();
+                spCtx.moveTo(hw * 0.7, hh); spCtx.lineTo(hw * 0.5, hh * 0.2); spCtx.lineTo(hw * 0.2, 0);
+                spCtx.lineTo(hw * 0.4, -hh); spCtx.lineTo(hw, -hh * 0.3);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.strokeStyle = "#0abde3"; spCtx.lineWidth = 1.5; spCtx.stroke();
+
+                // Animated Rotating Magnetic Accelerator Ring
+                spCtx.save();
+                spCtx.rotate(spaceFrameTracker * 0.08);
+                spCtx.strokeStyle = "#00d2d3"; spCtx.lineWidth = 2.5;
+                spCtx.beginPath(); spCtx.arc(0, 0, hw * 0.42, 0, Math.PI * 2); spCtx.stroke();
+                // Magnetic flux nodes on ring
+                for (let mi = 0; mi < 4; mi++) {
+                    let ma = mi * (Math.PI / 2);
+                    spCtx.fillStyle = "#ffffff";
+                    spCtx.beginPath();
+                    spCtx.arc(Math.cos(ma) * hw * 0.42, Math.sin(ma) * hw * 0.42, 3, 0, Math.PI * 2);
+                    spCtx.fill();
+                }
+                spCtx.restore();
+
+                // Core electric plasma eye
+                spCtx.fillStyle = "#ffffff";
+                spCtx.beginPath(); spCtx.arc(0, 0, 5, 0, Math.PI * 2); spCtx.fill();
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 8) {
+                // --- 8. DARK HARVESTER (Siege battlecruiser, gold-trimmed obsidian & toxic emerald) ---
+                spCtx.shadowColor = "#00ff88"; spCtx.shadowBlur = 16;
+                // Multi-plate obsidian armor
+                spCtx.fillStyle = "#0c1017";
+                spCtx.beginPath();
+                spCtx.moveTo(0, hh * 0.9);
+                spCtx.lineTo(hw * 0.35, hh * 0.5);
+                spCtx.lineTo(hw, hh * 0.1);
+                spCtx.lineTo(hw * 0.85, -hh);
+                spCtx.lineTo(0, -hh * 0.6);
+                spCtx.lineTo(-hw * 0.85, -hh);
+                spCtx.lineTo(-hw, hh * 0.1);
+                spCtx.lineTo(-hw * 0.35, hh * 0.5);
+                spCtx.closePath(); spCtx.fill();
+
+                // Regal gold filigree armor trim
+                spCtx.strokeStyle = "#f1c40f"; spCtx.lineWidth = 1.8; spCtx.stroke();
+
+                // Toxic emerald anti-matter crystal pylons
+                spCtx.fillStyle = "#00ff88";
+                spCtx.beginPath();
+                spCtx.moveTo(-hw * 0.65, -hh * 0.4); spCtx.lineTo(-hw * 0.55, hh * 0.1); spCtx.lineTo(-hw * 0.75, hh * 0.1);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.beginPath();
+                spCtx.moveTo(hw * 0.65, -hh * 0.4); spCtx.lineTo(hw * 0.55, hh * 0.1); spCtx.lineTo(hw * 0.75, hh * 0.1);
+                spCtx.closePath(); spCtx.fill();
+
+                // Insectoid quad-sensor eyes
+                spCtx.fillStyle = "#26de81";
+                spCtx.beginPath();
+                spCtx.arc(-8, hh * 0.2, 2.5, 0, Math.PI * 2);
+                spCtx.arc(-3, hh * 0.35, 2.5, 0, Math.PI * 2);
+                spCtx.arc(3, hh * 0.35, 2.5, 0, Math.PI * 2);
+                spCtx.arc(8, hh * 0.2, 2.5, 0, Math.PI * 2);
+                spCtx.fill();
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 9) {
+                // --- 9. APEX NEMESIS (Demonic alien capital titan, multi-jointed barbed wings) ---
+                spCtx.shadowColor = "#ff0055"; spCtx.shadowBlur = 18;
+                // Barbed bio-chitin hull
+                spCtx.fillStyle = "#1e082b";
+                spCtx.beginPath();
+                spCtx.moveTo(0, hh * 0.95);
+                spCtx.lineTo(hw * 0.2, hh * 0.5);
+                spCtx.lineTo(hw * 0.6, hh * 0.75); // Outer claw 1
+                spCtx.lineTo(hw * 0.5, hh * 0.2);
+                spCtx.lineTo(hw, hh * 0.3); // Outer razor wing
+                spCtx.lineTo(hw * 0.9, -hh * 0.6);
+                spCtx.lineTo(hw * 0.4, -hh);
+                spCtx.lineTo(0, -hh * 0.4);
+                spCtx.lineTo(-hw * 0.4, -hh);
+                spCtx.lineTo(-hw * 0.9, -hh * 0.6);
+                spCtx.lineTo(-hw, hh * 0.3);
+                spCtx.lineTo(-hw * 0.5, hh * 0.2);
+                spCtx.lineTo(-hw * 0.6, hh * 0.75);
+                spCtx.lineTo(-hw * 0.2, hh * 0.5);
+                spCtx.closePath(); spCtx.fill();
+                spCtx.strokeStyle = "#be2edd"; spCtx.lineWidth = 2; spCtx.stroke();
+
+                // Dual Heavy Plasma Lance Emitters
+                spCtx.fillStyle = "#ff1e56";
+                spCtx.fillRect(-hw * 0.3, hh * 0.4, 6, 16);
+                spCtx.fillRect(hw * 0.3 - 6, hh * 0.4, 6, 16);
+
+                // Four menacing tracking ocular sensors
+                let lookDx = ((pShipObj.x + pShipObj.w / 2) - (alienInvaderObj.x + hw)) * 0.05;
+                spCtx.fillStyle = "#ff0055";
+                [-12, -4, 4, 12].forEach(ox => {
+                    spCtx.beginPath();
+                    spCtx.ellipse(ox + Math.max(-2, Math.min(2, lookDx)), -hh * 0.1, 2.5, 4.5, 0, 0, Math.PI * 2);
+                    spCtx.fill();
+                });
+                spCtx.shadowBlur = 0;
+
+            } else if (lvl === 10) {
+                // ===================================================================
+                // 💀 LEVEL 10 FINAL BOSS: OMEGA WORLD-EATER DOOMSDAY TITAN (TOTALLY DIFFERENT)
+                // ===================================================================
+                spCtx.shadowColor = isRage ? "#ff0033" : "#f39c12";
+                spCtx.shadowBlur = 24 + Math.sin(spaceFrameTracker * 0.25) * 12;
+
+                // 1. Dominating Multi-Tier Cybernetic Citadel Hull
+                let titanGrad = spCtx.createLinearGradient(0, -hh, 0, hh);
+                titanGrad.addColorStop(0, isRage ? '#3d000a' : '#0a0d17');
+                titanGrad.addColorStop(0.5, isRage ? '#7a0018' : '#1c2438');
+                titanGrad.addColorStop(1, isRage ? '#b30026' : '#2f3b52');
+                spCtx.fillStyle = titanGrad;
+
+                // Colossal segmented war-wings
+                spCtx.beginPath();
+                spCtx.moveTo(0, -hh * 0.7);
+                spCtx.lineTo(hw * 0.35, -hh);
+                spCtx.lineTo(hw * 0.75, -hh * 0.85);
+                spCtx.lineTo(hw, -hh * 0.3);
+                spCtx.lineTo(hw * 0.95, hh * 0.4);
+                spCtx.lineTo(hw * 0.65, hh * 0.75);
+                spCtx.lineTo(hw * 0.3, hh * 0.45);
+                spCtx.lineTo(0, hh * 0.65); // Apex prow
+                spCtx.lineTo(-hw * 0.3, hh * 0.45);
+                spCtx.lineTo(-hw * 0.65, hh * 0.75);
+                spCtx.lineTo(-hw * 0.95, hh * 0.4);
+                spCtx.lineTo(-hw, -hh * 0.3);
+                spCtx.lineTo(-hw * 0.75, -hh * 0.85);
+                spCtx.lineTo(-hw * 0.35, -hh);
+                spCtx.closePath();
+                spCtx.fill();
+
+                // Gilded doomsday battle trim
+                spCtx.strokeStyle = isRage ? "#ff0033" : "#f1c40f";
+                spCtx.lineWidth = 2.4;
+                spCtx.stroke();
+
+                // 2. Heavy Flank Missile / Siege Bastions
+                spCtx.fillStyle = "#2c3e50";
+                spCtx.fillRect(-hw * 0.88, -hh * 0.2, 16, 32);
+                spCtx.fillRect(hw * 0.88 - 16, -hh * 0.2, 16, 32);
+                spCtx.strokeStyle = "#e74c3c"; spCtx.lineWidth = 1.2;
+                spCtx.strokeRect(-hw * 0.88, -hh * 0.2, 16, 32);
+                spCtx.strokeRect(hw * 0.88 - 16, -hh * 0.2, 16, 32);
+
+                // Missile silo nodes
+                spCtx.fillStyle = isRage ? "#ff3838" : "#f39c12";
+                for (let mi = 0; mi < 3; mi++) {
+                    spCtx.fillRect(-hw * 0.85, -hh * 0.15 + mi * 9, 10, 4);
+                    spCtx.fillRect(hw * 0.85 - 10, -hh * 0.15 + mi * 9, 10, 4);
+                }
+
+                // 3. Pulsing Energy Conduits Along Wings
+                spCtx.strokeStyle = isRage ? "#ff4757" : "#00d2d3";
+                spCtx.lineWidth = 2;
+                spCtx.beginPath();
+                spCtx.moveTo(-hw * 0.7, -hh * 0.4); spCtx.lineTo(-hw * 0.3, 0); spCtx.lineTo(0, -hh * 0.3);
+                spCtx.lineTo(hw * 0.3, 0); spCtx.lineTo(hw * 0.7, -hh * 0.4);
+                spCtx.stroke();
+
+                // 4. Central SINGULARITY EYE OF DOOM (Animated Ocular Reactor)
+                let eyeR = 18 + Math.sin(spaceFrameTracker * (isRage ? 0.4 : 0.15)) * 4;
+                // Outer runic containment ring
+                spCtx.save();
+                spCtx.rotate(spaceFrameTracker * (isRage ? 0.08 : 0.03));
+                spCtx.strokeStyle = isRage ? "#ff0033" : "#e056fd";
+                spCtx.lineWidth = 2;
+                spCtx.beginPath(); spCtx.arc(0, 0, eyeR + 6, 0, Math.PI * 2); spCtx.stroke();
+                spCtx.restore();
+
+                // Eye iris gradient
+                let eyeGrad = spCtx.createRadialGradient(0, 0, 2, 0, 0, eyeR);
+                eyeGrad.addColorStop(0, '#ffffff');
+                eyeGrad.addColorStop(0.3, isRage ? '#ff0055' : '#ff3838');
+                eyeGrad.addColorStop(0.7, isRage ? '#7a001c' : '#8854d0');
+                eyeGrad.addColorStop(1, '#000000');
+                spCtx.fillStyle = eyeGrad;
+                spCtx.beginPath(); spCtx.arc(0, 0, eyeR, 0, Math.PI * 2); spCtx.fill();
+
+                // Blinding vertical singularity pupil slit
+                spCtx.fillStyle = "#ffffff";
+                spCtx.beginPath();
+                spCtx.ellipse(0, 0, 3, eyeR * 0.8, 0, 0, Math.PI * 2);
+                spCtx.fill();
+
+                // Pre-firing death beam targeting ray (Rage mode)
+                if (isRage) {
+                    spCtx.strokeStyle = `rgba(255, 0, 85, ${0.4 + Math.sin(spaceFrameTracker * 0.35) * 0.3})`;
+                    spCtx.lineWidth = 3;
+                    spCtx.beginPath();
+                    spCtx.moveTo(0, eyeR);
+                    spCtx.lineTo(0, spCanvasElement.height);
+                    spCtx.stroke();
+                }
+                spCtx.shadowBlur = 0;
             }
+
             spCtx.restore();
 
-            // --- 7. ENEMY COMBAT PATTERNS ---
-            let counterRate = alienInvaderObj.isBoss ? (isRage ? 25 : 45) : Math.max(20, 50 - (currentLevelState * 3));
-            if (spaceFrameTracker % counterRate === 0 && alienInvaderObj.y >= 40) {
-                if (alienInvaderObj.isBoss) {
-                    if (isRage) {
-                        // Circular Bullet Hell Pattern
-                        applySpaceCameraShake(3);
-                        for (let i = 0; i < 6; i++) {
-                            let angle = (spaceFrameTracker * 0.1) + (i * (Math.PI * 2 / 6));
-                            enemyLasers.push({
-                                x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h / 2,
-                                dx: Math.cos(angle) * 3, dy: Math.sin(angle) * 3
-                            });
-                        }
-                    } else {
-                        // Tri-Shot Spread
+            // --- 7. ENEMY COMBAT PATTERNS (10 DIVERSE BALLISTIC PROFILES) ---
+            let counterRate;
+            if (alienInvaderObj.isFinalBoss) {
+                counterRate = isRage ? 16 : 28;
+            } else if (alienInvaderObj.isBoss) {
+                counterRate = isRage ? 22 : 36;
+            } else {
+                counterRate = Math.max(16, 52 - (lvl * 3.5));
+            }
+
+            if (spaceFrameTracker % counterRate === 0 && alienInvaderObj.y >= 35) {
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_LASER');
+                let cx = alienInvaderObj.x + alienInvaderObj.w / 2;
+                let cy = alienInvaderObj.y + alienInvaderObj.h;
+
+                switch (lvl) {
+                    case 1: // Viper Scout: Single light blaster
+                        enemyLasers.push({ x: cx, y: cy, dx: 0, dy: 4.2, color: '#00d2d3' });
+                        break;
+                    case 2: // Shadow Interceptor: Rapid twin parallel lasers
                         enemyLasers.push(
-                            { x: alienInvaderObj.x + 10, y: alienInvaderObj.y + alienInvaderObj.h, dx: -1.5, dy: 4 },
-                            { x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h, dx: 0, dy: 5 },
-                            { x: alienInvaderObj.x + alienInvaderObj.w - 10, y: alienInvaderObj.y + alienInvaderObj.h, dx: 1.5, dy: 4 }
+                            { x: cx - 12, y: cy, dx: 0, dy: 4.8, color: '#ff3838' },
+                            { x: cx + 12, y: cy, dx: 0, dy: 4.8, color: '#ff3838' }
                         );
-                    }
-                } else {
-                    // Targeted Minion Shot (Aims slightly towards player)
-                    let aimDx = ((pShipObj.x + pShipObj.w / 2) - (alienInvaderObj.x + alienInvaderObj.w / 2)) * 0.015;
-                    enemyLasers.push({ x: alienInvaderObj.x + alienInvaderObj.w / 2, y: alienInvaderObj.y + alienInvaderObj.h, dx: aimDx, dy: 4.5 });
+                        break;
+                    case 3: // Ironclad Raider: Heavy aimed blast with slight spread
+                        let aim3 = ((pShipObj.x + pShipObj.w / 2) - cx) * 0.018;
+                        enemyLasers.push(
+                            { x: cx - 16, y: cy, dx: aim3 - 0.7, dy: 4.6, color: '#2ed573' },
+                            { x: cx + 16, y: cy, dx: aim3 + 0.7, dy: 4.6, color: '#2ed573' }
+                        );
+                        break;
+                    case 4: // Void Phantom: 3-way void spread
+                        enemyLasers.push(
+                            { x: cx, y: cy, dx: -1.8, dy: 4.4, color: '#a55eea' },
+                            { x: cx, y: cy, dx: 0, dy: 5.0, color: '#a55eea' },
+                            { x: cx, y: cy, dx: 1.8, dy: 4.4, color: '#a55eea' }
+                        );
+                        break;
+                    case 5: // Level 5 MID-BOSS Goliath Dreadnought
+                        if (isRage) {
+                            applySpaceCameraShake(3.5);
+                            for (let i = 0; i < 6; i++) {
+                                let angle = (spaceFrameTracker * 0.12) + (i * (Math.PI * 2 / 6));
+                                enemyLasers.push({
+                                    x: cx, y: alienInvaderObj.y + alienInvaderObj.h / 2,
+                                    dx: Math.cos(angle) * 3.6, dy: Math.sin(angle) * 3.6,
+                                    color: '#ff4757', isHeavy: true
+                                });
+                            }
+                        } else {
+                            enemyLasers.push(
+                                { x: cx - 42, y: cy - 10, dx: -1.6, dy: 4.5, color: '#e67e22' },
+                                { x: cx - 14, y: cy, dx: -0.6, dy: 5.2, color: '#ffa502' },
+                                { x: cx + 14, y: cy, dx: 0.6, dy: 5.2, color: '#ffa502' },
+                                { x: cx + 42, y: cy - 10, dx: 1.6, dy: 4.5, color: '#e67e22' }
+                            );
+                        }
+                        break;
+                    case 6: // Oblivion Marauder: Fast piercing dual crimson spikes
+                        let aim6 = ((pShipObj.x + pShipObj.w / 2) - cx) * 0.02;
+                        enemyLasers.push(
+                            { x: cx - 18, y: cy, dx: aim6 - 0.4, dy: 5.6, color: '#ff1e56' },
+                            { x: cx + 18, y: cy, dx: aim6 + 0.4, dy: 5.6, color: '#ff1e56' }
+                        );
+                        break;
+                    case 7: // Plasma Vortex: 3-way pulsing disc array
+                        enemyLasers.push(
+                            { x: cx - 22, y: cy, dx: -1.8, dy: 4.8, color: '#00d2d3' },
+                            { x: cx, y: cy, dx: 0, dy: 5.4, color: '#0abde3' },
+                            { x: cx + 22, y: cy, dx: 1.8, dy: 4.8, color: '#00d2d3' }
+                        );
+                        break;
+                    case 8: // Dark Harvester: Quad spread barrage
+                        enemyLasers.push(
+                            { x: cx - 30, y: cy, dx: -2.2, dy: 4.6, color: '#00ff88' },
+                            { x: cx - 10, y: cy, dx: -0.7, dy: 5.2, color: '#00ff88' },
+                            { x: cx + 10, y: cy, dx: 0.7, dy: 5.2, color: '#00ff88' },
+                            { x: cx + 30, y: cy, dx: 2.2, dy: 4.6, color: '#00ff88' }
+                        );
+                        break;
+                    case 9: // Apex Nemesis: 5-way quint-fan barrage + heavy center lance
+                        let aim9 = ((pShipObj.x + pShipObj.w / 2) - cx) * 0.016;
+                        enemyLasers.push(
+                            { x: cx - 32, y: cy, dx: -2.6 + aim9, dy: 4.6, color: '#e056fd' },
+                            { x: cx - 16, y: cy, dx: -1.2 + aim9, dy: 5.2, color: '#be2edd' },
+                            { x: cx, y: cy, dx: aim9, dy: 6.0, color: '#ff3838', isHeavy: true },
+                            { x: cx + 16, y: cy, dx: 1.2 + aim9, dy: 5.2, color: '#be2edd' },
+                            { x: cx + 32, y: cy, dx: 2.6 + aim9, dy: 4.6, color: '#e056fd' }
+                        );
+                        break;
+                    case 10: // Level 10 FINAL BOSS: Omega World-Eater
+                        if (isRage) {
+                            applySpaceCameraShake(4.5);
+                            for (let i = 0; i < 8; i++) {
+                                let angle = (spaceFrameTracker * 0.16) + (i * (Math.PI * 2 / 8));
+                                enemyLasers.push({
+                                    x: cx, y: alienInvaderObj.y + 40,
+                                    dx: Math.cos(angle) * 3.8, dy: Math.sin(angle) * 3.8,
+                                    color: '#ff0055', isHeavy: true
+                                });
+                            }
+                        } else {
+                            let aim10 = ((pShipObj.x + pShipObj.w / 2) - cx) * 0.016;
+                            enemyLasers.push(
+                                { x: cx - 55, y: cy - 20, dx: -2.2, dy: 4.8, color: '#f1c40f' },
+                                { x: cx - 25, y: cy, dx: -0.8 + aim10, dy: 5.4, color: '#ff3838' },
+                                { x: cx, y: cy + 5, dx: aim10, dy: 6.2, color: '#ff0033', isHeavy: true },
+                                { x: cx + 25, y: cy, dx: 0.8 + aim10, dy: 5.4, color: '#ff3838' },
+                                { x: cx + 55, y: cy - 20, dx: 2.2, dy: 4.8, color: '#f1c40f' }
+                            );
+                        }
+                        break;
                 }
             }
 
@@ -5743,14 +6393,15 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                     if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_HIT');
 
                     if (alienInvaderObj.health <= 0) {
-                        applySpaceCameraShake(alienInvaderObj.isBoss ? 25 : 8);
-                        createSpaceExplosion(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2, "#e74c3c", 40, alienInvaderObj.isBoss);
+                        applySpaceCameraShake(alienInvaderObj.isBoss ? 32 : 9);
+                        createSpaceExplosion(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2, "#e74c3c", alienInvaderObj.isBoss ? 55 : 25, alienInvaderObj.isBoss);
                         if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, alienInvaderObj.isBoss ? 'BOSS_BOOM' : 'EXPLOSION');
 
                         if (currentLevelState === (parseInt(rules.spaceTar) || 3)) {
                             triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
                         }
                         if (currentLevelState < 10) {
+                            if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'STAGE_CLEAR');
                             currentLevelState++;
                             spaceTransitionCount = 100; // Give time to see the explosion
                             alienInvaderObj.y = -500; // Hide body instantly
@@ -5765,9 +6416,13 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             enemyLasers.forEach((el, eli) => {
                 el.y += el.dy || 5.5; el.x += el.dx || 0;
 
-                spCtx.shadowColor = "#ff4d4d"; spCtx.shadowBlur = 8;
-                spCtx.fillStyle = "#fff";
-                spCtx.beginPath(); spCtx.arc(el.x, el.y, 4, 0, Math.PI * 2); spCtx.fill();
+                let laserColor = el.color || "#ff4d4d";
+                let isHeavy = el.isHeavy || false;
+                spCtx.shadowColor = laserColor; spCtx.shadowBlur = isHeavy ? 12 : 8;
+                spCtx.fillStyle = laserColor;
+                spCtx.beginPath(); spCtx.arc(el.x, el.y, isHeavy ? 5.5 : 3.8, 0, Math.PI * 2); spCtx.fill();
+                spCtx.fillStyle = "#ffffff";
+                spCtx.beginPath(); spCtx.arc(el.x, el.y, isHeavy ? 2.8 : 1.8, 0, Math.PI * 2); spCtx.fill();
                 spCtx.shadowBlur = 0;
 
                 if (el.y > spCanvasElement.height + 10 || el.x < -10 || el.x > spCanvasElement.width + 10) { enemyLasers.splice(eli, 1); return; }
@@ -5776,9 +6431,16 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                     enemyLasers.splice(eli, 1);
                     applySpaceCameraShake(6);
                     createSpaceExplosion(el.x, el.y, "#3498db", 8, false); // Shield/Hull spark
-                    if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_HIT');
 
-                    if (sShieldTimer <= 0) pShipObj.health--;
+                    if (sShieldTimer > 0) {
+                        // Shield absorbed hit!
+                        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'SHIELD_DEFLECT');
+                    } else {
+                        // Hull damaged
+                        pShipObj.health--;
+                        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_HIT');
+                    }
+
                     if (pShipObj.health <= 0) {
                         createSpaceExplosion(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2, "#3498db", 30, true);
                         if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'GAME_OVER');
@@ -5805,7 +6467,7 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             spCtx.textAlign = "start";
 
             // Stage display
-            spCtx.fillStyle = "rgba(15, 23, 42, 0.7)";
+            spCtx.fillStyle = "rgba(15, 23, 42, 0.75)";
             spCtx.beginPath(); spCtx.roundRect(10, 10, 100, 24, 6); spCtx.fill();
             spCtx.fillStyle = "white"; spCtx.font = "900 12px Segoe UI";
             spCtx.fillText(`STAGE: ${currentLevelState}/10`, 18, 26);
@@ -5817,17 +6479,48 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             spCtx.fillRect(spCanvasElement.width - 105, 14, Math.max(0, hpWidth), 16);
             spCtx.fillStyle = "#fff"; spCtx.fillText("HP", spCanvasElement.width - 100, 26);
 
-            // Boss HP Bar (if active and alive)
-            if (alienInvaderObj.isBoss && alienInvaderObj.y >= 40 && alienInvaderObj.health > 0) {
-                let bossHpPct = alienInvaderObj.health / alienInvaderObj.maxHealth;
-                spCtx.fillStyle = "rgba(0,0,0,0.6)";
-                spCtx.fillRect(spCanvasElement.width / 2 - 80, 45, 160, 8);
-                spCtx.fillStyle = isRage ? "#c0392b" : "#9b59b6";
-                spCtx.fillRect(spCanvasElement.width / 2 - 80, 45, 160 * Math.max(0, bossHpPct), 8);
-                spCtx.strokeStyle = "#fff"; spCtx.lineWidth = 1;
-                spCtx.strokeRect(spCanvasElement.width / 2 - 80, 45, 160, 8);
-                spCtx.fillStyle = "#fff"; spCtx.font = "bold 9px Arial"; spCtx.textAlign = "center";
-                spCtx.fillText("BOSS VITALITY", spCanvasElement.width / 2, 42);
+            // Boss HP Bar (if active and alive on Level 5 or Level 10)
+            if (alienInvaderObj.isBoss && alienInvaderObj.y >= 35 && alienInvaderObj.health > 0) {
+                let bossHpPct = Math.max(0, alienInvaderObj.health / alienInvaderObj.maxHealth);
+                let barW = 180;
+                let barX = (spCanvasElement.width / 2) - (barW / 2);
+                let barY = 40;
+
+                // Frame
+                spCtx.fillStyle = "rgba(10, 15, 30, 0.85)";
+                spCtx.beginPath();
+                spCtx.roundRect(barX - 4, barY - 14, barW + 8, 26, 6);
+                spCtx.fill();
+                spCtx.strokeStyle = isRage ? "#ff3838" : (alienInvaderObj.isFinalBoss ? "#f1c40f" : "#9b59b6");
+                spCtx.lineWidth = 1.5;
+                spCtx.stroke();
+
+                // Bar fill
+                let hpGrad = spCtx.createLinearGradient(barX, barY, barX + barW, barY);
+                if (isRage) {
+                    hpGrad.addColorStop(0, "#ff0033");
+                    hpGrad.addColorStop(1, "#ff6b81");
+                } else if (alienInvaderObj.isFinalBoss) {
+                    hpGrad.addColorStop(0, "#e67e22");
+                    hpGrad.addColorStop(0.5, "#f1c40f");
+                    hpGrad.addColorStop(1, "#e74c3c");
+                } else {
+                    hpGrad.addColorStop(0, "#8e44ad");
+                    hpGrad.addColorStop(1, "#e056fd");
+                }
+
+                spCtx.fillStyle = "rgba(255,255,255,0.1)";
+                spCtx.fillRect(barX, barY - 2, barW, 10);
+                spCtx.fillStyle = hpGrad;
+                spCtx.fillRect(barX, barY - 2, barW * bossHpPct, 10);
+
+                // Label
+                spCtx.fillStyle = "#ffffff";
+                spCtx.font = "bold 9px Segoe UI";
+                spCtx.textAlign = "center";
+                let bossTitle = alienInvaderObj.isFinalBoss ? "💀 OMEGA WORLD-EATER" : "🔥 GOLIATH DREADNOUGHT";
+                if (isRage) bossTitle += " [ENRAGED!]";
+                spCtx.fillText(bossTitle, spCanvasElement.width / 2, barY - 5);
             }
         }
         // ===================================================================
