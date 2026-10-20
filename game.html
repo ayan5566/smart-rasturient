@@ -259,35 +259,105 @@
             background: #0b0d14 !important;
             z-index: 99999 !important;
             margin: 0 !important;
-            padding: 10px 10px 8px 10px !important;
+            padding: 4px 8px 4px 8px !important;
             box-sizing: border-box !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            gap: 8px !important;
+            gap: 2px !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
         }
 
         .game-box.fullscreen-arcade-active .game-nav {
-            display: flex !important;
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
             width: 100% !important;
-            max-width: 580px !important;
+            max-width: 460px !important;
             gap: 4px !important;
             padding: 3px !important;
-            background: rgba(255, 255, 255, 0.06) !important;
-            border-radius: 12px !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px !important;
             margin-bottom: 2px !important;
         }
 
         .game-box.fullscreen-arcade-active .game-nav button {
             font-size: 11px !important;
-            padding: 7px 2px !important;
+            font-weight: 700 !important;
+            padding: 4px 3px !important;
             border-radius: 8px !important;
             white-space: nowrap !important;
             min-width: 0 !important;
-            flex: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: rgba(255, 255, 255, 0.04) !important;
+            color: #e2e8f0 !important;
+            cursor: pointer !important;
+            transition: all 0.15s ease !important;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav button:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav button.active {
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.28), rgba(230, 126, 34, 0.2)) !important;
+            border-color: #f1c40f !important;
+            color: #f1c40f !important;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.35) !important;
+        }
+
+        .game-nav-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            object-fit: cover;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            flex-shrink: 0;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav #navTOWER {
+            grid-column: 2 !important;
+        }
+
+        .game-box.fullscreen-arcade-active .game-nav #navHOCKEY {
+            grid-column: 3 !important;
+        }
+
+        .game-box.fullscreen-arcade-active #exitGameBtn {
+            width: auto !important;
+            max-width: fit-content !important;
+            padding: 3px 10px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            line-height: 1.2 !important;
+            margin: 1px auto 3px auto !important;
+            border-radius: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            background: rgba(231, 76, 60, 0.85) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+            cursor: pointer !important;
+            transition: transform 0.15s ease, background 0.15s ease !important;
+        }
+
+        .game-box.fullscreen-arcade-active #exitGameBtn:hover {
+            background: rgba(231, 76, 60, 1) !important;
+            transform: scale(1.03) !important;
         }
 
         .game-box.fullscreen-arcade-active canvas {
@@ -295,11 +365,47 @@
             width: auto !important;
             max-width: min(96vw, 560px) !important;
             height: auto !important;
-            max-height: 76vh !important;
+            max-height: 78vh !important;
             border-radius: 16px !important;
             box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 255, 255, 0.2) !important;
-            margin: 4px auto !important;
+            margin: 2px auto !important;
             object-fit: contain !important;
+        }
+
+        /* 💥 IN-GAME ON-SCREEN LOSS OVERLAY */
+        #inGameLossOverlay {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(88%, 310px);
+            background: rgba(12, 15, 26, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(255, 77, 77, 0.45);
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 77, 77, 0.25);
+            border-radius: 18px;
+            padding: 18px 16px;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            pointer-events: auto;
+            box-sizing: border-box;
+            animation: popInLoss 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popInLoss {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -46%) scale(0.92);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         .game-box.fullscreen-arcade-active .control-pad,
@@ -384,22 +490,28 @@
 
     <!-- 🧱 HTML ELEMENTS -->
     <div class="game-box fullscreen-arcade-active" id="arcadeGameWrapper">
-        <h4 style="margin-top: 0; color: white; font-weight: 800;">🎮 Play Games & Earn Discounts!</h4>
-        <div class="game-nav"
-            style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; background: rgba(255,255,255,0.06); padding: 4px; border-radius: 10px; width: 100%; max-width: 480px;">
-            <button id="navBRICK" onclick="switchGameMode('BRICK')"><span style="font-size: 20px;">🧱</span> Bricks</button>
-            <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><span style="font-size: 20px;">🐦</span> Flappy</button>
-            <button id="navSPACE" onclick="switchGameMode('SPACE')"><span style="font-size: 20px;">🚀</span> Space</button>
-            <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><span style="font-size: 20px;">🐍</span> Snake</button>
-            <button id="navTOWER" onclick="switchGameMode('TOWER')"><span style="font-size: 20px;">🏢</span> Tower</button>
-            <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')"><span style="font-size: 20px;">🏒</span> Hockey</button>
+        <div class="game-nav">
+            <button id="navBRICK" onclick="switchGameMode('BRICK')"><img src="assets/icons/brick.png" alt="Bricks" class="game-nav-icon"><span>Bricks</span></button>
+            <button id="navFLAPPY" onclick="switchGameMode('FLAPPY')"><img src="assets/icons/flappy.png" alt="Flappy" class="game-nav-icon"><span>Flappy</span></button>
+            <button id="navSPACE" onclick="switchGameMode('SPACE')"><img src="assets/icons/space.png" alt="Space" class="game-nav-icon"><span>Space</span></button>
+            <button id="navSNAKE" onclick="switchGameMode('SNAKE')"><img src="assets/icons/snake.png" alt="Snake" class="game-nav-icon"><span>Snake</span></button>
+            <button id="navTOWER" onclick="switchGameMode('TOWER')"><img src="assets/icons/tower.png" alt="Tower" class="game-nav-icon"><span>Tower</span></button>
+            <button id="navHOCKEY" onclick="switchGameMode('HOCKEY')"><img src="assets/icons/hockey.png" alt="Hockey" class="game-nav-icon"><span>Hockey</span></button>
         </div>
-        <div id="gameWindow" style="text-align: center; width: 100%;">
-            <div id="gameScreenStatusMsg" style="color: white; font-weight: bold; margin-bottom: 10px;">Select a game
-                mode to launch</div>
-            <button id="exitGameBtn" class="action-btn" onclick="exitGameEngine()"
-                style="background: var(--danger-red, #e74c3c); margin-bottom: 10px; max-width: 160px; font-size: 13px; padding: 8px; color: white; border: none; border-radius: 8px;">
-                🔙 Back to Table Menu</button>
+        <button id="exitGameBtn" onclick="exitGameEngine()">🔙 Back to Table Menu</button>
+        <div id="gameWindow" style="position: relative; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div id="gameScreenStatusMsg" style="display: none; color: white; font-weight: bold; margin-bottom: 2px;"></div>
+
+            <!-- 💥 In-Game Loss / Game Over Screen Overlay (Directly On Game Screen) -->
+            <div id="inGameLossOverlay">
+                <div style="font-size: 30px; line-height: 1; margin-bottom: 4px; filter: drop-shadow(0 2px 8px rgba(255,77,77,0.7));">💥</div>
+                <div style="color: #ff4d4d; font-size: 17px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 6px; text-shadow: 0 0 12px rgba(255,77,77,0.6);">GAME OVER</div>
+                <div id="inGameLossReason" style="color: #f1f5f9; font-size: 13px; font-weight: 600; line-height: 1.35; margin-bottom: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);"></div>
+                <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">
+                    <button onclick="startSelectedGame()" style="flex: 1; background: linear-gradient(135deg, #f1c40f, #e67e22); color: #0b0d14; border: none; font-weight: 800; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(241,196,15,0.4); transition: transform 0.15s ease;">🔄 Try Again</button>
+                    <button onclick="exitGameEngine()" style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 11px; padding: 8px 12px; border-radius: 8px; cursor: pointer;">🔙 Exit</button>
+                </div>
+            </div>
 
             <!-- Game Canvases -->
             <canvas id="flappyCanvas" width="320" height="350" style="background:#70c5ce;"></canvas>
@@ -767,6 +879,7 @@
             if (document.getElementById('towerCanvas')) document.getElementById('towerCanvas').style.display = 'none';
             if (document.getElementById('hockeyCanvas')) document.getElementById('hockeyCanvas').style.display = 'none';
             if (document.getElementById('couponDisplay')) document.getElementById('couponDisplay').style.display = 'none';
+            if (document.getElementById('inGameLossOverlay')) document.getElementById('inGameLossOverlay').style.display = 'none';
 
             // Tabs ki active class update karo
             document.querySelectorAll('.game-nav button').forEach(btn => btn.classList.remove('active'));
@@ -812,6 +925,9 @@ function startSelectedGame() {
 
     const statusMsg = document.getElementById('gameScreenStatusMsg');
     if (statusMsg) statusMsg.style.display = "none";
+
+    const lossOverlay = document.getElementById('inGameLossOverlay');
+    if (lossOverlay) lossOverlay.style.display = "none";
 
     // 3. Reset and hide all game canvases to eliminate overlap
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas', 'hockeyCanvas'];
@@ -945,6 +1061,9 @@ function exitGameEngine() {
     
     const statusMsg = document.getElementById('gameScreenStatusMsg');
     if (statusMsg) statusMsg.style.display = "none";
+
+    const lossOverlay = document.getElementById('inGameLossOverlay');
+    if (lossOverlay) lossOverlay.style.display = "none";
 
     // 3. Hide all canvas layers
     const allGameCanvasIds = ['flappyCanvas', 'spaceCanvas', 'snakeCanvas', 'brickCanvas', 'towerCanvas', 'hockeyCanvas'];
@@ -1322,10 +1441,250 @@ window.triggerRewardCoupon = triggerRewardCoupon;
         snakeDirectionVector = { x: 20, y: 0 };
         snakeScoreCounter = 0;
 
-        function onSnakeEatFood() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'EAT'); }
-        function onSnakePowerUp() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP'); }
-        function onSnakeGameOver() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'GAME_OVER'); }
-        function onSnakeCombo() { if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'COMBO'); }
+        // ===================================================================
+        // 🔊 RESTROFLOW ARCADE CENTRAL SYNTHESIZER (WEB AUDIO API ENGINE)
+        // ===================================================================
+        var arcadeAudioCtx = null;
+        function getArcadeAudioCtx() {
+            try {
+                if (!arcadeAudioCtx) {
+                    const AudioClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioClass) arcadeAudioCtx = new AudioClass();
+                }
+                if (arcadeAudioCtx && arcadeAudioCtx.state === 'suspended') {
+                    arcadeAudioCtx.resume().catch(() => {});
+                }
+            } catch (e) {}
+            return arcadeAudioCtx;
+        }
+
+        function triggerAudioBeepAlert(unused, type, param) {
+            try {
+                const ctx = getArcadeAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'EAT' || type === 'SNAKE_EAT') {
+                    // Bright ascending bell double-chirp
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(620, now);
+                    osc.frequency.exponentialRampToValueAtTime(980, now + 0.08);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'COMBO') {
+                    // 4-note ascending triumphant arpeggio
+                    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.05);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.05);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.22);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.05);
+                        o.stop(now + idx * 0.05 + 0.22);
+                    });
+                } else if (type === 'POWERUP' || type === 'POWER_UP') {
+                    // Magical ascending glissando shimmer
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(380, now);
+                    osc.frequency.exponentialRampToValueAtTime(1450, now + 0.25);
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(800, now);
+                    filter.frequency.exponentialRampToValueAtTime(3500, now + 0.25);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'PADDLE_HIT') {
+                    // Punchy rubber/wood impact thud
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(75, now + 0.08);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'WALL_HIT') {
+                    // Crisp boundary click
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(540, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.04);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                } else if (type === 'BRICK_HIT') {
+                    // Crystalline glass shatter
+                    [840, 1260].forEach((freq) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now);
+                        o.frequency.exponentialRampToValueAtTime(freq * 0.4, now + 0.12);
+                        g.gain.setValueAtTime(0.2, now);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now);
+                        o.stop(now + 0.12);
+                    });
+                } else if (type === 'EXPLOSION') {
+                    // Heavy low-end rumble + noise blast
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(90, now);
+                    osc.frequency.exponentialRampToValueAtTime(25, now + 0.35);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+
+                    const bufSize = Math.floor(ctx.sampleRate * 0.3);
+                    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+                    const out = noiseBuf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.3));
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = noiseBuf;
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.3, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    noise.connect(nGain);
+                    nGain.connect(ctx.destination);
+                    noise.start(now);
+                } else if (type === 'LIFE_LOST') {
+                    // Minor sad drop
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.35);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'JUMP' || type === 'FLAPPY_JUMP') {
+                    // Buoyant cartoonish upward swoosh
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(560, now + 0.12);
+                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'SCORE' || type === 'FLAPPY_PASS') {
+                    // Sweet double coin ding (B5 -> E6)
+                    [987.77, 1318.51].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        g.gain.setValueAtTime(0.22, now + idx * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.22);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.08);
+                        o.stop(now + idx * 0.08 + 0.22);
+                    });
+                } else if (type === 'CRASH' || type === 'GAME_OVER') {
+                    // Heavy crash impact
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(40, now + 0.3);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'LASER_PLAYER') {
+                    // Sci-Fi plasma laser blaster
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(940, now);
+                    osc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(1200, now);
+                    filter.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'ENEMY_HIT') {
+                    // Armor deflection tick
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(420, now);
+                    osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                } else if (type === 'BOSS_BOOM') {
+                    // Massive multi-stage cinematic boss detonation
+                    [65, 45, 30].forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sawtooth';
+                        o.frequency.setValueAtTime(freq * 1.5, now + idx * 0.1);
+                        o.frequency.exponentialRampToValueAtTime(20, now + idx * 0.1 + 0.6);
+                        g.gain.setValueAtTime(0.35, now + idx * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.6);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.1);
+                        o.stop(now + idx * 0.1 + 0.6);
+                    });
+                }
+            } catch (e) {}
+        }
+        window.triggerAudioBeepAlert = triggerAudioBeepAlert;
+        window.playArcadeSFX = triggerAudioBeepAlert;
+
+        function onSnakeEatFood() { triggerAudioBeepAlert(null, 'EAT'); }
+        function onSnakePowerUp() { triggerAudioBeepAlert(null, 'POWERUP'); }
+        function onSnakeGameOver() { triggerAudioBeepAlert(null, 'GAME_OVER'); }
+        function onSnakeCombo() { triggerAudioBeepAlert(null, 'COMBO'); }
 
         function createSnakeParticles(x, y, color, count) {
             for (let i = 0; i < count; i++) {
@@ -1605,77 +1964,155 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             });
             snCtx.shadowBlur = 0;
 
-            // 3. Draw Premium Food (Animated Crystal)
-            snCtx.shadowColor = '#2ecc71';
-            snCtx.shadowBlur = 15;
-            snCtx.fillStyle = '#27ae60';
-            let foodYOffset = Math.sin(snakeTimeVisual * 2) * 2; // Floating hover effect
+            // 3. Draw Premium Food (High-End 3D Glowing Golden Apple)
+            snCtx.save();
+            let foodYOffset = Math.sin(snakeTimeVisual * 2.5) * 2.5;
+            let fx = snakeFoodUnit.x + 10;
+            let fy = snakeFoodUnit.y + 10 + foodYOffset;
+
+            // Pulsing golden aura
+            snCtx.shadowColor = '#f1c40f';
+            snCtx.shadowBlur = 14 + Math.sin(snakeTimeVisual * 3) * 6;
+
+            // Apple body gradient (3D spherical shading)
+            let appleGrad = snCtx.createRadialGradient(fx - 2, fy - 2, 1, fx, fy, 8);
+            appleGrad.addColorStop(0, '#fff6a9');
+            appleGrad.addColorStop(0.4, '#f1c40f');
+            appleGrad.addColorStop(0.85, '#d35400');
+            appleGrad.addColorStop(1, '#962d00');
+            snCtx.fillStyle = appleGrad;
             snCtx.beginPath();
-            snCtx.arc(snakeFoodUnit.x + 10, snakeFoodUnit.y + 10 + foodYOffset, 7, 0, Math.PI * 2);
+            snCtx.arc(fx - 2.5, fy, 5.5, 0, Math.PI * 2);
+            snCtx.arc(fx + 2.5, fy, 5.5, 0, Math.PI * 2);
             snCtx.fill();
+
+            // Apple top stem
+            snCtx.shadowBlur = 0;
+            snCtx.strokeStyle = '#5d4037';
+            snCtx.lineWidth = 1.6;
+            snCtx.beginPath();
+            snCtx.moveTo(fx, fy - 4);
+            snCtx.quadraticCurveTo(fx + 2, fy - 8, fx + 3.5, fy - 9);
+            snCtx.stroke();
+
+            // Little green leaf
             snCtx.fillStyle = '#2ecc71';
             snCtx.beginPath();
-            snCtx.arc(snakeFoodUnit.x + 10, snakeFoodUnit.y + 10 + foodYOffset, 3.5, 0, Math.PI * 2);
+            snCtx.ellipse(fx + 3, fy - 7, 3, 1.5, Math.PI / 4, 0, Math.PI * 2);
             snCtx.fill();
-            snCtx.shadowBlur = 0;
 
-            // Draw PowerUp (If Active)
+            // Specular shine dot
+            snCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            snCtx.beginPath();
+            snCtx.arc(fx - 2, fy - 2.5, 1.4, 0, Math.PI * 2);
+            snCtx.fill();
+            snCtx.restore();
+
+            // Draw PowerUp (If Active - Shimmering Star Core)
             if (snakePowerUpObj) {
-                snCtx.shadowColor = '#f1c40f';
-                snCtx.shadowBlur = 15;
-                snCtx.fillStyle = '#f39c12';
-                let pOffset = Math.cos(snakeTimeVisual * 3) * 3;
-                snCtx.beginPath(); snCtx.arc(snakePowerUpObj.x + 10, snakePowerUpObj.y + 10 + pOffset, 7, 0, Math.PI * 2); snCtx.fill();
-                snCtx.fillStyle = '#f1c40f';
-                snCtx.beginPath(); snCtx.arc(snakePowerUpObj.x + 10, snakePowerUpObj.y + 10 + pOffset, 4, 0, Math.PI * 2); snCtx.fill();
-                snCtx.shadowBlur = 0;
+                snCtx.save();
+                let pOffset = Math.cos(snakeTimeVisual * 3.5) * 3;
+                let px = snakePowerUpObj.x + 10;
+                let py = snakePowerUpObj.y + 10 + pOffset;
+                snCtx.shadowColor = '#00ffff';
+                snCtx.shadowBlur = 18;
+                snCtx.fillStyle = '#00ffff';
+                snCtx.beginPath(); snCtx.arc(px, py, 6, 0, Math.PI * 2); snCtx.fill();
+                snCtx.fillStyle = '#ffffff';
+                snCtx.beginPath(); snCtx.arc(px, py, 3, 0, Math.PI * 2); snCtx.fill();
+                snCtx.restore();
             }
 
-            // 4. Draw Smooth Interpolated Snake Body
+            // 4. Draw Smooth Interpolated Snake Body with 3D Cyber Scales
             for (let i = snakeArr.length - 1; i >= 0; i--) {
                 let segment = snakeArr[i];
-
-                // Calculate exact rendered position between logic grid ticks
                 let drawX = segment.px + (segment.x - segment.px) * lerpP;
                 let drawY = segment.py + (segment.y - segment.py) * lerpP;
 
-                // Dynamic Segment Sizing (Tail gets thinner)
-                let sSize = 18 - (i * 0.15);
-                if (sSize < 8) sSize = 8;
+                let sSize = 18 - (i * 0.18);
+                if (sSize < 9) sSize = 9;
                 let sOffset = (20 - sSize) / 2;
 
                 if (i === 0) {
-                    // HEAD GRAPHICS (Pure HTML5 Canvas Vector)
-                    snCtx.shadowColor = '#00ffff';
-                    snCtx.shadowBlur = 10;
-                    snCtx.fillStyle = "#00d2d3";
-                    snCtx.beginPath(); snCtx.roundRect(drawX + 1, drawY + 1, 18, 18, 8); snCtx.fill();
+                    // HEAD GRAPHICS (Sleek Cybernetic Viper)
+                    snCtx.save();
+                    snCtx.shadowColor = '#2ecc71';
+                    snCtx.shadowBlur = 12;
+
+                    let headGrad = snCtx.createLinearGradient(drawX, drawY, drawX + 20, drawY + 20);
+                    headGrad.addColorStop(0, '#2ecc71');
+                    headGrad.addColorStop(1, '#1b7943');
+                    snCtx.fillStyle = headGrad;
+                    snCtx.beginPath();
+                    snCtx.roundRect(drawX + 1, drawY + 1, 18, 18, 9);
+                    snCtx.fill();
                     snCtx.shadowBlur = 0;
 
-                    // Animated Eyes looking towards movement
-                    snCtx.fillStyle = "white";
-                    let eyeOffsetX = (currentSnakeVector.x / 20) * 3;
-                    let eyeOffsetY = (currentSnakeVector.y / 20) * 3;
+                    // Glowing Reptile Eyes looking towards movement
+                    let eyeOffsetX = (currentSnakeVector.x / 20) * 3.5;
+                    let eyeOffsetY = (currentSnakeVector.y / 20) * 3.5;
+                    let lx = drawX + 6 + eyeOffsetX;
+                    let ly = drawY + 6 + eyeOffsetY;
+                    let rx = drawX + 14 + eyeOffsetX;
+                    let ry = drawY + 6 + eyeOffsetY;
 
-                    snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Left Eye
-                    snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX, drawY + 6 + eyeOffsetY, 3, 0, Math.PI * 2); snCtx.fill(); // Right Eye
+                    // Gold eye sockets
+                    snCtx.fillStyle = '#f1c40f';
+                    snCtx.beginPath(); snCtx.arc(lx, ly, 3.2, 0, Math.PI * 2); snCtx.fill();
+                    snCtx.beginPath(); snCtx.arc(rx, ry, 3.2, 0, Math.PI * 2); snCtx.fill();
 
-                    snCtx.fillStyle = "black";
-                    snCtx.beginPath(); snCtx.arc(drawX + 6 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
-                    snCtx.beginPath(); snCtx.arc(drawX + 14 + eyeOffsetX * 1.5, drawY + 6 + eyeOffsetY * 1.5, 1.5, 0, Math.PI * 2); snCtx.fill();
+                    // Slit pupils
+                    snCtx.fillStyle = '#0b0d14';
+                    snCtx.beginPath(); snCtx.ellipse(lx, ly, 1.0, 2.4, 0, 0, Math.PI * 2); snCtx.fill();
+                    snCtx.beginPath(); snCtx.ellipse(rx, ry, 1.0, 2.4, 0, 0, Math.PI * 2); snCtx.fill();
 
-                    // Animated Tongue
+                    // Animated Forked Tongue
                     snCtx.fillStyle = "#ff4d4d";
-                    let tLen = 3 + Math.sin(snakeTimeVisual * 4) * 3;
-                    if (currentSnakeVector.x > 0) snCtx.fillRect(drawX + 19, drawY + 9, tLen, 2);
-                    else if (currentSnakeVector.x < 0) snCtx.fillRect(drawX - tLen + 1, drawY + 9, tLen, 2);
-                    else if (currentSnakeVector.y > 0) snCtx.fillRect(drawX + 9, drawY + 19, 2, tLen);
-                    else if (currentSnakeVector.y < 0) snCtx.fillRect(drawX + 9, drawY - tLen + 1, 2, tLen);
+                    let tLen = 4 + Math.sin(snakeTimeVisual * 6) * 4;
+                    if (currentSnakeVector.x > 0) {
+                        snCtx.fillRect(drawX + 19, drawY + 9, tLen, 2);
+                        snCtx.fillRect(drawX + 19 + tLen, drawY + 7, 2, 2);
+                        snCtx.fillRect(drawX + 19 + tLen, drawY + 11, 2, 2);
+                    } else if (currentSnakeVector.x < 0) {
+                        snCtx.fillRect(drawX - tLen + 1, drawY + 9, tLen, 2);
+                        snCtx.fillRect(drawX - tLen - 1, drawY + 7, 2, 2);
+                        snCtx.fillRect(drawX - tLen - 1, drawY + 11, 2, 2);
+                    } else if (currentSnakeVector.y > 0) {
+                        snCtx.fillRect(drawX + 9, drawY + 19, 2, tLen);
+                        snCtx.fillRect(drawX + 7, drawY + 19 + tLen, 2, 2);
+                        snCtx.fillRect(drawX + 11, drawY + 19 + tLen, 2, 2);
+                    } else if (currentSnakeVector.y < 0) {
+                        snCtx.fillRect(drawX + 9, drawY - tLen + 1, 2, tLen);
+                        snCtx.fillRect(drawX + 7, drawY - tLen - 1, 2, 2);
+                        snCtx.fillRect(drawX + 11, drawY - tLen - 1, 2, 2);
+                    }
+                    snCtx.restore();
                 } else {
-                    // BODY GRAPHICS (Gradient Color fade to tail)
-                    let colorIntensity = Math.max(50, 200 - (i * 5));
-                    snCtx.fillStyle = `rgb(16, ${colorIntensity}, 135)`;
-                    snCtx.beginPath(); snCtx.roundRect(drawX + sOffset, drawY + sOffset, sSize, sSize, 6); snCtx.fill();
+                    // BODY SEGMENTS (3D Cylindrical Shading + Dorsal Ridge Line)
+                    snCtx.save();
+                    let tFraction = i / snakeArr.length;
+                    let r = Math.round(46 * (1 - tFraction) + 10 * tFraction);
+                    let g = Math.round(204 * (1 - tFraction) + 140 * tFraction);
+                    let b = Math.round(113 * (1 - tFraction) + 180 * tFraction);
+
+                    let segGrad = snCtx.createLinearGradient(drawX + sOffset, drawY + sOffset, drawX + sOffset + sSize, drawY + sOffset + sSize);
+                    segGrad.addColorStop(0, `rgb(${Math.min(255, r + 40)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 40)})`);
+                    segGrad.addColorStop(0.5, `rgb(${r}, ${g}, ${b})`);
+                    segGrad.addColorStop(1, `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 40)}, ${Math.max(0, b - 30)})`);
+
+                    snCtx.fillStyle = segGrad;
+                    snCtx.beginPath();
+                    snCtx.roundRect(drawX + sOffset, drawY + sOffset, sSize, sSize, sSize * 0.4);
+                    snCtx.fill();
+
+                    // Subtle neon spine highlight
+                    if (sSize > 12) {
+                        snCtx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+                        snCtx.beginPath();
+                        snCtx.arc(drawX + 10, drawY + 10, 2, 0, Math.PI * 2);
+                        snCtx.fill();
+                    }
+                    snCtx.restore();
                 }
             }
 
@@ -4617,37 +5054,73 @@ window.triggerRewardCoupon = triggerRewardCoupon;
 
             // Glowing Aura
             flCtx.shadowColor = '#f39c12';
-            flCtx.shadowBlur = 10;
+            flCtx.shadowBlur = 12;
 
-            // Bird Body
-            flCtx.fillStyle = "#ffd700";
-            flCtx.beginPath(); flCtx.ellipse(0, 0, 14, 11, 0, 0, Math.PI * 2); flCtx.fill();
-
+            // Plump 3D Bird Body (Spherical radial gradient)
+            let birdBodyGrad = flCtx.createRadialGradient(-3, -3, 2, 0, 0, 15);
+            birdBodyGrad.addColorStop(0, '#fff6a9');
+            birdBodyGrad.addColorStop(0.35, '#ffd32a');
+            birdBodyGrad.addColorStop(0.85, '#ff9f1a');
+            birdBodyGrad.addColorStop(1, '#e58e26');
+            flCtx.fillStyle = birdBodyGrad;
+            flCtx.beginPath();
+            flCtx.ellipse(0, 0, 15, 12, 0, 0, Math.PI * 2);
+            flCtx.fill();
             flCtx.shadowBlur = 0;
 
-            // Wing Flap Animation
-            let flapSpeed = fBird.velocity < 0 ? 25 : 8;
-            let wingY = Math.sin(flappyTime * flapSpeed) * 4;
-            flCtx.fillStyle = "#f39c12";
-            flCtx.beginPath(); flCtx.ellipse(-4, wingY, 8, 5, -0.2, 0, Math.PI * 2); flCtx.fill();
+            // Rosy Cheek
+            flCtx.fillStyle = "rgba(255, 107, 129, 0.55)";
+            flCtx.beginPath();
+            flCtx.arc(4, 2, 4, 0, Math.PI * 2);
+            flCtx.fill();
 
-            // Eye & Blinking
-            let isBlinking = Math.random() > 0.98;
+            // Wing Flap Animation (3D layered wing with feathers)
+            let flapSpeed = fBird.velocity < 0 ? 25 : 8;
+            let wingY = Math.sin(flappyTime * flapSpeed) * 5;
+            let wingGrad = flCtx.createLinearGradient(-10, wingY - 6, 2, wingY + 6);
+            wingGrad.addColorStop(0, '#fff3a3');
+            wingGrad.addColorStop(0.5, '#ffa801');
+            wingGrad.addColorStop(1, '#d35400');
+            flCtx.fillStyle = wingGrad;
+            flCtx.beginPath();
+            flCtx.ellipse(-4, wingY, 9, 6, -0.25, 0, Math.PI * 2);
+            flCtx.fill();
+
+            // Large Cute Anime Eye & Blinking
+            let isBlinking = Math.random() > 0.985;
             flCtx.fillStyle = "white";
-            flCtx.beginPath(); flCtx.arc(6, -4, 5, 0, Math.PI * 2); flCtx.fill();
+            flCtx.beginPath(); flCtx.arc(6, -4, 5.5, 0, Math.PI * 2); flCtx.fill();
             if (!isBlinking) {
-                flCtx.fillStyle = "black";
-                flCtx.beginPath(); flCtx.arc(8, -4, 2, 0, Math.PI * 2); flCtx.fill();
+                // Pupil
+                flCtx.fillStyle = "#1e272e";
+                flCtx.beginPath(); flCtx.arc(7.5, -4, 3, 0, Math.PI * 2); flCtx.fill();
+                // Specular eye catchlights
+                flCtx.fillStyle = "#ffffff";
+                flCtx.beginPath(); flCtx.arc(6.5, -5.5, 1.3, 0, Math.PI * 2); flCtx.fill();
+                flCtx.beginPath(); flCtx.arc(8.5, -3, 0.7, 0, Math.PI * 2); flCtx.fill();
             }
 
-            // Beak
-            flCtx.fillStyle = "#e67e22";
+            // Beak (Curved glossy orange beak)
+            let beakGrad = flCtx.createLinearGradient(10, -2, 22, 2);
+            beakGrad.addColorStop(0, '#ff9f1a');
+            beakGrad.addColorStop(1, '#c0392b');
+            flCtx.fillStyle = beakGrad;
             flCtx.beginPath();
-            flCtx.moveTo(10, 0); flCtx.lineTo(20, -2); flCtx.lineTo(18, 4); flCtx.fill();
+            flCtx.moveTo(9, -2);
+            flCtx.quadraticCurveTo(18, -4, 21, 0);
+            flCtx.quadraticCurveTo(16, 5, 9, 3);
+            flCtx.closePath();
+            flCtx.fill();
 
-            // Feather Highlight
-            flCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
-            flCtx.beginPath(); flCtx.ellipse(0, -6, 6, 2, 0, 0, Math.PI * 2); flCtx.fill();
+            // Tiny bird tail feathers
+            flCtx.fillStyle = "#e58e26";
+            flCtx.beginPath();
+            flCtx.moveTo(-13, 0);
+            flCtx.lineTo(-20, -5);
+            flCtx.lineTo(-17, 0);
+            flCtx.lineTo(-20, 5);
+            flCtx.closePath();
+            flCtx.fill();
 
             flCtx.restore();
 
@@ -4661,28 +5134,47 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                 return;
             }
 
-            // --- 5. PREMIUM PIPES & COLLISION ---
+            // --- 5. PREMIUM PIPES & COLLISION (3D Cylindrical Shader) ---
             fPipes.forEach((p, idx) => {
                 p.x -= currentSpeed;
+                let pipeW = 50;
 
-                let pipeW = 48;
+                // 3D Cylindrical Pipe Gradients
+                let pipeGradTop = flCtx.createLinearGradient(p.x, 0, p.x + pipeW, 0);
+                pipeGradTop.addColorStop(0, '#1e5f38');
+                pipeGradTop.addColorStop(0.18, '#2ecc71');
+                pipeGradTop.addColorStop(0.4, '#a8e6cf');
+                pipeGradTop.addColorStop(0.7, '#27ae60');
+                pipeGradTop.addColorStop(1, '#143d24');
 
-                // Pseudo-3D Pipe Render
-                flCtx.fillStyle = flappyLevelTheme.pipe;
+                // Pipe Bodies
+                flCtx.fillStyle = pipeGradTop;
                 flCtx.fillRect(p.x, 0, pipeW, p.gapTop);
                 flCtx.fillRect(p.x, p.gapBottom, pipeW, flappyCanvasElement.height - p.gapBottom);
 
-                flCtx.fillStyle = "rgba(0, 0, 0, 0.2)";
-                flCtx.fillRect(p.x + pipeW - 10, 0, 10, p.gapTop);
-                flCtx.fillRect(p.x + pipeW - 10, p.gapBottom, 10, flappyCanvasElement.height);
+                // Pipe Collar Flanges (Rim Lips)
+                let lipH = 18;
+                let lipExtra = 5;
+                let lipGrad = flCtx.createLinearGradient(p.x - lipExtra, 0, p.x + pipeW + lipExtra, 0);
+                lipGrad.addColorStop(0, '#1e5f38');
+                lipGrad.addColorStop(0.2, '#3ae374');
+                lipGrad.addColorStop(0.4, '#ffffff');
+                lipGrad.addColorStop(0.75, '#27ae60');
+                lipGrad.addColorStop(1, '#0e2f1b');
 
-                flCtx.fillStyle = "rgba(255, 255, 255, 0.2)";
-                flCtx.fillRect(p.x + 2, 0, 6, p.gapTop);
-                flCtx.fillRect(p.x + 2, p.gapBottom, 6, flappyCanvasElement.height);
+                flCtx.fillStyle = lipGrad;
+                flCtx.beginPath();
+                flCtx.roundRect(p.x - lipExtra, p.gapTop - lipH, pipeW + (lipExtra * 2), lipH, 3);
+                flCtx.fill();
 
-                flCtx.fillStyle = flappyLevelTheme.ground;
-                flCtx.fillRect(p.x - 4, p.gapTop - 15, pipeW + 8, 15);
-                flCtx.fillRect(p.x - 4, p.gapBottom, pipeW + 8, 15);
+                flCtx.beginPath();
+                flCtx.roundRect(p.x - lipExtra, p.gapBottom, pipeW + (lipExtra * 2), lipH, 3);
+                flCtx.fill();
+
+                // Collar Inner Dark Shadows
+                flCtx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                flCtx.fillRect(p.x - lipExtra, p.gapTop - 3, pipeW + (lipExtra * 2), 3);
+                flCtx.fillRect(p.x - lipExtra, p.gapBottom, pipeW + (lipExtra * 2), 3);
 
                 // 🚀 HORIZONTAL DISTANCE FIX: Agla pillar kitni door aayega
                 // 175 ek dam perfect arcade distance hai. Isko 150 karoge toh paas ho jayenge, 200 karoge toh door ho jayenge.
@@ -5021,56 +5513,95 @@ window.initSpaceShooterGame = initSpaceShooterGame;
             spCtx.save();
             spCtx.translate(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2);
 
-            // Thruster Flames
+            // Twin Ion Thruster Flames
             let currentVel = spaceTouchActive ? Math.abs(spaceTouchTargetX - pShipObj.x) * 0.1 : Math.abs(spaceMoveDir);
-            let flameLen = 12 + Math.random() * 8 + (currentVel * 1.5);
-            spCtx.fillStyle = sMultiTimer > 0 ? "#e74c3c" : "#00d2d3"; // Thruster changes color with powerup
-            spCtx.shadowColor = spCtx.fillStyle;
-            spCtx.shadowBlur = 15;
+            let flameLen = 14 + Math.random() * 8 + (currentVel * 1.8);
+            let thrusterColor = sMultiTimer > 0 ? "#ff4757" : "#00d2d3";
+
+            spCtx.save();
+            spCtx.shadowColor = thrusterColor;
+            spCtx.shadowBlur = 16;
+            // Left thruster flame
+            spCtx.fillStyle = thrusterColor;
             spCtx.beginPath();
-            spCtx.moveTo(-6, 14);
-            spCtx.lineTo(6, 14);
-            spCtx.lineTo(0, 14 + flameLen);
+            spCtx.moveTo(-8, 14); spCtx.lineTo(-2, 14); spCtx.lineTo(-5, 14 + flameLen);
+            spCtx.fill();
+            // Right thruster flame
+            spCtx.beginPath();
+            spCtx.moveTo(2, 14); spCtx.lineTo(8, 14); spCtx.lineTo(5, 14 + flameLen);
+            spCtx.fill();
+            // Core white hot centers
+            spCtx.fillStyle = "#ffffff";
+            spCtx.beginPath();
+            spCtx.moveTo(-6, 14); spCtx.lineTo(-4, 14); spCtx.lineTo(-5, 14 + flameLen * 0.5);
+            spCtx.fill();
+            spCtx.beginPath();
+            spCtx.moveTo(4, 14); spCtx.lineTo(6, 14); spCtx.lineTo(5, 14 + flameLen * 0.5);
             spCtx.fill();
             spCtx.shadowBlur = 0;
+            spCtx.restore();
 
-            // Ship Hull
-            spCtx.fillStyle = "#ecf0f1";
+            // Ship Hull (Titanium Aerodynamic Shading)
+            let hullGrad = spCtx.createLinearGradient(0, -18, 0, 16);
+            hullGrad.addColorStop(0, '#ffffff');
+            hullGrad.addColorStop(0.35, '#dcdde1');
+            hullGrad.addColorStop(1, '#718093');
+            spCtx.fillStyle = hullGrad;
             spCtx.beginPath();
-            spCtx.moveTo(0, -18); // Nose
-            spCtx.lineTo(18, 14); // Right Wing tip
-            spCtx.lineTo(6, 14);  // Right Engine base
-            spCtx.lineTo(-6, 14); // Left Engine base
-            spCtx.lineTo(-18, 14); // Left Wing tip
+            spCtx.moveTo(0, -20); // Sharp nose
+            spCtx.lineTo(20, 13);  // Right wingtip
+            spCtx.lineTo(8, 14);   // Right engine
+            spCtx.lineTo(0, 11);   // Tail notch
+            spCtx.lineTo(-8, 14);  // Left engine
+            spCtx.lineTo(-20, 13); // Left wingtip
             spCtx.closePath();
             spCtx.fill();
 
-            // Wing Accents
-            spCtx.fillStyle = "#e74c3c";
-            spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(14, 10); spCtx.lineTo(6, 10); spCtx.fill();
-            spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(-14, 10); spCtx.lineTo(-6, 10); spCtx.fill();
+            // Wing Racing Accents (Cyan/Red Neon Trim)
+            let trimGrad = spCtx.createLinearGradient(-15, 0, 15, 0);
+            trimGrad.addColorStop(0, '#00d2d3');
+            trimGrad.addColorStop(0.5, '#2e86de');
+            trimGrad.addColorStop(1, '#00d2d3');
+            spCtx.fillStyle = trimGrad;
+            spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(16, 11); spCtx.lineTo(7, 11); spCtx.fill();
+            spCtx.beginPath(); spCtx.moveTo(0, -10); spCtx.lineTo(-16, 11); spCtx.lineTo(-7, 11); spCtx.fill();
 
-            // Cockpit Canopy
-            spCtx.fillStyle = "#3498db";
+            // Wingtip Laser Cannons
+            spCtx.fillStyle = '#2f3542';
+            spCtx.fillRect(-20, 4, 3, 10);
+            spCtx.fillRect(17, 4, 3, 10);
+            spCtx.fillStyle = '#00d2d3';
+            spCtx.fillRect(-19, 2, 1.5, 3);
+            spCtx.fillRect(18, 2, 1.5, 3);
+
+            // High-Tech Cockpit Canopy
+            let canopyGrad = spCtx.createRadialGradient(-1, -4, 1, 0, -2, 8);
+            canopyGrad.addColorStop(0, '#70a1ff');
+            canopyGrad.addColorStop(0.5, '#1e90ff');
+            canopyGrad.addColorStop(1, '#0c2461');
+            spCtx.fillStyle = canopyGrad;
             spCtx.beginPath();
-            spCtx.ellipse(0, -2, 4, 9, 0, 0, Math.PI * 2);
+            spCtx.ellipse(0, -3, 4.5, 9, 0, 0, Math.PI * 2);
             spCtx.fill();
-            spCtx.fillStyle = "rgba(255,255,255,0.6)"; // Glass reflection
-            spCtx.beginPath(); spCtx.ellipse(-1, -4, 1.5, 4, 0, 0, Math.PI * 2); spCtx.fill();
 
-            // Energy Shield
+            // Specular Glass Reflections
+            spCtx.fillStyle = "rgba(255, 255, 255, 0.75)";
+            spCtx.beginPath(); spCtx.ellipse(-1.2, -5, 1.5, 4, -0.1, 0, Math.PI * 2); spCtx.fill();
+
+            // Energy Shield (Hexagonal ripple glow)
             if (sShieldTimer > 0) {
-                spCtx.strokeStyle = `rgba(0, 188, 212, ${0.5 + Math.sin(spaceFrameTracker * 0.2) * 0.3})`;
+                spCtx.strokeStyle = `rgba(0, 240, 255, ${0.45 + Math.sin(spaceFrameTracker * 0.25) * 0.35})`;
                 spCtx.lineWidth = 2.5;
                 spCtx.beginPath();
-                spCtx.arc(0, 0, 26 + Math.random() * 2, 0, Math.PI * 2);
+                spCtx.arc(0, 0, 27 + Math.sin(spaceFrameTracker * 0.3) * 2, 0, Math.PI * 2);
                 spCtx.stroke();
             }
             spCtx.restore();
 
-            // --- 5. FIRING MECHANICS (WITH RECOIL) ---
+            // --- 5. FIRING MECHANICS (WITH AUDIO & RECOIL) ---
             if (spaceFrameTracker % 12 === 0) {
                 applySpaceCameraShake(1.5); // Micro-recoil
+                if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'LASER_PLAYER');
                 if (sMultiTimer > 0) {
                     spaceBullets.push(
                         { x: pShipObj.x + pShipObj.w / 2, y: pShipObj.y, dx: 0 },
@@ -5178,6 +5709,7 @@ window.initSpaceShooterGame = initSpaceShooterGame;
 
                 if (pow.x > pShipObj.x && pow.x < pShipObj.x + pShipObj.w && pow.y > pShipObj.y && pow.y < pShipObj.y + pShipObj.h) {
                     createSpaceExplosion(pow.x, pow.y, spCtx.fillStyle, 10, false); // Collection spark
+                    if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'POWERUP');
 
                     // 🛑 FIX: Restores +2 HP per pickup, capped strictly at maxHealth
                     if (pow.type === 'H') {
@@ -5208,10 +5740,12 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                     spaceBullets.splice(bi, 1);
                     alienInvaderObj.health--;
                     createSpaceExplosion(b.x, b.y, "#f39c12", 5, false); // Impact sparks
+                    if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_HIT');
 
                     if (alienInvaderObj.health <= 0) {
                         applySpaceCameraShake(alienInvaderObj.isBoss ? 25 : 8);
                         createSpaceExplosion(alienInvaderObj.x + alienInvaderObj.w / 2, alienInvaderObj.y + alienInvaderObj.h / 2, "#e74c3c", 40, alienInvaderObj.isBoss);
+                        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, alienInvaderObj.isBoss ? 'BOSS_BOOM' : 'EXPLOSION');
 
                         if (currentLevelState === (parseInt(rules.spaceTar) || 3)) {
                             triggerRewardCoupon(parseInt(rules.spaceDisc) || 0);
@@ -5242,10 +5776,12 @@ window.initSpaceShooterGame = initSpaceShooterGame;
                     enemyLasers.splice(eli, 1);
                     applySpaceCameraShake(6);
                     createSpaceExplosion(el.x, el.y, "#3498db", 8, false); // Shield/Hull spark
+                    if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'ENEMY_HIT');
 
                     if (sShieldTimer <= 0) pShipObj.health--;
                     if (pShipObj.health <= 0) {
                         createSpaceExplosion(pShipObj.x + pShipObj.w / 2, pShipObj.y + pShipObj.h / 2, "#3498db", 30, true);
+                        if (typeof triggerAudioBeepAlert === 'function') triggerAudioBeepAlert(null, 'GAME_OVER');
                         finalizeFailedRun("💥 Spaceship Destroyed! Try Again.");
                     }
                 }
@@ -5355,27 +5891,32 @@ window.initSpaceShooterGame = initSpaceShooterGame;
         // Audio Event Hooks (No actual audio files, ready for your system)
         window.finalizeFailedRun = function (failureMessage) {
             // 1. Stop the game loop
-            if (typeof loopTimerInstance !== 'undefined') {
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
                 clearInterval(loopTimerInstance);
+                if (typeof cancelAnimationFrame === 'function') {
+                    cancelAnimationFrame(loopTimerInstance);
+                }
+                loopTimerInstance = null;
             }
 
-            // 2. Show the Crash/Game Over Message
+            // 2. Hide top status msg to eliminate overhead push & jump
             let statusMsg = document.getElementById('gameScreenStatusMsg');
             if (statusMsg) {
-                statusMsg.innerHTML = `
-            <div style="color: #ff4d4d; font-size: 20px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                ${failureMessage}
-            </div>
-        `;
-                statusMsg.style.display = "block";
+                statusMsg.style.display = "none";
             }
 
-            // 3. Show the 'Try Again' Button
+            // 3. Show On-Screen Loss Overlay directly on the game screen
+            let lossOverlay = document.getElementById('inGameLossOverlay');
+            let lossReason = document.getElementById('inGameLossReason');
+            if (lossOverlay && lossReason) {
+                lossReason.innerText = failureMessage || "Campaign Run Ended. Try Again!";
+                lossOverlay.style.display = "flex";
+            }
+
+            // 4. Hide external startBtn so controls remain clean and unified inside overlay
             let tryAgainBtn = document.getElementById('startBtn');
             if (tryAgainBtn) {
-                tryAgainBtn.style.display = "block";
-                tryAgainBtn.innerText = "🔄 Try Campaign Attempt Again";
-                tryAgainBtn.setAttribute("onclick", "startSelectedGame()");
+                tryAgainBtn.style.display = "none";
             }
         };
 // ===================================================================
