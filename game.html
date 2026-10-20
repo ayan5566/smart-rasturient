@@ -730,6 +730,19 @@
         var towerPerfectCombo = 0;
         var towerGlowFlashAlpha = 0;
 
+        // 🎵 Natural Audio & Tactile Physics Variables
+        var twAudioCtx = null;
+        var towerStackSquashY = 0;
+        var towerStackSwayAngle = 0;
+        var towerStackSwayVel = 0;
+        var towerShockwavesArray = [];
+        var towerDebrisArray = [];
+        var towerGameState = 'PLAYING';
+        var towerCollapseAnim = null;
+        var towerHasTapped = false;
+        var towerMaxCombo = 0;
+        var towerClawOpen = 0;
+
         // ===================================================================
         // 🕹️ GAME SWITCHER & CONTROLLER DISPATCHER
         // ===================================================================
@@ -1727,9 +1740,211 @@ window.triggerRewardCoupon = triggerRewardCoupon;
         }
         window.setSnakeDirection = setSnakeDirection;
         // ===================================================================
-        // 💥 UPGRADED: GAME OVER RUNTIME CONTROLLER (GLOBAL SCOPE FIX)
+        // 🏢 TOWER BLOXX: HIGH-FIDELITY NATURAL ENGINE & SOUND SYSTEM
+        // ===================================================================
 
-        // -------------------------------------------------------------------
+        function getTwAudioCtx() {
+            try {
+                if (!twAudioCtx) {
+                    const AudioClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioClass) twAudioCtx = new AudioClass();
+                }
+                if (twAudioCtx && twAudioCtx.state === 'suspended') {
+                    twAudioCtx.resume().catch(() => {});
+                }
+            } catch (e) {}
+            return twAudioCtx;
+        }
+
+        function playTowerSound(type, param) {
+            try {
+                const ctx = getTwAudioCtx();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'DROP') {
+                    // Crisp mechanical cable release latch click
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(1400, now);
+                    osc.frequency.exponentialRampToValueAtTime(160, now + 0.04);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+
+                    // Aerodynamic wind rush whoosh
+                    const bufSize = Math.floor(ctx.sampleRate * 0.20);
+                    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+                    const out = noiseBuf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) {
+                        out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.45));
+                    }
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = noiseBuf;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(550, now);
+                    filter.frequency.exponentialRampToValueAtTime(180, now + 0.20);
+                    filter.Q.value = 2.2;
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.22, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+                    noise.connect(filter);
+                    filter.connect(nGain);
+                    nGain.connect(ctx.destination);
+                    noise.start(now);
+
+                } else if (type === 'IMPACT_PERFECT') {
+                    // 1. Deep solid bass impact kick
+                    const bass = ctx.createOscillator();
+                    const bGain = ctx.createGain();
+                    bass.type = 'sine';
+                    bass.frequency.setValueAtTime(150, now);
+                    bass.frequency.exponentialRampToValueAtTime(42, now + 0.16);
+                    bGain.gain.setValueAtTime(0.42, now);
+                    bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                    bass.connect(bGain);
+                    bGain.connect(ctx.destination);
+                    bass.start(now);
+                    bass.stop(now + 0.16);
+
+                    // 2. Harmonic crystal chime arpeggio scaling with combo streak
+                    const combo = Math.max(1, param || 1);
+                    const rootScale = [523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5];
+                    const baseFreq = rootScale[(combo - 1) % rootScale.length];
+                    const chord = [baseFreq, baseFreq * 1.2599, baseFreq * 1.4983, baseFreq * 2.0];
+
+                    chord.forEach((freq, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.025);
+                        g.gain.setValueAtTime(0.18, now + idx * 0.025);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.025 + 0.38);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.025);
+                        o.stop(now + idx * 0.025 + 0.38);
+                    });
+
+                } else if (type === 'IMPACT_GOOD') {
+                    // Solid natural masonry landing thud
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(170, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.12);
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+
+                    // Masonry settling grit crunch
+                    const bufSize = Math.floor(ctx.sampleRate * 0.07);
+                    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+                    const out = noiseBuf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.35));
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = noiseBuf;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(1300, now);
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.15, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                    noise.connect(filter);
+                    filter.connect(nGain);
+                    nGain.connect(ctx.destination);
+                    noise.start(now);
+
+                } else if (type === 'WOBBLE') {
+                    // Structural stress creak
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.linearRampToValueAtTime(180, now + 0.19);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.20);
+
+                } else if (type === 'LEVEL_UP') {
+                    // Triumphant 5-note brass fanfare
+                    const notes = [523.25, 659.25, 783.99, 987.77, 1046.50];
+                    notes.forEach((f, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.setValueAtTime(f, now + idx * 0.07);
+                        g.gain.setValueAtTime(0.20, now + idx * 0.07);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.32);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.07);
+                        o.stop(now + idx * 0.07 + 0.32);
+                    });
+
+                } else if (type === 'REWARD') {
+                    // Jackpot sparkle bells for discount coupon
+                    const notes = [1046.5, 1318.5, 1567.98, 2093.0];
+                    notes.forEach((f, idx) => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(f, now + idx * 0.06);
+                        g.gain.setValueAtTime(0.22, now + idx * 0.06);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.35);
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        o.start(now + idx * 0.06);
+                        o.stop(now + idx * 0.06 + 0.35);
+                    });
+
+                } else if (type === 'COLLAPSE') {
+                    // Deep tumbling rumble and masonry collapse
+                    const rumble = ctx.createOscillator();
+                    const rGain = ctx.createGain();
+                    rumble.type = 'sawtooth';
+                    rumble.frequency.setValueAtTime(95, now);
+                    rumble.frequency.linearRampToValueAtTime(30, now + 0.65);
+                    rGain.gain.setValueAtTime(0.38, now);
+                    rGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+                    rumble.connect(rGain);
+                    rGain.connect(ctx.destination);
+                    rumble.start(now);
+                    rumble.stop(now + 0.65);
+
+                    // Shattering debris crunch
+                    const bufSize = Math.floor(ctx.sampleRate * 0.50);
+                    const noiseBuf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+                    const out = noiseBuf.getChannelData(0);
+                    for (let i = 0; i < bufSize; i++) out[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.40));
+                    const noise = ctx.createBufferSource();
+                    noise.buffer = noiseBuf;
+                    const filter = ctx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(750, now);
+                    filter.frequency.linearRampToValueAtTime(220, now + 0.50);
+                    filter.Q.value = 1.3;
+                    const nGain = ctx.createGain();
+                    nGain.gain.setValueAtTime(0.30, now);
+                    nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+                    noise.connect(filter);
+                    filter.connect(nGain);
+                    nGain.connect(ctx.destination);
+                    noise.start(now);
+                }
+            } catch (e) {}
+        }
 
         function initTowerVFXState() {
             towerTargetCameraY = 0;
@@ -1738,30 +1953,39 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             towerTargetZoom = 1.0;
             towerFloatingTexts = [];
             towerParticlesArray = [];
+            towerShockwavesArray = [];
+            towerDebrisArray = [];
             towerPerfectCombo = 0;
+            towerMaxCombo = 0;
             towerGlowFlashAlpha = 0;
-            shootingStarState = null; // Reset shooting star instance on game start
+            towerStackSquashY = 0;
+            towerStackSwayAngle = 0;
+            towerStackSwayVel = 0;
+            towerGameState = 'PLAYING';
+            towerCollapseAnim = null;
+            towerClawOpen = 0;
+            shootingStarState = null;
 
-            // Animated Birds (Floors 0-16)
+            // Animated Living Birds (Floors 0-16)
             towerBirdsArray = [];
-            for (let i = 0; i < 4; i++) {
+            const canvasW = towerCanvasElement ? towerCanvasElement.width : 360;
+            for (let i = 0; i < 5; i++) {
                 towerBirdsArray.push({
-                    x: Math.random() * (towerCanvasElement ? towerCanvasElement.width : 320),
-                    y: 80 + Math.random() * 120,
-                    speed: 0.8 + Math.random() * 0.6,
+                    x: Math.random() * canvasW,
+                    y: 70 + Math.random() * 130,
+                    speed: 0.9 + Math.random() * 0.7,
+                    size: 3.5 + Math.random() * 1.5,
                     wingPhase: Math.random() * Math.PI * 2
                 });
             }
 
-            // Animated Cars on Ground (Floors 0-10)
-            towerCarsArray = [];
-            for (let i = 0; i < 3; i++) {
-                towerCarsArray.push({
-                    x: Math.random() * (towerCanvasElement ? towerCanvasElement.width : 320),
-                    speed: (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 0.8),
-                    color: ['#e74c3c', '#f1c40f', '#3498db', '#ecf0f1'][i % 4]
-                });
-            }
+            // Animated City Traffic with Distinct Vehicle Models (Floors 0-16)
+            towerCarsArray = [
+                { type: 'TAXI', x: canvasW * 0.15, speed: 1.5, lane: 0, color: '#facc15' },
+                { type: 'SEDAN', x: canvasW * 0.58, speed: 1.8, lane: 0, color: '#38bdf8' },
+                { type: 'BUS', x: canvasW * 0.88, speed: -1.2, lane: 1, color: '#0284c7' },
+                { type: 'SEDAN', x: canvasW * 0.32, speed: -1.6, lane: 1, color: '#ef4444' }
+            ];
         }
 
         function initTowerBloxxGame() {
@@ -1774,75 +1998,98 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             isTowerBlockDropping = false;
             towerCameraOffsetOffsetY = 0;
             towerVisualVibrationScaleX = 0;
-            shootingStarState = null;
+            towerHasTapped = false;
             activeTowerBlocksArray = [];
-            towerParticlesArray = [];
 
             initTowerVFXState();
 
-            // Generate background stars for high altitude / space
+            // Rich multi-magnitude stars for stratosphere and cosmos
             towerStarsArray = [];
-            for (let i = 0; i < 50; i++) {
+            const canvasW = towerCanvasElement.width;
+            const canvasH = towerCanvasElement.height;
+            for (let i = 0; i < 75; i++) {
                 towerStarsArray.push({
-                    x: Math.random() * towerCanvasElement.width,
-                    y: Math.random() * towerCanvasElement.height,
-                    size: Math.random() * 2 + 0.5,
+                    x: Math.random() * canvasW,
+                    y: Math.random() * canvasH,
+                    size: Math.random() * 2.2 + 0.5,
                     alpha: Math.random(),
-                    twinkleSpeed: 0.02 + Math.random() * 0.03
+                    twinkleSpeed: 0.02 + Math.random() * 0.04,
+                    color: ['#ffffff', '#fff7e6', '#e0f7fa', '#ffebee', '#ede7f6'][Math.floor(Math.random() * 5)]
                 });
             }
 
-            // Generate floating clouds
+            // Procedural volumetric drifting cumulus clouds
             towerCloudsArray = [];
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 7; i++) {
                 towerCloudsArray.push({
-                    x: Math.random() * towerCanvasElement.width,
-                    y: Math.random() * (towerCanvasElement.height * 0.6),
-                    speed: 0.2 + Math.random() * 0.3,
-                    radius: 18 + Math.random() * 14
+                    x: Math.random() * canvasW,
+                    y: Math.random() * (canvasH * 0.65),
+                    speed: 0.22 + Math.random() * 0.35,
+                    radius: 20 + Math.random() * 16,
+                    density: 0.4 + Math.random() * 0.4
                 });
             }
 
-            // 🧱 SQUARE BLOCK DIMENSIONS
-            let squareBlockWidth = 40;
-            let squareBlockHeight = 40;
+            // 🧱 RESPONSIVE ARCHITECTURAL BLOCK SIZING
+            // Proportional to canvas width for crisp architectural details
+            let squareBlockWidth = Math.min(54, Math.max(44, Math.round(canvasW * 0.15)));
+            let squareBlockHeight = Math.round(squareBlockWidth * 0.88);
 
-            // Baseline Anchor Floor
+            // Grand Foundation Ground Floor (Floor 0)
+            // Sits elevated atop the grand granite plaza podium (canvasH - 36), separated cleanly from street level
             activeTowerBlocksArray.push({
-                x: (towerCanvasElement.width / 2) - (squareBlockWidth / 2),
-                y: towerCanvasElement.height - squareBlockHeight - 15,
+                x: (canvasW / 2) - (squareBlockWidth / 2),
+                y: canvasH - 36 - squareBlockHeight,
                 w: squareBlockWidth,
                 h: squareBlockHeight,
-                color: '#2c3e50'
+                color: '#2c3e50',
+                isAnchor: true
             });
 
-            // ⛓️ HARDENED PENDULUM SWING CONFIGURATION
-            let chainLength = 100;
+            // ⛓️ INDUSTRIAL CRANE & PENDULUM PIVOT SETUP
+            let chainLength = 110;
             let swingSpeed = calculateTowerSwingSpeed(0);
 
             currentSwingingBlock = {
-                pivotX: towerCanvasElement.width / 2,
+                pivotX: canvasW / 2,
                 pivotY: 0,
                 length: chainLength,
-                maxAngle: Math.PI / 2.8, // Dynamic wider swing arc for hard difficulty
+                maxAngle: Math.PI / 2.7,
                 swingTimer: 0,
                 speed: swingSpeed,
                 w: squareBlockWidth,
                 h: squareBlockHeight,
-                x: 0, y: 0,
-                color: '#ffd700'
+                x: 0,
+                y: 0,
+                dropX: 0,
+                dropY: 0,
+                dropSpeedY: 2.4,
+                dropAccY: 0.58,
+                color: '#f39c12'
             };
 
-            // Mobile / Desktop Click Interaction
-            towerCanvasElement.onclick = (e) => {
-                e.preventDefault();
-                if (!isTowerBlockDropping && activeGameMode === 'TOWER') {
+            // Unified Mobile / Desktop Click & Touch Interaction
+            const handleDropAction = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    if (e.stopPropagation) e.stopPropagation();
+                }
+                getTwAudioCtx(); // Wake up audio context on interaction
+
+                if (towerGameState === 'PLAYING' && !isTowerBlockDropping && activeGameMode === 'TOWER') {
                     isTowerBlockDropping = true;
+                    towerHasTapped = true;
                     currentSwingingBlock.dropX = currentSwingingBlock.x;
                     currentSwingingBlock.dropY = currentSwingingBlock.y;
-                    currentSwingingBlock.dropSpeedY = 8.0; // Increased drop speed
+                    currentSwingingBlock.dropSpeedY = 2.4;
+                    currentSwingingBlock.dropAccY = 0.58;
+                    towerClawOpen = 1.0;
+                    playTowerSound('DROP');
                 }
             };
+
+            towerCanvasElement.onclick = handleDropAction;
+            towerCanvasElement.ontouchstart = handleDropAction;
 
             loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
         }
@@ -1856,7 +2103,7 @@ window.triggerRewardCoupon = triggerRewardCoupon;
         function calculateTowerSwingSpeed(floorCount) {
             let baseSpeed = 0.038;
             let maxSpeed = 0.125;
-            let calculatedSpeed = baseSpeed + (floorCount * 0.0022); // Rapid acceleration curve
+            let calculatedSpeed = baseSpeed + (floorCount * 0.0022);
             return Math.min(maxSpeed, calculatedSpeed);
         }
 
@@ -1864,108 +2111,192 @@ window.triggerRewardCoupon = triggerRewardCoupon;
         function render50FloorAtmosphere(floorCount) {
             let w = towerCanvasElement.width;
             let h = towerCanvasElement.height;
-
             let progress = Math.min(floorCount / 50, 1.0);
+
             let grad = twCtx.createLinearGradient(0, 0, 0, h);
 
             if (progress < 0.20) {
-                // 0-10 Floors: Sunny Daytime Sky
+                // Tier 1 (Floors 0-10): Bright Sunny Morning & Daytime Sky
                 let factor = progress / 0.20;
-                grad.addColorStop(0, interpolateColor('#52c234', '#3a7bd5', factor));
-                grad.addColorStop(0.4, interpolateColor('#70c5ce', '#3a7bd5', factor));
-                grad.addColorStop(1, interpolateColor('#e0f7fa', '#a1c4fd', factor));
+                grad.addColorStop(0, interpolateColor('#2980b9', '#3498db', factor));
+                grad.addColorStop(0.35, interpolateColor('#6dd5fa', '#5dade2', factor));
+                grad.addColorStop(1, interpolateColor('#ffffff', '#d4e6f1', factor));
             } else if (progress < 0.40) {
-                // 11-20 Floors: Mid Atmosphere / Sunset Transition
+                // Tier 2 (Floors 11-20): Radiant Golden Hour & Sunset Sky
                 let factor = (progress - 0.20) / 0.20;
-                grad.addColorStop(0, interpolateColor('#3a7bd5', '#1e3c72', factor));
-                grad.addColorStop(1, interpolateColor('#a1c4fd', '#fbc2eb', factor));
+                grad.addColorStop(0, interpolateColor('#1a2a6c', '#2c3e50', factor));
+                grad.addColorStop(0.4, interpolateColor('#b21f1f', '#e67e22', factor));
+                grad.addColorStop(1, interpolateColor('#fdbb2d', '#f39c12', factor));
             } else if (progress < 0.60) {
-                // 21-30 Floors: High Atmosphere / Twilight Dusk
+                // Tier 3 (Floors 21-30): Twilight Violet Dusk
                 let factor = (progress - 0.40) / 0.20;
-                grad.addColorStop(0, interpolateColor('#1e3c72', '#0f2027', factor));
-                grad.addColorStop(1, interpolateColor('#fbc2eb', '#2a5298', factor));
+                grad.addColorStop(0, interpolateColor('#141e30', '#0f2027', factor));
+                grad.addColorStop(0.5, interpolateColor('#243b55', '#203a43', factor));
+                grad.addColorStop(1, interpolateColor('#5d4157', '#2c5364', factor));
             } else if (progress < 0.80) {
-                // 31-40 Floors: Upper Stratosphere / Night Sky
+                // Tier 4 (Floors 31-40): Upper Stratosphere & Crescent Moon Night
                 let factor = (progress - 0.60) / 0.20;
-                grad.addColorStop(0, interpolateColor('#0f2027', '#050515', factor));
-                grad.addColorStop(1, interpolateColor('#2a5298', '#101025', factor));
+                grad.addColorStop(0, interpolateColor('#0a0e17', '#030712', factor));
+                grad.addColorStop(0.6, interpolateColor('#0f172a', '#0b1120', factor));
+                grad.addColorStop(1, interpolateColor('#1e293b', '#111827', factor));
             } else {
-                // 41-50 Floors: Deep Space, Nebulae & Aurora
+                // Tier 5 (Floors 41-50): Deep Cosmic Exosphere, Radiant Nebulae & Aurora
                 let factor = (progress - 0.80) / 0.20;
-                grad.addColorStop(0, interpolateColor('#050515', '#000000', factor));
-                grad.addColorStop(0.7, interpolateColor('#101025', '#080010', factor));
-                grad.addColorStop(1, interpolateColor('#18002e', '#030008', factor));
+                grad.addColorStop(0, '#020308');
+                grad.addColorStop(0.5, interpolateColor('#0a0518', '#030010', factor));
+                grad.addColorStop(1, interpolateColor('#15082a', '#050212', factor));
             }
 
             twCtx.fillStyle = grad;
             twCtx.fillRect(0, 0, w, h);
 
-            // Render Living Birds (Floors 0-16)
-            if (progress < 0.32) {
+            // ☀️ 1. SUN / SUNSET ORB (Floors 0-25)
+            if (progress < 0.50) {
                 twCtx.save();
-                twCtx.strokeStyle = 'rgba(44, 62, 80, 0.6)';
-                twCtx.lineWidth = 1.8;
+                let sunProgress = progress / 0.50;
+                let sunX = w * 0.78;
+                let sunY = 55 + sunProgress * (h * 0.45);
+                let sunRadius = 24 - sunProgress * 4;
+
+                let sunCorona = twCtx.createRadialGradient(sunX, sunY, sunRadius * 0.2, sunX, sunY, sunRadius * 2.8);
+                if (progress < 0.20) {
+                    sunCorona.addColorStop(0, 'rgba(255, 255, 235, 0.95)');
+                    sunCorona.addColorStop(0.3, 'rgba(255, 235, 170, 0.45)');
+                    sunCorona.addColorStop(1, 'rgba(255, 240, 200, 0)');
+                } else {
+                    sunCorona.addColorStop(0, 'rgba(255, 210, 120, 0.95)');
+                    sunCorona.addColorStop(0.4, 'rgba(243, 156, 18, 0.55)');
+                    sunCorona.addColorStop(1, 'rgba(231, 76, 60, 0)');
+                }
+                twCtx.fillStyle = sunCorona;
+                twCtx.beginPath();
+                twCtx.arc(sunX, sunY, sunRadius * 2.8, 0, Math.PI * 2);
+                twCtx.fill();
+
+                twCtx.fillStyle = progress < 0.20 ? '#fffef0' : '#ffeaa7';
+                twCtx.beginPath();
+                twCtx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+                twCtx.fill();
+                twCtx.restore();
+            }
+
+            // 🕊️ 2. LIVING BIRDS IN NATURAL FLOCK FLIGHT (Floors 0-18)
+            if (progress < 0.36) {
+                twCtx.save();
+                twCtx.strokeStyle = progress < 0.20 ? 'rgba(30, 41, 59, 0.65)' : 'rgba(248, 250, 252, 0.55)';
+                twCtx.lineWidth = 1.6;
+                twCtx.lineCap = 'round';
                 towerBirdsArray.forEach(bird => {
                     bird.x += bird.speed;
-                    if (bird.x > w + 20) bird.x = -20;
-                    bird.wingPhase += 0.15;
-                    let wingY = Math.sin(bird.wingPhase) * 4;
+                    if (bird.x > w + 25) bird.x = -25;
+                    bird.wingPhase += 0.16;
+                    let wingSpan = bird.size || 4;
+                    let wingY = Math.sin(bird.wingPhase) * (wingSpan * 0.7);
 
                     twCtx.beginPath();
-                    twCtx.moveTo(bird.x - 6, bird.y + wingY);
-                    twCtx.lineTo(bird.x, bird.y);
-                    twCtx.lineTo(bird.x + 6, bird.y + wingY);
+                    twCtx.moveTo(bird.x - wingSpan, bird.y + wingY);
+                    twCtx.quadraticCurveTo(bird.x - (wingSpan * 0.4), bird.y - 1, bird.x, bird.y);
+                    twCtx.quadraticCurveTo(bird.x + (wingSpan * 0.4), bird.y - 1, bird.x + wingSpan, bird.y + wingY);
                     twCtx.stroke();
                 });
                 twCtx.restore();
             }
 
-            // Render Stars, Planets, and Aurora (Floors 20-50)
-            if (progress > 0.35) {
-                let starAlphaFactor = Math.min((progress - 0.35) / 0.35, 1.0);
+            // 🌙 3. STARS, CRESCENT MOON, AURORA & NEBULA (Floors 22-50)
+            if (progress > 0.38) {
+                let celestialAlpha = Math.min((progress - 0.38) / 0.25, 1.0);
                 twCtx.save();
+
+                // Multi-magnitude twinkling stars
                 towerStarsArray.forEach(star => {
                     star.alpha += star.twinkleSpeed;
-                    let currentAlpha = (Math.sin(star.alpha) + 1) / 2 * starAlphaFactor;
-                    twCtx.fillStyle = `rgba(255, 255, 255, ${currentAlpha})`;
+                    let currentAlpha = (Math.sin(star.alpha) + 1) / 2 * celestialAlpha;
+                    twCtx.fillStyle = star.color || '#ffffff';
+                    twCtx.globalAlpha = currentAlpha;
                     twCtx.beginPath();
                     twCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                     twCtx.fill();
                 });
+                twCtx.globalAlpha = 1.0;
 
-                // Deep Space Distant Planets & Aurora (Floors 32-50)
-                if (progress > 0.65) {
-                    twCtx.fillStyle = 'rgba(241, 196, 15, 0.15)';
+                // Detailed Crescent Moon (Floors 28-50)
+                if (progress > 0.52) {
+                    let moonX = w * 0.82;
+                    let moonY = 68;
+                    let moonRad = 16;
+
+                    // Lunar glow halo
+                    let moonHalo = twCtx.createRadialGradient(moonX, moonY, moonRad * 0.8, moonX, moonY, moonRad * 3.2);
+                    moonHalo.addColorStop(0, 'rgba(224, 242, 254, 0.35)');
+                    moonHalo.addColorStop(1, 'rgba(224, 242, 254, 0)');
+                    twCtx.fillStyle = moonHalo;
                     twCtx.beginPath();
-                    twCtx.arc(w - 50, 80, 28, 0, Math.PI * 2);
-                    twCtx.fill();
-                    twCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                    twCtx.beginPath();
-                    twCtx.arc(w - 50, 80, 18, 0, Math.PI * 2);
+                    twCtx.arc(moonX, moonY, moonRad * 3.2, 0, Math.PI * 2);
                     twCtx.fill();
 
-                    let auroraGrad = twCtx.createLinearGradient(0, 0, w, 150);
-                    auroraGrad.addColorStop(0, 'rgba(46, 204, 113, 0.08)');
-                    auroraGrad.addColorStop(0.5, 'rgba(155, 89, 182, 0.12)');
-                    auroraGrad.addColorStop(1, 'rgba(52, 152, 219, 0.05)');
-                    twCtx.fillStyle = auroraGrad;
-                    twCtx.fillRect(0, 0, w, 180);
+                    // Crescent body
+                    twCtx.fillStyle = '#f8fafc';
+                    twCtx.beginPath();
+                    twCtx.arc(moonX, moonY, moonRad, 0, Math.PI * 2);
+                    twCtx.fill();
+
+                    twCtx.fillStyle = '#050816';
+                    twCtx.beginPath();
+                    twCtx.arc(moonX - 5, moonY - 3, moonRad * 0.88, 0, Math.PI * 2);
+                    twCtx.fill();
                 }
 
-                // 🎯 FIX FOR FLOOR 32 CRASH: shootingStarState object guarded safely
+                // Cosmic Aurora & Swirling Nebulae (Floors 40-50)
+                if (progress > 0.75) {
+                    let auroraAlpha = Math.min((progress - 0.75) / 0.25, 0.45);
+                    let cosmicGrad = twCtx.createLinearGradient(0, 0, w, 220);
+                    cosmicGrad.addColorStop(0, `rgba(168, 85, 247, ${auroraAlpha * 0.5})`);
+                    cosmicGrad.addColorStop(0.4, `rgba(6, 182, 212, ${auroraAlpha * 0.4})`);
+                    cosmicGrad.addColorStop(0.8, `rgba(236, 72, 153, ${auroraAlpha * 0.35})`);
+                    cosmicGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    twCtx.fillStyle = cosmicGrad;
+                    twCtx.fillRect(0, 0, w, 240);
+
+                    // Distant Curved Blue Earth Horizon (Floors 46-50)
+                    if (progress > 0.88) {
+                        let earthAlpha = Math.min((progress - 0.88) / 0.12, 0.85);
+                        twCtx.save();
+                        twCtx.globalAlpha = earthAlpha;
+                        let earthGrad = twCtx.createRadialGradient(w / 2, h + 180, 220, w / 2, h + 180, 360);
+                        earthGrad.addColorStop(0, '#1e3a8a');
+                        earthGrad.addColorStop(0.65, '#0284c7');
+                        earthGrad.addColorStop(0.88, '#38bdf8');
+                        earthGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+                        twCtx.fillStyle = earthGrad;
+                        twCtx.beginPath();
+                        twCtx.arc(w / 2, h + 180, 360, Math.PI, Math.PI * 2);
+                        twCtx.fill();
+                        twCtx.restore();
+                    }
+                }
+
+                // Luminous Shooting Star Meteors
                 if (progress > 0.60) {
-                    if (!shootingStarState && Math.random() < 0.02) {
+                    if (!shootingStarState && Math.random() < 0.022) {
                         shootingStarState = {
-                            x: Math.random() * w,
-                            y: Math.random() * (h * 0.4),
+                            x: Math.random() * (w * 0.85),
+                            y: Math.random() * (h * 0.35),
                             len: 35 + Math.random() * 45,
                             speed: 9 + Math.random() * 4,
                             alpha: 1.0
                         };
                     }
                     if (shootingStarState) {
-                        twCtx.strokeStyle = `rgba(255, 255, 255, ${shootingStarState.alpha})`;
-                        twCtx.lineWidth = 1.8;
+                        twCtx.save();
+                        let sGrad = twCtx.createLinearGradient(
+                            shootingStarState.x, shootingStarState.y,
+                            shootingStarState.x - shootingStarState.len, shootingStarState.y + shootingStarState.len
+                        );
+                        sGrad.addColorStop(0, `rgba(255, 255, 255, ${shootingStarState.alpha})`);
+                        sGrad.addColorStop(0.5, `rgba(56, 189, 248, ${shootingStarState.alpha * 0.6})`);
+                        sGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                        twCtx.strokeStyle = sGrad;
+                        twCtx.lineWidth = 2.0;
                         twCtx.beginPath();
                         twCtx.moveTo(shootingStarState.x, shootingStarState.y);
                         twCtx.lineTo(shootingStarState.x - shootingStarState.len, shootingStarState.y + shootingStarState.len);
@@ -1973,199 +2304,774 @@ window.triggerRewardCoupon = triggerRewardCoupon;
 
                         shootingStarState.x += shootingStarState.speed;
                         shootingStarState.y += shootingStarState.speed;
-                        shootingStarState.alpha -= 0.035;
+                        shootingStarState.alpha -= 0.038;
                         if (shootingStarState.alpha <= 0) shootingStarState = null;
+                        twCtx.restore();
                     }
                 }
                 twCtx.restore();
             }
 
-            // Parallax Ground Surface
-            let parallaxOffsetY = towerSmoothCameraY * 0.3;
+            // 🏙️ 4. PARALLAX CITY FOUNDATION (Floors 0-20)
+            let parallaxOffsetY = towerSmoothCameraY * 0.28;
             renderGroundAndCityFoundation(progress, parallaxOffsetY);
 
-            // Drifting Clouds (Floors 10-35)
-            if (progress > 0.15 && progress < 0.75) {
+            // ☁️ 5. VOLUMETRIC DRIFTING CUMULUS CLOUDS (Floors 8-36)
+            if (progress > 0.12 && progress < 0.72) {
                 twCtx.save();
-                let cloudAlpha = 0.35 * (1 - Math.abs(progress - 0.45) * 2);
-                twCtx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, cloudAlpha)})`;
+                let cloudFade = Math.sin(Math.min(1, Math.max(0, (progress - 0.12) / 0.60)) * Math.PI);
+                let cloudAlpha = Math.max(0, 0.42 * cloudFade);
+
                 towerCloudsArray.forEach(cloud => {
                     cloud.x += cloud.speed;
-                    if (cloud.x - cloud.radius > w) cloud.x = -cloud.radius;
+                    if (cloud.x - cloud.radius * 2 > w) cloud.x = -cloud.radius * 2;
+                    let cloudY = cloud.y + (towerSmoothCameraY * 0.16);
+
+                    // 3D Shaded Cloud Body
+                    let cGrad = twCtx.createLinearGradient(cloud.x, cloudY - cloud.radius, cloud.x, cloudY + cloud.radius);
+                    if (progress < 0.25) {
+                        cGrad.addColorStop(0, `rgba(255, 255, 255, ${cloudAlpha})`);
+                        cGrad.addColorStop(1, `rgba(226, 232, 240, ${cloudAlpha * 0.8})`);
+                    } else {
+                        cGrad.addColorStop(0, `rgba(254, 215, 170, ${cloudAlpha})`);
+                        cGrad.addColorStop(1, `rgba(168, 85, 247, ${cloudAlpha * 0.75})`);
+                    }
+                    twCtx.fillStyle = cGrad;
                     twCtx.beginPath();
-                    twCtx.arc(cloud.x, cloud.y + (towerSmoothCameraY * 0.15), cloud.radius, 0, Math.PI * 2);
-                    twCtx.arc(cloud.x + 15, cloud.y - 8 + (towerSmoothCameraY * 0.15), cloud.radius * 0.8, 0, Math.PI * 2);
+                    twCtx.arc(cloud.x, cloudY, cloud.radius, 0, Math.PI * 2);
+                    twCtx.arc(cloud.x + (cloud.radius * 0.7), cloudY - (cloud.radius * 0.35), cloud.radius * 0.85, 0, Math.PI * 2);
+                    twCtx.arc(cloud.x - (cloud.radius * 0.7), cloudY - (cloud.radius * 0.25), cloud.radius * 0.75, 0, Math.PI * 2);
+                    twCtx.arc(cloud.x + (cloud.radius * 1.3), cloudY + (cloud.radius * 0.1), cloud.radius * 0.6, 0, Math.PI * 2);
                     twCtx.fill();
                 });
                 twCtx.restore();
             }
         }
 
-        // 🏙️ REALISTIC MODERN SKYSCRAPER FLOOR RENDERER
-        function drawStylizedSquareBlock(x, y, w, h, hexColor) {
-            twCtx.save();
-
-            twCtx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-            twCtx.shadowBlur = 8;
-            twCtx.shadowOffsetY = 4;
-
-            let blockGrad = twCtx.createLinearGradient(x, y, x, y + h);
-            blockGrad.addColorStop(0, lightenColor(hexColor, 30));
-            blockGrad.addColorStop(0.3, hexColor);
-            blockGrad.addColorStop(1, darkenColor(hexColor, 25));
-
-            twCtx.fillStyle = blockGrad;
-            twCtx.beginPath();
-            twCtx.roundRect(x, y, w, h, 3);
-            twCtx.fill();
-
-            twCtx.shadowBlur = 0;
-            twCtx.shadowOffsetY = 0;
-
-            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-            twCtx.lineWidth = 1.2;
-            twCtx.beginPath();
-            twCtx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 3);
-            twCtx.stroke();
-
-            twCtx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            twCtx.fillRect(x, y + h - 4, w, 4);
-            twCtx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            twCtx.fillRect(x, y + h - 5, w, 1);
-
-            let winMargin = 5;
-            let winW = (w - (winMargin * 3)) / 2;
-            let winH = h - 12;
-
-            [x + winMargin, x + (winMargin * 2) + winW].forEach(winX => {
-                let glassGrad = twCtx.createLinearGradient(winX, y + 4, winX + winW, y + 4 + winH);
-                glassGrad.addColorStop(0, '#103048');
-                glassGrad.addColorStop(0.5, '#1e5276');
-                glassGrad.addColorStop(1, '#0b1d28');
-                twCtx.fillStyle = glassGrad;
-                twCtx.fillRect(winX, y + 4, winW, winH);
-
-                twCtx.fillStyle = 'rgba(255, 250, 205, 0.85)';
-                twCtx.fillRect(winX + 2, y + 6, winW - 4, 3);
-
-                twCtx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-                twCtx.beginPath();
-                twCtx.moveTo(winX, y + 4 + winH);
-                twCtx.lineTo(winX + winW - 2, y + 4);
-                twCtx.lineTo(winX + winW, y + 4);
-                twCtx.lineTo(winX + 2, y + 4 + winH);
-                twCtx.fill();
-
-                twCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                twCtx.lineWidth = 0.8;
-                twCtx.strokeRect(winX, y + 4, winW, winH);
-            });
-
-            twCtx.restore();
-        }
-
-        // 🌳 REALISTIC GROUND & LIVING CITY FOUNDATION
+        // 🏙️ REALISTIC DOWNTOWN URBAN ENVIRONMENT & ELEVATED PLAZA FOUNDATION
         function renderGroundAndCityFoundation(progress, parallaxOffsetY) {
-            if (progress > 0.40) return;
+            if (progress > 0.42) return;
 
             let w = towerCanvasElement.width;
             let h = towerCanvasElement.height;
-            let groundAlpha = 1.0 - (progress / 0.40);
+            let groundAlpha = Math.max(0, 1.0 - (progress / 0.42));
 
             twCtx.save();
-            twCtx.globalAlpha = Math.max(0, groundAlpha);
+            twCtx.globalAlpha = groundAlpha;
 
-            twCtx.fillStyle = '#2c3e50';
-            twCtx.fillRect(15, 230 + parallaxOffsetY, 40, 170);
-            twCtx.fillRect(70, 180 + parallaxOffsetY, 55, 220);
-            twCtx.fillRect(200, 260 + parallaxOffsetY, 50, 140);
-            twCtx.fillRect(260, 210 + parallaxOffsetY, 45, 190);
+            let baseGroundY = h - 36 + parallaxOffsetY;
+            let cx = w / 2;
 
-            twCtx.fillStyle = '#f39c12';
-            for (let wy = 200; wy < 380; wy += 20) {
-                twCtx.fillRect(78, wy + parallaxOffsetY, 6, 8);
-                twCtx.fillRect(102, wy + parallaxOffsetY, 6, 8);
-            }
+            // =========================================================================
+            // 1. LAYER 1: DEEP DISTANT SKYLINE (MISTY SILHOUETTE BEHIND ALL BUILDINGS)
+            // =========================================================================
+            twCtx.fillStyle = '#1e293b';
+            twCtx.fillRect(15, baseGroundY - 145, 42, 160);
+            twCtx.fillRect(68, baseGroundY - 180, 48, 195);
+            twCtx.fillRect(125, baseGroundY - 120, 36, 135);
+            twCtx.fillRect(170, baseGroundY - 135, 40, 150);
+            twCtx.fillRect(220, baseGroundY - 195, 54, 210);
+            twCtx.fillRect(285, baseGroundY - 155, 46, 170);
+            twCtx.fillRect(340, baseGroundY - 170, 50, 185);
 
-            let groundY = h - 20 + parallaxOffsetY;
+            // Architectural spires & communication masts atop distant buildings
+            twCtx.strokeStyle = '#334155';
+            twCtx.lineWidth = 1.8;
+            [92, 247, 365].forEach(spX => {
+                if (spX < w) {
+                    twCtx.beginPath();
+                    twCtx.moveTo(spX, baseGroundY - 180);
+                    twCtx.lineTo(spX, baseGroundY - 215);
+                    twCtx.stroke();
 
-            twCtx.fillStyle = '#34495e';
-            twCtx.fillRect(0, groundY - 10, w, 30);
-            twCtx.fillStyle = '#f1c40f';
-            for (let rx = 5; rx < w; rx += 30) {
-                twCtx.fillRect(rx, groundY + 2, 15, 2);
-            }
-
-            towerCarsArray.forEach(car => {
-                car.x += car.speed;
-                if (car.x > w + 20) car.x = -20;
-                if (car.x < -20) car.x = w + 20;
-
-                twCtx.fillStyle = car.color;
-                twCtx.beginPath();
-                twCtx.roundRect(car.x, groundY - 6, 16, 7, 2);
-                twCtx.fill();
-                twCtx.fillStyle = '#fff';
-                twCtx.fillRect(car.speed > 0 ? car.x + 14 : car.x, groundY - 5, 2, 2);
+                    // Pulsing red obstruction warning beacons on distant spires
+                    let beaconPulse = (Math.sin(Date.now() * 0.007 + spX) + 1) / 2;
+                    twCtx.fillStyle = `rgba(239, 68, 68, ${0.4 + beaconPulse * 0.6})`;
+                    twCtx.beginPath();
+                    twCtx.arc(spX, baseGroundY - 216, 2.5, 0, Math.PI * 2);
+                    twCtx.fill();
+                }
             });
 
-            twCtx.fillStyle = '#7f8c8d';
-            twCtx.fillRect((w / 2) - 60, groundY - 18, 120, 12);
-            twCtx.fillStyle = '#95a5a6';
-            twCtx.fillRect((w / 2) - 55, groundY - 22, 110, 5);
+            // =========================================================================
+            // 2. LAYER 2: FLANKING DOWNTOWN HIGH-RISES (LEFT & RIGHT URBAN CANYON)
+            // =========================================================================
+            // These stately high-rises flank the construction site on the left and right,
+            // creating a true downtown street canyon while keeping the central plot open!
 
-            twCtx.fillStyle = '#27ae60';
-            twCtx.fillRect(0, groundY - 14, (w / 2) - 60, 5);
-            twCtx.fillRect((w / 2) + 60, groundY - 14, (w / 2) - 60, 5);
+            // --- LEFT HIGH-RISE (West Downtown Financial Center) ---
+            let leftBldgW = Math.max(60, cx - 85);
+            let leftBldgH = 175;
+            let leftBldgY = baseGroundY - leftBldgH + 8;
 
-            [25, (w - 35)].forEach(treeX => {
-                twCtx.fillStyle = '#795548';
-                twCtx.fillRect(treeX, groundY - 28, 4, 14);
-                twCtx.fillStyle = '#2e7d32';
+            let leftBldgGrad = twCtx.createLinearGradient(0, leftBldgY, leftBldgW, leftBldgY);
+            leftBldgGrad.addColorStop(0, '#0f172a');
+            leftBldgGrad.addColorStop(0.7, '#1e293b');
+            leftBldgGrad.addColorStop(1, '#334155');
+            twCtx.fillStyle = leftBldgGrad;
+            twCtx.fillRect(0, leftBldgY, leftBldgW, leftBldgH);
+
+            // Rooftop elevator penthouse & HVAC chiller
+            twCtx.fillStyle = '#475569';
+            twCtx.fillRect(8, leftBldgY - 12, leftBldgW - 20, 12);
+            twCtx.fillStyle = '#64748b';
+            twCtx.fillRect(16, leftBldgY - 18, 14, 6);
+
+            // Illuminated Office Windows Grid (Warm yellow & cool cyan lights)
+            for (let wy = leftBldgY + 14; wy < baseGroundY - 12; wy += 18) {
+                for (let wx = 8; wx < leftBldgW - 10; wx += 15) {
+                    let winColor = ((wx + wy) % 5 === 0) ? 'rgba(56, 189, 248, 0.75)' : 'rgba(253, 224, 71, 0.72)';
+                    twCtx.fillStyle = winColor;
+                    twCtx.fillRect(wx, wy, 8, 9);
+                }
+            }
+
+            // --- RIGHT HIGH-RISE (East Metropolis Tower & Classic Water Tank) ---
+            let rightBldgX = cx + 85;
+            let rightBldgW = w - rightBldgX;
+            let rightBldgH = 190;
+            let rightBldgY = baseGroundY - rightBldgH + 8;
+
+            if (rightBldgW > 20) {
+                let rightBldgGrad = twCtx.createLinearGradient(rightBldgX, rightBldgY, rightBldgX + rightBldgW, rightBldgY);
+                rightBldgGrad.addColorStop(0, '#334155');
+                rightBldgGrad.addColorStop(0.3, '#1e293b');
+                rightBldgGrad.addColorStop(1, '#0f172a');
+                twCtx.fillStyle = rightBldgGrad;
+                twCtx.fillRect(rightBldgX, rightBldgY, rightBldgW, rightBldgH);
+
+                // Classic City Wooden Water Tower atop right building
+                let wtX = rightBldgX + 14;
+                let wtY = rightBldgY - 22;
+                twCtx.fillStyle = '#78350f';
+                twCtx.fillRect(wtX, wtY, 16, 14);
+                twCtx.fillStyle = '#92400e';
                 twCtx.beginPath();
-                twCtx.arc(treeX + 2, groundY - 30, 10, 0, Math.PI * 2);
+                twCtx.moveTo(wtX - 2, wtY);
+                twCtx.lineTo(wtX + 8, wtY - 8);
+                twCtx.lineTo(wtX + 18, wtY);
                 twCtx.fill();
+                twCtx.strokeStyle = '#475569';
+                twCtx.lineWidth = 1.2;
+                twCtx.beginPath();
+                twCtx.moveTo(wtX + 2, wtY + 14);
+                twCtx.lineTo(wtX, rightBldgY);
+                twCtx.moveTo(wtX + 14, wtY + 14);
+                twCtx.lineTo(wtX + 16, rightBldgY);
+                twCtx.stroke();
+
+                // Illuminated Window Columns
+                for (let wy = rightBldgY + 16; wy < baseGroundY - 12; wy += 18) {
+                    for (let wx = rightBldgX + 10; wx < w - 8; wx += 15) {
+                        let winColor = ((wx * 3 + wy) % 7 === 0) ? 'rgba(56, 189, 248, 0.70)' : 'rgba(254, 240, 138, 0.75)';
+                        twCtx.fillStyle = winColor;
+                        twCtx.fillRect(wx, wy, 8, 9);
+                    }
+                }
+
+                // Glowing Rooftop Neon Skyline Sign
+                twCtx.fillStyle = '#ec4899';
+                twCtx.font = 'bold 8px sans-serif';
+                twCtx.fillText('METRO', rightBldgX + 12, rightBldgY + 10);
+            }
+
+            // =========================================================================
+            // 3. LAYER 3: THE SKYSCRAPER'S GRAND PLAZA & CONSTRUCTION PODIUM
+            // =========================================================================
+            // The skyscraper sits squarely in the center on its own majestic, elevated plaza!
+            let plazaHalfW = Math.min(84, cx - 12);
+            let plazaLeft = cx - plazaHalfW;
+            let plazaRight = cx + plazaHalfW;
+            let plazaW = plazaRight - plazaLeft;
+
+            // Raised Granite Plaza Podium Surface (Anchor floor sits cleanly on top of this)
+            let plazaGrad = twCtx.createLinearGradient(plazaLeft, baseGroundY, plazaRight, baseGroundY);
+            plazaGrad.addColorStop(0, '#64748b');
+            plazaGrad.addColorStop(0.5, '#94a3b8');
+            plazaGrad.addColorStop(1, '#64748b');
+            twCtx.fillStyle = plazaGrad;
+            twCtx.beginPath();
+            twCtx.roundRect(plazaLeft, baseGroundY, plazaW, 10, [4, 4, 0, 0]);
+            twCtx.fill();
+
+            // Plaza paving stone scorelines
+            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+            twCtx.lineWidth = 0.8;
+            for (let px = plazaLeft + 12; px < plazaRight; px += 18) {
+                twCtx.beginPath();
+                twCtx.moveTo(px, baseGroundY);
+                twCtx.lineTo(px, baseGroundY + 10);
+                twCtx.stroke();
+            }
+
+            // 3-Tier Stately Granite Entrance Steps (leading down from plaza to sidewalk)
+            for (let st = 0; st < 3; st++) {
+                let stepY = baseGroundY + 6 + (st * 3);
+                let stepW = plazaW - (st * 8);
+                let stepX = cx - (stepW / 2);
+                twCtx.fillStyle = st % 2 === 0 ? '#475569' : '#334155';
+                twCtx.fillRect(stepX, stepY, stepW, 3);
+            }
+
+            // Symmetrical Plaza Accessories (Left & Right of Skyscraper entrance)
+            [-plazaHalfW + 16, plazaHalfW - 16].forEach((ox, sIdx) => {
+                let accX = cx + ox;
+
+                // Stainless Steel Flagpole with waving pennant
+                twCtx.strokeStyle = '#cbd5e1';
+                twCtx.lineWidth = 1.5;
+                twCtx.beginPath();
+                twCtx.moveTo(accX, baseGroundY);
+                twCtx.lineTo(accX, baseGroundY - 26);
+                twCtx.stroke();
+                // Finial ball atop flagpole
+                twCtx.fillStyle = '#f59e0b';
+                twCtx.beginPath();
+                twCtx.arc(accX, baseGroundY - 27, 2, 0, Math.PI * 2);
+                twCtx.fill();
+                // Waving architectural pennant flag
+                twCtx.fillStyle = sIdx === 0 ? '#0284c7' : '#f59e0b';
+                twCtx.beginPath();
+                twCtx.moveTo(accX, baseGroundY - 26);
+                twCtx.lineTo(accX + (sIdx === 0 ? 12 : -12), baseGroundY - 21);
+                twCtx.lineTo(accX, baseGroundY - 16);
+                twCtx.fill();
+
+                // Bronze Planter Box with Sculpted Topiary Evergreen
+                let pbX = cx + (ox * 0.65);
+                twCtx.fillStyle = '#92400e';
+                twCtx.fillRect(pbX - 6, baseGroundY - 6, 12, 7);
+                // Topiary spherical shrub
+                twCtx.fillStyle = '#166534';
+                twCtx.beginPath();
+                twCtx.arc(pbX, baseGroundY - 11, 7, 0, Math.PI * 2);
+                twCtx.fill();
+                twCtx.fillStyle = '#22c55e';
+                twCtx.beginPath();
+                twCtx.arc(pbX - 2, baseGroundY - 13, 4, 0, Math.PI * 2);
+                twCtx.fill();
+
+                // Modern Plaza Ornamental Lamp Stanchion
+                let lampX = cx + (ox * 0.92);
+                twCtx.fillStyle = '#1e293b';
+                twCtx.fillRect(lampX - 1.5, baseGroundY - 18, 3, 18);
+                // Illuminated lamp globe with radial warm light pool
+                let lampGlow = twCtx.createRadialGradient(lampX, baseGroundY - 19, 1, lampX, baseGroundY - 19, 14);
+                lampGlow.addColorStop(0, 'rgba(254, 240, 138, 0.9)');
+                lampGlow.addColorStop(0.4, 'rgba(254, 240, 138, 0.4)');
+                lampGlow.addColorStop(1, 'rgba(254, 240, 138, 0)');
+                twCtx.fillStyle = lampGlow;
+                twCtx.beginPath();
+                twCtx.arc(lampX, baseGroundY - 19, 14, 0, Math.PI * 2);
+                twCtx.fill();
+            });
+
+            // =========================================================================
+            // 4. LAYER 4: SIDEWALK PROMENADE (CONNECTING PLAZA TO STREET)
+            // =========================================================================
+            let sidewalkY = baseGroundY + 12;
+            let sidewalkH = 7;
+
+            // Concrete Sidewalk Surface
+            twCtx.fillStyle = '#64748b';
+            twCtx.fillRect(0, sidewalkY, w, sidewalkH);
+
+            // Granite curb stone edge along street
+            twCtx.fillStyle = '#94a3b8';
+            twCtx.fillRect(0, sidewalkY + sidewalkH - 2, w, 2);
+
+            // Pedestrian Zebra Crosswalk in front of Plaza
+            twCtx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            for (let zx = cx - 36; zx <= cx + 36; zx += 12) {
+                twCtx.fillRect(zx, sidewalkY + sidewalkH, 7, 18);
+            }
+
+            // Polished Silver Protective Security Bollards along Curb
+            twCtx.fillStyle = '#cbd5e1';
+            for (let bx = plazaLeft + 4; bx <= plazaRight - 4; bx += 22) {
+                if (Math.abs(bx - cx) > 28) { // Keep crosswalk clear
+                    twCtx.beginPath();
+                    twCtx.roundRect(bx - 2, sidewalkY + 1, 4, 6, 1);
+                    twCtx.fill();
+                }
+            }
+
+            // =========================================================================
+            // 5. LAYER 5: FOREGROUND CITY AVENUE & REALISTIC VEHICLES
+            // =========================================================================
+            // The road is positioned in front of and below the sidewalk!
+            // Vehicles drive along this road in the foreground and NEVER intersect the building!
+            let roadY = sidewalkY + sidewalkH;
+            let roadH = h - roadY + 8;
+
+            // Rich Dark Asphalt Roadway
+            twCtx.fillStyle = '#0f172a';
+            twCtx.fillRect(0, roadY, w, roadH);
+
+            // Storm Drain Grates along the curb
+            twCtx.fillStyle = '#1e293b';
+            [24, w - 38].forEach(dx => {
+                twCtx.fillRect(dx, roadY, 14, 3);
+            });
+
+            // Yellow Dashed Center Lane Divider
+            let laneDivY = roadY + (roadH * 0.46);
+            twCtx.fillStyle = '#f59e0b';
+            for (let rx = 8; rx < w; rx += 36) {
+                twCtx.fillRect(rx, laneDivY, 18, 2);
+            }
+
+            // White Solid Outer Road Edge Line
+            twCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            twCtx.fillRect(0, roadY + roadH - 2, w, 1.5);
+
+            // Dynamic Vehicles Driving along designated lanes:
+            // Lane 0: Upper Lane (driving right, dir = 1, y = roadY + 4)
+            // Lane 1: Lower Lane (driving left, dir = -1, y = roadY + 13)
+            towerCarsArray.forEach(car => {
+                car.x += car.speed;
+                if (car.speed > 0 && car.x > w + 40) car.x = -40;
+                if (car.speed < 0 && car.x < -40) car.x = w + 40;
+
+                let carY = car.lane === 0 ? (roadY + 4) : (roadY + 13);
+                let dir = car.speed > 0 ? 1 : -1;
+
+                // Render Headlight Light Beam Cone across asphalt
+                let hBeamW = 32;
+                let hBeamX = car.x + (dir * (car.type === 'BUS' ? 18 : 10));
+                let hBeam = twCtx.createLinearGradient(hBeamX, carY + 3, hBeamX + (dir * hBeamW), carY + 3);
+                hBeam.addColorStop(0, 'rgba(254, 240, 138, 0.85)');
+                hBeam.addColorStop(1, 'rgba(254, 240, 138, 0)');
+                twCtx.fillStyle = hBeam;
+                twCtx.beginPath();
+                twCtx.moveTo(hBeamX, carY + 1);
+                twCtx.lineTo(hBeamX + (dir * hBeamW), carY - 2);
+                twCtx.lineTo(hBeamX + (dir * hBeamW), carY + 8);
+                twCtx.lineTo(hBeamX, carY + 5);
+                twCtx.fill();
+
+                if (car.type === 'TAXI') {
+                    // --- ICONIC YELLOW CITY CAB ---
+                    let cW = 20;
+                    let cH = 8;
+                    // Yellow Body
+                    twCtx.fillStyle = '#facc15';
+                    twCtx.beginPath();
+                    twCtx.roundRect(car.x - 10, carY, cW, cH, 2);
+                    twCtx.fill();
+                    // Black/white checkered decal stripe
+                    twCtx.fillStyle = '#1e293b';
+                    twCtx.fillRect(car.x - 8, carY + 3, 16, 2);
+                    // Windshield & side glass
+                    twCtx.fillStyle = '#38bdf8';
+                    twCtx.fillRect(car.x - (dir > 0 ? 2 : 6), carY + 1, 6, 3);
+                    // Lit Taxi Roof Sign
+                    twCtx.fillStyle = '#fef08a';
+                    twCtx.fillRect(car.x - 3, carY - 2.5, 6, 2.5);
+                    // Headlight
+                    twCtx.fillStyle = '#ffffff';
+                    twCtx.fillRect(car.x + (dir * 9), carY + 2, 1.5, 3);
+                    // Taillight
+                    twCtx.fillStyle = '#ef4444';
+                    twCtx.fillRect(car.x - (dir * 10), carY + 2, 1.5, 3);
+
+                } else if (car.type === 'BUS') {
+                    // --- METROPOLITAN COMMUTER BUS ---
+                    let bW = 36;
+                    let bH = 10;
+                    // Bus Body (Modern Two-tone Blue & White)
+                    twCtx.fillStyle = '#0284c7';
+                    twCtx.beginPath();
+                    twCtx.roundRect(car.x - 18, carY - 1, bW, bH, 2);
+                    twCtx.fill();
+                    twCtx.fillStyle = '#f8fafc';
+                    twCtx.fillRect(car.x - 18, carY - 1, bW, 3);
+                    // Illuminated Passenger Windows
+                    twCtx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+                    for (let bx = car.x - 14; bx <= car.x + 10; bx += 7) {
+                        twCtx.fillRect(bx, carY + 2, 5, 4);
+                    }
+                    // Front Destination Display
+                    twCtx.fillStyle = '#f59e0b';
+                    twCtx.fillRect(car.x + (dir * 14) - 2, carY, 4, 2);
+                    // Headlight & Taillight
+                    twCtx.fillStyle = '#ffffff';
+                    twCtx.fillRect(car.x + (dir * 17), carY + 3, 2, 3);
+                    twCtx.fillStyle = '#ef4444';
+                    twCtx.fillRect(car.x - (dir * 18), carY + 3, 2, 3);
+
+                } else {
+                    // --- MODERN LUXURY SEDAN ---
+                    let cW = 21;
+                    let cH = 7.5;
+                    // Metallic Car Body
+                    twCtx.fillStyle = car.color || '#ef4444';
+                    twCtx.beginPath();
+                    twCtx.roundRect(car.x - 10, carY + 1, cW, cH, 2.5);
+                    twCtx.fill();
+                    // Aerodynamic Windshield
+                    twCtx.fillStyle = '#38bdf8';
+                    twCtx.fillRect(car.x - (dir > 0 ? 3 : 6), carY + 1, 5, 3);
+                    // Chrome Wheels
+                    twCtx.fillStyle = '#475569';
+                    twCtx.beginPath();
+                    twCtx.arc(car.x - 6, carY + cH + 0.5, 2, 0, Math.PI * 2);
+                    twCtx.arc(car.x + 6, carY + cH + 0.5, 2, 0, Math.PI * 2);
+                    twCtx.fill();
+                    // LED Headlights
+                    twCtx.fillStyle = '#ffffff';
+                    twCtx.fillRect(car.x + (dir * 9.5), carY + 2.5, 1.5, 2.5);
+                    // Red LED Taillight
+                    twCtx.fillStyle = '#ef4444';
+                    twCtx.fillRect(car.x - (dir * 10.5), carY + 2.5, 1.5, 2.5);
+                }
             });
 
             twCtx.restore();
         }
 
-        // ✨ PERFECT ALIGNMENT SPARK PARTICLES
+        // 🏙️ NATURAL REALISTIC SKYSCRAPER FLOOR ARCHITECTURE
+        function drawStylizedSquareBlock(x, y, w, h, hexColor, floorIndex, isAnchor) {
+            twCtx.save();
+
+            // 1. Soft Physical Contact Drop Shadow onto underlying floor
+            twCtx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+            twCtx.beginPath();
+            twCtx.roundRect(x + 2, y + h - 2, w - 4, 6, 3);
+            twCtx.fill();
+
+            // 2. Base Structural Cladding & Bevel Gradient
+            let blockGrad = twCtx.createLinearGradient(x, y, x, y + h);
+            blockGrad.addColorStop(0, lightenColor(hexColor, 28));
+            blockGrad.addColorStop(0.25, hexColor);
+            blockGrad.addColorStop(1, darkenColor(hexColor, 32));
+
+            twCtx.fillStyle = blockGrad;
+            twCtx.beginPath();
+            twCtx.roundRect(x, y, w, h, 4);
+            twCtx.fill();
+
+            // Top-edge crisp architectural bevel highlight
+            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+            twCtx.lineWidth = 1.2;
+            twCtx.beginPath();
+            twCtx.moveTo(x + 3, y + 1);
+            twCtx.lineTo(x + w - 3, y + 1);
+            twCtx.stroke();
+
+            // Bottom structural belt course divider
+            twCtx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+            twCtx.fillRect(x, y + h - 3, w, 3);
+
+            // 3. TIERED ARCHITECTURAL THEMES BASED ON ALTITUDE
+            if (isAnchor) {
+                // ========================================================
+                // 🏛️ FOUNDATION LOBBY (FLOOR 0)
+                // Grand dark granite lobby, illuminated entrance & canopy
+                // ========================================================
+                let lobbyW = w - 10;
+                let lobbyH = h - 8;
+                let lobbyX = x + 5;
+                let lobbyY = y + 4;
+
+                // Grand glass rotunda interior
+                let rotundaGrad = twCtx.createLinearGradient(lobbyX, lobbyY, lobbyX, lobbyY + lobbyH);
+                rotundaGrad.addColorStop(0, '#fef08a');
+                rotundaGrad.addColorStop(0.7, '#f59e0b');
+                rotundaGrad.addColorStop(1, '#78350f');
+                twCtx.fillStyle = rotundaGrad;
+                twCtx.fillRect(lobbyX, lobbyY, lobbyW, lobbyH);
+
+                // Double revolving glass doors
+                twCtx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+                twCtx.lineWidth = 1.0;
+                twCtx.strokeRect(lobbyX, lobbyY, lobbyW, lobbyH);
+                twCtx.beginPath();
+                twCtx.moveTo(lobbyX + (lobbyW / 2), lobbyY);
+                twCtx.lineTo(lobbyX + (lobbyW / 2), lobbyY + lobbyH);
+                twCtx.stroke();
+
+                // Entrance Canopy with Downlights
+                twCtx.fillStyle = '#0f172a';
+                twCtx.fillRect(x + 2, y + 2, w - 4, 3);
+                twCtx.fillStyle = '#fef08a';
+                for (let lx = x + 8; lx < x + w - 6; lx += 10) {
+                    twCtx.beginPath();
+                    twCtx.arc(lx, y + 3, 1.2, 0, Math.PI * 2);
+                    twCtx.fill();
+                }
+
+            } else {
+                // Determine zone theme based on current tower altitude
+                let zoneTier = Math.min(5, Math.floor((floorIndex || towerScoreCounter) / 10) + 1);
+
+                if (zoneTier === 1) {
+                    // ========================================================
+                    // 🏢 TIER 1 (FLOORS 1-10): DOWNTOWN PRESTIGE
+                    // Modern 3-bay recessed windows with warm office lights
+                    // ========================================================
+                    let winCount = 3;
+                    let padX = 4;
+                    let totalPads = (winCount + 1) * padX;
+                    let winW = (w - totalPads) / winCount;
+                    let winH = h - 10;
+
+                    for (let c = 0; c < winCount; c++) {
+                        let winX = x + padX + c * (winW + padX);
+                        let winY = y + 4;
+
+                        // Recessed window frame
+                        twCtx.fillStyle = '#090d16';
+                        twCtx.fillRect(winX - 0.5, winY - 0.5, winW + 1, winH + 1);
+
+                        // Window glass reflection & interior light
+                        let wGrad = twCtx.createLinearGradient(winX, winY, winX + winW, winY + winH);
+                        if ((c + (floorIndex || 0)) % 2 === 0) {
+                            wGrad.addColorStop(0, '#fef3c7');
+                            wGrad.addColorStop(0.6, '#fde68a');
+                            wGrad.addColorStop(1, '#d97706');
+                        } else {
+                            wGrad.addColorStop(0, '#38bdf8');
+                            wGrad.addColorStop(0.5, '#0284c7');
+                            wGrad.addColorStop(1, '#0c4a6e');
+                        }
+                        twCtx.fillStyle = wGrad;
+                        twCtx.fillRect(winX, winY, winW, winH);
+
+                        // Horizontal office blind lines
+                        twCtx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                        twCtx.fillRect(winX, winY + (winH * 0.33), winW, 1);
+                        twCtx.fillRect(winX, winY + (winH * 0.66), winW, 1);
+
+                        // Diagonal glass glare
+                        twCtx.fillStyle = 'rgba(255, 255, 255, 0.30)';
+                        twCtx.beginPath();
+                        twCtx.moveTo(winX, winY + winH);
+                        twCtx.lineTo(winX + winW, winY);
+                        twCtx.lineTo(winX + winW, winY + 2);
+                        twCtx.lineTo(winX + 2, winY + winH);
+                        twCtx.fill();
+                    }
+
+                } else if (zoneTier === 2) {
+                    // ========================================================
+                    // 🌿 TIER 2 (FLOORS 11-20): SKY GARDEN TERRACES
+                    // Cantilevered glass balustrades & cascading green terrace plants
+                    // ========================================================
+                    let winW = w - 10;
+                    let winH = h - 12;
+                    let winX = x + 5;
+                    let winY = y + 3;
+
+                    // Large floor-to-ceiling panoramic glass
+                    let pGrad = twCtx.createLinearGradient(winX, winY, winX, winY + winH);
+                    pGrad.addColorStop(0, '#fdba74');
+                    pGrad.addColorStop(0.5, '#fb923c');
+                    pGrad.addColorStop(1, '#1e293b');
+                    twCtx.fillStyle = pGrad;
+                    twCtx.fillRect(winX, winY, winW, winH);
+
+                    // Terrace glass balustrade railing
+                    twCtx.fillStyle = 'rgba(56, 189, 248, 0.45)';
+                    twCtx.fillRect(winX - 2, winY + winH - 6, winW + 4, 6);
+                    twCtx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    twCtx.lineWidth = 1.0;
+                    twCtx.strokeRect(winX - 2, winY + winH - 6, winW + 4, 6);
+
+                    // Cascading green terrace foliage
+                    twCtx.fillStyle = '#16a34a';
+                    for (let fx = winX; fx < winX + winW; fx += 7) {
+                        twCtx.beginPath();
+                        twCtx.arc(fx + 2, winY + winH - 1, 3.2, 0, Math.PI * 2);
+                        twCtx.fill();
+                    }
+                    twCtx.fillStyle = '#22c55e';
+                    for (let fx = winX + 3; fx < winX + winW - 3; fx += 8) {
+                        twCtx.beginPath();
+                        twCtx.arc(fx, winY + winH + 1, 2.2, 0, Math.PI * 2);
+                        twCtx.fill();
+                    }
+
+                } else if (zoneTier === 3) {
+                    // ========================================================
+                    // ☁️ TIER 3 (FLOORS 21-30): TWILIGHT REFLECTIVE SPIRE
+                    // Seamless reflective curtain wall with specular diagonal glares
+                    // ========================================================
+                    let glassW = w - 6;
+                    let glassH = h - 6;
+                    let glassX = x + 3;
+                    let glassY = y + 3;
+
+                    let cGrad = twCtx.createLinearGradient(glassX, glassY, glassX + glassW, glassY + glassH);
+                    cGrad.addColorStop(0, '#1e1b4b');
+                    cGrad.addColorStop(0.4, '#4338ca');
+                    cGrad.addColorStop(0.8, '#06b6d4');
+                    cGrad.addColorStop(1, '#0f172a');
+                    twCtx.fillStyle = cGrad;
+                    twCtx.fillRect(glassX, glassY, glassW, glassH);
+
+                    // Vertical architectural louver mullions
+                    twCtx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                    twCtx.lineWidth = 0.8;
+                    for (let mx = glassX + 8; mx < glassX + glassW; mx += 10) {
+                        twCtx.beginPath();
+                        twCtx.moveTo(mx, glassY);
+                        twCtx.lineTo(mx, glassY + glassH);
+                        twCtx.stroke();
+                    }
+
+                    // Bright specular glint
+                    twCtx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                    twCtx.beginPath();
+                    twCtx.moveTo(glassX + (glassW * 0.2), glassY + glassH);
+                    twCtx.lineTo(glassX + (glassW * 0.65), glassY);
+                    twCtx.lineTo(glassX + (glassW * 0.72), glassY);
+                    twCtx.lineTo(glassX + (glassW * 0.27), glassY + glassH);
+                    twCtx.fill();
+
+                } else if (zoneTier === 4) {
+                    // ========================================================
+                    // 🌙 TIER 4 (FLOORS 31-40): STRATOSPHERE PENTHOUSE
+                    // Luxury champagne penthouse suites & ambient recessed downlights
+                    // ========================================================
+                    let suiteW = w - 8;
+                    let suiteH = h - 8;
+                    let suiteX = x + 4;
+                    let suiteY = y + 4;
+
+                    let sGrad = twCtx.createLinearGradient(suiteX, suiteY, suiteX, suiteY + suiteH);
+                    sGrad.addColorStop(0, '#fef08a');
+                    sGrad.addColorStop(0.6, '#f59e0b');
+                    sGrad.addColorStop(1, '#090d16');
+                    twCtx.fillStyle = sGrad;
+                    twCtx.fillRect(suiteX, suiteY, suiteW, suiteH);
+
+                    // Gold luxury frame
+                    twCtx.strokeStyle = '#facc15';
+                    twCtx.lineWidth = 1.0;
+                    twCtx.strokeRect(suiteX, suiteY, suiteW, suiteH);
+
+                    // Recessed ceiling spotlights
+                    twCtx.fillStyle = '#ffffff';
+                    for (let sx = suiteX + 6; sx < suiteX + suiteW; sx += 9) {
+                        twCtx.beginPath();
+                        twCtx.arc(sx, suiteY + 2, 1.0, 0, Math.PI * 2);
+                        twCtx.fill();
+                    }
+
+                } else {
+                    // ========================================================
+                    // 🌌 TIER 5 (FLOORS 41-50): ORBITAL TITANIUM APEX
+                    // Modular aerospace titanium panels & photon energy conduits
+                    // ========================================================
+                    let tW = w - 6;
+                    let tH = h - 6;
+                    let tX = x + 3;
+                    let tY = y + 3;
+
+                    twCtx.fillStyle = '#0f172a';
+                    twCtx.fillRect(tX, tY, tW, tH);
+
+                    // Glowing Cyan Photon Conduit Lines
+                    twCtx.strokeStyle = '#00ffff';
+                    twCtx.shadowColor = '#00ffff';
+                    twCtx.shadowBlur = 6;
+                    twCtx.lineWidth = 1.2;
+                    twCtx.strokeRect(tX + 2, tY + 2, tW - 4, tH - 4);
+                    twCtx.shadowBlur = 0;
+
+                    // Central Observation Dome Window
+                    let domeRad = Math.min(8, (h / 2) - 4);
+                    let dGrad = twCtx.createRadialGradient(x + (w / 2), y + (h / 2), 1, x + (w / 2), y + (h / 2), domeRad);
+                    dGrad.addColorStop(0, '#67e8f9');
+                    dGrad.addColorStop(0.7, '#0891b2');
+                    dGrad.addColorStop(1, '#164e63');
+                    twCtx.fillStyle = dGrad;
+                    twCtx.beginPath();
+                    twCtx.arc(x + (w / 2), y + (h / 2), domeRad, 0, Math.PI * 2);
+                    twCtx.fill();
+
+                    // If Grand Spire (Floor 50): Add observation spire with pulsing aviation beacon
+                    if (floorIndex >= 49 || towerScoreCounter >= 49) {
+                        twCtx.fillStyle = '#e2e8f0';
+                        twCtx.fillRect(x + (w / 2) - 2, y - 18, 4, 18);
+
+                        // Pulsing red navigation strobe
+                        let strobe = (Math.sin(Date.now() * 0.008) + 1) / 2;
+                        twCtx.fillStyle = `rgba(239, 68, 68, ${0.4 + strobe * 0.6})`;
+                        twCtx.beginPath();
+                        twCtx.arc(x + (w / 2), y - 19, 3.5, 0, Math.PI * 2);
+                        twCtx.fill();
+                    }
+                }
+            }
+
+            twCtx.restore();
+        }
+
+        // ✨ PERFECT ALIGNMENT SPARK & EXPANDING SHOCKWAVE VFX
         function createPerfectDropVFX(x, y) {
-            towerGlowFlashAlpha = 0.6;
-            for (let i = 0; i < 24; i++) {
+            towerGlowFlashAlpha = 0.55;
+
+            // Radiant expanding circular shockwave ring
+            towerShockwavesArray.push({
+                x: x,
+                y: y,
+                radius: 6,
+                maxRadius: 48,
+                alpha: 1.0,
+                color: '#facc15'
+            });
+
+            // 28 High-energy stardust particles
+            for (let i = 0; i < 28; i++) {
                 let angle = Math.random() * Math.PI * 2;
-                let speed = 2 + Math.random() * 5;
+                let speed = 2.5 + Math.random() * 5.5;
                 towerParticlesArray.push({
-                    x: x, y: y,
+                    x: x,
+                    y: y,
                     vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
+                    vy: Math.sin(angle) * speed - 1.2,
                     size: Math.random() * 3.5 + 1.5,
                     alpha: 1.0,
-                    color: ['#f1c40f', '#e74c3c', '#e67e22', '#2ecc71', '#ffffff'][Math.floor(Math.random() * 5)]
+                    color: ['#facc15', '#f59e0b', '#38bdf8', '#4ade80', '#ffffff'][Math.floor(Math.random() * 5)]
                 });
             }
 
+            // Bouncy celebratory combo text
             towerFloatingTexts.push({
                 text: towerPerfectCombo > 1 ? `PERFECT x${towerPerfectCombo}! 🔥` : `PERFECT! 🎯`,
-                x: x - 10,
-                y: y - 15,
+                x: x - 20,
+                y: y - 18,
                 alpha: 1.0,
-                scale: 1.3
+                scale: 1.35
             });
         }
 
-        // 💨 GOOD DROP DUST PARTICLES
+        // 💨 GOOD DROP BILLOWING DUST PARTICLES & CONCRETE CHIPS
         function createLandingDustParticles(x, y) {
-            for (let i = 0; i < 12; i++) {
+            // Billowing soft dust smoke puffs
+            for (let i = 0; i < 14; i++) {
                 towerParticlesArray.push({
-                    x: x + Math.random() * 40,
+                    x: x + Math.random() * 45,
                     y: y,
-                    vx: (Math.random() - 0.5) * 3.5,
-                    vy: -Math.random() * 2 - 0.5,
-                    size: Math.random() * 3 + 1.2,
+                    vx: (Math.random() - 0.5) * 4.0,
+                    vy: -Math.random() * 2.2 - 0.6,
+                    size: Math.random() * 3.8 + 1.5,
+                    alpha: 0.9,
+                    color: '#cbd5e1'
+                });
+            }
+            // Small concrete chips / pebbles
+            for (let i = 0; i < 6; i++) {
+                towerDebrisArray.push({
+                    x: x + Math.random() * 40,
+                    y: y - 2,
+                    vx: (Math.random() - 0.5) * 5.0,
+                    vy: -Math.random() * 3.5 - 1.0,
+                    size: Math.random() * 2.2 + 1.0,
                     alpha: 1.0,
-                    color: '#bdc3c7'
+                    color: '#64748b'
                 });
             }
         }
@@ -2175,26 +3081,27 @@ window.triggerRewardCoupon = triggerRewardCoupon;
 
             twCtx.clearRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
 
-            // 🎥 1. SMOOTH CINEMATIC CAMERA EASING LOGIC
+            // 🎥 1. SMOOTH CINEMATIC MONOTONIC CAMERA TRACKING LOGIC
             let surfaceAnchorBaseBlock = activeTowerBlocksArray[activeTowerBlocksArray.length - 1];
             let structuralTargetLandingY = surfaceAnchorBaseBlock.y;
 
-            // 🔥 FIX: Unified World Space. Crane hamesha top floor se fixed distance par rahegi taaki fall distance hamesha barabar mile.
-            currentSwingingBlock.pivotY = structuralTargetLandingY - 180;
+            // Crane stays fixed in relative distance above top floor
+            currentSwingingBlock.pivotY = structuralTargetLandingY - 175;
 
-            if (activeTowerBlocksArray.length > 2) {
-                towerTargetCameraY = 40 - currentSwingingBlock.pivotY; // Camera smoothly follows the crane
-                towerTargetZoom = Math.max(0.82, 1.0 - (towerScoreCounter * 0.0035)); // Gradual zoom-out
-            } else {
-                towerTargetCameraY = 0;
-                towerTargetZoom = 1.0;
-            }
+            // Smooth monotonic upward tracking: lock crane to comfortable view below HUD (~64px)
+            // Eliminates any bouncing, dipping down and up at 4-5 blocks!
+            const targetScreenCraneY = 64;
+            towerTargetCameraY = Math.max(0, targetScreenCraneY - currentSwingingBlock.pivotY);
 
-            // Smooth Interpolation (Lerp)
-            towerSmoothCameraY += (towerTargetCameraY - towerSmoothCameraY) * 0.08;
+            // Progressive altitude zoom (subtle 0.88 cap at high altitude)
+            towerTargetZoom = Math.max(0.88, 1.0 - (towerScoreCounter * 0.0025));
+
+            // Smooth Lerp Interpolation
+            towerSmoothCameraY += (towerTargetCameraY - towerSmoothCameraY) * 0.085;
+            towerCameraZoom += (towerTargetZoom - towerCameraZoom) * 0.05;
             towerCameraOffsetOffsetY = towerSmoothCameraY;
 
-            // 2. Render 50-Floor Smooth Dynamic Atmosphere
+            // 2. Render 50-Floor Continuous Dynamic Atmosphere
             render50FloorAtmosphere(towerScoreCounter);
 
             // ==========================================
@@ -2202,27 +3109,84 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             // ==========================================
             twCtx.save();
 
-            // Apply Centered Zoom
-            let canvasCenterX = towerCanvasElement.width / 2;
-            let canvasCenterY = towerCanvasElement.height / 2;
-            twCtx.translate(canvasCenterX, canvasCenterY);
-            twCtx.scale(towerCameraZoom, towerCameraZoom);
-            twCtx.translate(-canvasCenterX, -canvasCenterY);
-
-            // Apply Camera Scroll & Screen Shake
+            // Camera Scroll & Screen Shake Vibration (Applied first in screen space)
             twCtx.translate(towerVisualVibrationScaleX, towerCameraOffsetOffsetY);
 
+            // Focal-Point Zoom anchored directly at the Crane Pivot (zero vertical drift or jumping!)
+            let canvasCenterX = towerCanvasElement.width / 2;
+            let craneWorldPivotY = currentSwingingBlock.pivotY;
+            twCtx.translate(canvasCenterX, craneWorldPivotY);
+            twCtx.scale(towerCameraZoom, towerCameraZoom);
+            twCtx.translate(-canvasCenterX, -craneWorldPivotY);
+
             if (towerVisualVibrationScaleX !== 0) {
-                towerVisualVibrationScaleX *= -0.8;
+                towerVisualVibrationScaleX *= -0.78;
                 if (Math.abs(towerVisualVibrationScaleX) < 0.2) towerVisualVibrationScaleX = 0;
             }
 
-            // 4. Render Placed Skyscraper Floors
-            activeTowerBlocksArray.forEach(block => {
-                drawStylizedSquareBlock(block.x, block.y, block.w, block.h, block.color);
+            // Damped Spring Elastic Squash & Stretch Settling
+            if (towerStackSquashY !== 0) {
+                towerStackSquashY *= -0.72;
+                if (Math.abs(towerStackSquashY) < 0.005) towerStackSquashY = 0;
+            }
+
+            // Stack Dynamic Structural Sway Settling
+            if (towerStackSwayVel !== 0 || towerStackSwayAngle !== 0) {
+                towerStackSwayAngle += towerStackSwayVel;
+                towerStackSwayVel += -towerStackSwayAngle * 0.14;
+                towerStackSwayVel *= 0.88;
+                if (Math.abs(towerStackSwayAngle) < 0.001 && Math.abs(towerStackSwayVel) < 0.001) {
+                    towerStackSwayAngle = 0;
+                    towerStackSwayVel = 0;
+                }
+            }
+
+            // 4. Render Placed Skyscraper Floors (with Elastic Spring Compression & Sway)
+            let totalBlocks = activeTowerBlocksArray.length;
+            activeTowerBlocksArray.forEach((block, idx) => {
+                twCtx.save();
+
+                // Compute elastic compression ripple on topmost placed blocks
+                let distFromTop = totalBlocks - 1 - idx;
+                let squashFactor = distFromTop <= 4 ? Math.max(0, 1 - (distFromTop * 0.24)) : 0;
+                let currentBlockSquashY = towerStackSquashY * block.h * squashFactor;
+
+                // Subtle structural sway ripple along height
+                let swayX = distFromTop <= 8 ? (towerStackSwayAngle * (8 - distFromTop) * 2.8) : 0;
+
+                drawStylizedSquareBlock(
+                    block.x + swayX,
+                    block.y + currentBlockSquashY,
+                    block.w,
+                    block.h,
+                    block.color,
+                    idx,
+                    block.isAnchor
+                );
+
+                twCtx.restore();
             });
 
-            // 5. Update and Render Particles (Sparks & Dust)
+            // 5. Update and Render Expanding Shockwave Rings
+            for (let i = towerShockwavesArray.length - 1; i >= 0; i--) {
+                let sw = towerShockwavesArray[i];
+                sw.radius += 2.8;
+                sw.alpha -= 0.045;
+                if (sw.alpha <= 0) {
+                    towerShockwavesArray.splice(i, 1);
+                    continue;
+                }
+                twCtx.save();
+                twCtx.strokeStyle = sw.color || '#facc15';
+                twCtx.globalAlpha = Math.max(0, sw.alpha);
+                twCtx.lineWidth = 2.4;
+                twCtx.beginPath();
+                twCtx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                twCtx.stroke();
+                twCtx.restore();
+            }
+
+            // 6. Update and Render Particles (Sparks & Smoke Dust)
             for (let i = towerParticlesArray.length - 1; i >= 0; i--) {
                 let p = towerParticlesArray[i];
                 p.x += p.vx;
@@ -2240,62 +3204,144 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                 twCtx.globalAlpha = 1.0;
             }
 
+            // Update Concrete Pebble Debris
+            for (let i = towerDebrisArray.length - 1; i >= 0; i--) {
+                let d = towerDebrisArray[i];
+                d.x += d.vx;
+                d.y += d.vy;
+                d.vy += 0.35; // gravity
+                d.alpha -= 0.03;
+                if (d.alpha <= 0) {
+                    towerDebrisArray.splice(i, 1);
+                    continue;
+                }
+                twCtx.fillStyle = d.color;
+                twCtx.globalAlpha = Math.max(0, d.alpha);
+                twCtx.fillRect(d.x, d.y, d.size, d.size);
+                twCtx.globalAlpha = 1.0;
+            }
+
             // Render Floating Text FX (PERFECT! / COMBOS)
             for (let i = towerFloatingTexts.length - 1; i >= 0; i--) {
                 let ft = towerFloatingTexts[i];
-                ft.y -= 0.8;
-                ft.alpha -= 0.025;
+                ft.y -= 0.9;
+                ft.alpha -= 0.024;
                 if (ft.alpha <= 0) {
                     towerFloatingTexts.splice(i, 1);
                     continue;
                 }
                 twCtx.save();
-                twCtx.font = '900 13px Segoe UI, sans-serif';
-                twCtx.fillStyle = `rgba(241, 196, 15, ${ft.alpha})`;
-                twCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                twCtx.shadowBlur = 4;
+                twCtx.font = '900 14px "Segoe UI", system-ui, sans-serif';
+                twCtx.fillStyle = `rgba(250, 204, 21, ${ft.alpha})`;
+                twCtx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                twCtx.shadowBlur = 6;
                 twCtx.fillText(ft.text, ft.x, ft.y);
                 twCtx.restore();
             }
 
-            // 6. ⛓️ CRANE & PENDULUM SWING LOGIC
-            if (!isTowerBlockDropping) {
+            // 7. ⛓️ SUSPENSION CABLE & CLAW (INFINITY ∞ MOTION ENGINE)
+            let cranePivotX = currentSwingingBlock.pivotX;
+            let cranePivotY = currentSwingingBlock.pivotY;
+
+            if (!isTowerBlockDropping && towerGameState === 'PLAYING') {
+                // ♾️ Mathematical Lemniscate (Infinity Symbol ∞) Harmonic Motion
                 currentSwingingBlock.swingTimer += currentSwingingBlock.speed;
-                currentSwingingBlock.angle = Math.sin(currentSwingingBlock.swingTimer) * currentSwingingBlock.maxAngle;
+                let t = currentSwingingBlock.swingTimer;
 
-                currentSwingingBlock.x = currentSwingingBlock.pivotX + Math.sin(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.w / 2);
-                currentSwingingBlock.y = currentSwingingBlock.pivotY + Math.cos(currentSwingingBlock.angle) * currentSwingingBlock.length - (currentSwingingBlock.h / 2);
+                // Horizontal Infinity ∞ Path: X ~ sin(t), Y ~ sin(2t)
+                let infinityAmpX = currentSwingingBlock.length * Math.sin(currentSwingingBlock.maxAngle);
+                let infinityAmpY = 18; // Vertical lobe loop elevation
 
-                let chainAnchorX = currentSwingingBlock.pivotX;
-                let chainAnchorY = currentSwingingBlock.pivotY;
+                let offsetX = infinityAmpX * Math.sin(t);
+                let offsetY = currentSwingingBlock.length + (infinityAmpY * Math.sin(2 * t));
+
+                currentSwingingBlock.x = currentSwingingBlock.pivotX + offsetX - (currentSwingingBlock.w / 2);
+                currentSwingingBlock.y = currentSwingingBlock.pivotY + offsetY - (currentSwingingBlock.h / 2);
+
                 let blockCenterX = currentSwingingBlock.x + (currentSwingingBlock.w / 2);
-                let blockCenterY = currentSwingingBlock.y;
+                let blockTopY = currentSwingingBlock.y;
 
-                // Metallic Crane Cables
-                twCtx.strokeStyle = '#2c3e50';
-                twCtx.lineWidth = 2.5;
+                // Suspension Cables Hanging Freely from Sky (Bar Removed!)
+                twCtx.save();
+                twCtx.strokeStyle = '#94a3b8';
+                twCtx.lineWidth = 1.8;
+                [-2.5, 2.5].forEach(offsetCable => {
+                    twCtx.beginPath();
+                    twCtx.moveTo(cranePivotX + offsetCable, cranePivotY - 50);
+                    twCtx.lineTo(blockCenterX + offsetCable, blockTopY);
+                    twCtx.stroke();
+                });
+
+                // Heavy Hydraulic Spreader Beam
+                twCtx.fillStyle = '#475569';
+                twCtx.fillRect(blockCenterX - (currentSwingingBlock.w * 0.45), blockTopY - 6, currentSwingingBlock.w * 0.9, 6);
+
+                // Articulated Claw Arms Gripping the Block
+                twCtx.fillStyle = '#f59e0b';
+                let clawW = 5;
+                let clawH = 10;
+                // Left arm
+                twCtx.fillRect(blockCenterX - (currentSwingingBlock.w * 0.48), blockTopY - 5, clawW, clawH);
+                // Right arm
+                twCtx.fillRect(blockCenterX + (currentSwingingBlock.w * 0.48) - clawW, blockTopY - 5, clawW, clawH);
+
+                // Subtle Downward Plumb Laser Alignment Guide
+                twCtx.strokeStyle = 'rgba(0, 255, 255, 0.22)';
+                twCtx.lineWidth = 1.0;
+                twCtx.setLineDash([4, 4]);
                 twCtx.beginPath();
-                twCtx.moveTo(chainAnchorX, chainAnchorY);
-                twCtx.lineTo(blockCenterX, blockCenterY);
+                twCtx.moveTo(blockCenterX, currentSwingingBlock.y + currentSwingingBlock.h);
+                twCtx.lineTo(blockCenterX, structuralTargetLandingY);
                 twCtx.stroke();
+                twCtx.setLineDash([]);
+                twCtx.restore();
 
-                // Mechanical Crane Claw Joint
-                twCtx.fillStyle = '#f1c40f';
-                twCtx.beginPath();
-                twCtx.arc(blockCenterX, blockCenterY, 4.5, 0, Math.PI * 2);
-                twCtx.fill();
+                // Draw the Swinging Skyscraper Block
+                drawStylizedSquareBlock(
+                    currentSwingingBlock.x,
+                    currentSwingingBlock.y,
+                    currentSwingingBlock.w,
+                    currentSwingingBlock.h,
+                    currentSwingingBlock.color,
+                    towerScoreCounter,
+                    false
+                );
 
-                // Draw Swinging Building Block
-                drawStylizedSquareBlock(currentSwingingBlock.x, currentSwingingBlock.y, currentSwingingBlock.w, currentSwingingBlock.h, currentSwingingBlock.color);
-
-            } else {
-                // 7. ⛓️ FREE FALL DROP LOGIC (WITH SMOOTH DROPDOWN ANIMATION)
+            } else if (isTowerBlockDropping && towerGameState === 'PLAYING') {
+                // 8. ⛓️ FREE FALL ACCELERATING GRAVITY PHYSICS
+                currentSwingingBlock.dropSpeedY = Math.min(16.0, currentSwingingBlock.dropSpeedY + currentSwingingBlock.dropAccY);
                 currentSwingingBlock.dropY += currentSwingingBlock.dropSpeedY;
 
-                // 🔥 FIX: Rendering inside World Coordinates. No more teleporting blocks!
-                drawStylizedSquareBlock(currentSwingingBlock.dropX, currentSwingingBlock.dropY, currentSwingingBlock.w, currentSwingingBlock.h, currentSwingingBlock.color);
+                // Draw Clean Suspension Cable from Sky (No top bar)
+                twCtx.save();
+                let cableEndBlockX = currentSwingingBlock.dropX + (currentSwingingBlock.w / 2);
+                let cableEndBlockY = currentSwingingBlock.pivotY + 85;
+                [-2.5, 2.5].forEach(offsetCable => {
+                    twCtx.strokeStyle = '#64748b';
+                    twCtx.lineWidth = 1.5;
+                    twCtx.beginPath();
+                    twCtx.moveTo(cranePivotX + offsetCable, cranePivotY - 50);
+                    twCtx.lineTo(cableEndBlockX + offsetCable, cableEndBlockY);
+                    twCtx.stroke();
+                });
+                twCtx.fillStyle = '#f59e0b';
+                // Claw arms open wide
+                twCtx.fillRect(cableEndBlockX - 16, cableEndBlockY, 5, 8);
+                twCtx.fillRect(cableEndBlockX + 11, cableEndBlockY, 5, 8);
+                twCtx.restore();
 
-                // Collision / Landing Check using purely World Y coordinates
+                // Draw Falling Block
+                drawStylizedSquareBlock(
+                    currentSwingingBlock.dropX,
+                    currentSwingingBlock.dropY,
+                    currentSwingingBlock.w,
+                    currentSwingingBlock.h,
+                    currentSwingingBlock.color,
+                    towerScoreCounter,
+                    false
+                );
+
+                // Collision / Landing Check
                 if ((currentSwingingBlock.dropY + currentSwingingBlock.h) >= structuralTargetLandingY) {
                     isTowerBlockDropping = false;
                     let blockContactX = currentSwingingBlock.dropX;
@@ -2303,20 +3349,34 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                     let maximumAllowableMarginWidth = surfaceAnchorBaseBlock.w * 0.70;
 
                     if (structuralOffsetErrorX <= maximumAllowableMarginWidth) {
-                        // Successful Stack
+                        // Successful Landing!
                         towerScoreCounter++;
+                        towerMaxCombo = Math.max(towerMaxCombo, towerPerfectCombo);
+
+                        // Trigger elastic spring squash & structural sway
+                        towerStackSquashY = -0.20;
+                        let offsetDir = (blockContactX - surfaceAnchorBaseBlock.x) / surfaceAnchorBaseBlock.w;
+                        towerStackSwayVel += offsetDir * 0.07;
 
                         if (structuralOffsetErrorX <= 4) {
+                            // Perfect drop!
                             towerPerfectCombo++;
-                            towerVisualVibrationScaleX = 5.0; // Stronger camera feedback
+                            towerVisualVibrationScaleX = 5.5;
+                            playTowerSound('IMPACT_PERFECT', towerPerfectCombo);
                             createPerfectDropVFX(blockContactX + (currentSwingingBlock.w / 2), structuralTargetLandingY);
                         } else {
+                            // Good landing!
+                            if (structuralOffsetErrorX > maximumAllowableMarginWidth * 0.65) {
+                                playTowerSound('WOBBLE');
+                            }
                             towerPerfectCombo = 0;
-                            towerVisualVibrationScaleX = 2.5; // Soft landing shake
+                            towerVisualVibrationScaleX = 2.8;
+                            playTowerSound('IMPACT_GOOD');
                             createLandingDustParticles(blockContactX, structuralTargetLandingY);
                         }
 
-                        const blockSpectrumColors = ['#f39c12', '#9b59b6', '#e74c3c', '#3498db', '#1abc9c', '#e67e22'];
+                        // Vibrant Modern Skyscraper Color Spectrum
+                        const blockSpectrumColors = ['#f39c12', '#9b59b6', '#0284c7', '#10b981', '#e11d48', '#8b5cf6', '#d97706'];
                         let chosenColorHex = blockSpectrumColors[towerScoreCounter % blockSpectrumColors.length];
 
                         activeTowerBlocksArray.push({
@@ -2324,44 +3384,85 @@ window.triggerRewardCoupon = triggerRewardCoupon;
                             y: structuralTargetLandingY - currentSwingingBlock.h,
                             w: currentSwingingBlock.w,
                             h: currentSwingingBlock.h,
-                            color: chosenColorHex
+                            color: chosenColorHex,
+                            isAnchor: false
                         });
 
-                        // Discount Check
+                        // Discount Rule Check (Preserved 100%)
                         if (currentTowerLevelState === (parseInt(rules.towerTar) || 3)) {
                             if (typeof triggerRewardCoupon === 'function') {
                                 let earnedPercent = parseInt(rules.towerDisc) || 0;
                                 triggerRewardCoupon(earnedPercent);
+                                playTowerSound('REWARD');
                             }
                         }
 
-                        // Level Up Logic
+                        // Level Up Logic (Preserved 100%)
                         let calculatedLevel = calculateTowerLevel(towerScoreCounter);
                         if (calculatedLevel > currentTowerLevelState) {
                             currentTowerLevelState = calculatedLevel;
+                            playTowerSound('LEVEL_UP');
                             showOnScreenNotification(`🏢 Level Up! Advanced to Tower Level ${currentTowerLevelState}`);
                         }
 
-                        // Victory Check
+                        // Grand Victory Check (50 Floors)
                         if (towerScoreCounter >= 50) {
                             clearInterval(loopTimerInstance);
+                            playTowerSound('REWARD');
                             alert("👑 GRAND VICTORY! You built the ultimate 50-story space skyscraper!");
                             if (typeof switchGameMode === 'function') switchGameMode('FLAPPY');
                             return;
                         }
 
-                        // Reset Swinging Block for next turn
+                        // Reset Swinging Block for next floor
                         currentSwingingBlock.swingTimer = Math.random() * Math.PI * 2;
                         currentSwingingBlock.speed = calculateTowerSwingSpeed(towerScoreCounter);
+                        currentSwingingBlock.color = chosenColorHex;
+                        towerClawOpen = 0;
 
                     } else {
-                        // Collapse / Crash Logic
-                        towerVisualVibrationScaleX = 16;
+                        // 💥 Collapse Failure Animation
+                        towerGameState = 'COLLAPSING';
+                        playTowerSound('COLLAPSE');
+                        towerVisualVibrationScaleX = 16.0;
+
+                        towerCollapseAnim = {
+                            x: blockContactX,
+                            y: structuralTargetLandingY - currentSwingingBlock.h,
+                            w: currentSwingingBlock.w,
+                            h: currentSwingingBlock.h,
+                            vx: (blockContactX > surfaceAnchorBaseBlock.x ? 3.5 : -3.5),
+                            vy: -2.0,
+                            rot: 0,
+                            vRot: (blockContactX > surfaceAnchorBaseBlock.x ? 0.08 : -0.08),
+                            color: currentSwingingBlock.color
+                        };
+
                         setTimeout(() => {
                             finalizeFailedRun("💥 Tower Collapsed! Stack alignment balance failure.");
-                        }, 300);
+                        }, 850);
                     }
                 }
+            } else if (towerGameState === 'COLLAPSING' && towerCollapseAnim) {
+                // Tumble tumbling block with gravity
+                towerCollapseAnim.x += towerCollapseAnim.vx;
+                towerCollapseAnim.y += towerCollapseAnim.vy;
+                towerCollapseAnim.vy += 0.55;
+                towerCollapseAnim.rot += towerCollapseAnim.vRot;
+
+                twCtx.save();
+                twCtx.translate(towerCollapseAnim.x + (towerCollapseAnim.w / 2), towerCollapseAnim.y + (towerCollapseAnim.h / 2));
+                twCtx.rotate(towerCollapseAnim.rot);
+                drawStylizedSquareBlock(
+                    -towerCollapseAnim.w / 2,
+                    -towerCollapseAnim.h / 2,
+                    towerCollapseAnim.w,
+                    towerCollapseAnim.h,
+                    towerCollapseAnim.color,
+                    towerScoreCounter,
+                    false
+                );
+                twCtx.restore();
             }
 
             // ==========================================
@@ -2369,44 +3470,125 @@ window.triggerRewardCoupon = triggerRewardCoupon;
             // ==========================================
             twCtx.restore();
 
-            // Screen Glow Flash Overlay for Perfect Alignment (Fixed to Screen Space)
+            // Screen Glow Flash Overlay for Perfect Alignment
             if (towerGlowFlashAlpha > 0) {
-                twCtx.fillStyle = `rgba(255, 255, 255, ${towerGlowFlashAlpha})`;
+                twCtx.fillStyle = `rgba(250, 204, 21, ${towerGlowFlashAlpha * 0.35})`;
                 twCtx.fillRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
-                towerGlowFlashAlpha -= 0.05;
+                towerGlowFlashAlpha -= 0.04;
             }
 
-            // 8. MODERN MINIMAL GLASSMORPHISM HUD & HEIGHT METER
+            // ==========================================
+            // 💎 MODERN GLASSMORPHIC HUD & ALTIMETER
+            // ==========================================
             twCtx.save();
-            twCtx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+            const canvasW = towerCanvasElement.width;
+
+            // Tier Zone Names
+            const zoneTitles = [
+                'Downtown',
+                'Sky Gardens',
+                'Twilight Spire',
+                'Stratosphere',
+                'Orbital Apex'
+            ];
+            const zoneIcons = ['🏗️', '🌿', '☁️', '🌙', '🌌'];
+            let currentZoneName = zoneTitles[currentTowerLevelState - 1] || 'Apex';
+            let currentZoneIcon = zoneIcons[currentTowerLevelState - 1] || '🏢';
+
+            // Top Left Chip: Level & Zone
+            twCtx.fillStyle = 'rgba(15, 23, 42, 0.78)';
             twCtx.beginPath();
-            twCtx.roundRect(10, 10, 160, 32, 8);
+            twCtx.roundRect(10, 10, 140, 32, 10);
             twCtx.fill();
-            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            twCtx.lineWidth = 1.0;
             twCtx.stroke();
 
             twCtx.fillStyle = '#ffffff';
-            twCtx.font = 'bold 12px Segoe UI, sans-serif';
+            twCtx.font = 'bold 11px "Segoe UI", system-ui, sans-serif';
             twCtx.textAlign = 'left';
-            twCtx.fillText(`Lv.${currentTowerLevelState}  |  Floors: ${towerScoreCounter}`, 18, 30);
+            twCtx.fillText(`${currentZoneIcon} Lv.${currentTowerLevelState}  ${currentZoneName}`, 18, 30);
 
-            // Height Meter Indicator (Right Side)
-            let heightInMeters = towerScoreCounter * 4; // 4m per floor
-            twCtx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+            // Top Center / Right: Altimeter & Height Meter
+            let heightInMeters = towerScoreCounter * 4;
+            twCtx.fillStyle = 'rgba(15, 23, 42, 0.78)';
             twCtx.beginPath();
-            twCtx.roundRect(towerCanvasElement.width - 85, 10, 75, 32, 8);
+            twCtx.roundRect(canvasW - 130, 10, 120, 32, 10);
             twCtx.fill();
-            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            twCtx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
             twCtx.stroke();
 
-            twCtx.fillStyle = '#f1c40f';
-            twCtx.fillText(`📏 ${heightInMeters}m`, towerCanvasElement.width - 77, 30);
+            twCtx.fillStyle = '#facc15';
+            twCtx.font = 'bold 12px "Segoe UI", system-ui, sans-serif';
+            twCtx.textAlign = 'right';
+            twCtx.fillText(`🏢 ${towerScoreCounter}F  |  ${heightInMeters}m`, canvasW - 18, 30);
+
+            // Combo Flame Badge (Top Center if active streak >= 2)
+            if (towerPerfectCombo >= 2) {
+                let badgeW = 120;
+                let badgeX = (canvasW / 2) - (badgeW / 2);
+                let badgeY = 10;
+                let pulseGlow = (Math.sin(Date.now() * 0.008) + 1) / 2;
+
+                twCtx.fillStyle = 'rgba(234, 88, 12, 0.88)';
+                twCtx.beginPath();
+                twCtx.roundRect(badgeX, badgeY, badgeW, 28, 8);
+                twCtx.fill();
+                twCtx.strokeStyle = `rgba(253, 224, 71, ${0.5 + pulseGlow * 0.5})`;
+                twCtx.lineWidth = 1.4;
+                twCtx.stroke();
+
+                twCtx.fillStyle = '#ffffff';
+                twCtx.font = '900 11px "Segoe UI", system-ui, sans-serif';
+                twCtx.textAlign = 'center';
+                twCtx.fillText(`🔥 x${towerPerfectCombo} STREAK!`, badgeX + (badgeW / 2), badgeY + 18);
+            }
+
+            // Target Discount Progress Pill (Compact bottom or sub-header)
+            let targetFloors = parseInt(rules.towerTar) || 3;
+            let targetDisc = parseInt(rules.towerDisc) || 15;
+            let hasWonDisc = currentTowerLevelState >= targetFloors;
+
+            twCtx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+            twCtx.beginPath();
+            twCtx.roundRect(10, 48, 185, 20, 6);
+            twCtx.fill();
+            twCtx.strokeStyle = hasWonDisc ? '#22c55e' : 'rgba(255, 255, 255, 0.12)';
+            twCtx.stroke();
+
+            twCtx.fillStyle = hasWonDisc ? '#4ade80' : '#94a3b8';
+            twCtx.font = 'bold 10px "Segoe UI", system-ui, sans-serif';
+            twCtx.textAlign = 'left';
+            if (hasWonDisc) {
+                twCtx.fillText(`🎁 REWARD UNLOCKED: ${targetDisc}% OFF!`, 16, 62);
+            } else {
+                twCtx.fillText(`🎯 Goal: Lv.${targetFloors} (${targetFloors * 10}F) → ${targetDisc}% OFF`, 16, 62);
+            }
+
+            // Initial "TAP SCREEN TO DROP" Breathing Visual Cue
+            if (towerScoreCounter === 0 && !isTowerBlockDropping && !towerHasTapped) {
+                let cueAlpha = (Math.sin(Date.now() * 0.005) + 1) / 2 * 0.7 + 0.3;
+                twCtx.fillStyle = `rgba(15, 23, 42, ${cueAlpha * 0.85})`;
+                let cueW = 190;
+                let cueX = (canvasW / 2) - (cueW / 2);
+                let cueY = towerCanvasElement.height - 48;
+                twCtx.beginPath();
+                twCtx.roundRect(cueX, cueY, cueW, 30, 15);
+                twCtx.fill();
+                twCtx.strokeStyle = `rgba(0, 255, 255, ${cueAlpha})`;
+                twCtx.lineWidth = 1.2;
+                twCtx.stroke();
+
+                twCtx.fillStyle = `rgba(255, 255, 255, ${cueAlpha})`;
+                twCtx.font = 'bold 12px "Segoe UI", system-ui, sans-serif';
+                twCtx.textAlign = 'center';
+                twCtx.fillText(`👆 TAP ANYWHERE TO DROP`, cueX + (cueW / 2), cueY + 20);
+            }
+
             twCtx.restore();
         }
 
-        // 🎨 UTILITY GRADIENT HELPERS
-
-        // 🎨 UTILITY GRADIENT HELPERS
+        // 🎨 UTILITY COLOR GRADIENT HELPERS
         function interpolateColor(color1, color2, factor) {
             let c1 = hexToRgb(color1);
             let c2 = hexToRgb(color2);
