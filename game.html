@@ -1115,7 +1115,9 @@ function exitGameEngine() {
     homeUrl.searchParams.set('table', targetTable);
     homeUrl.searchParams.set('hotel', targetHotel);
     if (urlFloorParam) homeUrl.searchParams.set('floor', urlFloorParam);
-    // 🚨 NOTE: No 'discount' param — cloud session is the single source of truth
+    if (typeof maximumClaimedDisc !== 'undefined' && maximumClaimedDisc > 0) {
+        homeUrl.searchParams.set('discount', maximumClaimedDisc.toString());
+    }
 
     window.location.href = homeUrl.toString();
 }

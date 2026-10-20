@@ -2609,8 +2609,11 @@ function queueDebouncedBillRender() {
 
         // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         let clientCurrentActiveTable = "T1";
+        window.clientCurrentActiveTable = clientCurrentActiveTable;
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
         let localLiveRunningBill = [];
         let maximumClaimedDisc = 0; // 🛡️ FIX: Always start clean — cloud session is the single source of truth
+        window.maximumClaimedDisc = maximumClaimedDisc;
         let globalRunningInvoiceSumTotal = 0;
 
         // Canvas context initialization pointers explicitly binded
@@ -3781,7 +3784,8 @@ async function renderLiveCalculatedBill() {
 
         // In-memory runtime sync
         localLiveRunningBill = targetBill;
-        maximumClaimedDisc = targetDisc;
+        maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, targetDisc);
+        window.maximumClaimedDisc = maximumClaimedDisc;
 
         let badge = document.getElementById('liveCoinBadge');
         if (badge) badge.innerText = maximumClaimedDisc + "%";
@@ -3812,7 +3816,7 @@ async function renderLiveCalculatedBill() {
         }
 
         // Unified Calculation Engine
-        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, targetDisc, taxConfig);
+        let invoiceMath = calculateUnifiedMasterInvoice(targetBill, maximumClaimedDisc, taxConfig);
 
         // ✅ FIXED: discountValue ko invoiceMath se sahi tarike se define kiya gaya hai
         const calculatedDiscountVal = invoiceMath.discountValue || 0;
@@ -3894,10 +3898,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         }
 
         // 3. Supabase Cloud Sync
+        let effectiveDiscount = Math.max(existingCloudDiscount, maximumClaimedDisc || 0);
         await syncLiveSessionToSupabase(
             activeTableId, 
             targetTableBill, 
-            existingCloudDiscount, 
+            effectiveDiscount, 
             existingBellStatus, 
             existingPayStatus
         );
@@ -3905,7 +3910,10 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         // 4. In-Memory runtime variable sync
         if (activeTableId === clientCurrentActiveTable) {
             localLiveRunningBill = targetTableBill;
-            maximumClaimedDisc = existingCloudDiscount;
+            maximumClaimedDisc = effectiveDiscount;
+            window.maximumClaimedDisc = effectiveDiscount;
+            let badge = document.getElementById('liveCoinBadge');
+            if (badge) badge.innerText = maximumClaimedDisc + "%";
         }
 
         // 5. ✅ FIXED: STRICT FLOOR-SPECIFIC TABLE ISOLATION (No Cross-Floor Green Leaks)
@@ -4105,6 +4113,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
     // 3. Local Memory & UI Updates
     maximumClaimedDisc = earnedVal;
+    window.maximumClaimedDisc = maximumClaimedDisc;
     localStorage.setItem('discount_map_' + hotelId + '_' + activeTableId, earnedVal.toString());
 
     let badge = document.getElementById('liveCoinBadge');
@@ -4716,6 +4725,7 @@ async function initApp() {
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
     const urlFloor = urlParams.get('floor');
+    const urlDiscount = urlParams.get('discount');
 
     // 🔒 1. STRICT TABLE & SECTION ISOLATION LOCK
     if (urlTable) {
@@ -4730,6 +4740,20 @@ async function initApp() {
         // Standard single key: "ayah_T1"
         clientCurrentActiveTable = rawF ? `${rawF}_${rawT}` : rawT;
         window.clientCurrentActiveTable = clientCurrentActiveTable;
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
+    } else {
+        window.customerActiveTableIdentifier = clientCurrentActiveTable;
+    }
+
+    // 🎁 DISCOUNT PARAM RECOVERY
+    if (urlDiscount) {
+        let parsedDisc = parseInt(urlDiscount) || 0;
+        if (parsedDisc > 0) {
+            maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, parsedDisc);
+            window.maximumClaimedDisc = maximumClaimedDisc;
+            let badge = document.getElementById('liveCoinBadge');
+            if (badge) badge.innerText = maximumClaimedDisc + "%";
+        }
     }
 
     // 🔒 2. HOTEL IDENTITY SCOPE LOCK
@@ -4875,7 +4899,8 @@ async function initApp() {
                             let activeClean = clientCurrentActiveTable.trim().toLowerCase();
                             if (activeClean === compoundKey.toLowerCase() || activeClean === tIdClean.toLowerCase()) {
                                 localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
-                                maximumClaimedDisc = parseInt(targetCloudRow.discount_claimed) || 0;
+                                maximumClaimedDisc = Math.max(maximumClaimedDisc || 0, parseInt(targetCloudRow.discount_claimed) || 0);
+                                window.maximumClaimedDisc = maximumClaimedDisc;
 
                                 let badge = document.getElementById('liveCoinBadge');
                                 if (badge) badge.innerText = maximumClaimedDisc + "%";
