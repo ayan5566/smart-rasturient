@@ -846,13 +846,13 @@
             flex-direction: column !important;
             align-items: center !important;
             justify-content: flex-start !important;
-            /* ðŸ”¥ YAHAN CHANGE KIYA HAI: 'space-between' ko 'flex-start' kar diya */
+            /* 🔥 YAHAN CHANGE KIYA HAI: 'space-between' ko 'flex-start' kar diya */
             gap: 25px !important;
-            /* ðŸ”¥ Navbar aur Game ke beech ekdum perfect gap maintain karne ke liye */
+            /* 🔥 Navbar aur Game ke beech ekdum perfect gap maintain karne ke liye */
             overflow: hidden !important;
         }
 
-        /* ðŸŽ¯ TABS HEADER STRAP */
+        /* 🎯 TABS HEADER STRAP */
         .game-box.fullscreen-arcade-active .game-nav {
             display: grid !important;
             grid-template-columns: repeat(4, 1fr) !important;
@@ -884,7 +884,7 @@
             grid-column: 3 !important;
         }
 
-        /* ðŸŽ¯ LIQUID FULL-WIDTH GRAPHICS STAGE */
+        /* 🎯 LIQUID FULL-WIDTH GRAPHICS STAGE */
         .game-box.fullscreen-arcade-active canvas {
             display: none;
             width: 100% !important;
@@ -900,7 +900,7 @@
             /* Expands flawlessly across available width */
         }
 
-        /* ðŸŽ¯ ISOLATED FOOTER MOBILE JOYSTICKS */
+        /* 🎯 ISOLATED FOOTER MOBILE JOYSTICKS */
         .game-box.fullscreen-arcade-active .control-pad,
         .game-box.fullscreen-arcade-active .snake-grid-pad {
             /* Hard override: Keeps display managed purely by switchGameMode script logic */
@@ -922,7 +922,7 @@
             font-size: 16px !important;
         }
 
-        /* ðŸŽ¯ ACTION LIFECYCLE CONTROLS BUTTONS */
+        /* 🎯 ACTION LIFECYCLE CONTROLS BUTTONS */
         .game-box.fullscreen-arcade-active .action-btn {
             width: 100% !important;
             max-width: 340px !important;
@@ -949,7 +949,7 @@
                 box-sizing: border-box !important;
             }
 
-            /* âœ… FIXED: Sizing responsive hai, par display state (hide/show) ab JS control karega */
+            /* ✅ FIXED: Sizing responsive hai, par display state (hide/show) ab JS control karega */
             canvas {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -958,7 +958,7 @@
                 margin: 0 auto !important;
             }
 
-            /* âœ… FIXED: Controls panel ka layout tabhi set hoga jab wo open honge */
+            /* ✅ FIXED: Controls panel ka layout tabhi set hoga jab wo open honge */
             .control-pad,
             .snake-grid-pad {
                 width: 100% !important;
@@ -1437,13 +1437,12 @@
             <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
         </div>
         <div id="adminTableLayoutGrid"></div>
-        <button class="action-btn" onclick="openNewFloorModal()"
+        <button class="action-btn" onclick="addNewFloor()"
             style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
         <h3>📋 Live Customer Billing Tracker Map</h3>
         <div
             style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt
-                Live:</label>
+            <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt Live:</label>
             <select id="adminBillingViewerTableSelect" onchange="auditSelectedTableBillInvoiceLive()"
                 style="border-color:#27ae60; font-weight:bold; color:#27ae60;"></select>
 
@@ -1461,7 +1460,7 @@
             <hr style="border:0; border-top:1px dashed #ccc; margin:8px 0;">
             <div
                 style="font-size:14px; font-weight:bold; color:var(--dark-charcoal); display:flex; justify-content:space-between;">
-                <span>Net Payable (With Taxes & Disc):</span>
+                <span>Net Payable (With Taxes & Discount):</span>
                 <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">₹0</span>
 
             </div>
@@ -1471,7 +1470,7 @@
             </button>
             <button class="order-btn"
                 style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;"
-                onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
+                onclick="executeAdminManualBillWipeSettlement()">Clear & Settle Table Bill Archive</button>
         </div>
         <h3>📈 Real-time Popularity & Dish Analytics</h3>
         <div
@@ -1492,7 +1491,7 @@
             <label style="font-size:12px; font-weight:bold; color:#555;">Select Verified Size Option:</label>
             <select id="waiterSizeSelect"></select>
 
-            <!-- ðŸŽ¯ DUAL ACTION BUTTONS -->
+            <!-- 🎯 DUAL ACTION BUTTONS -->
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
                 <!-- Button 1: SIRF BILL MEIN ADD HOGA -->
                 <button onclick="injectExtraItemFromBillPanel(false)"
@@ -1748,11 +1747,11 @@
         const SUPABASE_URL = "https://dintuoiiaynpcxzwjxhf.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpbnR1b2lpYXlucGN4endqeGhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzAwNzAsImV4cCI6MjA5NTcwNjA3MH0.C3SSyuVl303mt77c3ZU57HPTZMAcDZGorXBe3Ep99Yw";
 
-        // ðŸ”¥ 1. SUPABASE CLIENT GLOBAL DECLARATION
+        // 🔥 1. SUPABASE CLIENT GLOBAL DECLARATION
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         window.supabaseClient = supabaseClient;
 
-        // ðŸ”¥ 2. HOTEL GLOBAL SCOPE ID DECLARATION (MUST BE BEFORE ANY FUNCTION ACCESS)
+        // 🔥 2. HOTEL GLOBAL SCOPE ID DECLARATION (MUST BE BEFORE ANY FUNCTION ACCESS)
         let hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
 
         if (hotelGlobalScopeID !== "Default_HQ_Arena" && hotelGlobalScopeID.length < 5) {
@@ -1772,7 +1771,7 @@
                 return false;
             });
 
-            // 3. ðŸ”¥ FIXED: Clicks ko bilkul khula chhod diya taaki tabs aur buttons instantly kaam karein!
+            // 3. 🔥 FIXED: Clicks ko bilkul khula chhod diya taaki tabs aur buttons instantly kaam karein!
             // Par long-press tap-hold karne par copy ka menu automatic suppress rahega.
             document.addEventListener('touchstart', function (e) {
                 // Multi-finger double tap zoom ko bypass karo runtime par
@@ -1840,7 +1839,7 @@
         }
         window.revealSaaSPricingTiersMatrix = revealSaaSPricingTiersMatrix;
         // ===================================================================
-        // ðŸ‘‘ UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
+        // 👑 UNIFIED SAAS SUBSCRIPTION PRICING & PAYWALL GATEKEEPER ENGINE
         // ===================================================================
         // ðŸ›¡ï¸ DEDUP FIX: resolveHotelSubscriptionPricing is already defined above â€” no duplicate needed here.
 
@@ -1897,12 +1896,12 @@
         function initializeHostedCheckout(planType) {
             // Identity safe-check
             if (!hotelGlobalScopeID || hotelGlobalScopeID === "Default_HQ_Arena") {
-                alert("âŒ Identity Mismatch: Active workspace email scope not resolved.");
+                alert("❌ Identity Mismatch: Active workspace email scope not resolved.");
                 return;
             }
 
             showOnScreenNotification("ðŸ”’ Launching secure gateway server tunnels...", false);
-            console.log(`ðŸš€ Gateway Spooler: Starting ${planType.toUpperCase()} token assembly for:`, hotelGlobalScopeID);
+            console.log(`🚀 Gateway Spooler: Starting ${planType.toUpperCase()} token assembly for:`, hotelGlobalScopeID);
 
             // ðŸ’¡ SYSTEM ARCHITECTURE METRIC: 
             // Stripe Checkout ya Razorpay Payment Links par user ka email reference bhejte hain (client_reference_id)
@@ -1932,11 +1931,11 @@
         // ðŸ·ï¸ ANTI-WHITE-SCREEN ISOLATED QR PRINT ENGINE (NATIVE LIFECYCLE GUARD)
         // ===================================================================
         function executeNativeBrowserPrintTrigger() {
-            console.log("ðŸš€ RestroFlow Print Engine: Triggering Force-Visible QR Sequence...");
+            console.log("🚀 RestroFlow Print Engine: Triggering Force-Visible QR Sequence...");
 
             const qrModal = document.getElementById('qrPrintPreviewModal');
             if (!qrModal) {
-                alert("âŒ Error: QR Modal layout content missing inside document!");
+                alert("❌ Error: QR Modal layout content missing inside document!");
                 return;
             }
 
@@ -1947,7 +1946,7 @@
             // Yeh listener class ko tabhi remove karega jab user print dialog ko fully close/dismiss kar dega
             window.onafterprint = function () {
                 qrModal.classList.remove('print-active-target', 'qr-print-layout');
-                console.log("å¤–éƒ¨ ðŸ§¹ Success: QR print target hooks cleaned up seamlessly after preview dismissal.");
+                console.log("å¤–éƒ¨ 🧹 Success: QR print target hooks cleaned up seamlessly after preview dismissal.");
                 window.onafterprint = null; // Unbind listener to save memory leaks
             };
 
@@ -1961,7 +1960,7 @@
 
             const selectedTable = document.getElementById('adminBillingViewerTableSelect').value;
             if (!selectedTable) {
-                alert("âŒ Verification Error: Please select a valid table first!");
+                alert("❌ Verification Error: Please select a valid table first!");
                 return;
             }
 
@@ -1971,10 +1970,10 @@
 
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(hotelGlobalScopeID);
 
-            // âœ… FIXED: Email verification scope added to route data fetch straight from Supabase Cloud
+            // ✅ FIXED: Email verification scope added to route data fetch straight from Supabase Cloud
             if (isUUID || hotelGlobalScopeID.includes("@")) {
                 try {
-                    showOnScreenNotification("â³ Fetching live bill ledger from cloud...", false);
+                    showOnScreenNotification("⏳ Fetching live bill ledger from cloud...", false);
                     const { data: sessionData, error } = await supabaseClient
                         .from('table_sessions')
                         .select('*')
@@ -2015,7 +2014,7 @@
                         }
                     }
                 } catch (err) {
-                    console.error("ðŸš¨ Cloud Fetch Print Exception:", err);
+                    console.error("🚨 Cloud Fetch Print Exception:", err);
                 }
             } else {
                 targetBill = JSON.parse(localStorage.getItem('bill_map_' + selectedTable)) || [];
@@ -2023,7 +2022,7 @@
             }
 
             if (targetBill.length === 0) {
-                alert("âŒ Slip Generation Blocked: Selected table ledger accounts are completely empty inside the cloud system!");
+                alert("❌ Slip Generation Blocked: Selected table ledger accounts are completely empty inside the cloud system!");
                 return;
             }
 
@@ -2104,7 +2103,7 @@
                     // Channel unsubscribe hone se pehle state safely remove karega
                     await supabaseClient.removeChannel(channel);
                 } catch (e) {
-                    console.log("â³ Clean socket transition handled.");
+                    console.log("⏳ Clean socket transition handled.");
                 }
             };
 
@@ -2117,7 +2116,7 @@
                 window.billingSessionsChannel = null;
             }
 
-            console.log("ðŸ“¡ RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
+            console.log("📡 RestroFlow Engine: Booting Isolated KDS-Cloned Channels...");
 
             try {
                 window.billingOrdersChannel = supabaseClient
@@ -2133,7 +2132,7 @@
                         if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
                     })
                     .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') console.log("âœ… Orders Realtime Channel Sync Successful!");
+                        if (status === 'SUBSCRIBED') console.log("✅ Orders Realtime Channel Sync Successful!");
                     });
 
                 window.billingSessionsChannel = supabaseClient
@@ -2150,11 +2149,11 @@
                         if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
                     })
                     .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') console.log("âœ… Sessions Realtime Channel Sync Successful!");
+                        if (status === 'SUBSCRIBED') console.log("✅ Sessions Realtime Channel Sync Successful!");
                     });
 
             } catch (realtimeErr) {
-                console.error("ðŸš¨ Cloud Core Realtime Pipeline Exception:", realtimeErr.message);
+                console.error("🚨 Cloud Core Realtime Pipeline Exception:", realtimeErr.message);
             }
         }
 
@@ -2230,15 +2229,15 @@ function queueDebouncedBillRender() {
                                 } else {
                                     localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKeyExact);
                                     let serverBill = targetCloudRow.live_bill || [];
-                                    // ðŸŸ¢ Items hain ya KDS order hai -> Green (1), warna Orange (0)
+                                    // 🟢 Items hain ya KDS order hai -> Green (1), warna Orange (0)
                                     t.state = (serverBill.length > 0 || hasActiveOrder) ? 1 : (t.state === 2 || t.state === 3 ? t.state : 0);
                                 }
                             } else if (hasActiveOrder) {
-                                t.state = 1; // ðŸŸ¢ Kitchen Order running = Green
+                                t.state = 1; // 🟢 Kitchen Order running = Green
                             } else {
                                 // Agar state manually Booked (2) ya Cleaning (3) nahi hai, toh Empty (0) karo
                                 if (t.state !== 2 && t.state !== 3) {
-                                    t.state = 0; // ðŸŠ Empty = Orange
+                                    t.state = 0; // 🍊 Empty = Orange
                                 }
                                 t.waiterBell = false;
                                 localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + currentCompoundKeyExact);
@@ -2262,7 +2261,7 @@ function queueDebouncedBillRender() {
 }
 
         // =================================================================
-        // ðŸ‘‘ STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
+        // 👑 STEP 5: SUPER ADMIN GLOBAL COMMAND NETWORK SUBSCRIPTION MATRIX
         // =================================================================
 
         const SECRET_FOUNDER_PASSPHRASE_KEY = "founder99"; // Master Password to protect the gateway
@@ -2275,12 +2274,12 @@ function queueDebouncedBillRender() {
                 document.getElementById('superAdminDashboard').style.display = 'block';
                 fetchGlobalSaaSAccountNetworkList();
             } else if (keyInput) {
-                alert("âŒ Identity Unverified! Security protocol triggered.");
+                alert("❌ Identity Unverified! Security protocol triggered.");
             }
         }
 
         // ===================================================================
-        // ðŸ‘‘ UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
+        // 👑 UPGRADED SAAS MASTER CONTROLLER CODE SYSTEM
         // ===================================================================
 
         async function fetchGlobalSaaSAccountNetworkList() {
@@ -2289,7 +2288,7 @@ function queueDebouncedBillRender() {
             listWrapper.innerHTML = `<span style="color:#7f8c8d; font-style:italic; font-size:12px;">Linking target grid database matrices stream...</span>`;
 
             try {
-                // ðŸ”¥ FIX: select query ke andar 'founder_label' ko bhi add kiya
+                // 🔥 FIX: select query ke andar 'founder_label' ko bhi add kiya
                 const { data: subList, error } = await supabaseClient
                     .from('subscriptions')
                     .select('id, user_phone, status, current_period_end, monthly_price, yearly_price, founder_label')
@@ -2314,7 +2313,7 @@ function queueDebouncedBillRender() {
                     let matchingConfig = configList ? configList.find(c => c.id === sub.id) : null;
                     let hotelDisplayName = (matchingConfig && matchingConfig.hotel_name) ? matchingConfig.hotel_name : "Unnamed Outlet Space";
 
-                    // ðŸ”¥ FIX: Agar founder ne koi custom label diya hai toh display ke liye vahi use hoga, warna original name
+                    // 🔥 FIX: Agar founder ne koi custom label diya hai toh display ke liye vahi use hoga, warna original name
                     let administrativeTitle = sub.founder_label || hotelDisplayName;
 
                     let currentMonthlyPrice = sub.monthly_price || 0;
@@ -2328,11 +2327,11 @@ function queueDebouncedBillRender() {
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #2d323f; padding:10px 0; font-size:12px; color:#fff; cursor:pointer;" 
                      onclick="populateSuperAdminFormFields('${clientEmail}', '${sanitizedAdminTitle}', ${currentMonthlyPrice}, ${currentYearlyPrice});"
                     <div>
-                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">ðŸ¢ Hotel: ${administrativeTitle}</span> ${sub.founder_label ? `<small style="color:#7f8c8d; font-style:italic;">(${hotelDisplayName})</small>` : ''}<br>
+                        <span style="font-weight:bold; color:#ffd700; font-size:13px;">🏢 Hotel: ${administrativeTitle}</span> ${sub.founder_label ? `<small style="color:#7f8c8d; font-style:italic;">(${hotelDisplayName})</small>` : ''}<br>
                         <span style="font-weight:bold; color:#3498db; font-size:11px;">ðŸ“± Contact Mobile Number: ${clientPhone}</span><br>
                         <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">ðŸ“© Identity Email: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
-                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">ðŸ’° M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
+                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">💰 M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
                     </div>
                     <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
                 </div>`;
@@ -2349,12 +2348,12 @@ function queueDebouncedBillRender() {
             if (document.getElementById('saTargetHotelName')) document.getElementById('saTargetHotelName').value = hotelName || '';
             if (document.getElementById('saCustomMonthlyRate')) document.getElementById('saCustomMonthlyRate').value = (mRate && parseInt(mRate) > 0) ? mRate : '';
             if (document.getElementById('saCustomYearlyRate')) document.getElementById('saCustomYearlyRate').value = (yRate && parseInt(yRate) > 0) ? yRate : '';
-            showOnScreenNotification("ðŸ“‹ Loaded: " + (hotelName || userId));
+            showOnScreenNotification("📋 Loaded: " + (hotelName || userId));
         }
         window.populateSuperAdminFormFields = populateSuperAdminFormFields;
 
         // ===================================================================
-        // ðŸ‘‘ UPGRADED SUPER ADMIN SEQUENCE: RECOGNIZES GLOBAL BASE DEFAULTS
+        // 👑 UPGRADED SUPER ADMIN SEQUENCE: RECOGNIZES GLOBAL BASE DEFAULTS
         // ===================================================================
         async function executeSuperAdminManualActivationSequence(targetStatusState) {
             let targetId = document.getElementById('saTargetUserUUID').value.trim();
@@ -2363,7 +2362,7 @@ function queueDebouncedBillRender() {
             let allocatedMonthlyPrice = parseInt(document.getElementById('saCustomMonthlyRate').value) || 0;
             let allocatedYearlyPrice = parseInt(document.getElementById('saCustomYearlyRate').value) || 0;
 
-            // ðŸ”¥ ðŸ”¥ THE FIX: Agar aap individual details nahi bhar rahe ho, toh checks ko bypass karke sidhe global defaults save karo!
+            // 🔥 🔥 THE FIX: Agar aap individual details nahi bhar rahe ho, toh checks ko bypass karke sidhe global defaults save karo!
             if (!targetId || targetId.length < 10) {
                 // Super Admin dashboard ke inputs se live default variables sync karo
                 let gMonthlyInput = document.getElementById('saGlobalDefaultMonthlyInput');
@@ -2383,13 +2382,13 @@ function queueDebouncedBillRender() {
                     return; // Execution block safe return
                 }
 
-                alert("âŒ Invalid user classification identifier code string pattern.");
+                alert("❌ Invalid user classification identifier code string pattern.");
                 return;
             }
 
             // Individual Restaurant activation sequence logic below (Untouched and Safe)
             try {
-                showOnScreenNotification("âš¡ Processing security write override data...", false);
+                showOnScreenNotification("⚡ Processing security write override data...", false);
 
                 const { data: existingRecord } = await supabaseClient
                     .from('subscriptions')
@@ -2429,9 +2428,9 @@ function queueDebouncedBillRender() {
                 }
 
                 if (syncOperationError) {
-                    alert("âŒ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
+                    alert("❌ Cloud Write Violation Execution Blocked: " + syncOperationError.message);
                 } else {
-                    showOnScreenNotification(`ðŸ‘‘ Scoped Parameters updated successfully!`);
+                    showOnScreenNotification(`👑 Scoped Parameters updated successfully!`);
 
                     document.getElementById('saTargetUserUUID').value = '';
                     document.getElementById('saTargetHotelName').value = '';
@@ -2558,16 +2557,16 @@ function queueDebouncedBillRender() {
                     payment_status: payStatus || 'PENDING'
                 };
 
-                // ðŸ”¥ ATOMIC HANDSHAKE: Automatic update if exists, else insert in 1 single statement
+                // 🔥 ATOMIC HANDSHAKE: Automatic update if exists, else insert in 1 single statement
                 const { error: upsertError } = await supabaseClient
                     .from('table_sessions')
                     .upsert(sessionPayload, { onConflict: 'table_id' }); // Binds tightly to your primary key
 
                 if (upsertError) {
-                    console.error("ðŸš¨ Supabase Sync 409 Shield Interrupted:", upsertError.message);
-                    showOnScreenNotification("âš ï¸ Database conflict captured!", true);
+                    console.error("🚨 Supabase Sync 409 Shield Interrupted:", upsertError.message);
+                    showOnScreenNotification("⚠️ Database conflict captured!", true);
                 } else {
-                    console.log(`ðŸš€ Cloud Sync: Composite Table ${compositeTableKey} securely synchronized.`);
+                    console.log(`🚀 Cloud Sync: Composite Table ${compositeTableKey} securely synchronized.`);
                 }
             } catch (err) {
                 console.error("System Error during table session sync:", err);
@@ -2588,7 +2587,7 @@ function queueDebouncedBillRender() {
         window.taxConfig = taxConfig;
         window.customPaymentQRData = customPaymentQRData;
 
-        // ðŸ”¥ SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
+        // 🔥 SYSTEM ATOMIC RESET POINTERS (Zeba-crossing variables for manual wipe tracking)
         let clientCurrentActiveTable = "T1";
         window.clientCurrentActiveTable = clientCurrentActiveTable;
         window.customerActiveTableIdentifier = clientCurrentActiveTable;
@@ -2619,7 +2618,7 @@ function queueDebouncedBillRender() {
             const password = document.getElementById('authPasswordInput').value;
 
             if (!email || !password) {
-                alert("âš ï¸ Please enter both Email and Password!");
+                alert("⚠️ Please enter both Email and Password!");
                 return;
             }
 
@@ -2636,24 +2635,24 @@ function queueDebouncedBillRender() {
                     const errMsg = error.message.toLowerCase();
 
                     if (errMsg.includes("confirm") || errMsg.includes("verified")) {
-                        alert(`âŒ Login Denied: ${error.message}\n\nðŸ’¡ Solution: Apne Supabase Dashboard -> Authentication -> Providers -> Email mein jaakar "Confirm email" ko OFF kar do, phir naya account banakar login karo!`);
+                        alert(`❌ Login Denied: ${error.message}\n\nðŸ’¡ Solution: Apne Supabase Dashboard -> Authentication -> Providers -> Email mein jaakar "Confirm email" ko OFF kar do, phir naya account banakar login karo!`);
                     } else if (errMsg.includes("credentials") || errMsg.includes("invalid")) {
-                        alert("âŒ Login Denied: Wrong Email or Password! Kripya check karke dubara sahi credentials dalein.");
+                        alert("❌ Login Denied: Wrong Email or Password! Kripya check karke dubara sahi credentials dalein.");
                     } else {
-                        alert("âŒ Login Denied: " + error.message);
+                        alert("❌ Login Denied: " + error.message);
                     }
                     return;
                 }
 
-                alert("ðŸš€ Workspace Authenticated successfully!");
+                alert("🚀 Workspace Authenticated successfully!");
                 closeLoginConsoleOverlay();
 
-                // ðŸ”¥ THE FIX: location.reload() ki jagah URL ke saare customer query parameters (?hotel aur ?table) 
+                // 🔥 THE FIX: location.reload() ki jagah URL ke saare customer query parameters (?hotel aur ?table) 
                 // ko automatic permanent strip/saaf karke clean reload karega taaki admin panel instantly unlock ho sake!
                 window.location.href = window.location.origin + window.location.pathname;
 
             } catch (err) {
-                console.error("ðŸš¨ Login Route Crash:", err);
+                console.error("🚨 Login Route Crash:", err);
                 alert("System Exception: Unable to complete authentication handshakes.");
             }
         }
@@ -2669,7 +2668,7 @@ function queueDebouncedBillRender() {
             if (!isAuthPortalInSignUpMode) {
                 title.innerText = "Create Account";
                 subTitle.innerText = "Register New Workspace Node";
-                mainBtn.innerText = "âœ¨ Register & Create Workspace";
+                mainBtn.innerText = "✨ Register & Create Workspace";
                 mainBtn.setAttribute("onclick", "executeRealCloudSignUpSequence()");
                 toggleLabel.innerText = "Already registered?";
                 toggleLink.innerText = "Login Instead";
@@ -2697,42 +2696,42 @@ function queueDebouncedBillRender() {
             console.log("ðŸ“ Pre-Validation Check -> Input Email:", email, "| Input Phone:", phone);
 
             if (!password) {
-                alert("âš ï¸ Security Rule: Password enter karna mandatory hai!");
+                alert("⚠️ Security Rule: Password enter karna mandatory hai!");
                 return;
             }
             if (password.length < 6) {
-                alert("âš ï¸ Security Rule: Password must be at least 6 characters long!");
+                alert("⚠️ Security Rule: Password must be at least 6 characters long!");
                 return;
             }
 
-            // âœ… AAPKA PURANA FEATURE: Agar email box me number dala hai toh usey phone maan lo
+            // ✅ AAPKA PURANA FEATURE: Agar email box me number dala hai toh usey phone maan lo
             if (email && !isNaN(email) && email.length >= 10) {
                 phone = email;
                 email = "";
             }
 
             if (!email && !phone) {
-                alert("âš ï¸ Validation Error: Account banane ke liye Email ID ya Mobile Number mein se koi ek cheez zaroor dalein!");
+                alert("⚠️ Validation Error: Account banane ke liye Email ID ya Mobile Number mein se koi ek cheez zaroor dalein!");
                 return;
             }
 
-            // âœ… AAPKA PURANA FEATURE: Auto email generator
+            // ✅ AAPKA PURANA FEATURE: Auto email generator
             let targetEmail = "";
             if (email) {
                 if (!email.includes("@")) {
-                    alert("âš ï¸ Invalid Format: Please enter a valid email address containing '@' (e.g., name@email.com)");
+                    alert("⚠️ Invalid Format: Please enter a valid email address containing '@' (e.g., name@email.com)");
                     return;
                 }
                 targetEmail = email;
             } else if (phone) {
                 if (phone.length < 10 || isNaN(phone)) {
-                    alert("âš ï¸ Validation Error: Please enter a valid 10-digit mobile number!");
+                    alert("⚠️ Validation Error: Please enter a valid 10-digit mobile number!");
                     return;
                 }
                 targetEmail = `${phone}@restroflow.com`;
             }
             try {
-                showOnScreenNotification("ðŸš€ Registering secure workspace...", false);
+                showOnScreenNotification("🚀 Registering secure workspace...", false);
 
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: targetEmail,
@@ -2740,12 +2739,12 @@ function queueDebouncedBillRender() {
                 });
 
                 if (error) {
-                    alert("âŒ Supabase Auth Denied: " + error.message);
+                    alert("❌ Supabase Auth Denied: " + error.message);
                     return;
                 }
 
                 if (data?.user) {
-                    // ðŸ”¥ CRITICAL FIX (Aapka): Pass menuCategories array/object directly
+                    // 🔥 CRITICAL FIX (Aapka): Pass menuCategories array/object directly
                     const { error: configError } = await supabaseClient.from('hotel_config').upsert({
                         id: targetEmail,
                         hotel_name: "Restaurant",
@@ -2769,7 +2768,7 @@ function queueDebouncedBillRender() {
                     });
 
                     if (subError) {
-                        alert("âŒ Sync Error: Subscription creation failed -> " + subError.message);
+                        alert("❌ Sync Error: Subscription creation failed -> " + subError.message);
                         return;
                     }
 
@@ -2781,10 +2780,10 @@ function queueDebouncedBillRender() {
                     toggleAuthPortalViewMode();
                 }
             } catch (err) {
-                console.error("ðŸš¨ Critical Onboarding Architectural Exception:", err);
+                console.error("🚨 Critical Onboarding Architectural Exception:", err);
             }
         }
-        // âš¡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
+        // ⚡ FIXED: Implements dynamic field isolation to preserve text editing states and strictly blocks UUID leaks on customer views
         function updateFrontEndClassificationLabels() {
             let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID);
 
@@ -2796,7 +2795,7 @@ function queueDebouncedBillRender() {
 
             let tableNameElem = document.getElementById('displayTableName');
             if (tableNameElem) {
-                // ðŸ”¥ FRONTEND DECORATOR: Parse compound names to read clean formats natively
+                // 🔥 FRONTEND DECORATOR: Parse compound names to read clean formats natively
                 if (clientCurrentActiveTable.includes('_')) {
                     let parts = clientCurrentActiveTable.split('_');
                     tableNameElem.innerText = `${parts[0]} - Table ${parts[1]}`;
@@ -2841,7 +2840,7 @@ function queueDebouncedBillRender() {
             let overlay = document.getElementById('rulesListDisplay');
             if (!overlay) return;
 
-            // ðŸ”¥ FIX 5: All 6 games dynamically rendered â€” no hardcoded missing entries
+            // 🔥 FIX 5: All 6 games dynamically rendered â€” no hardcoded missing entries
             overlay.innerHTML = `
         <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar || 5} points = <b>${rules.flappyDisc || 0}% Code Coin</b></li>
         <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar || 3} = <b>${rules.spaceDisc || 0}% Code Coin</b></li>
@@ -2858,7 +2857,7 @@ function queueDebouncedBillRender() {
         // ===================================================================
         function openSmartMobilePaymentGatewayGateway() {
             if (globalRunningInvoiceSumTotal <= 0) {
-                alert("âŒ Bill is Empty! Cannot trigger payment mapping.");
+                alert("❌ Bill is Empty! Cannot trigger payment mapping.");
                 return;
             }
 
@@ -2876,17 +2875,17 @@ function queueDebouncedBillRender() {
             document.getElementById('mobilePaymentSimulatorModal').style.display = 'flex';
         }
         // ===================================================================
-        // ðŸš€ NEW MODULE: DEEP-LINK NATIVE UPI INTENT STREAM ROUTER
+        // 🚀 NEW MODULE: DEEP-LINK NATIVE UPI INTENT STREAM ROUTER
         // ===================================================================
         function executeNativeUpiIntentRoutingPipeline() {
             let activeOwnerVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "merchant_inject_node@sbi";
             let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
 
-            // ðŸ”¥ Standard NPCI UPI String Specification Architecture Blueprint
+            // 🔥 Standard NPCI UPI String Specification Architecture Blueprint
             // am = Amount, cu = Currency, pn = Payee Name, pa = Payee Address (VPA)
             let nativeUpiIntentString = `upi://pay?pa=${encodeURIComponent(activeOwnerVpa)}&pn=${encodeURIComponent(realBrandName)}&am=${globalRunningInvoiceSumTotal}&cu=INR&tn=${encodeURIComponent('RestroFlow Table ' + clientCurrentActiveTable)}`;
 
-            console.log("ðŸš€ Spooling Deep-Link Intent Matrix Router Node:", nativeUpiIntentString);
+            console.log("🚀 Spooling Deep-Link Intent Matrix Router Node:", nativeUpiIntentString);
             showOnScreenNotification("ðŸ“² Requesting device smartphone UPI node handles...", false);
 
             // Redirects browser control flow directly into active smartphone operating system apps slider
@@ -2924,7 +2923,7 @@ function queueDebouncedBillRender() {
         };
         window.populateAdminForms = populateAdminForms;
         // ===================================================================
-        // ðŸ‘¨â€ðŸ³ FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
+        // ðŸ‘¨â€🍳 FIXED: ANTI-CRASH KDS TICKET ROUTER (VALID UUID ENFORCED)
         // ===================================================================
         async function dispatchKdsTicketDirectly(tableId, dishName, itemSize, itemQty) {
             try {
@@ -2943,7 +2942,7 @@ function queueDebouncedBillRender() {
                     .maybeSingle();
 
                 if (orderErr) {
-                    console.error("ðŸš¨ KDS Table Insert Error:", orderErr.message);
+                    console.error("🚨 KDS Table Insert Error:", orderErr.message);
                     return;
                 }
 
@@ -2956,10 +2955,10 @@ function queueDebouncedBillRender() {
                     });
 
                     if (itemErr) {
-                        console.error("ðŸš¨ KDS Item Insert Error:", itemErr.message);
+                        console.error("🚨 KDS Item Insert Error:", itemErr.message);
                     } else {
-                        console.log("ðŸ”¥ KDS Sync: Ticket successfully landed on kitchen grid nodes.");
-                        showOnScreenNotification("ðŸ³ Order sent to kitchen successfully!");
+                        console.log("🔥 KDS Sync: Ticket successfully landed on kitchen grid nodes.");
+                        showOnScreenNotification("🍳 Order sent to kitchen successfully!");
                     }
                 }
             } catch (err) {
@@ -2994,7 +2993,7 @@ function queueDebouncedBillRender() {
             // Core billing matrix me direct push
             await appendDishToBillInvoice(dishName, size, price, standardTableKey, selectedQuantityToken);
 
-            // ðŸ”¥ KDS Ticket par bhi exact same table ID jayegi taaki admin panel par turant live dikhe
+            // 🔥 KDS Ticket par bhi exact same table ID jayegi taaki admin panel par turant live dikhe
             await dispatchKdsTicketDirectly(standardTableKey, dishName, size, selectedQuantityToken);
 
 
@@ -3005,7 +3004,7 @@ function queueDebouncedBillRender() {
         }
 
         // ===================================================================
-        // âš¡ WAITER BILLING CONSOLE: DUAL ROUTING ENGINE (BILL & KDS)
+        // ⚡ WAITER BILLING CONSOLE: DUAL ROUTING ENGINE (BILL & KDS)
         // ===================================================================
         async function injectExtraItemFromBillPanel(sendToKds = false) {
             try {
@@ -3014,7 +3013,7 @@ function queueDebouncedBillRender() {
                 let targetSize = document.getElementById('waiterSizeSelect').value;
 
                 if (!selectedTargetTable || !targetDishName || !targetSize) {
-                    alert("âš ï¸ Please select Table, Dish, and Size first!");
+                    alert("⚠️ Please select Table, Dish, and Size first!");
                     return;
                 }
 
@@ -3038,11 +3037,11 @@ function queueDebouncedBillRender() {
                     // 2. Conditional Push to Kitchen (KDS)
                     if (sendToKds) {
                         await dispatchKdsTicketDirectly(selectedTargetTable, targetDishName, targetSize, 1);
-                        showOnScreenNotification(`ðŸ”¥ Item [${targetDishName}] added to Table ${cleanTableId} Bill & sent to Kitchen KDS!`);
-                        alert(`âœ… SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill AND sent directly to the Kitchen KDS Monitor!`);
+                        showOnScreenNotification(`🔥 Item [${targetDishName}] added to Table ${cleanTableId} Bill & sent to Kitchen KDS!`);
+                        alert(`✅ SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill AND sent directly to the Kitchen KDS Monitor!`);
                     } else {
-                        showOnScreenNotification(`ðŸ“‹ Item [${targetDishName}] added to Table ${cleanTableId} Bill only!`);
-                        alert(`âœ… SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill ONLY (Not sent to KDS).`);
+                        showOnScreenNotification(`📋 Item [${targetDishName}] added to Table ${cleanTableId} Bill only!`);
+                        alert(`✅ SUCCESS:\n\n'${targetDishName}' [${targetSize.toUpperCase()}] has been added to Table ${cleanTableId}'s Running Bill ONLY (Not sent to KDS).`);
                     }
 
                     // UI Refresh for Cashier/Admin Live Viewer
@@ -3050,19 +3049,19 @@ function queueDebouncedBillRender() {
                         auditSelectedTableBillInvoiceLive();
                     }
                 } else {
-                    showOnScreenNotification("âŒ Configuration size invalid or template missing!", true);
+                    showOnScreenNotification("❌ Configuration size invalid or template missing!", true);
                 }
             } catch (err) {
-                console.error("ðŸš¨ Waiter Inject Error:", err);
-                alert("âŒ Failed to process waiter order injection: " + err.message);
+                console.error("🚨 Waiter Inject Error:", err);
+                alert("❌ Failed to process waiter order injection: " + err.message);
             }
         }
 
-        // ðŸ” Extra KDS Verification Handler (Aapke confirmation ke liye)
+        // 🔍 Extra KDS Verification Handler (Aapke confirmation ke liye)
         function confirmKdsVisibilityStatus() {
             let selectedTable = document.getElementById('waiterTableSelect').value;
             let cleanTableId = selectedTable.includes('_') ? selectedTable.split('_')[1] : selectedTable;
-            alert(`ðŸŸ¢ KDS REALTIME STATUS:\n\nHotel Scope: ${hotelGlobalScopeID}\nTarget Table: ${cleanTableId}\n\nAny item injected from here will immediately trigger the Kitchen Siren and display on the KDS screen.`);
+            alert(`🟢 KDS REALTIME STATUS:\n\nHotel Scope: ${hotelGlobalScopeID}\nTarget Table: ${cleanTableId}\n\nAny item injected from here will immediately trigger the Kitchen Siren and display on the KDS screen.`);
         }
 
         function executeTableManualResetSequence(tableKey) {
@@ -3105,7 +3104,7 @@ function queueDebouncedBillRender() {
 
             if (itemKeysArray.length === 0) {
                 outputGrid.innerHTML = `<span style="color:#999; font-style:italic; font-size:12px;">No sales metrics history tracked yet for outlet.</span>`;
-                return; // âœ… Ab yeh return cleanly function ke andar hi hai!
+                return; // ✅ Ab yeh return cleanly function ke andar hi hai!
             }
 
             itemKeysArray.forEach(dishName => {
@@ -3128,14 +3127,14 @@ function queueDebouncedBillRender() {
             let activeOwnerAuditTable = document.getElementById('adminBillingViewerTableSelect').value;
 
             if (!activeOwnerAuditTable) {
-                alert("âŒ No table selected for settlement audit.");
+                alert("❌ No table selected for settlement audit.");
                 return;
             }
 
-            if (confirm(`âš ï¸ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
+            if (confirm(`⚠️ CRITICAL COMMAND: Wipe/Clear all archived items, live orders, and payment tokens for Table ${activeOwnerAuditTable}? This will reset the table to a brand-new state.`)) {
 
                 try {
-                    // ðŸ”¥ DECLARE THE MISSING KEYS AT THE TOP OF TRY BLOCK
+                    // 🔥 DECLARE THE MISSING KEYS AT THE TOP OF TRY BLOCK
                     let cleanTableId = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[1] : activeOwnerAuditTable;
                     let floorName = activeOwnerAuditTable.includes('_') ? activeOwnerAuditTable.split('_')[0] : "";
                     const compositeTableKey = `${hotelGlobalScopeID}_${activeOwnerAuditTable.trim()}`;
@@ -3187,7 +3186,7 @@ function queueDebouncedBillRender() {
                                     currentCompoundKey === targetAuditClean || 
                                     targetAuditClean.endsWith('_' + t.id.trim())) {
                                     
-                                    t.state = 0; // ðŸŠ Set back to Orange (Empty)
+                                    t.state = 0; // 🍊 Set back to Orange (Empty)
                                     t.waiterBell = false;
                                     delete t.custom_color;
 
@@ -3216,11 +3215,11 @@ function queueDebouncedBillRender() {
                     generateAdminTableGrid();
                     auditSelectedTableBillInvoiceLive();
 
-                    showOnScreenNotification(`ðŸ§¹ Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
-                    alert(`ðŸ§¹ Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
+                    showOnScreenNotification(`🧹 Table ${activeOwnerAuditTable} has been fully reset to 0%!`, false);
+                    alert(`🧹 Success! Table session, kitchen tickets, and discounts COMPLETELY DELETED from Supabase Cloud.`);
 
                 } catch (err) {
-                    console.error("ðŸš¨ CRITICAL CORE WIPEOUT FAILURE:", err);
+                    console.error("🚨 CRITICAL CORE WIPEOUT FAILURE:", err);
                     alert("An architectural error occurred during full database wipe sequences.");
                 }
             }
@@ -3232,7 +3231,7 @@ function queueDebouncedBillRender() {
 
             let realBrandName = localStorage.getItem('restroflow_actual_brand_name_' + hotelGlobalScopeID) || "RestroFlow";
 
-            // ðŸ”¥ UNIQUE LINK TOKEN BINDING: URL parameters mein floor identity aur table sector code dono inject kar diye hain
+            // 🔥 UNIQUE LINK TOKEN BINDING: URL parameters mein floor identity aur table sector code dono inject kar diye hain
             let routingRawLinkURL = window.location.origin + window.location.pathname + `?hotel=${encodeURIComponent(hotelGlobalScopeID)}&floor=${encodeURIComponent(floorName)}&table=${encodeURIComponent(tableUnitID)}`;
 
             document.getElementById('qrPrintTitle').innerText = `${realBrandName} - ${tableUnitID}`;
@@ -3323,14 +3322,14 @@ function queueDebouncedBillRender() {
 
                         // Cloud DB reset (Admin panel par glow clear kar do)
                         syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'PENDING');
-                        console.log(`â° Waiter Bell Auto-Reset: Flashing glow cleared for Table [${clientCurrentActiveTable}] after 10s.`);
+                        console.log(`⏰ Waiter Bell Auto-Reset: Flashing glow cleared for Table [${clientCurrentActiveTable}] after 10s.`);
                     }, 10000); // Exact 10 Seconds
 
                 } else {
-                    showOnScreenNotification("âŒ Active table scope unverified!", true);
+                    showOnScreenNotification("❌ Active table scope unverified!", true);
                 }
             } catch (err) {
-                console.error("ðŸš¨ Waiter Bell Signal Error:", err);
+                console.error("🚨 Waiter Bell Signal Error:", err);
             }
         }
         // ===================================================================
@@ -3430,12 +3429,12 @@ async function auditSelectedTableBillInvoiceLive() {
 
         // Payment Banner Update
         if (paymentStatusToken === 'SUCCESS_PAID') {
-            paymentBanner.innerText = "ðŸ’° STATUS: PAID ONLINE SUCCESS via Mobile UPI";
+            paymentBanner.innerText = "💰 STATUS: PAID ONLINE SUCCESS via Mobile UPI";
             paymentBanner.style.background = "#eef9f5";
             paymentBanner.style.color = "#27ae60";
             paymentBanner.style.display = "block";
         } else {
-            paymentBanner.innerText = "â³ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT";
+            paymentBanner.innerText = "⏳ STATUS: UNPAID / BILL PENDING CASHIER SETTLEMENT";
             paymentBanner.style.background = "#fff3cd";
             paymentBanner.style.color = "#856404";
             paymentBanner.style.display = "block";
@@ -3444,14 +3443,14 @@ async function auditSelectedTableBillInvoiceLive() {
         outputBox.innerHTML = '';
         let subtotal = 0;
 
-        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">ðŸ“‹ Mapped Financial Account Ledger:</div>`;
+        outputBox.innerHTML += `<div style="font-weight:bold; color:#2c3e50; border-bottom:1px solid #ddd; margin-bottom:8px; padding-bottom:4px; font-size:13px;">📋 Mapped Financial Account Ledger:</div>`;
 
-        // ðŸŽ¯ DISH RENDERING WITH LIVE KDS STATUS BADGES
+        // 🎯 DISH RENDERING WITH LIVE KDS STATUS BADGES
         targetBill.forEach((row, rIdx) => {
             let rowCost = (parseFloat(row.price) || 0) * (parseInt(row.qty) || 0);
             subtotal += rowCost;
 
-            // ðŸ” Lookup live KDS status for this exact dish & size
+            // 🔍 Lookup live KDS status for this exact dish & size
             let kdsStatus = null;
             if (kitchenOrders && kitchenOrders.length > 0) {
                 for (let ko of kitchenOrders) {
@@ -3471,24 +3470,24 @@ async function auditSelectedTableBillInvoiceLive() {
             // Status Badge HTML & Colors
             let statusBadgeHtml = '';
             if (kdsStatus === 'PENDING') {
-                statusBadgeHtml = `<span style="background: #fff3cd; color: #d35400; border: 1px solid #f39c12; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">â³ Pending</span>`;
+                statusBadgeHtml = `<span style="background: #fff3cd; color: #d35400; border: 1px solid #f39c12; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">⏳ Pending</span>`;
             } else if (kdsStatus === 'PREPARING') {
-                statusBadgeHtml = `<span style="background: #e8f4fd; color: #2980b9; border: 1px solid #3498db; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">ðŸ³ Preparing</span>`;
+                statusBadgeHtml = `<span style="background: #e8f4fd; color: #2980b9; border: 1px solid #3498db; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">🍳 Preparing</span>`;
             } else if (kdsStatus === 'COMPLETED') {
-                statusBadgeHtml = `<span style="background: #eafaf1; color: #27ae60; border: 1px solid #2ecc71; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">ðŸ½ï¸ Dispatched</span>`;
+                statusBadgeHtml = `<span style="background: #eafaf1; color: #27ae60; border: 1px solid #2ecc71; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">🍽️ Dispatched</span>`;
             } else {
-                statusBadgeHtml = `<span style="background: #f1f2f6; color: #7f8c8d; border: 1px solid #ccc; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">ðŸ“‹ Bill Only</span>`;
+                statusBadgeHtml = `<span style="background: #f1f2f6; color: #7f8c8d; border: 1px solid #ccc; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 6px;">📋 Bill Only</span>`;
             }
 
             outputBox.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; padding: 4px 0; border-bottom: 1px dashed #eee;">
                 <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                    <span>â€¢ <b>${row.name}</b> [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
+                    <span>• <b>${row.name}</b> [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
                     ${statusBadgeHtml}
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
                     <b>₹${rowCost}</b>
-                    <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">âŒ</button>
+                    <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">❌</button>
                 </div>
             </div>`;
         });
@@ -3516,7 +3515,7 @@ async function auditSelectedTableBillInvoiceLive() {
         grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
 
     } catch (err) {
-        console.error("ðŸš¨ Admin Invoice Tracker Exception:", err);
+        console.error("🚨 Admin Invoice Tracker Exception:", err);
     }
 }
 
@@ -3529,16 +3528,16 @@ async function auditSelectedTableBillInvoiceLive() {
             let targetBtn = document.getElementById(btnId);
             if (targetBtn) {
                 targetBtn.disabled = true;
-                targetBtn.innerText = "â³";
+                targetBtn.innerText = "⏳";
             }
 
-            if (!confirm("âš ï¸ Are you sure you want to permanently delete this specific item?")) {
-                if (targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "âŒ"; }
+            if (!confirm("⚠️ Are you sure you want to permanently delete this specific item?")) {
+                if (targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "❌"; }
                 return;
             }
 
             try {
-                showOnScreenNotification("â³ Processing secure deletion...", false);
+                showOnScreenNotification("⏳ Processing secure deletion...", false);
                 const compositeKey = `${hotelGlobalScopeID}_${tableId}`;
 
                 if (removalType === 'LEDGER') {
@@ -3607,7 +3606,7 @@ async function auditSelectedTableBillInvoiceLive() {
                     }
                 }
 
-                showOnScreenNotification("âœ… Item successfully deleted!");
+                showOnScreenNotification("✅ Item successfully deleted!");
 
                 // --- 2. GLOBAL SYSTEM REFRESH TRIGGERS ---
                 // Refresh Current Admin Panel Data
@@ -3628,10 +3627,10 @@ async function auditSelectedTableBillInvoiceLive() {
                 }
 
             } catch (err) {
-                console.error("ðŸš¨ Deletion Error:", err);
-                showOnScreenNotification("âŒ Deletion failed. Sync error with cloud database.", true);
+                console.error("🚨 Deletion Error:", err);
+                showOnScreenNotification("❌ Deletion failed. Sync error with cloud database.", true);
                 // Safely re-enable button on crash
-                if (targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "âŒ"; }
+                if (targetBtn) { targetBtn.disabled = false; targetBtn.innerText = "❌"; }
             }
         }
 
@@ -3695,7 +3694,7 @@ async function renderLiveCalculatedBill() {
         : `Table ${activeTableId}`;
     document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active ${displayScope}`;
 
-    showOnScreenNotification("â³ Fetching live invoice directly from cloud...", false);
+    showOnScreenNotification("⏳ Fetching live invoice directly from cloud...", false);
 
     try {
         // ðŸ”’ 2. DIRECT SUPABASE CLOUD LOOKUP
@@ -3757,7 +3756,7 @@ async function renderLiveCalculatedBill() {
         if (badge) badge.innerText = maximumClaimedDisc + "%";
 
     } catch (err) {
-        console.error("ðŸš¨ Cloud Bill Fetch Failed:", err);
+        console.error("🚨 Cloud Bill Fetch Failed:", err);
         targetBill = [];
     }
 
@@ -3784,7 +3783,7 @@ async function renderLiveCalculatedBill() {
         // Unified Calculation Engine
         let invoiceMath = calculateUnifiedMasterInvoice(targetBill, maximumClaimedDisc, taxConfig);
 
-        // âœ… FIXED: discountValue ko invoiceMath se sahi tarike se define kiya gaya hai
+        // ✅ FIXED: discountValue ko invoiceMath se sahi tarike se define kiya gaya hai
         const calculatedDiscountVal = invoiceMath.discountValue || 0;
 
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
@@ -3801,7 +3800,7 @@ async function renderLiveCalculatedBill() {
         globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
 
         document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
-        // âœ… FIXED: yahan calculatedDiscountVal ka use kiya hai
+        // ✅ FIXED: yahan calculatedDiscountVal ka use kiya hai
         document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-₹" + calculatedDiscountVal.toFixed(2) + ")";
         document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
@@ -3838,7 +3837,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             .maybeSingle();
 
         if (fetchErr) {
-            console.error("ðŸš¨ Cloud Fetch Error in appendDish:", fetchErr.message);
+            console.error("🚨 Cloud Fetch Error in appendDish:", fetchErr.message);
         }
 
         let targetTableBill = (cloudSession && Array.isArray(cloudSession.live_bill)) ? cloudSession.live_bill : [];
@@ -3882,7 +3881,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             if (badge) badge.innerText = maximumClaimedDisc + "%";
         }
 
-        // 5. âœ… FIXED: STRICT FLOOR-SPECIFIC TABLE ISOLATION (No Cross-Floor Green Leaks)
+        // 5. ✅ FIXED: STRICT FLOOR-SPECIFIC TABLE ISOLATION (No Cross-Floor Green Leaks)
         if (typeof floorData !== 'undefined' && Array.isArray(floorData)) {
             floorData.forEach(floor => {
                 if (floor && Array.isArray(floor.tables)) {
@@ -3900,7 +3899,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                         }
 
                         if (isExactMatch) {
-                            t.state = 1; // ðŸŸ¢ Sirf aur sirf target section waali table Green hogi
+                            t.state = 1; // 🟢 Sirf aur sirf target section waali table Green hogi
                             delete t.custom_color;
                         }
                     });
@@ -3920,11 +3919,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             auditSelectedTableBillInvoiceLive();
         }
 
-        console.log(`âœ… Cloud Append Success: [${dishName} x${parsedItemQty}] saved for ${compositeTableKey}`);
+        console.log(`✅ Cloud Append Success: [${dishName} x${parsedItemQty}] saved for ${compositeTableKey}`);
 
     } catch (err) {
-        console.error("ðŸš¨ CRITICAL TRANSACTION SYNC CORRUPTION:", err);
-        showOnScreenNotification("âŒ Cloud transmission broken!", true);
+        console.error("🚨 CRITICAL TRANSACTION SYNC CORRUPTION:", err);
+        showOnScreenNotification("❌ Cloud transmission broken!", true);
     }
 }
         // ===================================================================
@@ -3941,7 +3940,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
             if (!confirm(confirmMsg)) return;
 
-            showOnScreenNotification("â³ Updating bill and kitchen...", false);
+            showOnScreenNotification("⏳ Updating bill and kitchen...", false);
 
             // 1. Decrease quantity or remove the item from local array
             if (targetItem.qty > 1) {
@@ -4006,10 +4005,10 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
                 if (!kdsSuccessfullyUpdated) {
                     // If it is PREPARING or COMPLETED in KDS, we delete it from the bill but alert the waiter
-                    showOnScreenNotification(`âš ï¸ Removed from Bill. (Kitchen may have already started preparing it!)`, true);
+                    showOnScreenNotification(`⚠️ Removed from Bill. (Kitchen may have already started preparing it!)`, true);
                 }
             } catch (err) {
-                console.error("ðŸš¨ KDS sync error during item removal:", err);
+                console.error("🚨 KDS sync error during item removal:", err);
             }
 
             // 5. Instantly Re-render the Bill (Taxes, Total, and UI update without closing modal)
@@ -4056,7 +4055,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             }
         }
 
-        // 2. ðŸ”¥ SUPABASE MEIN DIRECT DISCOUNT UPSERT/SAVE
+        // 2. 🔥 SUPABASE MEIN DIRECT DISCOUNT UPSERT/SAVE
         const { error: upsertErr } = await supabaseClient
             .from('table_sessions')
             .upsert({
@@ -4068,13 +4067,13 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             }, { onConflict: 'table_id' });
 
         if (upsertErr) {
-            console.error("ðŸš¨ Supabase Discount Save Error:", upsertErr.message);
+            console.error("🚨 Supabase Discount Save Error:", upsertErr.message);
         } else {
-            console.log(`âœ… Supabase Discount Locked: ${earnedVal}% on [${targetCompositeKey}]`);
+            console.log(`✅ Supabase Discount Locked: ${earnedVal}% on [${targetCompositeKey}]`);
         }
 
     } catch (err) {
-        console.error("ðŸš¨ Cloud Discount Save Exception:", err);
+        console.error("🚨 Cloud Discount Save Exception:", err);
     }
 
     // 3. Local Memory & UI Updates
@@ -4250,7 +4249,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                         <div class="image-upload-container" style="flex: 1; border: none; padding: 0;">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>
                         
                         <label style="font-size: 12px; font-weight: 800; color: ${stockTextColor}; background: ${stockBadgeBg}; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; border: 1px solid rgba(0,0,0,0.03);">
-                            <input type="checkbox" ${isItemInStock ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].inStock=this.checked; saveAdminConfig(); populateAdminForms();" style="margin:0; cursor:pointer; width:auto;"> ${isItemInStock ? 'ðŸŸ¢ In Stock' : 'ðŸ”´ Out Of Stock'}
+                            <input type="checkbox" ${isItemInStock ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].inStock=this.checked; saveAdminConfig(); populateAdminForms();" style="margin:0; cursor:pointer; width:auto;"> ${isItemInStock ? '🟢 In Stock' : 'ðŸ”´ Out Of Stock'}
                         </label>
                     </div>
                     
@@ -4275,15 +4274,15 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 if (isExist) {
                     clientCurrentActiveTable = scannedID; document.getElementById('displayTableName').innerText = "Table " + clientCurrentActiveTable;
                     localLiveRunningBill = JSON.parse(localStorage.getItem('bill_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || [];
-                    // ðŸ”¥ FIX 2: Use scoped key only
+                    // 🔥 FIX 2: Use scoped key only
                     maximumClaimedDisc = parseInt(localStorage.getItem('discount_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable)) || 0;
                     saveAdminConfig(); updateFrontEndClassificationLabels();
                     alert(` View context swapped to Table ${scannedID}.`);
-                } else { alert("âŒ Unknown QR Code Target!"); }
+                } else { alert("❌ Unknown QR Code Target!"); }
             }
         }
         // ===================================================================
-        // ðŸ“¡ STEPS 1-4 ENGINE: REQUEST OVERRIDE, AUTO-SAVE, AND DISAPPEAR CONTAINER
+        // 📡 STEPS 1-4 ENGINE: REQUEST OVERRIDE, AUTO-SAVE, AND DISAPPEAR CONTAINER
         // ===================================================================
         async function requestRemoteFounderVpaUnlockToken() {
             let vpaContainer = document.getElementById('secHotelVpaOperationalContainer');
@@ -4291,14 +4290,14 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             let noticeLabel = document.getElementById('vpaSecurityStatusNoticeLabel');
 
             if (!vpaContainer) {
-                console.error("âŒ Error: secHotelVpaOperationalContainer DOM element not found!");
+                console.error("❌ Error: secHotelVpaOperationalContainer DOM element not found!");
                 return;
             }
 
             // ðŸ’¥ STEP 3 & 4: Agar dabba pehle se screen par open hai, toh is click par SAVE & DISAPPEAR kerna hai
             if (vpaContainer.style.display === 'block') {
                 if (!vpaInput || vpaInput.value.trim() === "") {
-                    alert("âš ï¸ Please enter a valid UPI VPA Address before saving!");
+                    alert("⚠️ Please enter a valid UPI VPA Address before saving!");
                     return;
                 }
 
@@ -4311,7 +4310,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 if (typeof saveAdminConfig === "function") saveAdminConfig();
                 if (typeof triggerJustSaveConfig === "function") await triggerJustSaveConfig();
 
-                // ðŸ”¥ STEP 4: Section screen se instantly gayab (disappear)
+                // 🔥 STEP 4: Section screen se instantly gayab (disappear)
                 vpaContainer.style.display = 'none';
 
                 try {
@@ -4329,7 +4328,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
             // ðŸ’¥ STEP 1 & 2: Agar dabba band thha, toh cloud check karke screen par show karo
             try {
-                showOnScreenNotification("ðŸ“¡ Syncing tokens with RestroFlow Cloud...", false);
+                showOnScreenNotification("📡 Syncing tokens with RestroFlow Cloud...", false);
 
                 const { data: subData } = await supabaseClient
                     .from('subscriptions')
@@ -4340,7 +4339,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 // STEP 5 RE-START INITIALIZER HANDSHAKE MATRIX
                 if (subData && subData.founder_label === 'VPA_EDIT_GRANTED') {
                     vpaContainer.style.styleWithJS = "block"; // Safe tracking variable
-                    vpaContainer.style.display = 'block'; // ðŸ”¥ Core visibility trigger: Dabba samne laye!
+                    vpaContainer.style.display = 'block'; // 🔥 Core visibility trigger: Dabba samne laye!
 
                     if (vpaInput) {
                         vpaInput.removeAttribute('disabled');
@@ -4348,7 +4347,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                         vpaInput.focus();
                     }
                     if (noticeLabel) {
-                        noticeLabel.innerText = "ðŸŸ¢ Status: Temporary Permission Active! Fill VPA and click button to save.";
+                        noticeLabel.innerText = "🟢 Status: Temporary Permission Active! Fill VPA and click button to save.";
                         noticeLabel.style.color = "var(--neon-green)";
                     }
                     showOnScreenNotification("ðŸ”“ Access Granted! VPA section unlocked.");
@@ -4359,17 +4358,17 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
         }
 
         // ===================================================================
-        // ðŸ‘‘ FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
+        // 👑 FOUNDER CENTER: GRANT OR REVOKE VPA ACCESS VIA ONE-CLICK COMMAND
         // ===================================================================
         async function executeRemoteVpaAccessGrantPipeline(permissionState) {
             let targetId = document.getElementById('saTargetUserUUID').value.trim();
             if (!targetId || targetId.length < 10) {
-                alert("âŒ Target Verification Error: Please select/click a valid restaurant account row from the network list first!");
+                alert("❌ Target Verification Error: Please select/click a valid restaurant account row from the network list first!");
                 return;
             }
 
             try {
-                showOnScreenNotification("â³ Syncing remote authorization parameters...", false);
+                showOnScreenNotification("⏳ Syncing remote authorization parameters...", false);
                 let tokenFlag = (permissionState === 'granted') ? 'VPA_EDIT_GRANTED' : 'VPA_EDIT_LOCKED';
 
                 const { error } = await supabaseClient
@@ -4378,9 +4377,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     .eq('id', targetId);
 
                 if (error) {
-                    alert("âŒ Cloud Write Violation: " + error.message);
+                    alert("❌ Cloud Write Violation: " + error.message);
                 } else {
-                    showOnScreenNotification(`ðŸ‘‘ Token access state updated to: ${tokenFlag.toUpperCase()}`);
+                    showOnScreenNotification(`👑 Token access state updated to: ${tokenFlag.toUpperCase()}`);
                     fetchGlobalSaaSAccountNetworkList();
                 }
             } catch (err) { console.error(err); }
@@ -4510,11 +4509,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
             // Guard Clause: Strict 3MB file payload safety restriction
             if (file.size > 3 * 1024 * 1024) {
-                alert("âš ï¸ File size too large! Please upload an image under 3MB.");
+                alert("⚠️ File size too large! Please upload an image under 3MB.");
                 return;
             }
 
-            showOnScreenNotification("â³ Uploading photo securely to Supabase Storage...", false);
+            showOnScreenNotification("⏳ Uploading photo securely to Supabase Storage...", false);
 
             try {
                 // 1. Email ID se special characters (@ aur .) hatakar clean tenant folder name sanitize karo
@@ -4536,8 +4535,8 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     });
 
                 if (uploadError) {
-                    console.error("ðŸš¨ Supabase Storage Bucket Policy Error:", uploadError.message);
-                    alert("âŒ Upload Failed: " + uploadError.message + "\n\nðŸ’¡ Solution: Ensure your Supabase RLS Policy uses lowercase 'dishes' exactly!");
+                    console.error("🚨 Supabase Storage Bucket Policy Error:", uploadError.message);
+                    alert("❌ Upload Failed: " + uploadError.message + "\n\nðŸ’¡ Solution: Ensure your Supabase RLS Policy uses lowercase 'dishes' exactly!");
                     return;
                 }
 
@@ -4548,7 +4547,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     .getPublicUrl(filePath);
 
                 const publicCDNUrl = urlData.publicUrl;
-                console.log("ðŸš€ Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
+                console.log("🚀 Asset uploaded successfully. Public CDN Link:", publicCDNUrl);
 
                 // 4. Memory matrix state layers variables flush karo
                 menuCategories[cIdx].items[iIdx].image = publicCDNUrl;
@@ -4561,7 +4560,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 showOnScreenNotification("ðŸ“¸ Dish photo uploaded and live via CDN!");
 
             } catch (err) {
-                console.error("ðŸš¨ Critical Storage Architecture Exception:", err);
+                console.error("🚨 Critical Storage Architecture Exception:", err);
                 alert("System Exception: Unable to complete cloud transmission handshakes.");
             }
         }
@@ -4573,7 +4572,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             const file = event.target.files[0];
             if (!file) return;
 
-            showOnScreenNotification("â³ Processing QR asset image...", false);
+            showOnScreenNotification("⏳ Processing QR asset image...", false);
             const reader = new FileReader();
             reader.onload = function (e) {
                 // 1. Global state storage container ko dynamic write data do
@@ -4589,7 +4588,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             reader.readAsDataURL(file);
         }
 // ===================================================================
-// ðŸ“¡ CUSTOMER REALTIME TRACKER (PURE SUPABASE SYNC, NO LOCALSTORAGE)
+// 📡 CUSTOMER REALTIME TRACKER (PURE SUPABASE SYNC, NO LOCALSTORAGE)
 // ===================================================================
 async function initializeCustomerRealtimeTracker() {
     // ðŸ›¡ï¸ SAFE WEBSOCKET TEARDOWN
@@ -4604,7 +4603,7 @@ async function initializeCustomerRealtimeTracker() {
 
     let activeTableId = (window.clientCurrentActiveTable || clientCurrentActiveTable || "T1").trim();
     const compositeTableKey = `${hotelGlobalScopeID}_${activeTableId}`;
-    console.log("ðŸ“¡ Customer WebSocket: Listening live on Cloud Session:", compositeTableKey);
+    console.log("📡 Customer WebSocket: Listening live on Cloud Session:", compositeTableKey);
 
     // 1. Table Session Stream (Bill & Discount changes)
     window.customerSessionsChannel = supabaseClient
@@ -4616,7 +4615,7 @@ async function initializeCustomerRealtimeTracker() {
             filter: `table_id=eq.${compositeTableKey}`
         }, (payload) => {
             if (payload.new) {
-                // ðŸ”¥ ZERO LOCALSTORAGE: Seedha memory aur UI update
+                // 🔥 ZERO LOCALSTORAGE: Seedha memory aur UI update
                 localLiveRunningBill = Array.isArray(payload.new.live_bill) ? payload.new.live_bill : [];
                 maximumClaimedDisc = parseInt(payload.new.discount_claimed) || 0;
 
@@ -4678,7 +4677,7 @@ function switchGameMode(selectedTargetMode) {
     let floorName = currentParams.get('floor') || (active.includes('_') ? active.split('_')[0] : '');
     let pureTable = active.includes('_') ? active.split('_')[1] : active;
 
-    // âœ… FIXED: 'modules/game.html' ki jagah direct 'game.html' kiya gaya hai
+    // ✅ FIXED: 'modules/game.html' ki jagah direct 'game.html' kiya gaya hai
     const targetUrl = new URL('game.html', window.location.href);
     targetUrl.searchParams.set('mode', selectedTargetMode);
     targetUrl.searchParams.set('hotel', hotelScope);
@@ -4691,10 +4690,10 @@ function switchGameMode(selectedTargetMode) {
 }
 window.switchGameMode = switchGameMode;
         // ===================================================================
-// ðŸš€ SURGICALLY FIXED APP BOOT ENGINE (HYBRID CLOUD-FIRST NO-RESET)
+// 🚀 SURGICALLY FIXED APP BOOT ENGINE (HYBRID CLOUD-FIRST NO-RESET)
 // ===================================================================
 async function initApp() {
-    console.log("ðŸ“¡ RestroFlow Core: Initializing App Boot Engine via Cloud Scope...");
+    console.log("📡 RestroFlow Core: Initializing App Boot Engine via Cloud Scope...");
     const urlParams = new URLSearchParams(window.location.search);
     const urlTable = urlParams.get('table');
     const urlHotel = urlParams.get('hotel');
@@ -4735,7 +4734,7 @@ async function initApp() {
         hotelGlobalScopeID = urlHotel.trim();
         localStorage.setItem('restaurantHotelClassificationID', hotelGlobalScopeID);
         window.hotelGlobalScopeID = hotelGlobalScopeID;
-        console.log("ðŸŽ¯ Hotel Scope Locked:", hotelGlobalScopeID);
+        console.log("🎯 Hotel Scope Locked:", hotelGlobalScopeID);
         initializeCustomerRealtimeTracker();
     } else {
         hotelGlobalScopeID = localStorage.getItem('restaurantHotelClassificationID') || "Default_HQ_Arena";
@@ -4755,7 +4754,7 @@ async function initApp() {
 
             const isPlanValid = await verifySubscriptionGatekeeper(ownerEmail);
             if (!isPlanValid) {
-                console.log("â³ SaaS Notice: Inactive profile routed to paywall.");
+                console.log("⏳ SaaS Notice: Inactive profile routed to paywall.");
             } else {
                 document.getElementById('customerView').style.display = 'none';
                 document.getElementById('adminDashboard').style.display = 'block';
@@ -4821,7 +4820,7 @@ async function initApp() {
         console.error("Config fetch error:", err);
     }
 
-    // ðŸ”’ 5. ðŸ”¥ PURE CLOUD STATE SYNC FOR ALL TABLES & CUSTOMER BILL RESTORATION
+    // ðŸ”’ 5. 🔥 PURE CLOUD STATE SYNC FOR ALL TABLES & CUSTOMER BILL RESTORATION
     try {
         const { data: globalCloudSessions, error: sessionFetchErr } = await supabaseClient
             .from('table_sessions')
@@ -4865,11 +4864,11 @@ async function initApp() {
                                 localStorage.removeItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey);
 
                                 let serverBillPayload = targetCloudRow.live_bill || [];
-                                // ðŸŸ¢ Active order = Green (1), Empty = Orange (0)
+                                // 🟢 Active order = Green (1), Empty = Orange (0)
                                 t.state = (serverBillPayload.length > 0 || hasKitchenOrders) ? 1 : 0;
                             }
 
-                            // ðŸ”¥ RESTORE BILL DIRECTLY FROM SUPABASE FOR THIS CUSTOMER (NO LOCALSTORAGE)
+                            // 🔥 RESTORE BILL DIRECTLY FROM SUPABASE FOR THIS CUSTOMER (NO LOCALSTORAGE)
                             let activeClean = clientCurrentActiveTable.trim().toLowerCase();
                             if (activeClean === compoundKey.toLowerCase() || activeClean === tIdClean.toLowerCase()) {
                                 localLiveRunningBill = Array.isArray(targetCloudRow.live_bill) ? targetCloudRow.live_bill : [];
@@ -4880,9 +4879,9 @@ async function initApp() {
                                 if (badge) badge.innerText = maximumClaimedDisc + "%";
                             }
                         } else if (hasKitchenOrders) {
-                            t.state = 1; // ðŸŸ¢ Kitchen order present = Green
+                            t.state = 1; // 🟢 Kitchen order present = Green
                         } else {
-                            t.state = 0; // ðŸŠ Empty = Orange
+                            t.state = 0; // 🍊 Empty = Orange
                             t.waiterBell = false;
                         }
                     });
@@ -4955,19 +4954,19 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
                 // 3. Cloud aur local storage par sync save triggered karo
                 saveAdminConfig();
 
-                // ðŸ”¥ CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
+                // 🔥 CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
                 generateAdminTableGrid();
 
                 showOnScreenNotification("🎨 Table theme design matrix updated live!");
             }
         }
-        // âš¡ FIXED: Completed the category filtration logic cleanly to block execution freezes
+        // ⚡ FIXED: Completed the category filtration logic cleanly to block execution freezes
         function filterCustomerViewCategoryTab(targetCategoryName) {
             customerActiveCategoryName = targetCategoryName;
             renderCustomerMenu(); // Category change hote hi menu ko live redraw karo
         }
         // ===================================================================
-        // ðŸ“‹ MENU, CATEGORY & DISH MANAGEMENT FUNCTIONS
+        // 📋 MENU, CATEGORY & DISH MANAGEMENT FUNCTIONS
         // ===================================================================
 
         function addNewCategory() {
@@ -5020,7 +5019,7 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
             }
         }
         // ===================================================================
-        // ðŸ¢ FLOOR & TABLE MANAGEMENT FUNCTIONS
+        // 🏢 FLOOR & TABLE MANAGEMENT FUNCTIONS
         // ===================================================================
 
         function addNewFloor() {
@@ -5080,7 +5079,7 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         }
 
 // ===================================================================
-// ðŸ¢ MASTER TABLE GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
+// 🏢 MASTER TABLE GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid');
@@ -5115,7 +5114,7 @@ function generateAdminTableGrid() {
                 baseThemeColor = tbl.custom_color;
                 currentLabel = tbl.state === 1 ? 'Full' : (tbl.state === 2 ? 'Booked' : (tbl.state === 3 ? 'Cleaning' : 'Empty'));
             } else if (tbl.state === 1) {
-                baseThemeColor = 'var(--tbl-green)';  // ðŸŸ¢ Green = Full
+                baseThemeColor = 'var(--tbl-green)';  // 🟢 Green = Full
                 currentLabel = 'Full';
             } else if (tbl.state === 2) {
                 baseThemeColor = 'var(--tbl-grey)';   // âšª Grey = Booked
@@ -5124,7 +5123,7 @@ function generateAdminTableGrid() {
                 baseThemeColor = 'var(--tbl-brown)';  // ðŸŸ¤ Brown = Cleaning
                 currentLabel = 'Cleaning';
             } else {
-                baseThemeColor = 'var(--tbl-orange)'; // ðŸŠ Orange = Empty
+                baseThemeColor = 'var(--tbl-orange)'; // 🍊 Orange = Empty
                 currentLabel = 'Empty';
             }
 
@@ -5146,7 +5145,7 @@ function generateAdminTableGrid() {
     });
 }
 
-        // âœ… showOnScreenNotification function ko poore rules ke sath jodd diya hai
+        // ✅ showOnScreenNotification function ko poore rules ke sath jodd diya hai
         function showOnScreenNotification(message, isError = false) {
             let toast = document.getElementById('customToastNotification');
             if (!toast) return;
@@ -5180,7 +5179,7 @@ function generateAdminTableGrid() {
                 return;
             }
 
-            // ðŸŽ¯ Capturing form values straight into the global rules state manager object
+            // 🎯 Capturing form values straight into the global rules state manager object
             rules.flappyTar = parseInt(document.getElementById('cfgFlappyTar').value) || 5;
             rules.flappyDisc = parseInt(document.getElementById('cfgFlappyDisc').value) || 0;
             rules.spaceTar = parseInt(document.getElementById('cfgSpaceTar').value) || 3;
@@ -5232,7 +5231,7 @@ function generateAdminTableGrid() {
         }
 
         // ===================================================================
-        // ðŸ“¡ CLOUD SYNC: MENU + TABLES/FLOORS DATA SYNC TO SUPABASE
+        // 📡 CLOUD SYNC: MENU + TABLES/FLOORS DATA SYNC TO SUPABASE
         // ===================================================================
         async function uploadMenuToCloud() {
             const currentActiveSaveId = String(hotelGlobalScopeID || "Default_HQ_Arena").trim();
@@ -5292,7 +5291,7 @@ function generateAdminTableGrid() {
                     .select();
 
                 if (upsertError) {
-                    console.error("ðŸš¨ Cloud Save Failed:", upsertError.message);
+                    console.error("🚨 Cloud Save Failed:", upsertError.message);
                     if (typeof showOnScreenNotification === 'function') {
                         showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
                     }
@@ -5366,7 +5365,7 @@ function generateAdminTableGrid() {
 
             await uploadMenuToCloud();
 
-            // ðŸ”¥ HIGH-PRIORITY FIX: Save hote hi header ke naam ko abhi ke abhi force-update karo
+            // 🔥 HIGH-PRIORITY FIX: Save hote hi header ke naam ko abhi ke abhi force-update karo
             updateFrontEndClassificationLabels();
 
             showOnScreenNotification("✅ Menu & Settings safely updated to cloud!");
@@ -5383,7 +5382,7 @@ function generateAdminTableGrid() {
                     let typedBrandName = identityInput.value || "RestroFlow";
                     localStorage.setItem('restroflow_actual_brand_name_' + hotelGlobalScopeID, typedBrandName);
 
-                    // ðŸ”¥ CRITICAL FIX: Removed JSON.stringify to provide type compliance and remove logout lag
+                    // 🔥 CRITICAL FIX: Removed JSON.stringify to provide type compliance and remove logout lag
                     await supabaseClient
                         .from('hotel_config')
                         .upsert({
@@ -5402,12 +5401,12 @@ function generateAdminTableGrid() {
                 renderCustomerMenu();
                 showOnScreenNotification("👋 Logged out successfully!");
             } catch (err) {
-                console.error("ðŸš¨ Sign-out runtime exception logged:", err);
+                console.error("🚨 Sign-out runtime exception logged:", err);
             }
         }
 
         // =================================================================
-        // ðŸ‘¨â€ðŸ³ STEP 4: KITCHEN DISPLAY SYSTEM (KDS) OPERATIONAL SYSTEM
+        // ðŸ‘¨â€🍳 STEP 4: KITCHEN DISPLAY SYSTEM (KDS) OPERATIONAL SYSTEM
         // =================================================================
 
         let currentKdsFilterState = 'PENDING';
@@ -5421,7 +5420,7 @@ function generateAdminTableGrid() {
         let globalAudioCtx = null;
         let isAudioUnlocked = false;
         let isUnlockInProgress = false; // Synchronous re-entrancy lock
-        // ðŸŸ¢ NEW KDS & REALTIME DEDUPLICATION STATE
+        // 🟢 NEW KDS & REALTIME DEDUPLICATION STATE
         let isKDSActive = false;
         const processedOrderIdsSet = new Set(); // Prevents duplicate sounds for the same order
         async function unlockAudioEngineOnUserGesture() {
@@ -5474,7 +5473,7 @@ function generateAdminTableGrid() {
         window.addEventListener('pointerdown', unlockAudioEngineOnUserGesture, { passive: true });
         window.addEventListener('keydown', unlockAudioEngineOnUserGesture, { passive: true });
 
-        // ðŸ‘¨â€ðŸ³ KDS SIREN ALERT (Guarded for Realtime, Active KDS, Unlocked State, & Deduplication)
+        // ðŸ‘¨â€🍳 KDS SIREN ALERT (Guarded for Realtime, Active KDS, Unlocked State, & Deduplication)
         function triggerAudioBeepAlert(orderId = null, eventType = 'INSERT') {
             try {
                 // ðŸ›¡ï¸ Strict Validation Rules Guard
@@ -5564,10 +5563,10 @@ function generateAdminTableGrid() {
             }
         }
         // ===================================================================
-        // ðŸ‘¨â€ðŸ³ FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
+        // ðŸ‘¨â€🍳 FIXED: AMBIGUITY RESOLVED & UUID TYPE-SAFE KDS FETCH ENGINE
         // ===================================================================
         async function fetchActiveKitchenOrdersQueue() {
-            console.log("ðŸ“¡ KDS Pipeline: Fetching live tickets for isolated ID:", hotelGlobalScopeID);
+            console.log("📡 KDS Pipeline: Fetching live tickets for isolated ID:", hotelGlobalScopeID);
 
             // Step A: Fetch base active orders cleanly without embedding/joining
             const { data: orders, error } = await supabaseClient
@@ -5577,7 +5576,7 @@ function generateAdminTableGrid() {
                 .order('created_at', { ascending: true });
 
             if (error) {
-                console.error("ðŸš¨ KDS Fetch Error:", error.message);
+                console.error("🚨 KDS Fetch Error:", error.message);
                 return;
             }
 
@@ -5596,7 +5595,7 @@ function generateAdminTableGrid() {
                         order.order_items = items.filter(item => item.order_id === order.id);
                     });
                 } else if (itemsError) {
-                    console.error("ðŸš¨ KDS Items Fetch Error:", itemsError.message);
+                    console.error("🚨 KDS Items Fetch Error:", itemsError.message);
                 }
             }
 
@@ -5641,7 +5640,7 @@ function generateAdminTableGrid() {
                     actionButtonHtml = `<button class="order-btn" onclick="executeChefCompletionSequence('${order.id}', '${order.hotel_id}')" style="background:#2ecc71; margin:0;">Mark Complete</button>`;
                 }
 
-                // ðŸ”¥ SHARP RENDER HACK: Checks compound fields structure to split and decorate floor headers clearly on kitchen streams
+                // 🔥 SHARP RENDER HACK: Checks compound fields structure to split and decorate floor headers clearly on kitchen streams
                 let displayTableTitle = order.table_id;
                 if (displayTableTitle.includes('_')) {
                     let parts = displayTableTitle.split('_');
@@ -5655,7 +5654,7 @@ function generateAdminTableGrid() {
                 <div>
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px dashed #2d323f; padding-bottom:8px; font-size:12px;">
                         <span style="color:#7f8c8d;">ID: ${order.id.substring(0, 6).toUpperCase()}</span>
-                        <span style="color:#e74c3c; font-weight:bold;">â±ï¸ ${displayMin}m ${displaySec}s ago</span>
+                        <span style="color:#e74c3c; font-weight:bold;">⏱️ ${displayMin}m ${displaySec}s ago</span>
                     </div>
                     <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🍽 ${displayTableTitle}</h3>
                     <div>${itemsHtml}</div>
@@ -5666,7 +5665,7 @@ function generateAdminTableGrid() {
             });
         }
         // ===================================================================
-        // ðŸ“¡ CORE SECURITY ENGINE: LIVE WEBHOOK REAL-TIME REALM LISTENER
+        // 📡 CORE SECURITY ENGINE: LIVE WEBHOOK REAL-TIME REALM LISTENER
         // ===================================================================
         // Yeh function customer panel ko bina page refresh kiye batayega ki bank se paisa aa gaya hai
         function upgradeCustomerSideRealtimePaymentListener(compositeTableKey) {
@@ -5680,7 +5679,7 @@ function generateAdminTableGrid() {
                     table: 'table_sessions',
                     filter: `table_id=eq.${compositeTableKey}`
                 }, (payload) => {
-                    console.log("ðŸ“¡ Payment Watcher: Row modification detected!", payload);
+                    console.log("📡 Payment Watcher: Row modification detected!", payload);
 
                     if (payload.new && payload.new.payment_status === 'SUCCESS_PAID') {
                         let statusLoader = document.getElementById('customerPaymentLoadingStatusEngine');
@@ -5713,17 +5712,17 @@ function generateAdminTableGrid() {
         async function simulateInboundBankWebhookSignal() {
             let selectElement = document.getElementById('adminBillingViewerTableSelect');
             if (!selectElement || !selectElement.value) {
-                alert("âŒ Error: Please select a valid table to target the fake webhook signal!");
+                alert("❌ Error: Please select a valid table to target the fake webhook signal!");
                 return;
             }
 
             let targetTable = selectElement.value;
             const compositeTableKey = `${hotelGlobalScopeID}_${targetTable}`;
 
-            showOnScreenNotification("â³ Spooling secure mock transaction packet link...", false);
+            showOnScreenNotification("⏳ Spooling secure mock transaction packet link...", false);
 
             try {
-                // ðŸ”¥ BANK WEBHOOK SIMULATION CORE: Direct row manipulation mimicry
+                // 🔥 BANK WEBHOOK SIMULATION CORE: Direct row manipulation mimicry
                 // Yeh theek wahi parameters database mein badlega jo ek real bank server webhook karta hai
                 const { error } = await supabaseClient
                     .from('table_sessions')
@@ -5731,10 +5730,10 @@ function generateAdminTableGrid() {
                     .eq('table_id', compositeTableKey);
 
                 if (error) {
-                    alert("âŒ Sandbox Simulation Write Violation: " + error.message);
+                    alert("❌ Sandbox Simulation Write Violation: " + error.message);
                 } else {
                     showOnScreenNotification("⚡ Bank Webhook Payload Injected! Status changed to SUCCESS_PAID.");
-                    console.log(`ðŸ“¡ Mock Webhook Node: Sent secure success callback matrix for ${compositeTableKey}`);
+                    console.log(`📡 Mock Webhook Node: Sent secure success callback matrix for ${compositeTableKey}`);
                 }
             } catch (err) { console.error(err); }
         }
@@ -5749,26 +5748,26 @@ function generateAdminTableGrid() {
         };
 
         // ===================================================================
-// ðŸ‘¨â€ðŸ³ KDS TICKET STATUS UPDATER WITH INSTANT ADMIN BILL REFRESH
+// ðŸ‘¨â€🍳 KDS TICKET STATUS UPDATER WITH INSTANT ADMIN BILL REFRESH
 // ===================================================================
 async function updateKdsTicketState(orderId, nextStatusState) {
     await supabaseClient.from('active_orders').update({ status: nextStatusState }).eq('id', orderId);
     fetchActiveKitchenOrdersQueue();
 
-    // ðŸ”¥ Realtime Refresh: Admin live billing card agar open hai toh badge instantly change hoga
+    // 🔥 Realtime Refresh: Admin live billing card agar open hai toh badge instantly change hoga
     if (typeof auditSelectedTableBillInvoiceLive === "function" && document.getElementById('adminDashboard').style.display === 'block') {
         auditSelectedTableBillInvoiceLive();
     }
 }
 
         // ===================================================================
-        // ðŸ‘¨â€ðŸ³ FIXED: ANTI-FREEZE KDS COMPLETION ROUTER WITH QUANTITY SYSTEM SYNC
+        // ðŸ‘¨â€🍳 FIXED: ANTI-FREEZE KDS COMPLETION ROUTER WITH QUANTITY SYSTEM SYNC
         // ===================================================================
         async function executeChefCompletionSequence(orderId, hotelId) {
             const ticket = activeKdsOrdersArray.find(o => o.id === orderId);
             if (!ticket) return;
 
-            showOnScreenNotification("â³ Dispatching order and updating analytics...", false);
+            showOnScreenNotification("⏳ Dispatching order and updating analytics...", false);
 
             // 1. Dynamic quantity parameter calculation block wrapped in try-catch to prevent freezes
             if (Array.isArray(ticket.order_items)) {
@@ -5784,7 +5783,7 @@ async function updateKdsTicketState(orderId, nextStatusState) {
                         });
                         console.log(` Bars Analytics synced for item: ${item.dish_name} (Ã—${finalQuantityToIncrement})`);
                     } catch (rpcErr) {
-                        console.error("ðŸš¨ Non-blocking Analytics Error:", rpcErr.message);
+                        console.error("🚨 Non-blocking Analytics Error:", rpcErr.message);
                         // Non-blocking fallback: Analytics query reject hone par bhi parent order system chalta rahega
                     }
                 }
@@ -5801,8 +5800,8 @@ async function updateKdsTicketState(orderId, nextStatusState) {
                 fetchActiveKitchenOrdersQueue();
 
             } catch (dbErr) {
-                console.error("ðŸš¨ KDS Purge Exception:", dbErr);
-                alert("âŒ Error clearing order from KDS table rows.");
+                console.error("🚨 KDS Purge Exception:", dbErr);
+                alert("❌ Error clearing order from KDS table rows.");
             }
         }
 
@@ -5827,7 +5826,7 @@ async function updateKdsTicketState(orderId, nextStatusState) {
                 loginModal.style.display = 'flex';
             }
         }
-        // âš¡ DIRECT REGISTRATION ROUTER: Opens modal directly in SignUp view mode
+        // ⚡ DIRECT REGISTRATION ROUTER: Opens modal directly in SignUp view mode
         function launchSleekSignUpOverlay() {
             launchSleekLoginUIConsoleOverlay(); // Opens the main overlay modal container
             if (!isAuthPortalInSignUpMode) {
@@ -5835,7 +5834,7 @@ async function updateKdsTicketState(orderId, nextStatusState) {
             }
         }
 
-        // âš¡ DIRECT LOGIN ROUTER: Opens modal directly in traditional Login view mode
+        // ⚡ DIRECT LOGIN ROUTER: Opens modal directly in traditional Login view mode
         function launchSleekLoginOverlay() {
             launchSleekLoginUIConsoleOverlay(); // Opens the main overlay modal container
             if (isAuthPortalInSignUpMode) {
@@ -5849,19 +5848,19 @@ async function updateKdsTicketState(orderId, nextStatusState) {
                 loginModal.style.display = 'none';
             }
         }
-        // ðŸš€ THE MASTER ROUTER ENGINE: Tied globally with HTML onclick="executeAuthPortalMasterRouter()"
+        // 🚀 THE MASTER ROUTER ENGINE: Tied globally with HTML onclick="executeAuthPortalMasterRouter()"
         function executeAuthPortalMasterRouter() {
             console.log("ðŸ”’ RestroFlow Master Router Engaged!");
             if (isAuthPortalInSignUpMode) {
-                console.log("âœ¨ Routing execution to: SIGN UP ENGINE");
+                console.log("✨ Routing execution to: SIGN UP ENGINE");
                 executeRealCloudSignUpSequence();
             } else {
-                console.log("ðŸš€ Routing execution to: LOGIN ENGINE");
+                console.log("🚀 Routing execution to: LOGIN ENGINE");
                 executeRealCloudLoginSequence();
             }
         }
         // ===================================================================
-        // ðŸ‘‘ INTERACTIVE PAYWALL LIFE-CYCLE CONTROLLERS
+        // 👑 INTERACTIVE PAYWALL LIFE-CYCLE CONTROLLERS
         // ===================================================================
         function displaySubscriptionExpiredPaywallModal(monthlyRate, yearlyRate) {
             // Inject pricing text nodes inside targets fields flawlessly
