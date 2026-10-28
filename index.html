@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hosted by Restorflow</title>
+    <title>RestroFlow - Smart Restaurant & Arcade</title>
 
     <!-- ðŸŒ SAAS ENGINE FIXED: Native vector inline URI guarantees 100% sharp professional tab logo display on any resolution screen -->
     <link rel="icon" type="image/jpeg" href="favicon.jpg">
@@ -374,8 +374,8 @@
         }
 
         .dish-photo-frame {
-            width: 65px;
-            height: 65px;
+            width: 70px;
+            height: 70px;
             border-radius: 12px;
             object-fit: cover;
             background: #eee;
@@ -1050,30 +1050,30 @@
             <div
                 style="background:#f1f2f6; padding:12px; border-radius:10px; font-size:14px; margin-bottom:15px; font-weight:500;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal:</span><span
-                        id="billSubtotal">â‚¹0</span></div>
+                        id="billSubtotal">₹0</span></div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--danger-red);">
                     <span>Game Disc. Allowed:</span><span id="billDiscountApplied">0%</span>
                 </div>
                 <div id="taxRowCGST"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;">
-                    <span>CGST:</span><span id="billCGSTVal">â‚¹0</span>
+                    <span>CGST:</span><span id="billCGSTVal">₹0</span>
                 </div>
                 <div id="taxRowSGST"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;">
-                    <span>SGST:</span><span id="billSGSTVal">â‚¹0</span>
+                    <span>SGST:</span><span id="billSGSTVal">₹0</span>
                 </div>
                 <div id="taxRowService"
                     style="display:none; justify-content:space-between; margin-bottom:4px; color:#555;"><span>Service
-                        Charge:</span><span id="billServiceVal">â‚¹0</span></div>
+                        Charge:</span><span id="billServiceVal">₹0</span></div>
                 <hr style="border:0; border-top:1px dashed #ccc; margin:6px 0;">
                 <div
                     style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px; color:var(--neon-green);">
-                    <span>Total Bill:</span><span id="billGrandTotal">â‚¹0</span>
+                    <span>Total Bill:</span><span id="billGrandTotal">₹0</span>
                 </div>
             </div>
 
             <button class="action-btn" id="payOnlineInvoiceMainBtn" onclick="openSmartMobilePaymentGatewayGateway()"
-                style="background:var(--neon-green); margin-bottom:8px; color:white; display:block;">ðŸ’³ Pay Online from
+                style="background:var(--neon-green); margin-bottom:8px; color:white; display:block;">💳 Pay Online from
                 Mobile (UPI)</button>
             <button class="action-btn" onclick="document.getElementById('invoiceBillModal').style.display='none'"
                 style="background:#333; color:white;">Back to Hub</button>
@@ -1081,12 +1081,12 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- ðŸ“± UPGRADED: NATIVE MOBILE UPI INTENT GATEWAY SIMULATOR -->
+    <!-- 📱 UPGRADED: NATIVE MOBILE UPI INTENT GATEWAY SIMULATOR -->
     <!-- =================================================================== -->
     <div class="modal-overlay" id="mobilePaymentSimulatorModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()"
             style="text-align:center; border-radius: 24px; padding: 30px 20px;">
-            <h3 style="margin-bottom: 5px;">ðŸ“± In-App Secure UPI Payment</h3>
+            <h3 style="margin-bottom: 5px;">📱 In-App Secure UPI Payment</h3>
             <p style="font-size:12px; color:#7f8c8d; margin-top:0; margin-bottom: 20px;">Single-click direct
                 bank-to-bank instant ledger transfer</p>
 
@@ -1096,20 +1096,17 @@
                     style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Net
                     Payable Amount</span>
                 <h1 style="color: var(--neon-green); margin: 5px 0; font-size: 36px; font-weight: 900;"
-                    id="paymentGatewayBillAmountDisplay">â‚¹0</h1>
-                <div style="font-size: 11px; color: var(--dark-charcoal); font-weight: 600; margin-top: 5px;"
-                    id="paymentGatewayTargetUpiLabel">Receiver: Loading UPI Identity...</div>
-            </div>
-
-            <div id="customerPaymentLoadingStatusEngine"
-                style="background:#eef9f5; color:#27ae60; padding:12px; border-radius:12px; font-size:12px; margin-bottom:20px; font-weight:bold; border: 1px solid rgba(46,204,113,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                ðŸ”’ Secure Connection Active. Waiting for bank gateway signal...
+                    id="paymentGatewayBillAmountDisplay">₹0</h1>
+                <div id="customerPaymentLoadingStatusEngine"
+                    style="background:#eef9f5; color:#27ae60; padding:12px; border-radius:12px; font-size:12px; margin-top:10px; font-weight:bold; border: 1px solid rgba(46,204,113,0.2); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    🔒 Secure Connection Active. Waiting for bank gateway signal...
+                </div>
             </div>
 
             <button class="action-btn" id="triggerUpiIntentMobileDirectBtn"
                 onclick="executeNativeUpiIntentRoutingPipeline()"
                 style="background: var(--dark-charcoal); color: white; margin-bottom: 10px; padding: 14px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 100%;">
-                âš¡ Open UPI Apps (GPay / PhonePe / Paytm)
+                ⚡ Open UPI Apps (GPay / PhonePe / Paytm)
             </button>
 
             <button class="action-btn"
@@ -1122,7 +1119,7 @@
 
     <div class="modal-overlay" id="qrPrintPreviewModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()" style="text-align: center;">
-            <h3 id="qrPrintTitle">ðŸ–¨ï¸ Table QR Label Card</h3>
+            <h3 id="qrPrintTitle">🖨️ Table QR Label Card</h3>
             <p id="qrPrintMetaSubText" style="font-size:12px; color:#666; margin-top:-5px;"></p>
             <div id="qrcodeCanvasOutputFrame"
                 style="display: flex; justify-content: center; margin: 20px 0; padding:10px; background:white; border:1px solid #ccc; display:inline-block;">
@@ -1138,7 +1135,7 @@
 
     <div class="modal-overlay" id="discountSheetModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3>ðŸŽ Game Reward Matrix</h3>
+            <h3>🎁 Game Reward Matrix</h3>
             <ul class="rules-list" id="rulesListDisplay"></ul>
             <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'"
                 style="background:#2c3e50; color:white;">Start Playing!</button>
@@ -1150,18 +1147,18 @@
 
             <div
                 style="background: #fff5f5; color: var(--danger-red); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px auto; border: 2px solid var(--danger-red);">
-                âš ï¸</div>
+                ⚠️</div>
 
             <h2
                 style="color: var(--danger-red); font-weight: 900; margin-bottom: 6px; font-size: 26px; letter-spacing: 0.5px;">
-                YOUR PLAN IS EXPIRED</h2>
+                YOUR PLAN HAS EXPIRED</h2>
             <p
                 style="color: #7f8c8d; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 25px; line-height: 1.4;">
                 Your RestroFlow workspace account is created.</p>
 
             <button class="action-btn" id="activatePlanTriggerBtn" onclick="revealSaaSPricingTiersMatrix()"
                 style="background: var(--neon-green); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 6px 15px rgba(46,204,113,0.3); margin-bottom: 12px;">
-                âš¡ ACTIVATE YOUR PLAN
+                ⚡ ACTIVATE YOUR PLAN
             </button>
 
             <div id="saasPricingTiersContainer"
@@ -1173,41 +1170,41 @@
                 <div
                     style="background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 13px; color: #475569;">ðŸ“… <b>Monthly Pack:</b></span>
+                        <span style="font-size: 13px; color: #475569;">📅 <b>Monthly Pack:</b></span>
                         <span style="color: var(--neon-green); font-weight: 800; font-size: 16px;"
-                            id="paywallMonthlyPriceDisplay">â‚¹499</span>
+                            id="paywallMonthlyPriceDisplay">₹499</span>
                     </div>
                     <button class="action-btn" onclick="initializeHostedCheckout('monthly')"
-                        style="background: var(--neon-green); color: white; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">ðŸ’³
+                        style="background: var(--neon-green); color: white; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💳
                         Pay Monthly Rate</button>
                 </div>
 
                 <div
                     style="background: white; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 13px; color: #475569;">ðŸ‘‘ <b>Yearly Enterprise:</b></span>
+                        <span style="font-size: 13px; color: #475569;">👑 <b>Yearly Enterprise:</b></span>
                         <span style="color: var(--accent-gold); font-weight: 800; font-size: 16px;"
-                            id="paywallYearlyPriceDisplay">â‚¹5000</span>
+                            id="paywallYearlyPriceDisplay">₹5000</span>
                     </div>
                     <button class="action-btn" onclick="initializeHostedCheckout('yearly')"
-                        style="background: var(--accent-gold); color: black; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">ðŸ’Ž
+                        style="background: var(--accent-gold); color: black; padding: 8px; font-size: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; width: 100%;">💎
                         Pay Yearly Rate</button>
                 </div>
 
                 <p
                     style="font-size: 10px; color: #94a3b8; text-align: center; margin: 4px 0 0 0; font-weight: bold; letter-spacing: 0.3px;">
-                    ðŸ”’ Payment redirects are processed over secure 256-bit SSL nodes.</p>
+                    🔒 Payment redirects are processed over secure 256-bit SSL nodes.</p>
             </div>
 
             <button class="action-btn" onclick="closePaywallAndExitToHub()"
                 style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; margin-bottom: 12px;">
-                ðŸšª Exit & Return to Hub
+                🚪 Exit & Return to Hub
             </button>
 
             <button class="action-btn"
                 onclick="document.getElementById('subscriptionExpiredPaywallModal').style.display='none'; document.getElementById('customerView').style.display='block'; renderCustomerMenu(); updateFrontEndClassificationLabels();"
                 style="background: #7f8c8d; color: white; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%;">
-                ðŸ‘€ Back to Customer Menu View
+                👀 Back to Customer Menu View
             </button>
 
         </div>
@@ -1215,8 +1212,8 @@
 
     <div class="container" id="customerView">
         <div class="floating-action-container">
-            <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">ðŸ””</div>
-            <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">ðŸ§¾</div>
+            <div class="floating-btn waiter-btn" onclick="callWaiterBellSignal()" title="Call Waiter Service">🔔</div>
+            <div class="floating-btn bill-btn" onclick="renderLiveCalculatedBill()" title="Check Invoice Bill">🧾</div>
         </div>
         <div class="discount-badge" id="liveCoinBadge" onclick="openDiscountSheet()">0%</div>
         <div
@@ -1275,20 +1272,20 @@
         </div>
 
         <div style="width: 100%; margin-top: 25px;">
-            <button onclick="launchSleekLoginOverlay()"
+            <button class="action-btn" onclick="launchSleekLoginOverlay()"
                 style="background: var(--dark-charcoal); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; width: 100%; cursor: pointer; box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2); display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
-                ðŸ”’ Open RestroFlow Workspace Portal
+                🚀 Open RestroFlow Workspace Portal
             </button>
         </div>
-    </div>
     </div>
     <div class="modal-overlay" id="restroflowLoginModal" style="display:none;">
         <div class="modal-content"
             style="max-width:380px; width:90%; padding:35px 25px; border-radius:24px; text-align:center; background:#ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); box-sizing: border-box;">
 
             <div onclick="launchSuperAdminSecretModulePrompt()"
-                style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;"
-                title="Founder Secret Entry">âš¡</div>
+                style="background: var(--dark-charcoal); color: white; width: 55px; height: 55px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 15px auto; box-shadow: 0 8px 20px rgba(44,62,80,0.3); cursor: pointer;">
+                <div onclick="openFounderMasterModalDirectly()" style="cursor: pointer; opacity: 0.15; font-size: 10px;" title="Founder Secret Entry">⚡</div>
+            </div>
 
             <h2 id="authPortalTitle"
                 style="color: var(--dark-charcoal); font-weight: 800; margin-bottom: 4px; font-size: 26px; letter-spacing: -0.5px;">
@@ -1297,33 +1294,35 @@
                 style="color: #7f8c8d; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 0; margin-bottom: 30px; text-transform: uppercase;">
                 Workspace Gateway Terminal</p>
 
-            <div style="text-align: left; margin-bottom: 12px;">
-                <label
-                    style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace
-                    Email Identity</label>
-                <input type="text" id="authEmailInput" placeholder="Enter owner email address..."
-                    style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
-            </div>
+            <form id="authPortalForm" onsubmit="event.preventDefault(); executeAuthPortalMasterRouter();" style="margin: 0; padding: 0;">
+                <div style="text-align: left; margin-bottom: 12px;">
+                    <label
+                        style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Workspace
+                        Email Identity</label>
+                    <input type="text" id="authEmailInput" placeholder="Enter owner email address..." autocomplete="username"
+                        style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+                </div>
 
-            <div style="text-align: left; margin-bottom: 25px;">
-                <label
-                    style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Secure
-                    Access Password</label>
-                <input type="password" id="authPasswordInput" placeholder="Enter workspace password..."
-                    style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
-            </div>
-            <div id="authPhoneInputContainer" style="text-align: left; margin-bottom: 25px; display: none;">
-                <label
-                    style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Mobile
-                    Number</label>
-                <input type="number" id="authPhoneInput" placeholder="Enter 10-digit mobile number..."
-                    style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
-            </div>
+                <div style="text-align: left; margin-bottom: 25px;">
+                    <label
+                        style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Secure
+                        Access Password</label>
+                    <input type="password" id="authPasswordInput" placeholder="Enter workspace password..." autocomplete="current-password"
+                        style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+                </div>
+                <div id="authPhoneInputContainer" style="text-align: left; margin-bottom: 25px; display: none;">
+                    <label
+                        style="font-size: 11px; font-weight: 700; color: var(--dark-charcoal); text-transform: uppercase; letter-spacing: 0.5px;">Mobile
+                        Number</label>
+                    <input type="number" id="authPhoneInput" placeholder="Enter 10-digit mobile number..." autocomplete="tel"
+                        style="width:100%; padding:14px; margin-top:6px; margin-bottom:0; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; box-sizing: border-box;">
+                </div>
 
-            <button class="action-btn" id="authPrimaryActionButton" onclick="executeAuthPortalMasterRouter()"
-                style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
-                ðŸš€ Authenticate & Boot System
-            </button>
+                <button type="submit" class="action-btn" id="authPrimaryActionButton"
+                    style="background: var(--dark-charcoal); color: white; padding: 14px; font-size: 15px; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; transition: all 0.2s;">
+                    ⚡ Authenticate & Boot System
+                </button>
+            </form>
 
             <div
                 style="margin-bottom: 20px; background: #f1f2f6; padding: 10px; border-radius: 10px; font-size: 13px; color: #555;">
@@ -1342,13 +1341,13 @@
     <div class="modal-overlay" id="tableColorPickerContextModal" style="display:none;">
         <div class="modal-content"
             style="max-width:320px; width:90%; text-align:center; padding: 25px; background: #ffffff; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); box-sizing: border-box;">
-            <h3 style="color: #2c3e50; margin-top: 0; text-align: center;">ðŸŽ¨ Table Theme Palette</h3>
+            <h3 style="color: #2c3e50; margin-top: 0; text-align: center;">🎨 Table Theme Palette</h3>
             <p style="font-size:12px; color:#666; margin-top:-5px; text-align: center;">Choose structural identity color
                 mapping fields:</p>
 
             <select id="ctxSelectedTableColorHexValue"
                 style="width:100%; padding:12px; margin:10px 0; border:1px solid #ccc; border-radius:8px; font-size:14px; background-color: #ffffff; color: #333;">
-                <option value="">ðŸŠ Dynamic State (Default)</option>
+                <option value="">🔄 Dynamic State (Default)</option>
             </select>
 
             <div style="display:flex; gap:10px; margin-top:15px;">
@@ -1365,7 +1364,7 @@
         style="display: none; max-width: 1000px; background: #15171e; color: #ffffff; border-radius: 16px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
         <div
             style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #282c37; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-            <h2 style="color: #ffffff; margin: 0; text-align: left;">ðŸ‘¨â€ðŸ³ Live Kitchen Monitor Queue</h2>
+            <h2 style="color: #ffffff; margin: 0; text-align: left;">👨‍🍳 Live Kitchen Monitor Queue</h2>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button class="category-tab-btn active" id="kdsFilterBtn_PENDING"
                     onclick="filterKdsView('PENDING')">Pending</button>
@@ -1385,14 +1384,14 @@
 
     <div class="container admin-panel" id="adminDashboard">
         <button class="action-btn" onclick="launchKitchenDisplaySystemModule()"
-            style="background:#e67e22; color:white; margin-bottom: 15px; font-weight:bold;">ðŸ‘¨â€ðŸ³ Open Live Kitchen
+            style="background:#e67e22; color:white; margin-bottom: 15px; font-weight:bold;">👨‍🍳 Open Live Kitchen
             Window</button>
-        <h2>ðŸ› ï¸ Variable Control Master Dashboard</h2>
+        <h2>🛠️ Variable Control Master Dashboard</h2>
 
-        <p style="text-align: center; font-size:12px; color:#27ae60; font-weight:bold; margin-top:-10px;">âš¡ Auto-Save
+        <p style="text-align: center; font-size:12px; color:#27ae60; font-weight:bold; margin-top:-10px;">⚡ Auto-Save
             Core Engine Operational</p>
 
-        <h3>ðŸ¢ Hotel Enterprise Classification Setup</h3>
+        <h3>🏨 Hotel Enterprise Classification Setup</h3>
         <div style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; margin-bottom:15px;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Master Hotel Registry ID String:</label>
             <input type="text" id="cfgHotelIdentityScopeKey" placeholder="e.g. My Premium Restaurant"
@@ -1404,11 +1403,9 @@
             style="background:white; padding:15px; border-radius:14px; border:1px solid #ccc; font-size:13px; margin-bottom:15px; text-align:left;">
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-weight: bold; color: var(--dark-charcoal);">ðŸ’³ Bank Payout UPI Configuration:</span>
+                <span style="font-weight: bold; color: var(--dark-charcoal);">💳 Bank Payout UPI Configuration:</span>
                 <button id="unlockVpaAdminSecureBtn" onclick="requestRemoteFounderVpaUnlockToken()"
-                    style="background: var(--dark-charcoal); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px;">
-                    ðŸ”“ Request VPA Edit Permission
-                </button>
+                    style="background: var(--accent-gold); color: black; font-size: 11px; padding: 6px 12px; border-radius: 6px; font-weight: bold; border: none; cursor: pointer;">🔒 Request VPA Edit Permission</button>
             </div>
 
             <div id="secHotelVpaOperationalContainer"
@@ -1423,25 +1420,26 @@
 
                     <button onclick="requestRemoteFounderVpaUnlockToken()"
                         style="background: var(--neon-green); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px;">
-                        ðŸ’¾ Save & Lock
+                        💾 Save & Lock
                     </button>
                 </div>
                 <div id="vpaSecurityStatusNoticeLabel"
                     style="font-size: 11px; font-weight: bold; color: var(--danger-red); margin-top: 6px; display: block;">
-                    ðŸ”’ Status: Hidden & Locked by RestroFlow HQ.</div>
+                    <div id="vpaLockStatusNotice" style="font-size:11px; color:#7f8c8d; margin-top:4px;">🔒 Status: Hidden & Locked by RestroFlow HQ.</div>
+                </div>
             </div>
         </div>
-        <h3>ðŸ¢ Table curret status section </h3>
+        <h3>📊 Table Current Status Section</h3>
         <div class="table-legend-bar">
-            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: empty</span>
-            <span class="legend-dot" style="background:var(--tbl-green)">Green: full </span>
+            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: Empty</span>
+            <span class="legend-dot" style="background:var(--tbl-green)">Green: Full </span>
             <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
             <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
         </div>
         <div id="adminTableLayoutGrid"></div>
-        <button class="action-btn" onclick="addNewFloor()"
-            style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">âž• Create New Floor</button>
-        <h3>ðŸ“Š Live Customer Billing Tracker Map</h3>
+        <button class="action-btn" onclick="openNewFloorModal()"
+            style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
+        <h3>📋 Live Customer Billing Tracker Map</h3>
         <div
             style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt
@@ -1464,23 +1462,24 @@
             <div
                 style="font-size:14px; font-weight:bold; color:var(--dark-charcoal); display:flex; justify-content:space-between;">
                 <span>Net Payable (With Taxes & Disc):</span>
-                <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">â‚¹0</span>
+                <span id="adminLiveBillGrandTotalOutput" style="color:#27ae60;">₹0</span>
 
             </div>
-            <button class="order-btn"
-                style="background:var(--neon-green); color:white; font-size:12px; padding:6px; margin-top:8px; display: block;"
-                onclick="executeLiveBillingThermalPrint()">ðŸ–¨ï¸ Print Bill </button>
+            <button class="order-btn" onclick="executeLiveBillingThermalPrint()"
+                style="background:var(--neon-green); color:white; font-size:12px; padding:8px; margin-top:8px; display: block; width: 100%; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                🖨️ Print Bill (Thermal Receipt)
+            </button>
             <button class="order-btn"
                 style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;"
                 onclick="executeAdminManualBillWipeSettlement()">Clear/Settled Table Bill Archive</button>
         </div>
-        <h3>ðŸ“Š Real-time Popularity & Dish Analytics</h3>
+        <h3>📈 Real-time Popularity & Dish Analytics</h3>
         <div
             style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
             <div id="adminAnalyticsLiveOutputGrid"></div>
         </div>
 
-        <h3>âš¡ Waiter Billing Console: Force Inject Items</h3>
+        <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
         <div
             style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
             <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
@@ -1498,18 +1497,18 @@
                 <!-- Button 1: SIRF BILL MEIN ADD HOGA -->
                 <button onclick="injectExtraItemFromBillPanel(false)"
                     style="background: var(--dark-charcoal); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
-                    ðŸ“‹ Add to Running Bill Only (No KDS)
+                    ➕ Add to Running Bill Only (No KDS)
                 </button>
 
                 <!-- Button 2: BILL + KDS DONO MEIN ADD HOGA -->
                 <button onclick="injectExtraItemFromBillPanel(true)"
                     style="background: var(--neon-green); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer;">
-                    ðŸ”¥ Add to Bill + Send to Kitchen (KDS)
+                    🔥 Add to Bill + Send to Kitchen (KDS)
                 </button>
             </div>
         </div>
 
-        <h3>âš–ï¸ Dynamic Tax Rates Configurations</h3>
+        <h3>⚖️ Dynamic Tax Rates Configurations</h3>
         <div
             style="background:white; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:13px; margin-bottom:15px;">
             <label><input type="checkbox" id="cfgTaxCGSTActive" onchange="saveAdminConfig()"> Enable CGST (%)</label>
@@ -1524,15 +1523,15 @@
         </div>
 
 
-        <h3>ðŸŽ® Target Variables & Value Ratios</h3>
+        <h3>🎯 Target Variables & Value Ratios</h3>
         <div
             style="background: white; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
             <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 12px; align-items: center;">
 
                 <!-- Flappy Bird -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸ¦ Flappy Target Points:</span>
-                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">â­ Rec: 5â€“10 Points <span
+                    <span style="font-weight: 600; color: #2c3e50;">🐦 Flappy Target Points:</span>
+                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: 5–10 Points <span
                             style="color:#7f8c8d; font-weight:500;">(Hard)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1548,8 +1547,8 @@
 
                 <!-- Space Shooter -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸš€ Space Clear Stage:</span>
-                    <span style="font-size: 11px; color: #f39c12; font-weight: 700;">â­ Rec: Stage 3â€“5 <span
+                    <span style="font-weight: 600; color: #2c3e50;">🚀 Space Clear Stage:</span>
+                    <span style="font-size: 11px; color: #f39c12; font-weight: 700;">⭐ Rec: Stage 3–5 <span
                             style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1565,9 +1564,9 @@
 
                 <!-- Snake Game -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸ Snake Target Apples:</span>
-                    <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">â­ Rec: 25-30 Apples <span
-                            style="color:#7f8c8d; font-weight:500;">(medium to hard)</span></span>
+                    <span style="font-weight: 600; color: #2c3e50;">🐍 Snake Target Apples:</span>
+                    <span style="font-size: 11px; color: #2ecc71; font-weight: 700;">⭐ Rec: 25–30 Apples <span
+                            style="color:#7f8c8d; font-weight:500;">(Medium to Hard)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <span style="color: #64748b;">Qty:</span>
@@ -1582,8 +1581,8 @@
 
                 <!-- Brick Breaker -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸ§± Brick Breaker Levels:</span>
-                    <span style="font-size: 11px; color: #e67e22; font-weight: 700;">â­ Rec: 3 Levels <span
+                    <span style="font-weight: 600; color: #2c3e50;">🧱 Brick Breaker Levels:</span>
+                    <span style="font-size: 11px; color: #e67e22; font-weight: 700;">⭐ Rec: 3 Levels <span
                             style="color:#7f8c8d; font-weight:500;">(Medium)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1599,8 +1598,8 @@
 
                 <!-- Tower Bloxx -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸ¢ Tower Target Level:</span>
-                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">â­ Rec: Level 3â€“4 <span
+                    <span style="font-weight: 600; color: #2c3e50;">🏗️ Tower Target Level:</span>
+                    <span style="font-size: 11px; color: #e74c3c; font-weight: 700;">⭐ Rec: Level 3–4 <span
                             style="color:#7f8c8d; font-weight:500;">(Hard / 20-30 Floors)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1616,8 +1615,8 @@
 
                 <!-- Cyber Air Hockey -->
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-weight: 600; color: #2c3e50;">ðŸ’ Cyber Air Hockey Goals:</span>
-                    <span style="font-size: 11px; color: #00cec9; font-weight: 700;">â­ Rec: 5 Goals <span
+                    <span style="font-weight: 600; color: #2c3e50;">🏒 Cyber Air Hockey Goals:</span>
+                    <span style="font-size: 11px; color: #00cec9; font-weight: 700;">⭐ Rec: 5 Goals <span
                             style="color:#7f8c8d; font-weight:500;">(vs Chef AI)</span></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 4px;">
@@ -1633,53 +1632,51 @@
 
             </div>
         </div>
-        <h3>ðŸ“‹ Item Master Setup (Photos & Checkboxes)</h3>
+        <h3>🍽️ Item Master Setup (Photos & Checkboxes)</h3>
         <div id="adminMenuForm"></div>
-        <button class="action-btn" onclick="addNewCategory()"
-            style="background:#2980b9; color:white; margin-bottom:15px;">âž• Create New Category Section</button>
+        <button class="action-btn" onclick="openNewCategoryModal()"
+            style="background:#2980b9; color:white; margin-bottom:15px;">➕ Create New Category Section</button>
 
         <button class="action-btn" onclick="triggerJustSaveConfig()"
-            style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">Example: ðŸ’¾ Save
-            Menu & Settings</button>
+            style="background:var(--neon-green); color:white; margin-bottom:10px; font-weight:bold;">💾 Save Menu & Settings</button>
 
         <button class="action-btn" onclick="logoutAdmin()"
-            style="background:var(--dark-charcoal); color:white; font-weight:bold;">Example: ðŸšª Logout
-            Dashboard</button>
+            style="background:var(--dark-charcoal); color:white; font-weight:bold;">🚪 Logout Dashboard</button>
 
         <button class="action-btn" onclick="launchSuperAdminSecretModulePrompt()"
             style="background: linear-gradient(135deg, #ffd700, #c5a059); color: #0b0c10; font-weight: bold; margin-top: 15px; border: 2px solid #ffd700;">
-            ðŸ‘‘ Founder Master Control
+            👑 Founder Master Control
         </button>
     </div>
     <div class="container" id="superAdminDashboard"
         style="display: none; max-width: 600px; background: #0b0c10; color: #c5a059; border: 3px double #c5a059; border-radius: 20px; padding: 25px; box-sizing: border-box; margin: 20px auto;">
-        <h2 style="color: #ffd700; margin-bottom: 5px;">ðŸ‘‘ SaaS Founder Master Command Center</h2>
+            <h2 style="color: #ffd700; margin-bottom: 5px;">👑 SaaS Founder Master Command Center</h2>
         <p
             style="text-align: center; font-size: 11px; color: #8f9aa3; margin-top: 0; font-weight: bold; letter-spacing: 1px;">
             GLOBAL NETWORK SUBSCRIPTION VALIDATOR</p>
         <hr style="border-color: #c5a059; margin-bottom: 20px;">
 
-        <h3>ðŸ¢ Registered Restaurant Network Accounts</h3>
-        <p style="font-size:10px; color:#bdc3c7; margin-top:-10px; font-style:italic;">ðŸ’¡ Tip: Click any row below to
+            <h3>🏢 Registered Restaurant Network Accounts</h3>
+        <p style="font-size:10px; color:#bdc3c7; margin-top:-10px; font-style:italic;">💡 Tip: Click any row below to
             instantly load its details into the controller form.</p>
         <div id="superAdminClientsListWrapper"
             style="background: #1f2833; border-radius: 12px; padding: 15px; max-height: 250px; overflow-y: auto; margin-bottom: 25px; text-align: left;">
         </div>
-        <!-- ðŸ”¥ SaaS Model UI: Global Base Tier Rate Modifier Fields Group -->
-        <h3 style="color: #ffd700; margin-top: 25px;">ðŸŒ Global Baseline Default Package Rates</h3>
+        <!-- SaaS Model UI: Global Base Tier Rate Modifier Fields Group -->
+            <h3 style="color: #ffd700; margin-top: 25px;">🌐 Global Baseline Default Package Rates</h3>
         <div
             style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px solid #ffd700; margin-bottom: 20px;">
             <p style="font-size: 11px; color: #bdc3c7; margin-top: 0;">Yeh pricing tab kaam aayegi jab kisi individual
-                restaurant account identity par rate â‚¹0 set hoga.</p>
+                restaurant account identity par rate ₹0 set hoga.</p>
             <div style="display: flex; gap: 10px;">
                 <div style="flex: 1;">
-                    <label style="font-size: 11px; font-weight: bold; color: #c5a059;">Default Monthly (â‚¹):</label>
+                    <label style="font-size: 11px; font-weight: bold; color: #c5a059;">Default Monthly (₹):</label>
                     <input type="number" id="saGlobalDefaultMonthlyInput" value="499"
                         style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;"
                         oninput="dynamicGlobalSaaSDefaults.monthly = parseInt(this.value) || 0;">
                 </div>
                 <div style="flex: 1;">
-                    <label style="font-size: 11px; font-weight: bold; color: #c5a059;">Default Yearly (â‚¹):</label>
+                    <label style="font-size: 11px; font-weight: bold; color: #c5a059;">Default Yearly (₹):</label>
                     <input type="number" id="saGlobalDefaultYearlyInput" value="4999"
                         style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;"
                         oninput="dynamicGlobalSaaSDefaults.yearly = parseInt(this.value) || 0;">
@@ -1687,7 +1684,7 @@
             </div>
         </div>
 
-        <h3 style="color: #ffd700;">âš¡ Force Inject Subscription Rights</h3>
+            <h3 style="color: #ffd700;">⚡ Force Inject Subscription Rights</h3>
         <div
             style="background: #1f2833; padding: 15px; border-radius: 12px; text-align: left; border: 1px dashed #c5a059;">
 
@@ -1708,12 +1705,12 @@
 
             <div style="display: flex; gap: 10px;">
                 <div style="flex: 1;">
-                    <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Monthly Price (â‚¹):</label>
+                    <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Monthly Price (₹):</label>
                     <input type="number" id="saCustomMonthlyRate" placeholder="e.g. 999"
                         style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
                 </div>
                 <div style="flex: 1;">
-                    <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Yearly Price (â‚¹):</label>
+                    <label style="font-size: 11px; font-weight: bold; color: #ffd700;">Yearly Price (₹):</label>
                     <input type="number" id="saCustomYearlyRate" placeholder="e.g. 9999"
                         style="background: #0b0c10; color: #fff; border: 1px solid #c5a059;">
                 </div>
@@ -1721,29 +1718,28 @@
             <div
                 style="background: #0b0c10; border: 1px solid #ffd700; padding: 12px; border-radius: 8px; margin-bottom: 15px; margin-top: 10px;">
                 <label
-                    style="font-size: 11px; font-weight: bold; color: #ffd700; display: block; margin-bottom: 6px;">ðŸŽ¯
-                    VPA Remotely Modification Token Access Request Control:</label>
-                <button class="action-btn" onclick="executeRemoteVpaAccessGrantPipeline('granted')"
-                    style="background: #3498db; color: #fff; font-size: 12px; padding: 8px; margin-bottom: 6px; font-weight: 700; width: 100%;">
-                    âœ… Grant 1-Time Edit Permission Token
+                    style="font-size: 11px; font-weight: bold; color: #ffd700; display: block; margin-bottom: 6px;">🎯
+                    VPA Remote Modification Token Access Request Control:</label>
+                <button class="action-btn" onclick="grantSingleVPAEditToken()"
+                    style="background: #34495e; color: #f1c40f; border: 1px dashed #f1c40f; width: 100%; padding: 8px; font-weight: bold; margin-bottom: 6px;">
+                    ✅ Grant 1-Time Edit Permission Token
                 </button>
-                <button class="action-btn" onclick="executeRemoteVpaAccessGrantPipeline('revoked')"
-                    style="background: #7f8c8d; color: #fff; font-size: 11px; padding: 6px; font-weight: bold; width: 100%;">
-                    âŒ Force Revoke / Intercept Permission
+                <button class="action-btn" onclick="revokeSingleVPAEditToken()"
+                    style="background: #2c3e50; color: #e74c3c; border: 1px dashed #e74c3c; width: 100%; padding: 8px; font-weight: bold;">
+                    ❌ Force Revoke / Intercept Permission
                 </button>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('active')"
-                    style="background: var(--neon-green); color: #fff; flex: 1;">âš¡ Activate / Renew Plan</button>
+                    style="background: var(--neon-green); color: #fff; flex: 1;">⚡ Activate / Renew Plan</button>
                 <button class="action-btn" onclick="executeSuperAdminManualActivationSequence('suspended')"
-                    style="background: var(--danger-red); color: #fff; flex: 1;">ðŸš« Immediate Block</button>
+                    style="background: var(--danger-red); color: #fff; flex: 1;">🚫 Immediate Block</button>
             </div>
         </div>
 
         <button class="action-btn" onclick="exitSuperAdminDashboardConsole()"
-            style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">ðŸšª
-            Return to Login Hub</button>
+            style="background: var(--dark-charcoal); color: #fff; margin-top: 20px; font-weight: bold; border: 1px solid #c5a059;">🚪 Return to Login Hub</button>
     </div>
     <script>
         // ===================================================================
@@ -1830,8 +1826,8 @@
                 const monthlyDisplay = document.getElementById('paywallMonthlyPriceDisplay');
                 const yearlyDisplay = document.getElementById('paywallYearlyPriceDisplay');
 
-                if (monthlyDisplay) monthlyDisplay.innerText = "â‚¹" + pricing.monthlyPrice;
-                if (yearlyDisplay) yearlyDisplay.innerText = "â‚¹" + pricing.yearlyPrice;
+                if (monthlyDisplay) monthlyDisplay.innerText = "₹" + pricing.monthlyPrice;
+                if (yearlyDisplay) yearlyDisplay.innerText = "₹" + pricing.yearlyPrice;
 
                 const tiersContainer = document.getElementById('saasPricingTiersContainer');
                 const triggerBtn = document.getElementById('activatePlanTriggerBtn');
@@ -1960,9 +1956,8 @@
         }
         // ===================================================================
         // MODULE 2: ðŸ§¾ THERMAL RECEIPT BILL ENGINE (100% INDEPENDENT)
-        // ===================================================================
         async function executeLiveBillingThermalPrint() {
-            console.log("ðŸš€ RestroFlow Spooler: Starting Isolated Bill Print Sequence...");
+            console.log("🚀 RestroFlow Spooler: Starting Isolated Bill Print Sequence...");
 
             const selectedTable = document.getElementById('adminBillingViewerTableSelect').value;
             if (!selectedTable) {
@@ -2040,8 +2035,8 @@
                 subtotal += rowCost;
                 itemsRowsHTML += `
             <tr>
-                <td style="padding: 3px 0; font-size:11px; text-align: left;">${row.name}<br><small style="color:#555;">[${row.size.toUpperCase()}] x${row.qty} @â‚¹${row.price}</small></td>
-                <td style="text-align: right; vertical-align: top; padding: 3px 0; font-size:11px;">â‚¹${rowCost}</td>
+                <td style="padding: 3px 0; font-size:11px; text-align: left;">${row.name}<br><small style="color:#555;">[${row.size.toUpperCase()}] x${row.qty} @₹${row.price}</small></td>
+                <td style="text-align: right; vertical-align: top; padding: 3px 0; font-size:11px;">₹${rowCost}</td>
             </tr>`;
             });
 
@@ -2063,7 +2058,7 @@
             receiptContainer.innerHTML = `
         <div style="width: 100%; text-align: center;">
             <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">${realBrandName}</h3>
-            <p style="margin: 0 0 6px 0; font-size: 9px; letter-spacing: 1px;">TAX INVOICE / RECEIPTS</p>
+            <p style="margin: 0 0 6px 0; font-size: 9px; letter-spacing: 1px;">TAX INVOICE / RECEIPT</p>
             <div style="text-align: left; font-size: 10px; line-height: 1.2;">
                 <div><b>Table No:</b> ${selectedTable}</div>
                 <div><b>Date:</b> ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
@@ -2082,12 +2077,12 @@
             </table>
             <hr>
             <table style="width: 100%; font-size: 10px; line-height: 1.4;">
-                <tr><td>Gross Subtotal:</td><td style="text-align: right;">â‚¹${subtotal}</td></tr>
-                ${targetDisc > 0 ? `<tr style="color: red;"><td>Game Disc. (${targetDisc}%):</td><td style="text-align: right;">-â‚¹${discountValue.toFixed(1)}</td></tr>` : ''}
-                ${taxConfig.cgstActive ? `<tr><td>CGST (${taxConfig.cgstRate}%):</td><td style="text-align: right;">â‚¹${cgstAmount.toFixed(1)}</td></tr>` : ''}
-                ${taxConfig.sgstActive ? `<tr><td>SGST (${taxConfig.sgstRate}%):</td><td style="text-align: right;">â‚¹${sgstAmount.toFixed(1)}</td></tr>` : ''}
-                ${taxConfig.serviceActive ? `<tr><td>Service Charge (${taxConfig.serviceRate}%):</td><td style="text-align: right;">â‚¹${serviceAmount.toFixed(1)}</td></tr>` : ''}
-                <tr style="font-size: 12px; font-weight: bold;"><td style="padding-top: 5px;">GRAND TOTAL:</td><td style="text-align: right; padding-top: 5px;">â‚¹${finalBillSum}</td></tr>
+                <tr><td>Gross Subtotal:</td><td style="text-align: right;">₹${subtotal}</td></tr>
+                ${targetDisc > 0 ? `<tr style="color: red;"><td>Game Disc. (${targetDisc}%):</td><td style="text-align: right;">-₹${discountValue.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.cgstActive ? `<tr><td>CGST (${taxConfig.cgstRate}%):</td><td style="text-align: right;">₹${cgstAmount.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.sgstActive ? `<tr><td>SGST (${taxConfig.sgstRate}%):</td><td style="text-align: right;">₹${sgstAmount.toFixed(1)}</td></tr>` : ''}
+                ${taxConfig.serviceActive ? `<tr><td>Service Charge (${taxConfig.serviceRate}%):</td><td style="text-align: right;">₹${serviceAmount.toFixed(1)}</td></tr>` : ''}
+                <tr style="font-size: 12px; font-weight: bold;"><td style="padding-top: 5px;">GRAND TOTAL:</td><td style="text-align: right; padding-top: 5px;">₹${finalBillSum}</td></tr>
             </table>
             <hr>
             <p style="margin: 6px 0 0 0; font-size: 9px; font-style: italic;">~ RestroFlow Global Operational Node ~</p>
@@ -2337,7 +2332,7 @@ function queueDebouncedBillRender() {
                         <span style="font-weight:bold; color:#3498db; font-size:11px;">ðŸ“± Contact Mobile Number: ${clientPhone}</span><br>
                         <span style="font-family:monospace; color:#bdc3c7; font-size:10px;">ðŸ“© Identity Email: ${clientEmail}</span><br>
                         <span style="color:#7f8c8d; font-size:11px;">Expires on: ${formattedExpiry}</span><br>
-                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">ðŸ’° M: â‚¹${currentMonthlyPrice} \| Y: â‚¹${currentYearlyPrice}</span>
+                        <span style="background:rgba(255,255,255,0.05); color:#2ecc71; padding:2px 4px; border-radius:4px; display:inline-block; margin-top:2px; font-size:10px;">ðŸ’° M: ₹${currentMonthlyPrice} \| Y: ₹${currentYearlyPrice}</span>
                     </div>
                     <span style="background:${statusBadgeColor}; padding:3px 8px; border-radius:4px; font-weight:bold; font-size:10px; color:#fff;">${sub.status.toUpperCase()}</span>
                 </div>`;
@@ -2383,7 +2378,7 @@ function queueDebouncedBillRender() {
                     localStorage.setItem('saas_global_default_yearly', dynamicGlobalSaaSDefaults.yearly);
 
                     showOnScreenNotification("ðŸŒ Global Default Package Rates Saved Successfully!");
-                    alert("ðŸŒ Success! Global Baseline Rates updated across the network. Jin templates par â‚¹0 set hai, wahan ab ye rates lagenge.");
+                    alert("ðŸŒ Success! Global Baseline Rates updated across the network. Jin templates par ₹0 set hai, wahan ab ye rates lagenge.");
                     fetchGlobalSaaSAccountNetworkList();
                     return; // Execution block safe return
                 }
@@ -2683,7 +2678,7 @@ function queueDebouncedBillRender() {
             } else {
                 title.innerText = "RestroFlow";
                 subTitle.innerText = "Workspace Gateway Terminal";
-                mainBtn.innerText = "ðŸš€ Authenticate & Boot System";
+                mainBtn.innerText = "⚡ Authenticate & Boot System";
                 mainBtn.setAttribute("onclick", "executeRealCloudLoginSequence()");
                 toggleLabel.innerText = "New to RestroFlow?";
                 toggleLink.innerText = "Create Account";
@@ -2848,12 +2843,12 @@ function queueDebouncedBillRender() {
 
             // ðŸ”¥ FIX 5: All 6 games dynamically rendered â€” no hardcoded missing entries
             overlay.innerHTML = `
-        <li>ðŸ¦ <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar || 5} points = <b>${rules.flappyDisc || 0}% Code Coin</b></li>
-        <li>ðŸš€ <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar || 3} = <b>${rules.spaceDisc || 0}% Code Coin</b></li>
-        <li>ðŸ <b>Classic Snake Game:</b> Secure ${rules.snakeTar || 10} apples = <b>${rules.snakeDisc || 0}% Code Coin</b></li>
-        <li>ðŸ§± <b>Brick Breaker:</b> Complete ${rules.brickTar || 3} levels = <b>${rules.brickDisc || 0}% Code Coin</b></li>
-        <li>ðŸ¢ <b>Tower Bloxx:</b> Build ${rules.towerTar || 3} levels = <b>${rules.towerDisc || 0}% Code Coin</b></li>
-        <li>ðŸ’ <b>Cyber Air Hockey:</b> Score ${rules.hockeyTar || 5} goals vs Chef AI = <b>${rules.hockeyDisc || 15}% Code Coin</b></li>
+        <li>🐦 <b>Flappy Bird Flight:</b> Reach ${rules.flappyTar || 5} points = <b>${rules.flappyDisc || 0}% Code Coin</b></li>
+        <li>🚀 <b>Space Shooter Campaign:</b> Clear level ${rules.spaceTar || 3} = <b>${rules.spaceDisc || 0}% Code Coin</b></li>
+        <li>🐍 <b>Classic Snake Game:</b> Secure ${rules.snakeTar || 10} apples = <b>${rules.snakeDisc || 0}% Code Coin</b></li>
+        <li>🧱 <b>Brick Breaker:</b> Complete ${rules.brickTar || 3} levels = <b>${rules.brickDisc || 0}% Code Coin</b></li>
+        <li>🏢 <b>Tower Bloxx:</b> Build ${rules.towerTar || 3} levels = <b>${rules.towerDisc || 0}% Code Coin</b></li>
+        <li>🏒 <b>Cyber Air Hockey:</b> Score ${rules.hockeyTar || 5} goals vs Chef AI = <b>${rules.hockeyDisc || 15}% Code Coin</b></li>
     `;
             document.getElementById('discountSheetModal').style.display = 'flex';
         }
@@ -2868,7 +2863,7 @@ function queueDebouncedBillRender() {
             }
 
             // Live text node par net payable amount display push karo
-            document.getElementById('paymentGatewayBillAmountDisplay').innerText = "â‚¹" + globalRunningInvoiceSumTotal;
+            document.getElementById('paymentGatewayBillAmountDisplay').innerText = "₹" + globalRunningInvoiceSumTotal;
 
             // Cloud storage database se owner ki live UPI ID lookup karo
             let activeOwnerVpa = localStorage.getItem('restroflow_hotel_upi_vpa_' + hotelGlobalScopeID) || "merchant_inject_node@sbi";
@@ -3067,32 +3062,17 @@ function queueDebouncedBillRender() {
         function confirmKdsVisibilityStatus() {
             let selectedTable = document.getElementById('waiterTableSelect').value;
             let cleanTableId = selectedTable.includes('_') ? selectedTable.split('_')[1] : selectedTable;
-
             alert(`ðŸŸ¢ KDS REALTIME STATUS:\n\nHotel Scope: ${hotelGlobalScopeID}\nTarget Table: ${cleanTableId}\n\nAny item injected from here will immediately trigger the Kitchen Siren and display on the KDS screen.`);
         }
-        function executeSimulatedMobilePaymentSuccessSequence() {
-            updateDishOrderAnalytics();
 
-            // ðŸ”µ Set Paid Status for Grid to turn Blue
-            localStorage.setItem('payment_status_map_' + hotelGlobalScopeID + '_' + clientCurrentActiveTable, 'SUCCESS_PAID');
-            localStorage.setItem('payment_status_map_' + clientCurrentActiveTable, 'SUCCESS_PAID');
-
-            document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
-            document.getElementById('invoiceBillModal').style.display = 'none';
-
-            // Sync Paid Status directly to Supabase
-            syncLiveSessionToSupabase(clientCurrentActiveTable, localLiveRunningBill, maximumClaimedDisc, false, 'SUCCESS_PAID');
-
-            generateAdminTableGrid();
-            showOnScreenNotification(`ðŸ’° Payment received! Table ${clientCurrentActiveTable} is now Paid.`);
-        }
-
-            // ðŸŠ AUTOMATIC RESET: Instantly turn current active table status to 0 (Empty) via compound keys
+        function executeTableManualResetSequence(tableKey) {
+            let targetTable = tableKey || clientCurrentActiveTable;
+            // ðŸŸ  AUTOMATIC RESET: Instantly turn target table status to 0 (Empty) via compound keys
             floorData.forEach(floor => {
                 if (floor && floor.tables) {
                     floor.tables.forEach(t => {
                         let localKeyStr = `${floor.floorName}_${t.id}`;
-                        if (localKeyStr === clientCurrentActiveTable) {
+                        if (localKeyStr === targetTable) {
                             t.state = 0; // Reset back to dynamic empty status maps
                             t.waiterBell = false;
                             delete t.custom_color;
@@ -3103,17 +3083,17 @@ function queueDebouncedBillRender() {
 
             localStorage.setItem('restaurantFloors', JSON.stringify(floorData));
 
-            document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
-            document.getElementById('invoiceBillModal').style.display = 'none';
+            if (document.getElementById('mobilePaymentSimulatorModal')) document.getElementById('mobilePaymentSimulatorModal').style.display = 'none';
+            if (document.getElementById('invoiceBillModal')) document.getElementById('invoiceBillModal').style.display = 'none';
 
             // Sync clear state parameters directly to cloud engine database corridors
-            syncLiveSessionToSupabase(clientCurrentActiveTable, [], 0, false, 'PENDING');
+            syncLiveSessionToSupabase(targetTable, [], 0, false, 'PENDING');
 
             saveAdminConfig();
             generateAdminTableGrid();
 
-            showOnScreenNotification(`ðŸ’° Payment captured successfully! Table ${clientCurrentActiveTable} is now automatic Empty.`);
-        
+            showOnScreenNotification(`💳 Payment captured successfully! Table ${targetTable} is now automatically Empty.`);
+        }
         function renderAnalyticsDashboard() {
             let outputGrid = document.getElementById('adminAnalyticsLiveOutputGrid');
             if (!outputGrid) return;
@@ -3267,7 +3247,7 @@ function queueDebouncedBillRender() {
             if (confirm("Are you sure you want to remove the custom QR code image?")) {
                 customPaymentQRData = ""; localStorage.removeItem('restaurantCustomPaymentQR'); updateCustomQRAdminPreview();
                 if (document.getElementById('mobilePaymentSimulatorModal').style.display === 'flex') openSmartMobilePaymentGatewayGateway();
-                alert("ðŸ—‘ï¸ Custom QR purged! Gateway fallbacked onto automated dynamic QR codes.");
+                alert("🗑 Custom QR purged! Gateway fell back onto automated dynamic QR codes.");
             }
         }
 
@@ -3503,11 +3483,11 @@ async function auditSelectedTableBillInvoiceLive() {
             outputBox.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; padding: 4px 0; border-bottom: 1px dashed #eee;">
                 <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                    <span>â€¢ <b>${row.name}</b> [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@â‚¹${row.price})</span></span>
+                    <span>â€¢ <b>${row.name}</b> [${row.size.toUpperCase()}] x${row.qty} <span style="color:#7f8c8d;">(@₹${row.price})</span></span>
                     ${statusBadgeHtml}
                 </div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <b>â‚¹${rowCost}</b>
+                    <b>₹${rowCost}</b>
                     <button onclick="adminRemoveSpecificItem('LEDGER', '${selectedAdminTable}', ${rIdx})" id="delBtn_LEDGER_${rIdx}" style="background:var(--danger-red); color:white; border:none; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer;" title="Delete this item">âŒ</button>
                 </div>
             </div>`;
@@ -3517,7 +3497,7 @@ async function auditSelectedTableBillInvoiceLive() {
             outputBox.innerHTML = `<span style="color:#999; font-style:italic;">Table invoice is empty.</span>`;
             paymentBanner.style.display = "none";
             if (taxBox) taxBox.style.display = "none";
-            grandTotalBox.innerText = "â‚¹0";
+            grandTotalBox.innerText = "₹0";
             return;
         }
 
@@ -3526,14 +3506,14 @@ async function auditSelectedTableBillInvoiceLive() {
         if (taxBox) {
             taxBox.style.display = "block";
             taxBox.innerHTML = `
-            <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>â‚¹${invoiceMath.subtotal.toFixed(2)}</span></div>
-            <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-â‚¹${invoiceMath.discountValue.toFixed(2)}</span></div>
-            ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}\%):</span><span>â‚¹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
-            ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}\%):</span><span>â‚¹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
-            ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}\%):</span><span>â‚¹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
+            <div style="display:flex; justify-content:space-between; color:#7f8c8d; font-size:11px;"><span>Gross Amount:</span><span>₹${invoiceMath.subtotal.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; color:var(--danger-red); font-size:11px;"><span>Game Discount (${invoiceMath.discountRate}%):</span><span>-₹${invoiceMath.discountValue.toFixed(2)}</span></div>
+            ${taxConfig.cgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>CGST (${taxConfig.cgstRate}\%):</span><span>₹${invoiceMath.cgst.toFixed(2)}</span></div>` : ''}
+            ${taxConfig.sgstActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>SGST (${taxConfig.sgstRate}\%):</span><span>₹${invoiceMath.sgst.toFixed(2)}</span></div>` : ''}
+            ${taxConfig.serviceActive ? `<div style="display:flex; justify-content:space-between; font-size:11px;"><span>Service Charge (${taxConfig.serviceRate}\%):</span><span>₹${invoiceMath.service.toFixed(2)}</span></div>` : ''}
             `;
         }
-        grandTotalBox.innerText = "â‚¹" + invoiceMath.grandTotal;
+        grandTotalBox.innerText = "₹" + invoiceMath.grandTotal;
 
     } catch (err) {
         console.error("ðŸš¨ Admin Invoice Tracker Exception:", err);
@@ -3584,7 +3564,7 @@ async function auditSelectedTableBillInvoiceLive() {
                         // B. Splice out ONLY the target index accurately
                         currentBill.splice(ledgerIndex, 1);
 
-                        // C. If the bill becomes empty after deletion, normalize values to â‚¹0
+                        // C. If the bill becomes empty after deletion, normalize values to ₹0
                         if (currentBill.length === 0) {
                             currentDiscount = 0;
                             if (tableId === clientCurrentActiveTable) maximumClaimedDisc = 0;
@@ -3792,8 +3772,8 @@ async function renderLiveCalculatedBill() {
             accumulatedSubtotal += rowCost;
             rowsContainer.innerHTML += `
                 <div class="bill-item-row" style="margin-bottom: 8px;">
-                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">â‚¹${row.price} x ${row.qty}</span></div>
-                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">â‚¹${rowCost}</span></div>
+                    <div><strong>${row.name}</strong> <span style="color:#7f8c8d; font-size:11px;">[${row.size}]</span><br><span style="font-size:12px; color:#555;">₹${row.price} x ${row.qty}</span></div>
+                    <div style="display:flex; align-items:center; gap:8px;"><span style="font-weight:bold; color:var(--dark-charcoal);">₹${rowCost}</span></div>
                 </div>`;
         });
 
@@ -3808,31 +3788,31 @@ async function renderLiveCalculatedBill() {
         const calculatedDiscountVal = invoiceMath.discountValue || 0;
 
         document.getElementById('taxRowCGST').style.display = taxConfig.cgstActive ? 'flex' : 'none';
-        document.getElementById('billCGSTVal').innerText = "â‚¹" + invoiceMath.cgst.toFixed(2);
+        document.getElementById('billCGSTVal').innerText = "₹" + invoiceMath.cgst.toFixed(2);
         document.getElementById('taxRowSGST').style.display = taxConfig.sgstActive ? 'flex' : 'none';
-        document.getElementById('billSGSTVal').innerText = "â‚¹" + invoiceMath.sgst.toFixed(2);
+        document.getElementById('billSGSTVal').innerText = "₹" + invoiceMath.sgst.toFixed(2);
 
         let srvTaxRow = document.getElementById('taxRowService');
         if (srvTaxRow) {
             srvTaxRow.style.display = taxConfig.serviceActive ? 'flex' : 'none';
-            document.getElementById('billServiceVal').innerText = "â‚¹" + invoiceMath.service.toFixed(2);
+            document.getElementById('billServiceVal').innerText = "₹" + invoiceMath.service.toFixed(2);
         }
 
         globalRunningInvoiceSumTotal = invoiceMath.grandTotal;
 
-        document.getElementById('billSubtotal').innerText = "â‚¹" + invoiceMath.subtotal.toFixed(2);
+        document.getElementById('billSubtotal').innerText = "₹" + invoiceMath.subtotal.toFixed(2);
         // âœ… FIXED: yahan calculatedDiscountVal ka use kiya hai
-        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-â‚¹" + calculatedDiscountVal.toFixed(2) + ")";
-        document.getElementById('billGrandTotal').innerText = "â‚¹" + globalRunningInvoiceSumTotal;
+        document.getElementById('billDiscountApplied').innerText = invoiceMath.discountRate + "% (-₹" + calculatedDiscountVal.toFixed(2) + ")";
+        document.getElementById('billGrandTotal').innerText = "₹" + globalRunningInvoiceSumTotal;
 
         let payButton = document.getElementById('payOnlineInvoiceMainBtn');
         if (paymentStatusToken === 'SUCCESS_PAID') {
-            payButton.innerText = "ðŸ’° PAID SUCCESSFULLY VIA MOBILE UPI";
+            payButton.innerText = "💰 PAID SUCCESSFULLY VIA MOBILE UPI";
             payButton.style.background = "#7f8c8d";
             payButton.disabled = true;
             payButton.onclick = null;
         } else {
-            payButton.innerText = "ðŸ’³ Pay Online from Mobile (UPI)";
+            payButton.innerText = "💳 Pay Online from Mobile (UPI)";
             payButton.style.background = "var(--neon-green)";
             payButton.disabled = false;
             payButton.onclick = openSmartMobilePaymentGatewayGateway;
@@ -4112,7 +4092,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
 
     let displayBox = document.getElementById('couponDisplay');
     if (displayBox) {
-        displayBox.innerHTML = `ðŸŽ‰ Milestone Unlocked! Automatic <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${activeTableId} Invoice!`;
+        displayBox.innerHTML = `🎉 Milestone Unlocked! Automatically <strong>${maximumClaimedDisc}% OFF</strong> applied directly to Table ${activeTableId} Invoice!`;
         displayBox.style.display = "block";
     }
 
@@ -4179,9 +4159,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             });
 
             if (obj) {
-                if (obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (â‚¹${obj.s})</option>`;
-                if (obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (â‚¹${obj.m})</option>`;
-                if (obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (â‚¹${obj.l})</option>`;
+                if (obj.sActive && obj.s > 0) sizeSelector.innerHTML += `<option value="s">Small (₹${obj.s})</option>`;
+                if (obj.mActive && obj.m > 0) sizeSelector.innerHTML += `<option value="m">Medium (₹${obj.m})</option>`;
+                if (obj.lActive && obj.l > 0) sizeSelector.innerHTML += `<option value="l">Large (₹${obj.l})</option>`;
             }
         }
 
@@ -4275,9 +4255,9 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     </div>
                     
                     Name: <input type="text" value="${item.name || ''}" oninput="menuCategories[${cIdx}].items[${iIdx}].name=this.value; saveAdminConfig()">
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>â‚¹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>â‚¹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
-                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>â‚¹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
                     <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
                 </div>`;
                 });
@@ -4401,11 +4381,19 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     alert("âŒ Cloud Write Violation: " + error.message);
                 } else {
                     showOnScreenNotification(`ðŸ‘‘ Token access state updated to: ${tokenFlag.toUpperCase()}`);
-                    alert(`ðŸŽ‰ Success! Permission token changed to ${permissionState.toUpperCase()} for account: ${targetId}.\n\nMalik ab apne panel par 'Request VPA Edit Permission' button daba kar account edit kar sakte hain.`);
                     fetchGlobalSaaSAccountNetworkList();
                 }
             } catch (err) { console.error(err); }
         }
+
+        function grantSingleVPAEditToken() {
+            return executeRemoteVpaAccessGrantPipeline('granted');
+        }
+        function revokeSingleVPAEditToken() {
+            return executeRemoteVpaAccessGrantPipeline('locked');
+        }
+        window.grantSingleVPAEditToken = grantSingleVPAEditToken;
+        window.revokeSingleVPAEditToken = revokeSingleVPAEditToken;
 
         // ===================================================================
         // ðŸ›¡ï¸ ANTI-COLLISION ENGINE WRAPPERS BOUNDARIES (AIRTIGHT UPDATED)
@@ -4429,7 +4417,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 if (vpaContainer && vpaContainer.style.display !== 'block') {
                     vpaContainer.style.display = 'none';
                     if (noticeLabel) {
-                        noticeLabel.innerText = "ðŸ”’ Status: Hidden & Locked by RestroFlow HQ.";
+                        noticeLabel.innerText = "🔒 Status: Hidden & Locked by RestroFlow HQ.";
                         noticeLabel.style.color = "var(--danger-red)";
                     }
                 }
@@ -4467,8 +4455,8 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     let defaultPrice = item[defaultSize] || 0;
 
                     let photoMarkup = item.image ?
-                        `<img src="${item.image}" class="dish-photo-frame" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>ðŸ²</text></svg>';">` :
-                        `<div class="dish-photo-frame">ðŸ²</div>`;
+                        `<img src="${item.image}" class="dish-photo-frame" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🍽</text></svg>';">` :
+                        `<div class="dish-photo-frame">🍽</div>`;
 
                     let domUniqueId = `displayPrice_${cIdx}_${iIdx}`;
                     // Unique ID tracker string for the quantity counter box
@@ -4479,7 +4467,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     <div>
                         <div class="dish-main-info">
                             <div class="dish-details">${photoMarkup}<div class="dish-header-text"><strong>${item.name || 'Delicious Dish'}</strong></div></div>
-                            <span id="${domUniqueId}" class="price-display">â‚¹${defaultPrice}</span>
+                            <span id="${domUniqueId}" class="price-display">₹${defaultPrice}</span>
                         </div>
                         <div class="size-selector" data-c="${cIdx}" data-i="${iIdx}">
                             <button class="size-btn ${item.sActive && item.s > 0 ? 'visible' : ''} ${defaultSize === 's' ? 'active' : ''}" onclick="changeSizeToggle('${domUniqueId}', 's', ${item.s}, this)">S</button>
@@ -4490,11 +4478,11 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     
                     <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
                         <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
-                            <button onclick="modifyInputQtyCounter('${qtyInputId}', -1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">âˆ’</button>
+                            <button onclick="modifyInputQtyCounter('${qtyInputId}', -1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">−</button>
                             <input type="number" id="${qtyInputId}" value="1" min="1" max="20" readonly style="width: 45px; text-align: center; font-weight: bold; border: none; background: transparent; margin: 0; padding: 0; font-size: 16px; color: var(--dark-charcoal);">
                             <button onclick="modifyInputQtyCounter('${qtyInputId}', 1)" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none;">+</button>
                         </div>
-                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')" style="margin-top: 4px;">ðŸ›’Order now</button>
+                        <button class="order-btn" onclick="executeCustomerOrderCommitLink('${domUniqueId}', '${item.name || 'Dish'}', '${qtyInputId}')" style="margin-top: 4px;">🛒 Order now</button>
                     </div>
                 </div>`;
                 } catch (itemRenderError) {
@@ -4937,7 +4925,7 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
     // 1. Waiter Calling Bell Dismiss
     if (tbl.waiterBell) {
         tbl.waiterBell = false;
-        showOnScreenNotification(`ðŸ”” Waiter notification cleared for ${floor.floorName} Table ${tbl.id}`);
+        showOnScreenNotification(`🔔 Waiter notification cleared for ${floor.floorName} Table ${tbl.id}`);
         syncLiveSessionToSupabase(compoundKey, [], 0, false, 'PENDING');
     } else {
         // 2. Cycle States: 0 (Empty) -> 1 (Full) -> 2 (Booked) -> 3 (Cleaning) -> 0 (Empty)
@@ -4951,10 +4939,13 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
     saveAdminConfig();
     generateAdminTableGrid();
 }
-        function commitCustomTableColorPreference() {
-            let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue').value;
+        let currentActiveStylingTargetFloorIdx = null;
+        let currentActiveStylingTargetTableIdx = null;
 
-            if (currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null) {
+        function commitCustomTableColorPreference() {
+            let selectedColorHex = document.getElementById('ctxSelectedTableColorHexValue') ? document.getElementById('ctxSelectedTableColorHexValue').value : '#ffffff';
+
+            if (currentActiveStylingTargetFloorIdx !== null && currentActiveStylingTargetTableIdx !== null && floorData && floorData[currentActiveStylingTargetFloorIdx] && floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx]) {
                 // 1. Array ke andar naya color inject karo
                 floorData[currentActiveStylingTargetFloorIdx].tables[currentActiveStylingTargetTableIdx].custom_color = selectedColorHex;
 
@@ -4967,7 +4958,7 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
                 // ðŸ”¥ CRITICAL FIX: Tables ka grid instantly redraw karo taaki naya color turant screen par live dikhe!
                 generateAdminTableGrid();
 
-                showOnScreenNotification("ðŸŽ¨ Table theme design matrix updated live!");
+                showOnScreenNotification("🎨 Table theme design matrix updated live!");
             }
         }
         // âš¡ FIXED: Completed the category filtration logic cleanly to block execution freezes
@@ -4980,28 +4971,28 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         // ===================================================================
 
         function addNewCategory() {
-            let catName = prompt("ðŸ“ Enter new Category Name (e.g., Starters, Main Course):");
+            let catName = prompt("🍽 Enter new Category Name (e.g., Starters, Main Course):");
             if (catName && catName.trim() !== "") {
                 menuCategories.push({ categoryName: catName.trim(), items: [] });
                 saveAdminConfig();
                 populateAdminForms();
                 if (typeof renderCustomerMenu === "function") renderCustomerMenu();
-                showOnScreenNotification("âœ… New category section created!");
+                showOnScreenNotification("✅ New category section created!");
             }
         }
 
         function removeCategory(cIdx) {
-            if (confirm(`âš ï¸ Are you sure you want to delete the entire '${menuCategories[cIdx].categoryName}' category and ALL its dishes?`)) {
+            if (confirm(`⚠ Are you sure you want to delete the entire '${menuCategories[cIdx].categoryName}' category and ALL its dishes?`)) {
                 menuCategories.splice(cIdx, 1);
                 saveAdminConfig();
                 populateAdminForms();
                 if (typeof renderCustomerMenu === "function") renderCustomerMenu();
-                showOnScreenNotification("ðŸ—‘ï¸ Category removed successfully!");
+                showOnScreenNotification("🗑 Category removed successfully!");
             }
         }
 
         function addDishToCategory(cIdx) {
-            let dishName = prompt(`ðŸ² Enter new dish name for ${menuCategories[cIdx].categoryName}:`);
+            let dishName = prompt(`🍽 Enter new dish name for ${menuCategories[cIdx].categoryName}:`);
             if (dishName && dishName.trim() !== "") {
                 // Nayi dish ka default blueprint
                 menuCategories[cIdx].items.push({
@@ -5014,18 +5005,18 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
                 saveAdminConfig();
                 populateAdminForms();
                 if (typeof renderCustomerMenu === "function") renderCustomerMenu();
-                showOnScreenNotification(`âœ… Dish '${dishName}' added to menu!`);
+                showOnScreenNotification(`✅ Dish '${dishName}' added to menu!`);
             }
         }
 
         function removeDishRow(cIdx, iIdx) {
             let targetDish = menuCategories[cIdx].items[iIdx];
-            if (confirm(`âš ï¸ Are you sure you want to delete the dish '${targetDish.name}'?`)) {
+            if (confirm(`⚠ Are you sure you want to delete the dish '${targetDish.name}'?`)) {
                 menuCategories[cIdx].items.splice(iIdx, 1);
                 saveAdminConfig();
                 populateAdminForms();
                 if (typeof renderCustomerMenu === "function") renderCustomerMenu();
-                showOnScreenNotification("ðŸ—‘ï¸ Dish removed successfully!");
+                showOnScreenNotification("🗑 Dish removed successfully!");
             }
         }
         // ===================================================================
@@ -5033,21 +5024,21 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         // ===================================================================
 
         function addNewFloor() {
-            let fName = prompt("ðŸ¢ Enter new floor name (e.g., Rooftop, 1st Floor):");
+            let fName = prompt("🏢 Enter new floor name (e.g., Rooftop, 1st Floor):");
             if (fName && fName.trim() !== "") {
                 floorData.push({ floorName: fName.trim(), tables: [] });
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("âœ… New floor added successfully!");
+                showOnScreenNotification("✅ New floor added successfully!");
             }
         }
 
         function removeFloor(fIdx) {
-            if (confirm(`âš ï¸ Are you sure you want to delete the entire '${floorData[fIdx].floorName}' floor and all its tables?`)) {
+            if (confirm(`⚠ Are you sure you want to delete the entire '${floorData[fIdx].floorName}' floor and all its tables?`)) {
                 floorData.splice(fIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("ðŸ—‘ï¸ Floor removed successfully!");
+                showOnScreenNotification("🗑 Floor removed successfully!");
             }
         }
 
@@ -5076,15 +5067,15 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
             // 4. Save karke grid refresh karo
             saveAdminConfig();
             generateAdminTableGrid();
-            showOnScreenNotification(`âœ… Table ${newTableId} added successfully!`);
+                showOnScreenNotification(`✅ Table ${newTableId} added successfully!`);
         }
         function removeTable(fIdx, tIdx) {
             let targetTable = floorData[fIdx].tables[tIdx];
-            if (confirm(`âš ï¸ Are you sure you want to delete Table ${targetTable.id}?`)) {
+            if (confirm(`⚠ Are you sure you want to delete Table ${targetTable.id}?`)) {
                 floorData[fIdx].tables.splice(tIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("ðŸ—‘ï¸ Table removed successfully!");
+                showOnScreenNotification("🗑 Table removed successfully!");
             }
         }
 
@@ -5119,7 +5110,7 @@ function generateAdminTableGrid() {
 
             if (isPaid) {
                 baseThemeColor = '#2196f3';
-                currentLabel = 'ðŸ’° Paid UPI';
+                currentLabel = '💳 Paid UPI';
             } else if (tbl.custom_color) {
                 baseThemeColor = tbl.custom_color;
                 currentLabel = tbl.state === 1 ? 'Full' : (tbl.state === 2 ? 'Booked' : (tbl.state === 3 ? 'Cleaning' : 'Empty'));
@@ -5141,7 +5132,7 @@ function generateAdminTableGrid() {
 
             floorHTML += `
             <div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${fNameClean}', '${tIdClean}')">ðŸ–¨ï¸ QR</button>
+                    <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${fNameClean}', '${tIdClean}')">🖨 QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
                 ${tIdClean}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
@@ -5171,7 +5162,7 @@ function generateAdminTableGrid() {
 
         // ðŸ¥¤ S, M, L SIZE TOGGLE FUNCTION
         function changeSizeToggle(priceDomId, size, price, btnElement) {
-            document.getElementById(priceDomId).innerText = "â‚¹" + price;
+            document.getElementById(priceDomId).innerText = "₹" + price;
             let parentNode = btnElement.parentElement;
             parentNode.setAttribute('data-selected-size', size);
             parentNode.setAttribute('data-selected-price', price);
@@ -5303,7 +5294,7 @@ function generateAdminTableGrid() {
                 if (upsertError) {
                     console.error("ðŸš¨ Cloud Save Failed:", upsertError.message);
                     if (typeof showOnScreenNotification === 'function') {
-                        showOnScreenNotification("âŒ Cloud save failed: " + upsertError.message, true);
+                        showOnScreenNotification("❌ Cloud save failed: " + upsertError.message, true);
                     }
                 } else {
                     console.log("â˜ï¸ Menu, Settings & Tables successfully saved to Supabase!");
@@ -5370,7 +5361,7 @@ function generateAdminTableGrid() {
             // Clear any loose pending background macro tasks to avoid collision
             clearTimeout(configSaveTimeout);
 
-            showOnScreenNotification("â³ Syncing parameters securely to cloud...", false);
+            showOnScreenNotification("⏳ Syncing parameters securely to cloud...", false);
             // Explicit await guarantees network package landing before interface unlocks
 
             await uploadMenuToCloud();
@@ -5378,7 +5369,7 @@ function generateAdminTableGrid() {
             // ðŸ”¥ HIGH-PRIORITY FIX: Save hote hi header ke naam ko abhi ke abhi force-update karo
             updateFrontEndClassificationLabels();
 
-            showOnScreenNotification("ðŸ’¾ Menu & Settings safely updated to cloud!");
+            showOnScreenNotification("✅ Menu & Settings safely updated to cloud!");
         }
         // ===================================================================
         // ðŸšª FIXED TASK 2: PERSISTENCE SESSION GUARD PREVENTS TOKEN TRUNCATION BEFORE SIGNOUT
@@ -5409,7 +5400,7 @@ function generateAdminTableGrid() {
                 document.getElementById('customerView').style.display = 'block';
 
                 renderCustomerMenu();
-                showOnScreenNotification("ðŸšª Logged out successfully!");
+                showOnScreenNotification("👋 Logged out successfully!");
             } catch (err) {
                 console.error("ðŸš¨ Sign-out runtime exception logged:", err);
             }
@@ -5638,7 +5629,7 @@ function generateAdminTableGrid() {
                 let itemsHtml = '';
                 order.order_items.forEach(item => {
                     itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background:#202430; padding:8px; border-radius:6px; font-size:14px; border-left: 3px solid var(--tbl-orange);">
-                            <span><b>ðŸ” ${item.dish_name}</b> [${item.size}]</span>
+                            <span><b>🍲 ${item.dish_name}</b> [${item.size}]</span>
                             <b style="color:#2ecc71;">x${item.qty}</b>
                          </div>`;
                 });
@@ -5666,7 +5657,7 @@ function generateAdminTableGrid() {
                         <span style="color:#7f8c8d;">ID: ${order.id.substring(0, 6).toUpperCase()}</span>
                         <span style="color:#e74c3c; font-weight:bold;">â±ï¸ ${displayMin}m ${displaySec}s ago</span>
                     </div>
-                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">ðŸšª ${displayTableTitle}</h3>
+                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🍽 ${displayTableTitle}</h3>
                     <div>${itemsHtml}</div>
                 </div>
                 <div style="margin-top:15px;">${actionButtonHtml}</div>
@@ -5696,14 +5687,14 @@ function generateAdminTableGrid() {
                         let payIntentBtn = document.getElementById('triggerUpiIntentMobileDirectBtn');
 
                         if (statusLoader) {
-                            statusLoader.innerText = "ðŸŽ‰ PAYMENT VERIFIED BY BANK OVER REALM NODES!";
+                            statusLoader.innerText = "🎉 PAYMENT VERIFIED BY BANK OVER REALM NODES!";
                             statusLoader.style.background = "#eef9f5";
                             statusLoader.style.color = "#2ecc71";
                             statusLoader.style.border = "1px solid #2ecc71";
                         }
                         if (payIntentBtn) payIntentBtn.style.display = "none"; // Hide button once paid
 
-                        showOnScreenNotification("ðŸ’° Payment verified by Bank! Thank you.");
+                        showOnScreenNotification("💳 Payment verified by Bank! Thank you.");
 
                         // 3 second baad automatic screen clear clear out settings
                         setTimeout(() => {
@@ -5742,7 +5733,7 @@ function generateAdminTableGrid() {
                 if (error) {
                     alert("âŒ Sandbox Simulation Write Violation: " + error.message);
                 } else {
-                    showOnScreenNotification("ðŸš€ Bank Webhook Payload Injected! Status changed to SUCCESS_PAID.");
+                    showOnScreenNotification("⚡ Bank Webhook Payload Injected! Status changed to SUCCESS_PAID.");
                     console.log(`ðŸ“¡ Mock Webhook Node: Sent secure success callback matrix for ${compositeTableKey}`);
                 }
             } catch (err) { console.error(err); }
@@ -5806,7 +5797,7 @@ async function updateKdsTicketState(orderId, nextStatusState) {
                 // 3. Ab active order card entry ko cleanly erase karo dashboard queue se
                 await supabaseClient.from('active_orders').delete().eq('id', orderId);
 
-                showOnScreenNotification("ðŸ½ï¸ Order Completed & Dispatched! Database optimized safely.");
+                showOnScreenNotification("✅ Order Completed & Dispatched! Database optimized safely.");
                 fetchActiveKitchenOrdersQueue();
 
             } catch (dbErr) {
@@ -5818,7 +5809,8 @@ async function updateKdsTicketState(orderId, nextStatusState) {
         function filterKdsView(targetFilterState) {
             currentKdsFilterState = targetFilterState;
             document.querySelectorAll('#kitchenDashboard .category-tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`kdsFilterBtn_${targetFilterState}`).classList.add('active');
+            let activeFilterBtn = document.getElementById(`kdsFilterBtn_${targetFilterState}`);
+            if (activeFilterBtn) activeFilterBtn.classList.add('active');
             renderKdsInterfaceMatrix();
         }
 
@@ -5873,8 +5865,8 @@ async function updateKdsTicketState(orderId, nextStatusState) {
         // ===================================================================
         function displaySubscriptionExpiredPaywallModal(monthlyRate, yearlyRate) {
             // Inject pricing text nodes inside targets fields flawlessly
-            document.getElementById('paywallMonthlyPriceDisplay').innerText = "â‚¹" + monthlyRate;
-            document.getElementById('paywallYearlyPriceDisplay').innerText = "â‚¹" + yearlyRate;
+            document.getElementById('paywallMonthlyPriceDisplay').innerText = "₹" + monthlyRate;
+            document.getElementById('paywallYearlyPriceDisplay').innerText = "₹" + yearlyRate;
 
             // Hide primary layout environments to seal data views boundaries
             document.getElementById('adminDashboard').style.display = 'none';
