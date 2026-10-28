@@ -562,7 +562,7 @@
             <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
             <canvas id="brickCanvas" width="380" height="560" style="background:#04070f; border-radius: 12px; box-shadow: 0 0 25px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.85); border: 1.5px solid rgba(0, 242, 254, 0.35);"></canvas>
             <canvas id="towerCanvas" width="320" height="400" style="background:#1a252f;"></canvas>
-            <canvas id="hockeyCanvas" width="480" height="680" style="background:#080a14;"></canvas>
+            <canvas id="hockeyCanvas" width="480" height="680" style="background:#080a14 url('./assets/game_hockey_field4.jpg') center/cover no-repeat; border-radius: 14px; box-shadow: 0 0 30px rgba(0, 242, 254, 0.25), inset 0 0 20px rgba(0, 0, 0, 0.8); border: 2px solid rgba(0, 242, 254, 0.4);"></canvas>
 
             <!-- Touch Controls -->
             <div class="control-pad" id="brickControls">
@@ -8221,6 +8221,16 @@
         var hkChefAuraAngle = 0;
         var hkPuckStuckCounter = 0;
 
+        // Ice Hockey Field Background Asset
+        var hkBackgroundImage = new Image();
+        hkBackgroundImage.src = './assets/game_hockey_field4.jpg';
+        hkBackgroundImage.onerror = function() {
+            if (!this.dataset.retried) {
+                this.dataset.retried = "1";
+                this.src = './game_hockey_field4.jpg';
+            }
+        };
+
         function getHkAudioCtx() {
             try {
                 if (!hkAudioCtx) {
@@ -8838,29 +8848,34 @@
                 if (hkCameraShake < 0.2) hkCameraShake = 0;
             }
 
-            // Rink Gradient
-            const rinkGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, H * 0.7);
-            rinkGrad.addColorStop(0, '#0d1326');
-            rinkGrad.addColorStop(0.7, '#070a16');
-            rinkGrad.addColorStop(1, '#03050a');
-            ctx.fillStyle = rinkGrad;
-            ctx.fillRect(0, 0, W, H);
+            // Rink Playing Field: Render game_hockey_field4 Background Image
+            if (hkBackgroundImage && hkBackgroundImage.complete && hkBackgroundImage.naturalWidth > 0) {
+                ctx.drawImage(hkBackgroundImage, 0, 0, W, H);
+            } else {
+                // Rink Gradient Fallback
+                const rinkGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, H * 0.7);
+                rinkGrad.addColorStop(0, '#0d1326');
+                rinkGrad.addColorStop(0.7, '#070a16');
+                rinkGrad.addColorStop(1, '#03050a');
+                ctx.fillStyle = rinkGrad;
+                ctx.fillRect(0, 0, W, H);
 
-            // Cyber Grid Lines
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
-            ctx.lineWidth = 1;
-            const gridSize = 32;
-            for (let x = 10; x < W - 10; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 10);
-                ctx.lineTo(x, H - 10);
-                ctx.stroke();
-            }
-            for (let y = 10; y < H - 10; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(10, y);
-                ctx.lineTo(W - 10, y);
-                ctx.stroke();
+                // Cyber Grid Lines
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
+                ctx.lineWidth = 1;
+                const gridSize = 32;
+                for (let x = 10; x < W - 10; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 10);
+                    ctx.lineTo(x, H - 10);
+                    ctx.stroke();
+                }
+                for (let y = 10; y < H - 10; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(10, y);
+                    ctx.lineTo(W - 10, y);
+                    ctx.stroke();
+                }
             }
 
             // Center Line
@@ -8897,8 +8912,8 @@
             ctx.font = '22px Segoe UI';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.fillText('âš¡', W / 2, centerY);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.fillText('⚡', W / 2, centerY);
 
             // Goals
             // Top Goal Mouth (Chef)
