@@ -8193,7 +8193,7 @@
         }
 
         // ===================================================================
-        //CYBER AIR HOCKEY: PLAYER VS CHEF AI ENGINE & STATE
+        //CYBER AIR HOCKEY: PRO ARCADE 3D ENGINE & RENDERER
         // ===================================================================
 
         var hockeyCanvasElement = null;
@@ -8202,7 +8202,7 @@
 
         // Table & Game Elements
         var hkTable = { width: 480, height: 680, goalWidth: 160, goalDepth: 18, cornerBevel: 42 };
-        var hkPuck = { x: 240, y: 340, vx: 0, vy: 0, radius: 14, maxSpeed: 19, friction: 0.993, trail: [] };
+        var hkPuck = { x: 240, y: 340, vx: 0, vy: 0, radius: 14, maxSpeed: 19, friction: 0.993, angle: 0, trail: [] };
         var hkPlayer = { x: 240, y: 550, vx: 0, vy: 0, targetX: 240, targetY: 550, radius: 26, isDragging: false };
         var hkChefAI = {
             x: 240, y: 120, vx: 0, vy: 0, targetX: 240, targetY: 120, radius: 26,
@@ -8215,16 +8215,20 @@
         var hkPauseTimer = 0;
         var hkCameraShake = 0;
         var hkParticles = [];
+        var hkShockwaves = [];
+        var hkIceScratches = [];
         var hkBannerText = '';
-        var hkBannerColor = '#00ffff';
+        var hkBannerColor = '#00f2fe';
         var hkAudioCtx = null;
         var hkChefAuraAngle = 0;
         var hkPuckStuckCounter = 0;
+        var hkGoalLightPulse = 0;
+        var hkLastScorer = '';
 
         // Ice Hockey Field Background Asset
         var hkBackgroundImage = new Image();
         hkBackgroundImage.src = './assets/game_hockey_field4.jpg';
-        hkBackgroundImage.onerror = function() {
+        hkBackgroundImage.onerror = function () {
             if (!this.dataset.retried) {
                 this.dataset.retried = "1";
                 this.src = './game_hockey_field4.jpg';
@@ -8249,63 +8253,84 @@
                 const ctx = getHkAudioCtx();
                 if (!ctx) return;
                 const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
 
                 if (type === 'PUCK_HIT') {
                     const speed = Math.min(param || 8, 20);
-                    const freq = 240 + speed * 18;
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, now);
-                    osc.frequency.exponentialRampToValueAtTime(70, now + 0.08);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-                    osc.start(now);
-                    osc.stop(now + 0.08);
+                    // High-attack acoustic mallet click
+                    const clickOsc = ctx.createOscillator();
+                    const clickGain = ctx.createGain();
+                    clickOsc.type = 'triangle';
+                    clickOsc.frequency.setValueAtTime(650 + speed * 25, now);
+                    clickOsc.frequency.exponentialRampToValueAtTime(140, now + 0.025);
+                    clickGain.gain.setValueAtTime(0.35, now);
+                    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+                    clickOsc.connect(clickGain);
+                    clickGain.connect(ctx.destination);
+                    clickOsc.start(now);
+                    clickOsc.stop(now + 0.025);
+
+                    // Deep mechanical body thud
+                    const thudOsc = ctx.createOscillator();
+                    const thudGain = ctx.createGain();
+                    thudOsc.type = 'sine';
+                    thudOsc.frequency.setValueAtTime(240 + speed * 8, now);
+                    thudOsc.frequency.exponentialRampToValueAtTime(65, now + 0.075);
+                    thudGain.gain.setValueAtTime(0.28, now);
+                    thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+                    thudOsc.connect(thudGain);
+                    thudGain.connect(ctx.destination);
+                    thudOsc.start(now);
+                    thudOsc.stop(now + 0.075);
                 } else if (type === 'WALL_BOUNCE') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(440, now);
-                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.05);
-                    gain.gain.setValueAtTime(0.18, now);
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(480, now);
+                    osc.frequency.exponentialRampToValueAtTime(190, now + 0.05);
+                    gain.gain.setValueAtTime(0.22, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
                     osc.start(now);
                     osc.stop(now + 0.05);
                 } else if (type === 'GOAL_PLAYER') {
-                    [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+                    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, idx) => {
                         const o = ctx.createOscillator();
                         const g = ctx.createGain();
                         o.type = 'sawtooth';
-                        o.frequency.setValueAtTime(f, now + idx * 0.07);
-                        g.gain.setValueAtTime(0.18, now + idx * 0.07);
-                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.22);
+                        o.frequency.setValueAtTime(f, now + idx * 0.06);
+                        g.gain.setValueAtTime(0.2, now + idx * 0.06);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
                         o.connect(g);
                         g.connect(ctx.destination);
-                        o.start(now + idx * 0.07);
-                        o.stop(now + idx * 0.07 + 0.22);
+                        o.start(now + idx * 0.06);
+                        o.stop(now + idx * 0.06 + 0.25);
                     });
                 } else if (type === 'GOAL_CHEF') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(170, now);
-                    osc.frequency.linearRampToValueAtTime(100, now + 0.28);
-                    gain.gain.setValueAtTime(0.22, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(90, now + 0.32);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
                     osc.start(now);
-                    osc.stop(now + 0.3);
+                    osc.stop(now + 0.32);
                 } else if (type === 'MILESTONE') {
-                    const notes = [440, 554.37, 659.25, 880, 1108.73];
+                    const notes = [440, 554.37, 659.25, 880, 1108.73, 1318.5];
                     notes.forEach((f, idx) => {
                         const o = ctx.createOscillator();
                         const g = ctx.createGain();
                         o.type = 'square';
-                        o.frequency.setValueAtTime(f, now + idx * 0.08);
-                        g.gain.setValueAtTime(0.16, now + idx * 0.08);
-                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.28);
+                        o.frequency.setValueAtTime(f, now + idx * 0.07);
+                        g.gain.setValueAtTime(0.18, now + idx * 0.07);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.3);
                         o.connect(g);
                         g.connect(ctx.destination);
-                        o.start(now + idx * 0.08);
-                        o.stop(now + idx * 0.08 + 0.28);
+                        o.start(now + idx * 0.07);
+                        o.stop(now + idx * 0.07 + 0.3);
                     });
                 }
             } catch (e) { }
@@ -8315,7 +8340,7 @@
             speedMult = speedMult || 1;
             for (let i = 0; i < count; i++) {
                 const angle = Math.random() * Math.PI * 2;
-                const speed = (Math.random() * 4 + 1.5) * speedMult;
+                const speed = (Math.random() * 4.5 + 1.8) * speedMult;
                 hkParticles.push({
                     x: x, y: y,
                     vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
@@ -8326,16 +8351,16 @@
         }
 
         function createHkConfetti(x, y) {
-            const colors = ['#00ffff', '#ff007f', '#39ff14', '#f1c40f', '#ff7675', '#74b9ff'];
-            for (let i = 0; i < 70; i++) {
+            const colors = ['#00f2fe', '#ff007f', '#39ff14', '#ffd32a', '#ff6b81', '#70a1ff', '#ffffff'];
+            for (let i = 0; i < 75; i++) {
                 const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 7 + 2;
+                const speed = Math.random() * 7.5 + 2.5;
                 hkParticles.push({
                     x: x, y: y,
                     vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
                     life: 1.0, decay: Math.random() * 0.02 + 0.012,
                     color: colors[Math.floor(Math.random() * colors.length)],
-                    size: Math.random() * 4 + 2
+                    size: Math.random() * 4.5 + 2
                 });
             }
         }
@@ -8343,11 +8368,12 @@
         function resetHkPuck(serveTowardsPlayer) {
             hkPuck.x = hkTable.width / 2;
             hkPuck.y = hkTable.height / 2;
-            const dirY = serveTowardsPlayer ? 2.5 : -2.5;
+            const dirY = serveTowardsPlayer ? 2.6 : -2.6;
             const dirX = (Math.random() - 0.5) * 2.2;
             hkPuck.vx = dirX;
             hkPuck.vy = dirY;
             hkPuck.trail = [];
+            hkPuck.angle = 0;
         }
 
         // ===================================================================
@@ -8400,8 +8426,12 @@
             hkPauseTimer = 0;
             hkCameraShake = 0;
             hkParticles = [];
+            hkShockwaves = [];
+            hkIceScratches = [];
             hkBannerText = '';
             hkPuckStuckCounter = 0;
+            hkGoalLightPulse = 0;
+            hkLastScorer = '';
 
             resetHkPuck(true);
 
@@ -8471,6 +8501,7 @@
 
             hkChefAuraAngle += 0.05;
             if (hkChefAI.dialogueTimer > 0) hkChefAI.dialogueTimer--;
+            if (hkGoalLightPulse > 0) hkGoalLightPulse--;
 
             // 1. Handle Pause / Celebration
             if (hkGameState === 'GOAL_PAUSE') {
@@ -8506,14 +8537,12 @@
                 const minChefY = hkChefAI.radius + 12;
                 const maxChefY = (hkTable.height * 0.48) - hkChefAI.radius;
 
-                // Check if puck is in AI's deep corner or back zone (behind AI or near top wall)
+                // Check if puck is in AI's deep corner or back zone
                 const isDeepInCorner = hkPuck.y < minChefY + 35 && (hkPuck.x < hkTable.width * 0.35 || hkPuck.x > hkTable.width * 0.65);
                 const isBehindAi = hkPuck.y < hkChefAI.y + 10;
 
                 if (puckInChefZone) {
                     if (isDeepInCorner || isBehindAi) {
-                        // FIX: When puck is in corner or behind AI, DO NOT charge into the corner/wall!
-                        // Back off slightly toward center and position laterally to sweep or let corner deflectors reflect the puck
                         if (hkPuck.x < goalCenter) {
                             aiTargetX = Math.max(goalCenter - 25, hkPuck.x + hkChefAI.radius + 35);
                             aiTargetY = Math.max(minChefY + 30, hkPuck.y + 25);
@@ -8522,13 +8551,13 @@
                             aiTargetY = Math.max(minChefY + 30, hkPuck.y + 25);
                         }
                     } else {
-                        // Offensive / Defensive strike - keep AI slightly behind the puck to drive it forward
+                        // Offensive / Defensive strike
                         const lateralOffset = (hkPuck.x - goalCenter) * 0.12;
                         aiTargetX = hkPuck.x - lateralOffset;
                         aiTargetY = Math.max(minChefY, hkPuck.y - hkChefAI.radius - 14);
                     }
                 } else {
-                    // Puck in Player's zone: AI guards its goal
+                    // Puck in Player zone: AI guards its goal
                     const predictedX = hkPuck.x + (hkPuck.vx * 8);
                     const goalMouthLeft = goalCenter - (hkTable.goalWidth / 2) + 20;
                     const goalMouthRight = goalCenter + (hkTable.goalWidth / 2) - 20;
@@ -8593,6 +8622,7 @@
                             if (hkPuck.vx < 2) hkPuck.vx = 2.5;
                             if (hkPuck.vy < 2) hkPuck.vy = 2.5;
                             createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 8, 1.4);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 4, maxRadius: 28, alpha: 0.85, color: '#39ff14', lineWidth: 2 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8610,6 +8640,7 @@
                             if (hkPuck.vx > -2) hkPuck.vx = -2.5;
                             if (hkPuck.vy < 2) hkPuck.vy = 2.5;
                             createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 8, 1.4);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 4, maxRadius: 28, alpha: 0.85, color: '#39ff14', lineWidth: 2 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8626,7 +8657,8 @@
                             hkPuck.vy = (hkPuck.vy + 2 * vDot * nDiag) * 1.05;
                             if (hkPuck.vx < 2) hkPuck.vx = 2.5;
                             if (hkPuck.vy > -2) hkPuck.vy = -2.5;
-                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 8, 1.4);
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00f2fe', 8, 1.4);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 4, maxRadius: 28, alpha: 0.85, color: '#00f2fe', lineWidth: 2 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8643,7 +8675,8 @@
                             hkPuck.vy = (hkPuck.vy + 2 * vDot * nDiag) * 1.05;
                             if (hkPuck.vx > -2) hkPuck.vx = -2.5;
                             if (hkPuck.vy > -2) hkPuck.vy = -2.5;
-                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 8, 1.4);
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00f2fe', 8, 1.4);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 4, maxRadius: 28, alpha: 0.85, color: '#00f2fe', lineWidth: 2 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8653,13 +8686,15 @@
                         hkPuck.x = railInset + hkPuck.radius;
                         hkPuck.vx = Math.abs(hkPuck.vx) * 0.98;
                         if (hkPuck.vx < 1.5) hkPuck.vx = 2.0;
-                        createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                        createHkSparks(hkPuck.x, hkPuck.y, '#00f2fe', 6, 1);
+                        hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 3, maxRadius: 24, alpha: 0.75, color: '#00f2fe', lineWidth: 1.8 });
                         playHkSound('WALL_BOUNCE');
                     } else if (hkPuck.x + hkPuck.radius > hkTable.width - railInset) {
                         hkPuck.x = hkTable.width - railInset - hkPuck.radius;
                         hkPuck.vx = -Math.abs(hkPuck.vx) * 0.98;
                         if (hkPuck.vx > -1.5) hkPuck.vx = -2.0;
-                        createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                        createHkSparks(hkPuck.x, hkPuck.y, '#00f2fe', 6, 1);
+                        hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 3, maxRadius: 24, alpha: 0.75, color: '#00f2fe', lineWidth: 1.8 });
                         playHkSound('WALL_BOUNCE');
                     }
 
@@ -8674,7 +8709,8 @@
                             hkPuck.y = railInset + hkPuck.radius;
                             hkPuck.vy = Math.abs(hkPuck.vy) * 0.98;
                             if (hkPuck.vy < 1.5) hkPuck.vy = 2.5;
-                            createHkSparks(hkPuck.x, hkPuck.y, '#ff007f', 6, 1);
+                            createHkSparks(hkPuck.x, hkPuck.y, '#ff4757', 6, 1);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 3, maxRadius: 24, alpha: 0.75, color: '#ff4757', lineWidth: 1.8 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8690,7 +8726,8 @@
                             hkPuck.y = hkTable.height - railInset - hkPuck.radius;
                             hkPuck.vy = -Math.abs(hkPuck.vy) * 0.98;
                             if (hkPuck.vy > -1.5) hkPuck.vy = -2.5;
-                            createHkSparks(hkPuck.x, hkPuck.y, '#00ffff', 6, 1);
+                            createHkSparks(hkPuck.x, hkPuck.y, '#00f2fe', 6, 1);
+                            hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 3, maxRadius: 24, alpha: 0.75, color: '#00f2fe', lineWidth: 1.8 });
                             playHkSound('WALL_BOUNCE');
                         }
                     }
@@ -8728,7 +8765,24 @@
 
                                 const hitSpeed = Math.hypot(hkPuck.vx, hkPuck.vy);
                                 playHkSound('PUCK_HIT', hitSpeed);
-                                createHkSparks(striker.x + nx * striker.radius, striker.y + ny * striker.radius, isPlayer ? '#00ffff' : '#ffaa00', 10, 1.3);
+                                createHkSparks(striker.x + nx * striker.radius, striker.y + ny * striker.radius, isPlayer ? '#00f2fe' : '#ffa502', 12, 1.4);
+
+                                // Impact Shockwave ring
+                                hkShockwaves.push({
+                                    x: hkPuck.x, y: hkPuck.y,
+                                    radius: 6, maxRadius: isPlayer ? 48 : 42,
+                                    alpha: 1.0, color: isPlayer ? '#00f2fe' : '#ff4757',
+                                    lineWidth: 2.5
+                                });
+
+                                // Ice scratch on powerful hit
+                                if (hitSpeed > 7) {
+                                    hkIceScratches.push({
+                                        x1: striker.x, y1: striker.y,
+                                        x2: striker.x + nx * (striker.radius + 18), y2: striker.y + ny * (striker.radius + 18),
+                                        alpha: 0.75, width: Math.min(2.5, hitSpeed * 0.16)
+                                    });
+                                }
 
                                 if (hitSpeed > 10) hkCameraShake = 5;
                             } else {
@@ -8755,6 +8809,7 @@
                         hkPuck.vx = Math.cos(angleToCenter) * kickSpeed;
                         hkPuck.vy = Math.sin(angleToCenter) * kickSpeed;
                         createHkSparks(hkPuck.x, hkPuck.y, '#39ff14', 18, 2.0);
+                        hkShockwaves.push({ x: hkPuck.x, y: hkPuck.y, radius: 4, maxRadius: 36, alpha: 0.9, color: '#39ff14', lineWidth: 2 });
                         playHkSound('WALL_BOUNCE');
                         hkChefAI.dialogue = "Chef AI: Corner jet activated! Puck cleared! 💨";
                         hkChefAI.dialogueTimer = 140;
@@ -8764,8 +8819,10 @@
                     hkPuckStuckCounter = 0;
                 }
 
-                hkPuck.trail.unshift({ x: hkPuck.x, y: hkPuck.y });
-                if (hkPuck.trail.length > 8) hkPuck.trail.pop();
+                // Update Puck Angle and Plasma Trail
+                hkPuck.angle = (hkPuck.angle || 0) + (hkPuck.vx * 0.04 + hkPuck.vy * 0.02);
+                hkPuck.trail.unshift({ x: hkPuck.x, y: hkPuck.y, speed: currentSpeed });
+                if (hkPuck.trail.length > 10) hkPuck.trail.pop();
             }
 
             // 5. Goal Scored Handler
@@ -8773,13 +8830,16 @@
                 hkGameState = 'GOAL_PAUSE';
                 hkPauseTimer = 75;
                 hkCameraShake = 16;
+                hkGoalLightPulse = 75;
+                hkLastScorer = scorer;
 
                 if (scorer === 'PLAYER') {
                     hkScore.player++;
                     hkBannerText = '⚡ GOAL FOR PLAYER! ⚡';
-                    hkBannerColor = '#00ffff';
+                    hkBannerColor = '#00f2fe';
                     playHkSound('GOAL_PLAYER');
                     createHkConfetti(hkPuck.x, 20);
+                    hkShockwaves.push({ x: hkPuck.x, y: 16, radius: 10, maxRadius: 110, alpha: 1.0, color: '#00f2fe', lineWidth: 3.5 });
 
                     const taunts = [
                         'Chef AI: Nice shot! Let me turn up the heat! 🔥',
@@ -8808,9 +8868,10 @@
                 } else {
                     hkScore.chef++;
                     hkBannerText = '👨‍🍳 CHEF AI SCORED! 👨‍🍳';
-                    hkBannerColor = '#ff007f';
+                    hkBannerColor = '#ff4757';
                     playHkSound('GOAL_CHEF');
-                    createHkSparks(hkPuck.x, hkTable.height - 20, '#ff007f', 30, 2);
+                    createHkSparks(hkPuck.x, hkTable.height - 20, '#ff4757', 30, 2);
+                    hkShockwaves.push({ x: hkPuck.x, y: hkTable.height - 16, radius: 10, maxRadius: 110, alpha: 1.0, color: '#ff4757', lineWidth: 3.5 });
 
                     const chefBrags = [
                         'Chef AI: Order up! Chef scores! 👨‍🍳🔥',
@@ -8829,7 +8890,7 @@
         }
 
         // ===================================================================
-        //AIR HOCKEY HIGH-AESTHETIC CYBER TABLE RENDERER
+        //PRO ARCADE AIR HOCKEY HIGH-END 3D GRAPHICS RENDERER
         // ===================================================================
         function renderCyberAirHockeyScene() {
             const ctx = hkCtx;
@@ -8837,9 +8898,11 @@
             const H = hkTable.height;
             const goalLeft = (W - hkTable.goalWidth) / 2;
             const goalRight = (W + hkTable.goalWidth) / 2;
+            const goalW = hkTable.goalWidth;
 
             ctx.save();
 
+            // Screen Shake on Goal or Heavy Hit
             if (hkCameraShake > 0) {
                 const sx = (Math.random() - 0.5) * hkCameraShake;
                 const sy = (Math.random() - 0.5) * hkCameraShake;
@@ -8848,244 +8911,500 @@
                 if (hkCameraShake < 0.2) hkCameraShake = 0;
             }
 
-            // Rink Playing Field: Render game_hockey_field4 Background Image
+            // LAYER 1: Rink Playing Field
             if (hkBackgroundImage && hkBackgroundImage.complete && hkBackgroundImage.naturalWidth > 0) {
                 ctx.drawImage(hkBackgroundImage, 0, 0, W, H);
             } else {
-                // Rink Gradient Fallback
-                const rinkGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, H * 0.7);
-                rinkGrad.addColorStop(0, '#0d1326');
-                rinkGrad.addColorStop(0.7, '#070a16');
-                rinkGrad.addColorStop(1, '#03050a');
+                // High-End Radial Ice Arena Fallback
+                const rinkGrad = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, H * 0.75);
+                rinkGrad.addColorStop(0, '#101a2e');
+                rinkGrad.addColorStop(0.65, '#080d19');
+                rinkGrad.addColorStop(1, '#020408');
                 ctx.fillStyle = rinkGrad;
                 ctx.fillRect(0, 0, W, H);
+            }
 
-                // Cyber Grid Lines
-                ctx.strokeStyle = 'rgba(0, 255, 255, 0.04)';
-                ctx.lineWidth = 1;
-                const gridSize = 32;
-                for (let x = 10; x < W - 10; x += gridSize) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 10);
-                    ctx.lineTo(x, H - 10);
-                    ctx.stroke();
-                }
-                for (let y = 10; y < H - 10; y += gridSize) {
-                    ctx.beginPath();
-                    ctx.moveTo(10, y);
-                    ctx.lineTo(W - 10, y);
-                    ctx.stroke();
+            // LAYER 2: Stadium Lighting & Vignette Overlay (Gives true stadium focus)
+            const arenaVignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.35, W / 2, H / 2, H * 0.72);
+            arenaVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            arenaVignette.addColorStop(0.7, 'rgba(3, 8, 20, 0.20)');
+            arenaVignette.addColorStop(1, 'rgba(1, 4, 10, 0.60)');
+            ctx.fillStyle = arenaVignette;
+            ctx.fillRect(0, 0, W, H);
+
+            // LAYER 3: Dynamic Ice Surface Lighting (Puck & Striker Glows on Ice)
+            const puckSpeed = Math.hypot(hkPuck.vx, hkPuck.vy);
+            const puckGlowRad = Math.max(26, hkPuck.radius * 2.8 + puckSpeed * 1.5);
+            let puckGlowColor = 'rgba(0, 242, 254, 0.22)';
+            if (puckSpeed > 13) puckGlowColor = 'rgba(255, 215, 0, 0.35)';
+            else if (puckSpeed > 7) puckGlowColor = 'rgba(255, 71, 87, 0.28)';
+
+            const puckIceGrad = ctx.createRadialGradient(hkPuck.x, hkPuck.y, 2, hkPuck.x, hkPuck.y, puckGlowRad);
+            puckIceGrad.addColorStop(0, puckGlowColor);
+            puckIceGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = puckIceGrad;
+            ctx.beginPath();
+            ctx.arc(hkPuck.x, hkPuck.y, puckGlowRad, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Player Striker Ice Glow
+            const plyrIceGrad = ctx.createRadialGradient(hkPlayer.x, hkPlayer.y, 4, hkPlayer.x, hkPlayer.y, hkPlayer.radius * 2.2);
+            plyrIceGrad.addColorStop(0, 'rgba(0, 210, 255, 0.22)');
+            plyrIceGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = plyrIceGrad;
+            ctx.beginPath();
+            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Chef AI Striker Ice Glow
+            const chefIceGrad = ctx.createRadialGradient(hkChefAI.x, hkChefAI.y, 4, hkChefAI.x, hkChefAI.y, hkChefAI.radius * 2.2);
+            chefIceGrad.addColorStop(0, 'rgba(255, 71, 87, 0.22)');
+            chefIceGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = chefIceGrad;
+            ctx.beginPath();
+            ctx.arc(hkChefAI.x, hkChefAI.y, hkChefAI.radius * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // LAYER 4: Dynamic Ice Scratches & Impact Shockwaves
+            for (let i = hkIceScratches.length - 1; i >= 0; i--) {
+                const sc = hkIceScratches[i];
+                ctx.strokeStyle = `rgba(225, 245, 255, ${Math.max(0, sc.alpha)})`;
+                ctx.lineWidth = sc.width || 1.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(sc.x1, sc.y1);
+                ctx.lineTo(sc.x2, sc.y2);
+                ctx.stroke();
+                sc.alpha -= 0.015;
+                if (sc.alpha <= 0) hkIceScratches.splice(i, 1);
+            }
+
+            for (let i = hkShockwaves.length - 1; i >= 0; i--) {
+                const sw = hkShockwaves[i];
+                ctx.save();
+                ctx.strokeStyle = sw.color;
+                ctx.globalAlpha = Math.max(0, sw.alpha);
+                ctx.lineWidth = sw.lineWidth || 2;
+                ctx.shadowColor = sw.color;
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                sw.radius += (sw.maxRadius - sw.radius) * 0.22 + 1.2;
+                sw.alpha -= 0.045;
+                if (sw.alpha <= 0 || sw.radius >= sw.maxRadius) {
+                    hkShockwaves.splice(i, 1);
                 }
             }
 
-            // Center Line
-            const centerY = H / 2;
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.35)';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([8, 6]);
-            ctx.beginPath();
-            ctx.moveTo(12, centerY);
-            ctx.lineTo(W - 12, centerY);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            // LAYER 5: 3D Goal Pockets & Laser Sensor Lines
+            // Top Goal Pocket (Chef AI)
+            const topGoalPocket = ctx.createLinearGradient(0, 0, 0, 16);
+            topGoalPocket.addColorStop(0, '#020408');
+            topGoalPocket.addColorStop(0.5, '#080d19');
+            topGoalPocket.addColorStop(1, 'rgba(255, 71, 87, 0.15)');
+            ctx.fillStyle = topGoalPocket;
+            ctx.fillRect(goalLeft, 0, goalW, 16);
 
-            // Center Ring
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
-            ctx.lineWidth = 2.5;
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 10;
-            ctx.beginPath();
-            ctx.arc(W / 2, centerY, 44, 0, Math.PI * 2);
-            ctx.stroke();
+            // Hex Net lines inside top goal
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.lineWidth = 1;
+            for (let x = goalLeft + 8; x < goalRight; x += 12) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 16);
+                ctx.stroke();
+            }
+            for (let y = 4; y < 16; y += 4) {
+                ctx.beginPath();
+                ctx.moveTo(goalLeft, y);
+                ctx.lineTo(goalRight, y);
+                ctx.stroke();
+            }
 
+            // Glowing Laser Sensor Line across Chef Goal Threshold
             ctx.save();
-            ctx.translate(W / 2, centerY);
-            ctx.rotate(hkChefAuraAngle);
-            ctx.strokeStyle = 'rgba(255, 0, 127, 0.4)';
-            ctx.lineWidth = 1.5;
+            const topLaserGlow = (hkGoalLightPulse > 0 && hkLastScorer === 'PLAYER');
+            ctx.strokeStyle = topLaserGlow ? '#ff0033' : 'rgba(255, 71, 87, 0.85)';
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = topLaserGlow ? 22 : 10;
+            ctx.lineWidth = topLaserGlow ? 3.5 : 2;
             ctx.beginPath();
-            ctx.arc(0, 0, 26, 0, Math.PI * 2);
+            ctx.moveTo(goalLeft, 16);
+            ctx.lineTo(goalRight, 16);
             ctx.stroke();
+
+            // Metallic Goal Posts (Left & Right)
+            [goalLeft, goalRight].forEach(px => {
+                const postGrad = ctx.createLinearGradient(px - 4, 0, px + 4, 0);
+                postGrad.addColorStop(0, '#747d8c');
+                postGrad.addColorStop(0.4, '#ffffff');
+                postGrad.addColorStop(1, '#2f3542');
+                ctx.fillStyle = postGrad;
+                ctx.fillRect(px - 3.5, 0, 7, 18);
+                // Siren LED beacon on post
+                const beaconColor = topLaserGlow ? '#ff0033' : '#ff4757';
+                ctx.fillStyle = beaconColor;
+                ctx.shadowColor = beaconColor;
+                ctx.shadowBlur = topLaserGlow ? 16 : 6;
+                ctx.beginPath();
+                ctx.arc(px, 16, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
             ctx.restore();
 
-            ctx.shadowBlur = 0;
-            ctx.font = '22px Segoe UI';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-            ctx.fillText('⚡', W / 2, centerY);
+            // Bottom Goal Pocket (Player)
+            const botGoalPocket = ctx.createLinearGradient(0, H - 16, 0, H);
+            botGoalPocket.addColorStop(0, 'rgba(0, 242, 254, 0.15)');
+            botGoalPocket.addColorStop(0.5, '#080d19');
+            botGoalPocket.addColorStop(1, '#020408');
+            ctx.fillStyle = botGoalPocket;
+            ctx.fillRect(goalLeft, H - 16, goalW, 16);
 
-            // Goals
-            // Top Goal Mouth (Chef)
-            ctx.fillStyle = 'rgba(255, 0, 127, 0.25)';
-            ctx.fillRect(goalLeft, 0, hkTable.goalWidth, 14);
-            ctx.strokeStyle = '#ff007f';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = '#ff007f';
-            ctx.shadowBlur = 12;
-            ctx.strokeRect(goalLeft, 0, hkTable.goalWidth, 14);
-            ctx.strokeStyle = 'rgba(255, 0, 127, 0.4)';
+            // Hex Net lines inside bottom goal
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
             ctx.lineWidth = 1;
-            for (let gx = goalLeft + 12; gx < goalRight; gx += 14) {
+            for (let x = goalLeft + 8; x < goalRight; x += 12) {
                 ctx.beginPath();
-                ctx.moveTo(gx, 0);
-                ctx.lineTo(gx, 14);
+                ctx.moveTo(x, H - 16);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = H - 12; y < H; y += 4) {
+                ctx.beginPath();
+                ctx.moveTo(goalLeft, y);
+                ctx.lineTo(goalRight, y);
                 ctx.stroke();
             }
 
-            // Bottom Goal Mouth (Player)
-            ctx.fillStyle = 'rgba(0, 255, 255, 0.25)';
-            ctx.fillRect(goalLeft, H - 14, hkTable.goalWidth, 14);
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 12;
-            ctx.strokeRect(goalLeft, H - 14, hkTable.goalWidth, 14);
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
-            ctx.lineWidth = 1;
-            for (let gx = goalLeft + 12; gx < goalRight; gx += 14) {
-                ctx.beginPath();
-                ctx.moveTo(gx, H - 14);
-                ctx.lineTo(gx, H);
-                ctx.stroke();
-            }
-            ctx.shadowBlur = 0;
+            // Glowing Laser Sensor Line across Player Goal Threshold
+            ctx.save();
+            const botLaserGlow = (hkGoalLightPulse > 0 && hkLastScorer === 'CHEF');
+            ctx.strokeStyle = botLaserGlow ? '#00f2fe' : 'rgba(0, 242, 254, 0.85)';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = botLaserGlow ? 22 : 10;
+            ctx.lineWidth = botLaserGlow ? 3.5 : 2;
+            ctx.beginPath();
+            ctx.moveTo(goalLeft, H - 16);
+            ctx.lineTo(goalRight, H - 16);
+            ctx.stroke();
 
-            // Outer Rails with Angled Corner Bumpers
+            // Metallic Goal Posts (Bottom Left & Right)
+            [goalLeft, goalRight].forEach(px => {
+                const postGrad = ctx.createLinearGradient(px - 4, 0, px + 4, 0);
+                postGrad.addColorStop(0, '#747d8c');
+                postGrad.addColorStop(0.4, '#ffffff');
+                postGrad.addColorStop(1, '#2f3542');
+                ctx.fillStyle = postGrad;
+                ctx.fillRect(px - 3.5, H - 18, 7, 18);
+                // Siren LED beacon on post
+                const beaconColor = botLaserGlow ? '#00f2fe' : '#4facfe';
+                ctx.fillStyle = beaconColor;
+                ctx.shadowColor = beaconColor;
+                ctx.shadowBlur = botLaserGlow ? 16 : 6;
+                ctx.beginPath();
+                ctx.arc(px, H - 16, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
+            // LAYER 6: Sleek Perimeter Dasher Trim & Corner Deflector Caps
             const bevel = hkTable.cornerBevel || 42;
             const rInset = 10;
-            ctx.lineWidth = 7;
+
+            function drawCornerCap(cx, cy, angle) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(angle);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.45)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(bevel * 0.75, 0);
+                ctx.lineTo(0, bevel * 0.75);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Micro Air-Jet LED emitter
+                ctx.fillStyle = '#39ff14';
+                ctx.shadowColor = '#39ff14';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(bevel * 0.22, bevel * 0.22, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            drawCornerCap(rInset, rInset, 0);
+            drawCornerCap(W - rInset, rInset, Math.PI / 2);
+            drawCornerCap(W - rInset, H - rInset, Math.PI);
+            drawCornerCap(rInset, H - rInset, -Math.PI / 2);
+
+            // Subtle Dasher Rails (Sleek brushed aluminum framing with thin ambient neon line)
+            ctx.save();
+            ctx.lineWidth = 3.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
-            // Chef Half Rails (Pink Neon)
-            ctx.strokeStyle = 'rgba(255, 0, 127, 0.85)';
-            ctx.shadowColor = '#ff007f';
-            ctx.shadowBlur = 12;
+            // Top Chef Half Rails (Deep Crimson with soft glow)
+            ctx.strokeStyle = 'rgba(255, 71, 87, 0.75)';
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = 8;
             ctx.beginPath();
-            // Top Left Rail + Corner Bevel
             ctx.moveTo(goalLeft, rInset);
             ctx.lineTo(rInset + bevel, rInset);
             ctx.lineTo(rInset, rInset + bevel);
-            ctx.lineTo(rInset, centerY);
-            // Top Right Rail + Corner Bevel
+            ctx.lineTo(rInset, H / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
             ctx.moveTo(goalRight, rInset);
             ctx.lineTo(W - rInset - bevel, rInset);
             ctx.lineTo(W - rInset, rInset + bevel);
-            ctx.lineTo(W - rInset, centerY);
+            ctx.lineTo(W - rInset, H / 2);
             ctx.stroke();
 
-            // Player Half Rails (Cyan Neon)
-            ctx.strokeStyle = 'rgba(0, 255, 255, 0.85)';
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 12;
+            // Bottom Player Half Rails (Deep Electric Cyan with soft glow)
+            ctx.strokeStyle = 'rgba(0, 242, 254, 0.75)';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 8;
             ctx.beginPath();
-            // Bottom Left Rail + Corner Bevel
-            ctx.moveTo(rInset, centerY);
+            ctx.moveTo(rInset, H / 2);
             ctx.lineTo(rInset, H - rInset - bevel);
             ctx.lineTo(rInset + bevel, H - rInset);
             ctx.lineTo(goalLeft, H - rInset);
-            // Bottom Right Rail + Corner Bevel
-            ctx.moveTo(W - rInset, centerY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(W - rInset, H / 2);
             ctx.lineTo(W - rInset, H - rInset - bevel);
             ctx.lineTo(W - rInset - bevel, H - rInset);
             ctx.lineTo(goalRight, H - rInset);
             ctx.stroke();
+            ctx.restore();
 
-            // Corner Jet / Booster indicator markers
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(57, 255, 20, 0.45)';
-            [
-                { x: rInset + 8, y: rInset + 8 },
-                { x: W - rInset - 8, y: rInset + 8 },
-                { x: rInset + 8, y: H - rInset - 8 },
-                { x: W - rInset - 8, y: H - rInset - 8 }
-            ].forEach(pt => {
-                ctx.beginPath();
-                ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            // LAYER 7: Pro-Arcade 3D Air Hockey Puck with Dynamic Spin & Plasma Comet Trail
+            const trailLen = hkPuck.trail.length;
+            for (let i = 0; i < trailLen; i++) {
+                const pt = hkPuck.trail[i];
+                const factor = 1 - (i / trailLen);
+                const trRad = hkPuck.radius * (0.35 + factor * 0.55);
+                const trAlpha = factor * (pt.speed > 10 ? 0.65 : 0.40);
 
-            // Puck Trail
-            for (let i = 0; i < hkPuck.trail.length; i++) {
-                const tr = hkPuck.trail[i];
-                const trAlpha = (1 - (i / hkPuck.trail.length)) * 0.45;
-                const trRad = hkPuck.radius * (1 - (i / hkPuck.trail.length) * 0.4);
-                ctx.fillStyle = `rgba(0, 255, 255, ${trAlpha})`;
+                let trColor = `rgba(0, 242, 254, ${trAlpha})`;
+                if (pt.speed > 13) trColor = `rgba(255, 215, 0, ${trAlpha})`;
+                else if (pt.speed > 7) trColor = `rgba(255, 71, 87, ${trAlpha})`;
+
+                ctx.save();
+                ctx.fillStyle = trColor;
+                ctx.shadowColor = trColor;
+                ctx.shadowBlur = 10 * factor;
                 ctx.beginPath();
-                ctx.arc(tr.x, tr.y, trRad, 0, Math.PI * 2);
+                ctx.arc(pt.x, pt.y, trRad, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             }
 
-            // Glowing Puck
+            // 3D Puck Body
             ctx.save();
-            ctx.shadowColor = '#f1c40f';
-            ctx.shadowBlur = 14;
-            const puckGrad = ctx.createRadialGradient(hkPuck.x, hkPuck.y, 2, hkPuck.x, hkPuck.y, hkPuck.radius);
-            puckGrad.addColorStop(0, '#ffffff');
-            puckGrad.addColorStop(0.5, '#f1c40f');
-            puckGrad.addColorStop(1, '#e67e22');
-            ctx.fillStyle = puckGrad;
-            ctx.beginPath();
-            ctx.arc(hkPuck.x, hkPuck.y, hkPuck.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(hkPuck.x - 3, hkPuck.y - 3, hkPuck.radius * 0.35, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
+            const px = hkPuck.x;
+            const py = hkPuck.y;
+            const pr = hkPuck.radius;
 
-            // Chef AI Mallet
-            ctx.save();
-            ctx.shadowColor = '#ff4757';
-            ctx.shadowBlur = 16;
-            const chefGrad = ctx.createRadialGradient(hkChefAI.x, hkChefAI.y, 4, hkChefAI.x, hkChefAI.y, hkChefAI.radius);
-            chefGrad.addColorStop(0, '#ffa502');
-            chefGrad.addColorStop(0.6, '#ff4757');
-            chefGrad.addColorStop(1, '#2f3542');
-            ctx.fillStyle = chefGrad;
+            // 1. Soft Floor Shadow on Ice
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
             ctx.beginPath();
-            ctx.arc(hkChefAI.x, hkChefAI.y, hkChefAI.radius, 0, Math.PI * 2);
+            ctx.ellipse(px + 2, py + 4, pr * 1.05, pr * 0.88, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2.5;
+
+            // 2. Beveled Dark Carbon Composite Outer Cylinder
+            const puckRimGrad = ctx.createRadialGradient(px - pr * 0.35, py - pr * 0.35, 2, px, py, pr);
+            puckRimGrad.addColorStop(0, '#485460');
+            puckRimGrad.addColorStop(0.5, '#1e272e');
+            puckRimGrad.addColorStop(1, '#05070a');
+            ctx.fillStyle = puckRimGrad;
+            ctx.beginPath();
+            ctx.arc(px, py, pr, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Outer Polished Bevel Stroke
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.lineWidth = 1.2;
             ctx.stroke();
 
-            ctx.shadowBlur = 0;
-            ctx.font = '16px Segoe UI';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('👨‍🍳', hkChefAI.x, hkChefAI.y);
-            ctx.restore();
+            // 3. Inner Recessed Face
+            const innerR = pr * 0.76;
+            const puckFaceGrad = ctx.createRadialGradient(px + pr * 0.2, py + pr * 0.2, 1, px, py, innerR);
+            puckFaceGrad.addColorStop(0, '#1e272e');
+            puckFaceGrad.addColorStop(0.8, '#0f1318');
+            puckFaceGrad.addColorStop(1, '#000000');
+            ctx.fillStyle = puckFaceGrad;
+            ctx.beginPath();
+            ctx.arc(px, py, innerR, 0, Math.PI * 2);
+            ctx.fill();
 
-            // Player Mallet
+            // 4. Rotating Dynamic Spin Turbine Slots (Gives authentic motion blur & spin)
             ctx.save();
-            ctx.shadowColor = '#00d2d3';
-            ctx.shadowBlur = 18;
-            const plyrGrad = ctx.createRadialGradient(hkPlayer.x, hkPlayer.y, 4, hkPlayer.x, hkPlayer.y, hkPlayer.radius);
-            plyrGrad.addColorStop(0, '#ffffff');
-            plyrGrad.addColorStop(0.5, '#00d2d3');
-            plyrGrad.addColorStop(1, '#0984e3');
-            ctx.fillStyle = plyrGrad;
-            ctx.beginPath();
-            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
+            ctx.translate(px, py);
+            ctx.rotate(hkPuck.angle || 0);
 
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#ffffff';
+            const slotColor = puckSpeed > 13 ? '#ffd32a' : (puckSpeed > 7 ? '#ff4757' : '#00f2fe');
+            ctx.fillStyle = slotColor;
+            ctx.shadowColor = slotColor;
+            ctx.shadowBlur = puckSpeed > 7 ? 12 : 5;
+
+            for (let s = 0; s < 4; s++) {
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.arc(innerR * 0.55, 0, innerR * 0.18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(innerR * 0.25, -1, innerR * 0.38, 2);
+            }
+            ctx.restore();
+
+            // 5. Center Reactor Core
+            const coreColor = puckSpeed > 13 ? '#ffffff' : (puckSpeed > 7 ? '#ff9ff3' : '#e0ffff');
+            ctx.fillStyle = coreColor;
+            ctx.shadowColor = slotColor;
+            ctx.shadowBlur = 10;
             ctx.beginPath();
-            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius * 0.38, 0, Math.PI * 2);
+            ctx.arc(px, py, innerR * 0.32, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#0984e3';
+
+            // Specular Glass Glare across top
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
             ctx.beginPath();
-            ctx.arc(hkPlayer.x, hkPlayer.y, hkPlayer.radius * 0.22, 0, Math.PI * 2);
+            ctx.ellipse(px - pr * 0.28, py - pr * 0.28, pr * 0.28, pr * 0.14, -Math.PI / 4, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
 
-            // Particles
+            // LAYER 8: Pro-Arcade 3D Ergonomic Pushers / Mallets (Chef & Player)
+            function drawProPusher(x, y, radius, isPlayer) {
+                ctx.save();
+
+                // 1. Soft Physical Drop Shadow on Ice
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                ctx.beginPath();
+                ctx.ellipse(x + 4, y + 7, radius * 1.05, radius * 0.88, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. Base Flange / Protective Bumper (Lower wide ring)
+                const baseGrad = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.35, radius * 0.1, x, y, radius);
+                if (isPlayer) {
+                    baseGrad.addColorStop(0, '#e0f7fa');
+                    baseGrad.addColorStop(0.25, '#00e5ff');
+                    baseGrad.addColorStop(0.65, '#00838f');
+                    baseGrad.addColorStop(1, '#00363a');
+                } else {
+                    baseGrad.addColorStop(0, '#ffebee');
+                    baseGrad.addColorStop(0.25, '#ff5252');
+                    baseGrad.addColorStop(0.65, '#c62828');
+                    baseGrad.addColorStop(1, '#4a0e17');
+                }
+                ctx.fillStyle = baseGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Outer Bumper Chamfer Stroke
+                ctx.strokeStyle = isPlayer ? 'rgba(0, 242, 254, 0.85)' : 'rgba(255, 71, 87, 0.85)';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+
+                // 3. Recessed Inner Well (Dish)
+                const wellR = radius * 0.72;
+                const wellGrad = ctx.createRadialGradient(x + wellR * 0.2, y + wellR * 0.2, 1, x, y, wellR);
+                if (isPlayer) {
+                    wellGrad.addColorStop(0, '#002538');
+                    wellGrad.addColorStop(0.7, '#001420');
+                    wellGrad.addColorStop(1, '#004866');
+                } else {
+                    wellGrad.addColorStop(0, '#380008');
+                    wellGrad.addColorStop(0.7, '#200004');
+                    wellGrad.addColorStop(1, '#660012');
+                }
+                ctx.fillStyle = wellGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, wellR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Radial Tech Ticks inside Well
+                ctx.strokeStyle = isPlayer ? 'rgba(0, 242, 254, 0.45)' : 'rgba(255, 170, 0, 0.45)';
+                ctx.lineWidth = 1.2;
+                for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+                    const cosA = Math.cos(a);
+                    const sinA = Math.sin(a);
+                    ctx.beginPath();
+                    ctx.moveTo(x + cosA * (wellR * 0.75), y + sinA * (wellR * 0.75));
+                    ctx.lineTo(x + cosA * (wellR * 0.95), y + sinA * (wellR * 0.95));
+                    ctx.stroke();
+                }
+
+                // 4. Center Ergonomic Grip Knob (Handle Dome)
+                const knobR = radius * 0.44;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                ctx.beginPath();
+                ctx.arc(x + 1.5, y + 2.5, knobR, 0, Math.PI * 2);
+                ctx.fill();
+
+                const knobGrad = ctx.createRadialGradient(x - knobR * 0.35, y - knobR * 0.35, 1, x, y, knobR);
+                if (isPlayer) {
+                    knobGrad.addColorStop(0, '#ffffff');
+                    knobGrad.addColorStop(0.3, '#00f2fe');
+                    knobGrad.addColorStop(0.75, '#0984e3');
+                    knobGrad.addColorStop(1, '#003366');
+                } else {
+                    knobGrad.addColorStop(0, '#fff3e0');
+                    knobGrad.addColorStop(0.3, '#ffa502');
+                    knobGrad.addColorStop(0.75, '#ff4757');
+                    knobGrad.addColorStop(1, '#53000d');
+                }
+                ctx.fillStyle = knobGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, knobR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Knob Specular Glint
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                ctx.beginPath();
+                ctx.ellipse(x - knobR * 0.32, y - knobR * 0.32, knobR * 0.28, knobR * 0.16, -Math.PI / 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Center Crest Emblem
+                if (isPlayer) {
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 7.5, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 15px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('👨‍🍳', x, y);
+                }
+
+                ctx.restore();
+            }
+
+            // Draw Chef AI Mallet
+            drawProPusher(hkChefAI.x, hkChefAI.y, hkChefAI.radius, false);
+
+            // Draw Player Mallet
+            drawProPusher(hkPlayer.x, hkPlayer.y, hkPlayer.radius, true);
+
+            // LAYER 9: Impact Sparks & Celebratory Particles
             for (let i = hkParticles.length - 1; i >= 0; i--) {
                 const p = hkParticles[i];
                 p.x += p.vx;
@@ -9103,63 +9422,194 @@
             }
             ctx.globalAlpha = 1.0;
 
-            // HUD
-            ctx.font = '900 18px Segoe UI, sans-serif';
-            ctx.textAlign = 'left';
+            // LAYER 10: Cyber Arcade Scoreboard HUD (Top Glass Capsule)
+            const hudW = Math.min(W * 0.88, 360);
+            const hudH = 46;
+            const hudX = (W - hudW) / 2;
+            const hudY = 18;
+
+            ctx.save();
+            const bezelGrad = ctx.createLinearGradient(hudX, hudY, hudX, hudY + hudH);
+            bezelGrad.addColorStop(0, 'rgba(15, 23, 42, 0.92)');
+            bezelGrad.addColorStop(1, 'rgba(7, 11, 20, 0.94)');
+            ctx.fillStyle = bezelGrad;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.roundRect(hudX, hudY, hudW, hudH, hudH / 2);
+            ctx.fill();
+
+            // Border rim with dual neon accent
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Flashing Siren Beacons at ends of scoreboard
+            const isGoalSirens = (hkGoalLightPulse > 0);
+            // Left Siren (Chef Side)
+            ctx.fillStyle = (isGoalSirens && hkLastScorer === 'PLAYER') ? '#ff0033' : '#ff4757';
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = (isGoalSirens && hkLastScorer === 'PLAYER') ? 18 : 6;
+            ctx.beginPath();
+            ctx.arc(hudX + 16, hudY + hudH / 2, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Right Siren (Player Side)
+            ctx.fillStyle = (isGoalSirens && hkLastScorer === 'CHEF') ? '#00f2fe' : '#00e5ff';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = (isGoalSirens && hkLastScorer === 'CHEF') ? 18 : 6;
+            ctx.beginPath();
+            ctx.arc(hudX + hudW - 16, hudY + hudH / 2, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Chef AI Score (Left Section)
+            const chefSectionX = hudX + hudW * 0.25;
+            ctx.font = 'bold 9px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#ff6b81';
+            ctx.textAlign = 'center';
+            ctx.fillText('CHEF AI', chefSectionX, hudY + 14);
+
+            ctx.font = '900 24px "Segoe UI", sans-serif';
             ctx.fillStyle = '#ff4757';
-            ctx.fillText(`👨‍🍳 Chef: ${hkScore.chef}`, 20, 32);
+            ctx.shadowColor = '#ff4757';
+            ctx.shadowBlur = 10;
+            ctx.fillText(`${hkScore.chef}`, chefSectionX, hudY + 37);
+            ctx.shadowBlur = 0;
 
-            ctx.textAlign = 'right';
-            ctx.fillStyle = '#00ffff';
-            ctx.fillText(`Player: ${hkScore.player} 🏒`, W - 20, 32);
+            // VS & Speedometer Badge (Center Section)
+            const centerHudX = hudX + hudW / 2;
+            ctx.font = '900 11px "Segoe UI", sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+            ctx.fillText('VS', centerHudX, hudY + 16);
 
-            // Chef Dialogue
+            ctx.font = 'bold 10px "Segoe UI", sans-serif';
+            const speedDisplay = (puckSpeed * 4.6).toFixed(0);
+            ctx.fillStyle = puckSpeed > 13 ? '#ffd32a' : (puckSpeed > 7 ? '#ff7675' : '#74b9ff');
+            ctx.fillText(`⚡ ${speedDisplay} KM/H`, centerHudX, hudY + 34);
+
+            // Player Score (Right Section)
+            const plyrSectionX = hudX + hudW * 0.75;
+            ctx.font = 'bold 9px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#70a1ff';
+            ctx.fillText('YOU (P1)', plyrSectionX, hudY + 14);
+
+            ctx.font = '900 24px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#00f2fe';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 10;
+            ctx.fillText(`${hkScore.player}`, plyrSectionX, hudY + 37);
+            ctx.shadowBlur = 0;
+            ctx.restore();
+
+            // LAYER 11: Chef AI Communicator Pod
             if (hkChefAI.dialogue && hkChefAI.dialogueTimer > 0) {
-                const bubbleY = 52;
-                ctx.font = 'bold 11px Segoe UI, sans-serif';
+                const commY = hudY + hudH + 8;
+                ctx.font = '600 11px "Segoe UI", sans-serif';
                 ctx.textAlign = 'center';
-                const textWidth = ctx.measureText(hkChefAI.dialogue).width;
-                const bubbleW = textWidth + 24;
+                const textW = ctx.measureText(hkChefAI.dialogue).width;
+                const commW = Math.min(W * 0.92, textW + 30);
 
-                ctx.fillStyle = 'rgba(20, 25, 40, 0.88)';
-                ctx.strokeStyle = 'rgba(255, 71, 87, 0.7)';
-                ctx.lineWidth = 1.5;
+                ctx.save();
+                ctx.fillStyle = 'rgba(10, 15, 28, 0.92)';
+                ctx.strokeStyle = 'rgba(255, 71, 87, 0.65)';
+                ctx.lineWidth = 1.2;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+                ctx.shadowBlur = 10;
                 ctx.beginPath();
-                ctx.roundRect((W - bubbleW) / 2, bubbleY, bubbleW, 22, 11);
+                ctx.roundRect((W - commW) / 2, commY, commW, 24, 12);
                 ctx.fill();
                 ctx.stroke();
 
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(hkChefAI.dialogue, W / 2, bubbleY + 15);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#f1f2f6';
+                ctx.fillText(hkChefAI.dialogue, W / 2, commY + 16);
+                ctx.restore();
             }
 
-            // Target Matrix Progress
+            // LAYER 12: Target Matrix & Reward Progress Bar (Bottom Floating HUD)
             const targetTar = parseInt((window.rules && window.rules.hockeyTar) || 5);
             const targetDisc = parseInt((window.rules && window.rules.hockeyDisc) || 15);
-            const isCompleted = hkScore.player >= targetTar;
+            const isUnlocked = hkScore.player >= targetTar;
 
-            const footerY = H - 24;
-            ctx.font = 'bold 11px Segoe UI, sans-serif';
+            const pillW = Math.min(W * 0.88, 340);
+            const pillH = 34;
+            const pillX = (W - pillW) / 2;
+            const pillY = H - pillH - 14;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(12, 17, 30, 0.9)';
+            ctx.strokeStyle = isUnlocked ? 'rgba(57, 255, 20, 0.7)' : 'rgba(0, 242, 254, 0.4)';
+            ctx.lineWidth = 1.2;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Progress bar underlay
+            const progressRatio = Math.min(1.0, hkScore.player / targetTar);
+            const barW = pillW - 24;
+            const barH = 4;
+            const barX = pillX + 12;
+            const barY = pillY + pillH - 8;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 2);
+            ctx.fill();
+
+            const fillGrad = ctx.createLinearGradient(barX, 0, barX + barW * progressRatio, 0);
+            fillGrad.addColorStop(0, '#00f2fe');
+            fillGrad.addColorStop(1, isUnlocked ? '#39ff14' : '#ffd32a');
+            ctx.fillStyle = fillGrad;
+            ctx.shadowColor = isUnlocked ? '#39ff14' : '#00f2fe';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW * progressRatio, barH, 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.font = 'bold 11px "Segoe UI", sans-serif';
             ctx.textAlign = 'center';
+            if (isUnlocked) {
+                ctx.fillStyle = '#39ff14';
+                ctx.fillText(`🎉 TARGET WON: ${targetDisc}% OFF UNLOCKED! (${hkScore.player}/${targetTar})`, W / 2, pillY + 16);
+            } else {
+                ctx.fillStyle = '#dfe4ea';
+                ctx.fillText(`🎯 CHALLENGE: Score ${targetTar} Goals for ${targetDisc}% OFF (${hkScore.player}/${targetTar})`, W / 2, pillY + 16);
+            }
+            ctx.restore();
 
-            ctx.fillStyle = isCompleted ? '#39ff14' : 'rgba(255, 255, 255, 0.75)';
-            const targetText = isCompleted
-                ? `🎉 Target Achieved: ${targetDisc}% OFF Unlocked!`
-                : `🎯 Target: Score ${targetTar} Goals for ${targetDisc}% OFF (${hkScore.player}/${targetTar})`;
-            ctx.fillText(targetText, W / 2, footerY);
-
-            // Goal / Milestone Overlay Banner
+            // LAYER 13: Celebratory Goal Banner with 3D Holographic Sweep
             if (hkBannerText && hkGameState === 'GOAL_PAUSE') {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, centerY - 38, W, 76);
+                ctx.save();
+                ctx.fillStyle = 'rgba(2, 6, 16, 0.82)';
+                ctx.fillRect(0, H / 2 - 50, W, 100);
 
-                ctx.font = '900 20px Segoe UI, sans-serif';
+                ctx.strokeStyle = hkBannerColor;
+                ctx.shadowColor = hkBannerColor;
+                ctx.shadowBlur = 18;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(0, H / 2 - 50);
+                ctx.lineTo(W, H / 2 - 50);
+                ctx.moveTo(0, H / 2 + 50);
+                ctx.lineTo(W, H / 2 + 50);
+                ctx.stroke();
+
+                ctx.font = 'bold 12px "Segoe UI", sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 ctx.textAlign = 'center';
+                ctx.fillText('CYBER AIR HOCKEY ARENA', W / 2, H / 2 - 24);
+
+                ctx.font = '900 26px "Segoe UI", sans-serif';
                 ctx.fillStyle = hkBannerColor;
                 ctx.shadowColor = hkBannerColor;
-                ctx.shadowBlur = 15;
-                ctx.fillText(hkBannerText, W / 2, centerY + 7);
-                ctx.shadowBlur = 0;
+                ctx.shadowBlur = 20;
+                ctx.fillText(hkBannerText, W / 2, H / 2 + 12);
+                ctx.restore();
             }
 
             ctx.restore();
