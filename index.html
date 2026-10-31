@@ -2619,8 +2619,10 @@ function queueDebouncedBillRender() {
         window.updateAdminSectionBadges = updateAdminSectionBadges;
 
         function handleInboundOrderCrossSectionNotification(orderObj) {
-            if (!orderObj || !orderObj.table_id) return;
-            let rawTableId = String(orderObj.table_id).trim();
+            if (!orderObj) return;
+            let rawTableId = typeof orderObj === 'string' ? orderObj : (orderObj.table_id || '');
+            if (!rawTableId) return;
+            rawTableId = String(rawTableId).trim();
             let cleanUnitId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
             let isRoom = /^R\d+/i.test(cleanUnitId) || rawTableId.includes('_R') || rawTableId.toLowerCase().includes('room');
             let orderSection = isRoom ? 'ROOM' : 'TABLE';
@@ -2649,6 +2651,8 @@ function queueDebouncedBillRender() {
             const btnRoom = document.getElementById('tabBtn_ROOM');
             if (btnTable && btnRoom) {
                 if (targetSection === 'TABLE') {
+                    btnTable.classList.add('active');
+                    btnRoom.classList.remove('active');
                     btnTable.style.background = '#2c3e50';
                     btnTable.style.color = '#ffffff';
                     btnTable.style.boxShadow = '0 4px 10px rgba(44, 62, 80, 0.3)';
@@ -2656,6 +2660,8 @@ function queueDebouncedBillRender() {
                     btnRoom.style.color = '#57606f';
                     btnRoom.style.boxShadow = 'none';
                 } else {
+                    btnRoom.classList.add('active');
+                    btnTable.classList.remove('active');
                     btnRoom.style.background = 'linear-gradient(135deg, #8e44ad, #9b59b6)';
                     btnRoom.style.color = '#ffffff';
                     btnRoom.style.boxShadow = '0 4px 12px rgba(142, 68, 173, 0.4)';
