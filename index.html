@@ -709,6 +709,60 @@
             border: 1px dashed #ccc;
         }
 
+        /* 🔄 DUAL-MODE SERVICE SWITCHER (TABLES VS ROOMS) */
+        .service-mode-switcher-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            width: 100%;
+            background: #ffffff;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+        }
+
+        .service-mode-btn {
+            flex: 1;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 9px;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #f1f2f6;
+            color: #57606f;
+            outline: none;
+        }
+
+        .service-mode-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .service-unread-badge {
+            display: inline-block;
+            background: #e74c3c;
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 2px 7px;
+            font-size: 11px;
+            margin-left: 7px;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(231, 76, 60, 0.4);
+            animation: pulseBadge 1.5s infinite;
+        }
+
+        @keyframes pulseBadge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
         /* Floor Layout Grid Context Markup CSS Style Parameters */
         .floor-block {
             margin-bottom: 20px;
@@ -1429,20 +1483,30 @@
                 </div>
             </div>
         </div>
-        <h3>📊 Table Current Status Section</h3>
-        <div class="table-legend-bar">
-            <span class="legend-dot" style="background:var(--tbl-orange)">Orange: Empty</span>
-            <span class="legend-dot" style="background:var(--tbl-green)">Green: Full </span>
-            <span class="legend-dot" style="background:var(--tbl-grey)">Grey: Booked</span>
-            <span class="legend-dot" style="background:var(--tbl-brown)">Brown: Cleaning</span>
+        <!-- 🔄 MASTER DUAL-MODE SERVICE SWITCHER (TABLES VS. ROOMS) -->
+        <div class="service-mode-switcher-container">
+            <button id="tabBtn_TABLE" onclick="switchAdminServiceSection('TABLE')" class="service-mode-btn" style="background:#2c3e50; color:#ffffff; box-shadow:0 4px 10px rgba(44,62,80,0.3);">
+                🍽️ Tables Section <span id="badge_TABLE" class="service-unread-badge" style="display:none;">0</span>
+            </button>
+            <button id="tabBtn_ROOM" onclick="switchAdminServiceSection('ROOM')" class="service-mode-btn" style="background:#f1f2f6; color:#57606f;">
+                🛏️ Rooms Section <span id="badge_ROOM" class="service-unread-badge" style="display:none;">0</span>
+            </button>
+        </div>
+
+        <h3 id="adminStatusSectionTitle">📊 Table Current Status Section</h3>
+        <div class="table-legend-bar" id="adminGridLegendBar">
+            <span class="legend-dot" style="background:var(--tbl-orange)" id="legendEmpty">Orange: Empty</span>
+            <span class="legend-dot" style="background:var(--tbl-green)" id="legendFull">Green: Full</span>
+            <span class="legend-dot" style="background:var(--tbl-grey)" id="legendBooked">Grey: Booked</span>
+            <span class="legend-dot" style="background:var(--tbl-brown)" id="legendCleaning">Brown: Cleaning</span>
         </div>
         <div id="adminTableLayoutGrid"></div>
-        <button class="action-btn" onclick="addNewFloor()"
+        <button class="action-btn" id="adminFloorCreateButton" onclick="addNewFloor()"
             style="background:#8e44ad; color:white; font-size: 13px; margin-bottom:15px;">➕ Create New Floor</button>
-        <h3>📋 Live Customer Billing Tracker Map</h3>
+        <h3 id="adminBillingSectionTitle">📋 Live Customer Billing Tracker Map</h3>
         <div
             style="background:#fff; border:2px solid #27ae60; padding:15px; border-radius:12px; margin-bottom:20px; text-align:left;">
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt Live:</label>
+            <label id="adminBillingViewerSelectLabel" style="font-size:12px; font-weight:bold; color:#555;">Select Table to View Running Receipt Live:</label>
             <select id="adminBillingViewerTableSelect" onchange="auditSelectedTableBillInvoiceLive()"
                 style="border-color:#27ae60; font-weight:bold; color:#27ae60;"></select>
 
@@ -1468,7 +1532,7 @@
                 style="background:var(--neon-green); color:white; font-size:12px; padding:8px; margin-top:8px; display: block; width: 100%; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
                 🖨️ Print Bill (Thermal Receipt)
             </button>
-            <button class="order-btn"
+            <button id="adminSettleBillBtn" class="order-btn"
                 style="background:var(--dark-charcoal); color:white; font-size:12px; padding:6px; margin-top:8px;"
                 onclick="executeAdminManualBillWipeSettlement()">Clear & Settle Table Bill Archive</button>
         </div>
@@ -1481,7 +1545,7 @@
         <h3>⚡ Waiter Billing Console: Force Inject Items</h3>
         <div
             style="background:white; padding:15px; border-radius:12px; border:1px solid #ccc; margin-bottom:20px; text-align:left;">
-            <label style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
+            <label id="waiterTableSelectLabel" style="font-size:12px; font-weight:bold; color:#555;">Select Target Table ID Router:</label>
             <select id="waiterTableSelect"
                 style="padding:6px; margin:4px 0; font-size:12px; font-weight: bold; color: var(--tbl-orange);"></select>
 
@@ -2054,12 +2118,19 @@
                 document.body.appendChild(receiptContainer);
             }
 
+            let cleanThermalUnit = selectedTable.includes('_') ? selectedTable.split('_')[1] : selectedTable;
+            let isRoomThermal = isRoomUnit(cleanThermalUnit) || selectedTable.includes('_R') || selectedTable.toLowerCase().includes('room');
+            let unitFormattedLabel = isRoomThermal 
+                ? (selectedTable.includes('_') ? `${selectedTable.split('_')[0]} - Room ${cleanThermalUnit}` : `Room ${cleanThermalUnit}`)
+                : (selectedTable.includes('_') ? `${selectedTable.split('_')[0]} - Table ${cleanThermalUnit}` : `Table ${cleanThermalUnit}`);
+            let unitLabelKey = isRoomThermal ? 'Room No:' : 'Table No:';
+
             receiptContainer.innerHTML = `
         <div style="width: 100%; text-align: center;">
             <h3 style="margin: 0 0 2px 0; font-size: 13px; font-weight: bold;">${realBrandName}</h3>
             <p style="margin: 0 0 6px 0; font-size: 9px; letter-spacing: 1px;">TAX INVOICE / RECEIPT</p>
             <div style="text-align: left; font-size: 10px; line-height: 1.2;">
-                <div><b>Table No:</b> ${selectedTable}</div>
+                <div><b>${unitLabelKey}</b> ${unitFormattedLabel}</div>
                 <div><b>Date:</b> ${new Date().toLocaleDateString()} | ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
             <hr>
@@ -2126,8 +2197,11 @@
                         schema: 'public',
                         table: 'active_orders',
                         filter: 'hotel_id=eq.' + hotelGlobalScopeID
-                    }, () => {
-                        console.log("ðŸ”” Tracker Trigger: Active order state mutation captured!");
+                    }, (payload) => {
+                        console.log("🔔 Tracker Trigger: Active order state mutation captured!", payload);
+                        if (payload && (payload.eventType === 'INSERT' || payload.event === 'INSERT') && payload.new) {
+                            handleInboundOrderCrossSectionNotification(payload.new);
+                        }
                         fetchActiveKitchenOrdersQueue();
                         if (typeof queueDebouncedBillRender === "function") queueDebouncedBillRender();
                     })
@@ -2498,7 +2572,151 @@ function queueDebouncedBillRender() {
             { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
             { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
         ];
-        let defaultFloors = [{ floorName: "Ground Dining Hall", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
+        // 🔄 DUAL-MODE SERVICE SECTION ARCHITECTURE (TABLES VS ROOMS)
+        let activeAdminServiceSection = localStorage.getItem('restroflow_active_admin_service_section') || 'TABLE';
+        let unreadSectionOrdersCount = { TABLE: 0, ROOM: 0 };
+        window.activeAdminServiceSection = activeAdminServiceSection;
+        window.unreadSectionOrdersCount = unreadSectionOrdersCount;
+
+        function getFloorSectionType(floor) {
+            if (!floor) return 'TABLE';
+            if (floor.sectionType === 'ROOM' || floor.sectionType === 'TABLE') return floor.sectionType;
+            let fName = (floor.floorName || '').toLowerCase();
+            if (fName.includes('room') || fName.includes('wing') || fName.includes('stay') || fName.includes('suite')) {
+                return 'ROOM';
+            }
+            if (Array.isArray(floor.tables) && floor.tables.some(t => t && t.id && /^R\d+/i.test(String(t.id).trim()))) {
+                return 'ROOM';
+            }
+            return 'TABLE';
+        }
+        window.getFloorSectionType = getFloorSectionType;
+
+        function isRoomUnit(id, floorObj) {
+            if (!id && !floorObj) return false;
+            let cleanId = id ? (String(id).includes('_') ? String(id).split('_')[1] : String(id)).trim() : '';
+            if (cleanId && /^R\d+/i.test(cleanId)) return true;
+            if (floorObj && getFloorSectionType(floorObj) === 'ROOM') return true;
+            if (id && (String(id).includes('_R') || String(id).includes('-R') || String(id).toLowerCase().includes('room'))) return true;
+            return false;
+        }
+        window.isRoomUnit = isRoomUnit;
+
+        function updateAdminSectionBadges() {
+            const badgeTable = document.getElementById('badge_TABLE');
+            const badgeRoom = document.getElementById('badge_ROOM');
+            if (badgeTable) {
+                let count = unreadSectionOrdersCount.TABLE || 0;
+                badgeTable.innerText = count;
+                badgeTable.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+            if (badgeRoom) {
+                let count = unreadSectionOrdersCount.ROOM || 0;
+                badgeRoom.innerText = count;
+                badgeRoom.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+        }
+        window.updateAdminSectionBadges = updateAdminSectionBadges;
+
+        function handleInboundOrderCrossSectionNotification(orderObj) {
+            if (!orderObj || !orderObj.table_id) return;
+            let rawTableId = String(orderObj.table_id).trim();
+            let cleanUnitId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
+            let isRoom = /^R\d+/i.test(cleanUnitId) || rawTableId.includes('_R') || rawTableId.toLowerCase().includes('room');
+            let orderSection = isRoom ? 'ROOM' : 'TABLE';
+
+            if (activeAdminServiceSection !== orderSection) {
+                unreadSectionOrdersCount[orderSection] = (unreadSectionOrdersCount[orderSection] || 0) + 1;
+                updateAdminSectionBadges();
+
+                if (orderSection === 'TABLE') {
+                    showOnScreenNotification(`🔔 New Order received on Table ${cleanUnitId}!`, false);
+                } else {
+                    showOnScreenNotification(`🛏️ New Room Service Order received on Room ${cleanUnitId}!`, false);
+                }
+            }
+        }
+        window.handleInboundOrderCrossSectionNotification = handleInboundOrderCrossSectionNotification;
+
+        function switchAdminServiceSection(targetSection) {
+            activeAdminServiceSection = targetSection;
+            window.activeAdminServiceSection = targetSection;
+            localStorage.setItem('restroflow_active_admin_service_section', targetSection);
+            unreadSectionOrdersCount[targetSection] = 0;
+            updateAdminSectionBadges();
+
+            const btnTable = document.getElementById('tabBtn_TABLE');
+            const btnRoom = document.getElementById('tabBtn_ROOM');
+            if (btnTable && btnRoom) {
+                if (targetSection === 'TABLE') {
+                    btnTable.style.background = '#2c3e50';
+                    btnTable.style.color = '#ffffff';
+                    btnTable.style.boxShadow = '0 4px 10px rgba(44, 62, 80, 0.3)';
+                    btnRoom.style.background = '#f1f2f6';
+                    btnRoom.style.color = '#57606f';
+                    btnRoom.style.boxShadow = 'none';
+                } else {
+                    btnRoom.style.background = 'linear-gradient(135deg, #8e44ad, #9b59b6)';
+                    btnRoom.style.color = '#ffffff';
+                    btnRoom.style.boxShadow = '0 4px 12px rgba(142, 68, 173, 0.4)';
+                    btnTable.style.background = '#f1f2f6';
+                    btnTable.style.color = '#57606f';
+                    btnTable.style.boxShadow = 'none';
+                }
+            }
+
+            const titleElem = document.getElementById('adminStatusSectionTitle');
+            if (titleElem) {
+                titleElem.innerHTML = targetSection === 'ROOM' ? '🛏️ Room Current Status Section' : '📊 Table Current Status Section';
+            }
+
+            const btnFloorCreate = document.getElementById('adminFloorCreateButton');
+            if (btnFloorCreate) {
+                btnFloorCreate.innerHTML = targetSection === 'ROOM' ? '➕ Create New Room Wing/Floor' : '➕ Create New Floor';
+            }
+
+            const lblSelect = document.getElementById('adminBillingViewerSelectLabel');
+            if (lblSelect) {
+                lblSelect.innerText = targetSection === 'ROOM' ? 'Select Room to View Running Receipt Live:' : 'Select Table to View Running Receipt Live:';
+            }
+
+            const lblWaiterRouter = document.getElementById('waiterTableSelectLabel');
+            if (lblWaiterRouter) {
+                lblWaiterRouter.innerText = targetSection === 'ROOM' ? 'Select Target Room ID Router:' : 'Select Target Table ID Router:';
+            }
+
+            const btnSettle = document.getElementById('adminSettleBillBtn');
+            if (btnSettle) {
+                btnSettle.innerText = targetSection === 'ROOM' ? 'Clear & Settle Room Bill Archive' : 'Clear & Settle Table Bill Archive';
+            }
+
+            const legEmpty = document.getElementById('legendEmpty');
+            const legFull = document.getElementById('legendFull');
+            const legBooked = document.getElementById('legendBooked');
+            const legCleaning = document.getElementById('legendCleaning');
+            if (legEmpty && legFull) {
+                if (targetSection === 'ROOM') {
+                    legEmpty.innerText = 'Orange: Vacant';
+                    legFull.innerText = 'Purple: Occupied';
+                    legFull.style.background = '#9b59b6';
+                    if (legBooked) legBooked.innerText = 'Grey: Reserved';
+                    if (legCleaning) legCleaning.innerText = 'Brown: Cleaning';
+                } else {
+                    legEmpty.innerText = 'Orange: Empty';
+                    legFull.innerText = 'Green: Full';
+                    legFull.style.background = 'var(--tbl-green)';
+                    if (legBooked) legBooked.innerText = 'Grey: Booked';
+                    if (legCleaning) legCleaning.innerText = 'Brown: Cleaning';
+                }
+            }
+
+            if (typeof generateAdminTableGrid === 'function') generateAdminTableGrid();
+            if (typeof populateWaiterPanelDropdownList === 'function') populateWaiterPanelDropdownList();
+            if (typeof auditSelectedTableBillInvoiceLive === 'function') auditSelectedTableBillInvoiceLive();
+        }
+        window.switchAdminServiceSection = switchAdminServiceSection;
+
+        let defaultFloors = [{ floorName: "Ground Dining Hall", sectionType: "TABLE", tables: [{ id: "T1", state: 0, waiterBell: false }, { id: "T2", state: 1, waiterBell: false }, { id: "T3", state: 0, waiterBell: false }] }];
         let defaultTaxes = { cgstActive: true, cgstRate: 2.5, sgstActive: true, sgstRate: 2.5, serviceActive: false, serviceRate: 5 };
 
         // ðŸ›¡ï¸ LEVEL 3: Core Configurations arrays data streams retrieval bindings
@@ -2798,9 +3016,15 @@ function queueDebouncedBillRender() {
                 // 🔥 FRONTEND DECORATOR: Parse compound names to read clean formats natively
                 if (clientCurrentActiveTable.includes('_')) {
                     let parts = clientCurrentActiveTable.split('_');
-                    tableNameElem.innerText = `${parts[0]} - Table ${parts[1]}`;
+                    let floorPart = parts[0];
+                    let unitPart = parts[1];
+                    let isRoom = /^R\d+/i.test(unitPart) || floorPart.toLowerCase().includes('room') || floorPart.toLowerCase().includes('wing');
+                    let unitPrefix = isRoom ? "Room" : "Table";
+                    tableNameElem.innerText = `${floorPart} - ${unitPrefix} ${unitPart}`;
                 } else {
-                    tableNameElem.innerText = "Table " + clientCurrentActiveTable;
+                    let isRoom = /^R\d+/i.test(clientCurrentActiveTable);
+                    let unitPrefix = isRoom ? "Room " : "Table ";
+                    tableNameElem.innerText = unitPrefix + clientCurrentActiveTable;
                 }
             }
 
@@ -3234,8 +3458,10 @@ function queueDebouncedBillRender() {
             // 🔥 UNIQUE LINK TOKEN BINDING: URL parameters mein floor identity aur table sector code dono inject kar diye hain
             let routingRawLinkURL = window.location.origin + window.location.pathname + `?hotel=${encodeURIComponent(hotelGlobalScopeID)}&floor=${encodeURIComponent(floorName)}&table=${encodeURIComponent(tableUnitID)}`;
 
-            document.getElementById('qrPrintTitle').innerText = `${realBrandName} - ${tableUnitID}`;
-            document.getElementById('qrPrintMetaSubText').innerText = `Floor: ${floorName} | Sharp High-Res Matrix`;
+            let isRoomQR = isRoomUnit(tableUnitID) || (floorName && (floorName.toLowerCase().includes('room') || floorName.toLowerCase().includes('wing')));
+            let unitPrefixQR = isRoomQR ? "Room" : "Table";
+            document.getElementById('qrPrintTitle').innerText = `${realBrandName} - ${unitPrefixQR} ${tableUnitID}`;
+            document.getElementById('qrPrintMetaSubText').innerText = `${isRoomQR ? 'Wing/Floor' : 'Floor'}: ${floorName} | Sharp High-Res Matrix`;
 
             new QRCode(qrCanvasFrame, { text: routingRawLinkURL, width: 150, height: 150, colorDark: "#2c3e50", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H });
             document.getElementById('qrPrintPreviewModal').style.display = 'flex';
@@ -3689,9 +3915,11 @@ async function renderLiveCalculatedBill() {
     const compositeTargetKey = `${hotelGlobalScopeID}_${activeTableId}`;
 
     // Scope Header Title formatting
+    let cleanUnitPart = activeTableId.includes('_') ? activeTableId.split('_')[1] : activeTableId;
+    let isRoomActive = isRoomUnit(cleanUnitPart) || activeTableId.includes('_R') || activeTableId.toLowerCase().includes('room');
     let displayScope = activeTableId.includes('_') 
-        ? `${activeTableId.split('_')[0]} - Table ${activeTableId.split('_')[1]}` 
-        : `Table ${activeTableId}`;
+        ? `${activeTableId.split('_')[0]} - ${isRoomActive ? 'Room' : 'Table'} ${cleanUnitPart}` 
+        : `${isRoomActive ? 'Room' : 'Table'} ${cleanUnitPart}`;
     document.getElementById('billTableScopeText').innerText = `Invoice Scope: Active ${displayScope}`;
 
     showOnScreenNotification("⏳ Fetching live invoice directly from cloud...", false);
@@ -4128,16 +4356,32 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 const safeFloors = Array.isArray(floorData) ? floorData : [];
                 safeFloors.forEach(floor => {
                     if (!floor || !Array.isArray(floor.tables)) return;
+                    let floorSec = getFloorSectionType(floor);
+                    // Complete View Isolation: filter strictly to activeAdminServiceSection
+                    if (floorSec !== activeAdminServiceSection) return;
+
                     floor.tables.forEach(t => {
                         if (!t) return;
                         let compoundValue = `${floor.floorName}_${t.id}`;
-                        let displayLabel = `${floor.floorName} - Table ${t.id}`;
+                        let isRoom = isRoomUnit(t.id, floor);
+                        let displayPrefix = isRoom ? 'Room' : 'Table';
+                        let displayLabel = `${floor.floorName} - ${displayPrefix} ${t.id}`;
                         let markupOption = `<option value="${compoundValue}">${displayLabel}</option>`;
                         tableSelector.innerHTML += markupOption; adminViewerSelector.innerHTML += markupOption;
                     });
                 });
-                if (savedWaiterTableSelection) tableSelector.value = savedWaiterTableSelection;
-                if (savedAdminTableSelection) adminViewerSelector.value = savedAdminTableSelection;
+
+                if (savedWaiterTableSelection && Array.from(tableSelector.options).some(o => o.value === savedWaiterTableSelection)) {
+                    tableSelector.value = savedWaiterTableSelection;
+                } else if (tableSelector.options.length > 0) {
+                    tableSelector.selectedIndex = 0;
+                }
+
+                if (savedAdminTableSelection && Array.from(adminViewerSelector.options).some(o => o.value === savedAdminTableSelection)) {
+                    adminViewerSelector.value = savedAdminTableSelection;
+                } else if (adminViewerSelector.options.length > 0) {
+                    adminViewerSelector.selectedIndex = 0;
+                }
             }
             syncWaiterSizeDropdownOptions(); auditSelectedTableBillInvoiceLive();
         }
@@ -4797,7 +5041,10 @@ async function initApp() {
                     try { cloudFloors = JSON.parse(cloudFloors); } catch (e) { cloudFloors = null; }
                 }
                 if (Array.isArray(cloudFloors) && cloudFloors.length > 0) {
-                    floorData = cloudFloors;
+                    floorData = cloudFloors.map(f => ({
+                        ...f,
+                        sectionType: getFloorSectionType(f)
+                    }));
                 }
             }
 
@@ -4903,7 +5150,7 @@ async function initApp() {
 
     try {
         renderCustomerMenu();
-        generateAdminTableGrid();
+        switchAdminServiceSection(activeAdminServiceSection);
         updateFrontEndClassificationLabels();
         setupGlobalKeyboardBindings();
         populateWaiterPanelDropdownList();
@@ -5023,85 +5270,154 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
         // ===================================================================
 
         function addNewFloor() {
-            let fName = prompt("🏢 Enter new floor name (e.g., Rooftop, 1st Floor):");
+            let isRoom = activeAdminServiceSection === 'ROOM';
+            let promptMsg = isRoom 
+                ? "🛏️ Enter new Room Wing/Floor name (e.g., 1st Floor Rooms, Deluxe Wing, Suites):" 
+                : "🏢 Enter new Table Floor name (e.g., Ground Dining Hall, Rooftop, 1st Floor):";
+            let fName = prompt(promptMsg);
             if (fName && fName.trim() !== "") {
-                floorData.push({ floorName: fName.trim(), tables: [] });
+                floorData.push({ 
+                    floorName: fName.trim(), 
+                    sectionType: isRoom ? 'ROOM' : 'TABLE', 
+                    tables: [] 
+                });
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("✅ New floor added successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification(`✅ New ${isRoom ? 'Room Wing/Floor' : 'Floor'} '${fName.trim()}' added successfully!`);
             }
         }
 
         function removeFloor(fIdx) {
-            if (confirm(`⚠ Are you sure you want to delete the entire '${floorData[fIdx].floorName}' floor and all its tables?`)) {
+            let floor = floorData[fIdx];
+            if (!floor) return;
+            let isRoom = (floor.sectionType === 'ROOM') || (activeAdminServiceSection === 'ROOM');
+            let floorWord = isRoom ? 'Room Wing/Floor' : 'Floor';
+            if (confirm(`⚠ Are you sure you want to delete the entire '${floor.floorName}' ${floorWord} and all its units?`)) {
                 floorData.splice(fIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("🗑 Floor removed successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification(`🗑 ${floorWord} removed successfully!`);
             }
         }
 
         function addTableToFloor(fIdx) {
-            // 1. Us floor ke saare tables mein se sabse bada 'T' number dhundho
+            let floor = floorData[fIdx];
+            if (!floor) return;
+            let isRoom = (floor.sectionType === 'ROOM') || (activeAdminServiceSection === 'ROOM');
+            let prefix = isRoom ? 'R' : 'T';
+
+            // 1. Us floor ke saare units mein se sabse bada prefix number dhundho
             let maxNum = 0;
-            floorData[fIdx].tables.forEach(t => {
-                // Check karega ki kya naam T1, T2 format mein hai
-                let match = t.id.match(/^T(\d+)$/i);
-                if (match) {
-                    let num = parseInt(match[1]);
-                    if (num > maxNum) maxNum = num;
-                }
-            });
+            if (Array.isArray(floor.tables)) {
+                floor.tables.forEach(t => {
+                    if (!t || !t.id) return;
+                    let match = String(t.id).match(new RegExp(`^${prefix}(\\d+)$`, 'i'));
+                    if (match) {
+                        let num = parseInt(match[1]);
+                        if (num > maxNum) maxNum = num;
+                    }
+                });
+            } else {
+                floor.tables = [];
+            }
 
-            // 2. Naya table ID automatically generate karo (jaise T4, T5)
-            let newTableId = `T${maxNum + 1}`;
+            // 2. Naya unit ID automatically generate karo (jaise R1, R2 ya T4, T5)
+            let newUnitId = `${prefix}${maxNum + 1}`;
 
-            // 3. Table ko array mein add karo
-            floorData[fIdx].tables.push({
-                id: newTableId,
+            // 3. Unit ko array mein add karo
+            floor.tables.push({
+                id: newUnitId,
                 state: 0,
                 waiterBell: false
             });
 
+            if (!floor.sectionType) {
+                floor.sectionType = isRoom ? 'ROOM' : 'TABLE';
+            }
+
             // 4. Save karke grid refresh karo
             saveAdminConfig();
             generateAdminTableGrid();
-                showOnScreenNotification(`✅ Table ${newTableId} added successfully!`);
+            populateWaiterPanelDropdownList();
+            showOnScreenNotification(`✅ ${isRoom ? 'Room' : 'Table'} ${newUnitId} added successfully!`);
         }
+
         function removeTable(fIdx, tIdx) {
-            let targetTable = floorData[fIdx].tables[tIdx];
-            if (confirm(`⚠ Are you sure you want to delete Table ${targetTable.id}?`)) {
-                floorData[fIdx].tables.splice(tIdx, 1);
+            let floor = floorData[fIdx];
+            if (!floor || !floor.tables || !floor.tables[tIdx]) return;
+            let targetUnit = floor.tables[tIdx];
+            let isRoom = (floor.sectionType === 'ROOM') || isRoomUnit(targetUnit.id, floor);
+            let unitWord = isRoom ? 'Room' : 'Table';
+            if (confirm(`⚠ Are you sure you want to delete ${unitWord} ${targetUnit.id}?`)) {
+                floor.tables.splice(tIdx, 1);
                 saveAdminConfig();
                 generateAdminTableGrid();
-                showOnScreenNotification("🗑 Table removed successfully!");
+                populateWaiterPanelDropdownList();
+                showOnScreenNotification(`🗑 ${unitWord} removed successfully!`);
             }
         }
 
 // ===================================================================
-// 🏢 MASTER TABLE GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
+// 🏢 MASTER TABLE & ROOM GRID RENDERER (PETPOOJA/TOAST ARCHITECTURE)
 // ===================================================================
 function generateAdminTableGrid() {
     const container = document.getElementById('adminTableLayoutGrid');
     if (!container) return;
     container.innerHTML = '';
 
-    floorData.forEach((floor, fIdx) => {
+    const safeFloors = Array.isArray(floorData) ? floorData : [];
+    const isRoomMode = activeAdminServiceSection === 'ROOM';
+
+    // Complete View Isolation: filter floors to matching section
+    const matchingFloors = [];
+    safeFloors.forEach((floor, origIdx) => {
+        if (!floor) return;
+        let floorType = getFloorSectionType(floor);
+        if (floorType === activeAdminServiceSection) {
+            matchingFloors.push({ floor, origIdx });
+        }
+    });
+
+    if (matchingFloors.length === 0) {
+        container.innerHTML = `
+            <div style="background:#fff; border: 2px dashed ${isRoomMode ? '#9b59b6' : '#bdc3c7'}; border-radius:14px; padding:30px 20px; text-align:center; margin-bottom:15px;">
+                <div style="font-size:32px; margin-bottom:8px;">${isRoomMode ? '🛏️' : '🍽️'}</div>
+                <div style="font-weight:700; color:#2c3e50; font-size:15px; margin-bottom:4px;">
+                    ${isRoomMode ? 'No Hotel Room Wings or Floors Created Yet' : 'No Dining Table Floors Created Yet'}
+                </div>
+                <div style="font-size:12px; color:#7f8c8d; max-width:380px; margin:0 auto 12px auto; line-height:1.4;">
+                    ${isRoomMode 
+                        ? 'Click the button below to add your first Room Wing/Floor (e.g. 1st Floor Rooms, Deluxe Wing, Suites) and start adding Room units (R1, R2...).'
+                        : 'Click the button below to add your first Table Floor (e.g. Ground Dining Hall, Rooftop) and start adding Tables (T1, T2...).'}
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    matchingFloors.forEach(({ floor, origIdx: fIdx }) => {
+        let fNameClean = (floor.floorName || '').trim();
+        let addBtnLabel = isRoomMode ? '+ Add Room' : '+ Add Table';
+        let addBtnBg = isRoomMode ? 'linear-gradient(135deg, #8e44ad, #9b59b6)' : '#2ecc71';
+
         let floorHTML = `
-        <div class="floor-block">
+        <div class="floor-block" style="${isRoomMode ? 'border-left: 4px solid #8e44ad;' : ''}">
             <div class="floor-header">
-                <input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig();">
-                <button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">Delete Floor</button>
+                <input type="text" value="${floor.floorName}" oninput="floorData[${fIdx}].floorName=this.value; saveAdminConfig(); populateWaiterPanelDropdownList();">
+                <button onclick="removeFloor(${fIdx})" style="background:var(--danger-red); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">Delete Floor</button>
             </div>
             <div class="table-grid-container">`;
 
-        floor.tables.forEach((tbl, tIdx) => {
-            let fNameClean = (floor.floorName || '').trim();
+        const safeTables = Array.isArray(floor.tables) ? floor.tables : [];
+        safeTables.forEach((tbl, tIdx) => {
+            if (!tbl) return;
             let tIdClean = (tbl.id || '').trim();
             let compoundKey = `${fNameClean}_${tIdClean}`;
 
             let baseThemeColor = 'var(--tbl-orange)';
-            let currentLabel = 'Empty';
+            let currentLabel = isRoomMode ? 'Vacant' : 'Empty';
 
             // 1. Online Paid Check (Blue Priority)
             let isPaid = (localStorage.getItem('payment_status_map_' + hotelGlobalScopeID + '_' + compoundKey) === 'SUCCESS_PAID') ||
@@ -5112,34 +5428,36 @@ function generateAdminTableGrid() {
                 currentLabel = '💳 Paid UPI';
             } else if (tbl.custom_color) {
                 baseThemeColor = tbl.custom_color;
-                currentLabel = tbl.state === 1 ? 'Full' : (tbl.state === 2 ? 'Booked' : (tbl.state === 3 ? 'Cleaning' : 'Empty'));
+                currentLabel = tbl.state === 1 ? (isRoomMode ? 'Occupied' : 'Full') : (tbl.state === 2 ? (isRoomMode ? 'Reserved' : 'Booked') : (tbl.state === 3 ? 'Cleaning' : (isRoomMode ? 'Vacant' : 'Empty')));
             } else if (tbl.state === 1) {
-                baseThemeColor = 'var(--tbl-green)';  // 🟢 Green = Full
-                currentLabel = 'Full';
+                baseThemeColor = isRoomMode ? '#9b59b6' : 'var(--tbl-green)';  // 🟣 Purple for Occupied Room, 🟢 Green for Full Table
+                currentLabel = isRoomMode ? 'Occupied' : 'Full';
             } else if (tbl.state === 2) {
-                baseThemeColor = 'var(--tbl-grey)';   // âšª Grey = Booked
-                currentLabel = 'Booked';
+                baseThemeColor = 'var(--tbl-grey)';   // Grey = Booked / Reserved
+                currentLabel = isRoomMode ? 'Reserved' : 'Booked';
             } else if (tbl.state === 3) {
-                baseThemeColor = 'var(--tbl-brown)';  // ðŸŸ¤ Brown = Cleaning
+                baseThemeColor = 'var(--tbl-brown)';  // Brown = Cleaning
                 currentLabel = 'Cleaning';
             } else {
-                baseThemeColor = 'var(--tbl-orange)'; // 🍊 Orange = Empty
-                currentLabel = 'Empty';
+                baseThemeColor = 'var(--tbl-orange)'; // Orange = Vacant / Empty
+                currentLabel = isRoomMode ? 'Vacant' : 'Empty';
             }
 
             let alertClass = tbl.waiterBell ? 'waiter-alert' : '';
+            let unitBadge = isRoomMode ? 'Room' : '';
 
             floorHTML += `
             <div class="table-unit ${alertClass}" style="background: ${baseThemeColor};" onclick="resolveTableAlertAndCycleState(${fIdx}, ${tIdx})">
-                    <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${fNameClean}', '${tIdClean}')">🖨 QR</button>
+                <button class="print-qr-badge-btn" onclick="event.stopPropagation(); executeTriggerNativeQRGenCardWindow('${fNameClean}', '${tIdClean}')">🖨 QR</button>
                 <button class="del-tbl-btn" onclick="event.stopPropagation(); removeTable(${fIdx}, ${tIdx})">X</button>
+                ${unitBadge ? `<span style="font-size:10px; opacity:0.85; display:block;">${unitBadge}</span>` : ''}
                 ${tIdClean}<br><span style="font-size:9px; font-weight:normal;">${currentLabel}</span>
             </div>`;
         });
 
         floorHTML += `
             </div>
-            <button onclick="addTableToFloor(${fIdx})" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">+ Add Table</button>
+            <button onclick="addTableToFloor(${fIdx})" style="background:${addBtnBg}; color:white; border:none; padding:6px 14px; border-radius:5px; font-size:12px; font-weight:bold; cursor:pointer;">${addBtnLabel}</button>
         </div>`;
         container.innerHTML += floorHTML;
     });
@@ -5266,6 +5584,7 @@ function generateAdminTableGrid() {
                 const floorsDataForCloud = Array.isArray(floorData)
                     ? floorData.map(floor => ({
                         ...floor,
+                        sectionType: getFloorSectionType(floor),
                         tables: Array.isArray(floor.tables)
                             ? floor.tables.map(tbl => ({
                                 ...tbl,
@@ -5625,9 +5944,35 @@ function generateAdminTableGrid() {
                 const displayMin = Math.floor(elapsedSecs / 60);
                 const displaySec = elapsedSecs % 60;
 
+                let rawTableId = String(order.table_id || '').trim();
+                let cleanUnitId = rawTableId.includes('_') ? rawTableId.split('_')[1] : rawTableId;
+                let floorName = rawTableId.includes('_') ? rawTableId.split('_')[0] : '';
+                let isRoomOrder = /^R\d+/i.test(cleanUnitId) || rawTableId.includes('_R') || rawTableId.toLowerCase().includes('room');
+
+                let displayTableTitle = '';
+                if (isRoomOrder) {
+                    displayTableTitle = floorName ? `${floorName} - Room ${cleanUnitId}` : `Room ${cleanUnitId}`;
+                } else {
+                    displayTableTitle = floorName ? `${floorName} - Table ${cleanUnitId}` : `Table ${cleanUnitId}`;
+                }
+
+                // Distinct identity for room service: Royal Purple (#9b59b6 / #8e44ad)
+                let cardBg = isRoomOrder ? '#241734' : '#1f232d';
+                let cardBorder = isRoomOrder ? '2px solid #9b59b6' : '1px solid #2d323f';
+                let cardShadow = isRoomOrder ? '0 4px 18px rgba(155, 89, 182, 0.45)' : '0 4px 12px rgba(0,0,0,0.3)';
+                let itemStrip = isRoomOrder ? '3px solid #9b59b6' : '3px solid var(--tbl-orange)';
+                let itemBg = isRoomOrder ? '#1c102a' : '#202430';
+                let headerIcon = isRoomOrder ? '🛏️' : '🍽️';
+
+                let roomBadgeHtml = isRoomOrder ? `
+                    <span style="background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(142, 68, 173, 0.4); margin-right: 6px;">
+                        🛏️ ROOM ORDER
+                    </span>
+                ` : '';
+
                 let itemsHtml = '';
                 order.order_items.forEach(item => {
-                    itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background:#202430; padding:8px; border-radius:6px; font-size:14px; border-left: 3px solid var(--tbl-orange);">
+                    itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; background:${itemBg}; padding:8px; border-radius:6px; font-size:14px; border-left: ${itemStrip};">
                             <span><b>🍲 ${item.dish_name}</b> [${item.size}]</span>
                             <b style="color:#2ecc71;">x${item.qty}</b>
                          </div>`;
@@ -5635,28 +5980,22 @@ function generateAdminTableGrid() {
 
                 let actionButtonHtml = '';
                 if (order.status === 'PENDING') {
-                    actionButtonHtml = `<button class="order-btn" onclick="updateKdsTicketState('${order.id}', 'PREPARING')" style="background:#e67e22; margin:0;">Accept & Cook</button>`;
+                    actionButtonHtml = `<button class="order-btn" onclick="updateKdsTicketState('${order.id}', 'PREPARING')" style="background:${isRoomOrder ? '#9b59b6' : '#e67e22'}; margin:0;">${isRoomOrder ? 'Accept & Cook Room Order' : 'Accept & Cook'}</button>`;
                 } else if (order.status === 'PREPARING') {
                     actionButtonHtml = `<button class="order-btn" onclick="executeChefCompletionSequence('${order.id}', '${order.hotel_id}')" style="background:#2ecc71; margin:0;">Mark Complete</button>`;
                 }
 
-                // 🔥 SHARP RENDER HACK: Checks compound fields structure to split and decorate floor headers clearly on kitchen streams
-                let displayTableTitle = order.table_id;
-                if (displayTableTitle.includes('_')) {
-                    let parts = displayTableTitle.split('_');
-                    displayTableTitle = `${parts[0]} - Table ${parts[1]}`;
-                } else {
-                    displayTableTitle = `Table ${displayTableTitle}`;
-                }
-
                 container.innerHTML += `
-            <div style="background: #1f232d; border: 1px solid #2d323f; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <div style="background: ${cardBg}; border: ${cardBorder}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: ${cardShadow}; transition: transform 0.2s ease;">
                 <div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px dashed #2d323f; padding-bottom:8px; font-size:12px;">
-                        <span style="color:#7f8c8d;">ID: ${order.id.substring(0, 6).toUpperCase()}</span>
-                        <span style="color:#e74c3c; font-weight:bold;">⏱️ ${displayMin}m ${displaySec}s ago</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px dashed ${isRoomOrder ? '#4a2d6b' : '#2d323f'}; padding-bottom:8px; font-size:12px;">
+                        <span style="color:#a5b1c2;">ID: ${order.id.substring(0, 6).toUpperCase()}</span>
+                        <div style="display:flex; align-items:center;">
+                            ${roomBadgeHtml}
+                            <span style="color:#e74c3c; font-weight:bold;">⏱️ ${displayMin}m ${displaySec}s ago</span>
+                        </div>
                     </div>
-                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">🍽 ${displayTableTitle}</h3>
+                    <h3 style="text-align:left; color:#ffffff; margin: 0 0 12px 0;">${headerIcon} ${displayTableTitle}</h3>
                     <div>${itemsHtml}</div>
                 </div>
                 <div style="margin-top:15px;">${actionButtonHtml}</div>
