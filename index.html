@@ -1496,6 +1496,90 @@
             border: 1px dashed #ccc;
         }
 
+        .admin-schedule-box {
+            background: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .admin-schedule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .admin-schedule-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #2c3e50;
+            white-space: nowrap;
+        }
+
+        .admin-schedule-select {
+            flex: 1;
+            min-width: 170px;
+            width: auto !important;
+            padding: 6px 8px !important;
+            margin: 0 !important;
+            font-size: 12px !important;
+            font-weight: 600;
+            border: 1px solid #cfd8dc !important;
+            border-radius: 6px !important;
+            background: #f8fafc;
+            color: #1e293b;
+            cursor: pointer;
+        }
+
+        .admin-schedule-time-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-top: 4px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .admin-schedule-time-field {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            flex: 1;
+            min-width: 125px;
+        }
+
+        .admin-schedule-time-field input[type="time"] {
+            flex: 1;
+            padding: 5px 6px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+        }
+
+        .admin-schedule-badge {
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 5px 9px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            width: fit-content;
+        }
+
         /* 🔄 DUAL-MODE SERVICE SWITCHER (TABLES VS ROOMS) */
         .service-mode-switcher-container {
             display: flex;
@@ -3362,8 +3446,8 @@ function queueDebouncedBillRender() {
 
         // ... Iske neeche aapka baki ka code (fallbackMenu, defaultFloors, etc.) jaisa hai waisa hi rahega
         let fallbackMenu = [
-            { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "" }] },
-            { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "" }] }
+            { categoryName: "Pizzas & Fast Food", items: [{ name: "Farmhouse Pizza", s: 140, m: 240, l: 320, sActive: true, mActive: true, lActive: true, image: "", inStock: true, scheduleMode: "FOREVER", startTime: "09:00", endTime: "22:00" }, { name: "Burger Combo Crunch", s: 70, m: 120, l: 0, sActive: true, mActive: true, lActive: false, image: "", inStock: true, scheduleMode: "FOREVER", startTime: "09:00", endTime: "22:00" }] },
+            { categoryName: "Beverages & Addons", items: [{ name: "Chilled Cold Drink", s: 30, m: 50, l: 80, sActive: true, mActive: true, lActive: true, image: "", inStock: true, scheduleMode: "FOREVER", startTime: "09:00", endTime: "22:00" }] }
         ];
         // 🔄 DUAL-MODE SERVICE SECTION ARCHITECTURE (TABLES VS ROOMS)
         let activeAdminServiceSection = localStorage.getItem('restroflow_active_admin_service_section') || 'TABLE';
@@ -4004,6 +4088,18 @@ function queueDebouncedBillRender() {
 
             let cIdx = selectorNode.getAttribute('data-c');
             let iIdx = selectorNode.getAttribute('data-i');
+
+            const orderedBlueprint = menuCategories && menuCategories[cIdx] && menuCategories[cIdx].items ? menuCategories[cIdx].items[iIdx] : null;
+            if (!orderedBlueprint || (typeof isDishCurrentlyAvailable === 'function' && !isDishCurrentlyAvailable(orderedBlueprint))) {
+                const dishTitle = (orderedBlueprint && orderedBlueprint.name) ? orderedBlueprint.name : 'This dish';
+                if (typeof showOnScreenNotification === 'function') {
+                    showOnScreenNotification(`⏳ Sorry! "${dishTitle}" is currently out of stock or outside its scheduled hours.`);
+                } else {
+                    alert(`Sorry! "${dishTitle}" is currently out of stock or outside its scheduled hours.`);
+                }
+                if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+                return;
+            }
 
             if (!size) {
                 let bluePrint = menuCategories[cIdx].items[iIdx];
@@ -5285,6 +5381,12 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     let isItemInStock = item.inStock !== false;
                     let stockBadgeBg = isItemInStock ? 'rgba(46, 204, 113, 0.15)' : 'rgba(231, 76, 60, 0.15)';
                     let stockTextColor = isItemInStock ? 'var(--neon-green)' : 'var(--danger-red)';
+                    const dishScheduleMode = item.scheduleMode === 'TIMED' ? 'TIMED' : 'FOREVER';
+                    const dishStartTime = item.startTime || '09:00';
+                    const dishEndTime = item.endTime || '22:00';
+                    const scheduleBadgeMeta = typeof getDishScheduleBadgeMeta === 'function'
+                        ? getDishScheduleBadgeMeta(item)
+                        : { text: '♾️ Always Live (24/7 In Stock)', bg: 'rgba(46, 204, 113, 0.12)', color: '#1e8449', border: 'rgba(46, 204, 113, 0.25)' };
 
                     catHTML += `
                 <div class="admin-row">
@@ -5292,7 +5394,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                         <div class="image-upload-container" style="flex: 1; border: none; padding: 0;">${miniPreview}<input type="file" accept="image/*" onchange="processDishImageUpload(event, ${cIdx}, ${iIdx})" style="font-size:11px; width:100%;"></div>
                         
                         <label style="font-size: 12px; font-weight: 800; color: ${stockTextColor}; background: ${stockBadgeBg}; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; border: 1px solid rgba(0,0,0,0.03);">
-                            <input type="checkbox" ${isItemInStock ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].inStock=this.checked; saveAdminConfig(); populateAdminForms();" style="margin:0; cursor:pointer; width:auto;"> ${isItemInStock ? '🟢 In Stock' : 'ðŸ”´ Out Of Stock'}
+                            <input type="checkbox" ${isItemInStock ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].inStock=this.checked; saveAdminConfig(); populateAdminForms(); if(typeof renderCustomerMenu==='function')renderCustomerMenu();" style="margin:0; cursor:pointer; width:auto;"> ${isItemInStock ? '🟢 In Stock' : 'ðŸ”´ Out Of Stock'}
                         </label>
                     </div>
                     
@@ -5300,6 +5402,27 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                     <div class="admin-size-inline"><label><input type="checkbox" ${item.sActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].sActive=this.checked; saveAdminConfig(); populateAdminForms()"> S Size</label>₹: <input type="number" value="${item.s || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].s=parseInt(this.value)||0; saveAdminConfig()"></div>
                     <div class="admin-size-inline"><label><input type="checkbox" ${item.mActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].mActive=this.checked; saveAdminConfig(); populateAdminForms()"> M Size</label>₹: <input type="number" value="${item.m || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].m=parseInt(this.value)||0; saveAdminConfig()"></div>
                     <div class="admin-size-inline"><label><input type="checkbox" ${item.lActive ? 'checked' : ''} onchange="menuCategories[${cIdx}].items[${iIdx}].lActive=this.checked; saveAdminConfig(); populateAdminForms()"> L Size</label>₹: <input type="number" value="${item.l || 0}" oninput="menuCategories[${cIdx}].items[${iIdx}].l=parseInt(this.value)||0; saveAdminConfig()"></div>
+                    <div class="admin-schedule-box">
+                        <div class="admin-schedule-header">
+                            <span class="admin-schedule-label">🕒 Availability Schedule</span>
+                            <select class="admin-schedule-select" onchange="updateDishScheduleField(${cIdx}, ${iIdx}, 'scheduleMode', this.value, true)">
+                                <option value="FOREVER" ${dishScheduleMode !== 'TIMED' ? 'selected' : ''}>♾️ Forever (Always Available)</option>
+                                <option value="TIMED" ${dishScheduleMode === 'TIMED' ? 'selected' : ''}>⏰ Custom Time Slot (Auto Stock In/Out)</option>
+                            </select>
+                        </div>
+                        ${dishScheduleMode === 'TIMED' ? `
+                        <div class="admin-schedule-time-row">
+                            <label class="admin-schedule-time-field">
+                                From: <input type="time" value="${dishStartTime}" oninput="updateDishScheduleField(${cIdx}, ${iIdx}, 'startTime', this.value, false)" onchange="updateDishScheduleField(${cIdx}, ${iIdx}, 'startTime', this.value, false)">
+                            </label>
+                            <label class="admin-schedule-time-field">
+                                To: <input type="time" value="${dishEndTime}" oninput="updateDishScheduleField(${cIdx}, ${iIdx}, 'endTime', this.value, false)" onchange="updateDishScheduleField(${cIdx}, ${iIdx}, 'endTime', this.value, false)">
+                            </label>
+                        </div>` : ''}
+                        <div id="dishScheduleBadge_${cIdx}_${iIdx}" class="admin-schedule-badge" style="background: ${scheduleBadgeMeta.bg}; color: ${scheduleBadgeMeta.color}; border-color: ${scheduleBadgeMeta.border};">
+                            ${scheduleBadgeMeta.text}
+                        </div>
+                    </div>
                     <button onclick="removeDishRow(${cIdx}, ${iIdx})" style="background:#7f8c8d; color:white; border:none; padding:6px; border-radius:6px; margin-top:5px; cursor:pointer;">Remove Dish</button>
                 </div>`;
                 });
@@ -5465,6 +5588,166 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
                 }
             };
         }
+
+        // ===================================================================
+        // 🕒 SMART DISH AVAILABILITY SCHEDULE ENGINE (FOREVER / CUSTOM TIME)
+        // ===================================================================
+        function parseTimeToMinutes(timeStr, fallbackMinutes = 0) {
+            if (typeof timeStr !== 'string') return fallbackMinutes;
+            const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})$/);
+            if (!match) return fallbackMinutes;
+            const hh = parseInt(match[1], 10);
+            const mm = parseInt(match[2], 10);
+            if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return fallbackMinutes;
+            return (hh * 60) + mm;
+        }
+
+        function formatTime12Hr(timeStr) {
+            const totalMinutes = parseTimeToMinutes(timeStr, -1);
+            if (totalMinutes < 0) return timeStr || '--:--';
+            const hours24 = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            const period = hours24 >= 12 ? 'PM' : 'AM';
+            const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+            return `${hours12}:${String(mins).padStart(2, '0')} ${period}`;
+        }
+
+        function isDishCurrentlyAvailable(item) {
+            // 1. Master Manual Switch Check: Emergency Out-Of-Stock always overrides schedule
+            if (!item || item.inStock === false) return false;
+
+            // 2. Forever Mode Check: Available 24/7 whenever inStock is not false
+            const mode = item.scheduleMode || 'FOREVER';
+            if (mode === 'FOREVER') return true;
+
+            // 3. Custom Time Window Check (includes overnight support e.g. 22:00 - 02:00)
+            if (mode === 'TIMED') {
+                const now = new Date();
+                const currentMinutes = (now.getHours() * 60) + now.getMinutes();
+                const startMinutes = parseTimeToMinutes(item.startTime || '09:00', 9 * 60);
+                const endMinutes = parseTimeToMinutes(item.endTime || '22:00', 22 * 60);
+
+                if (startMinutes < endMinutes) {
+                    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+                }
+                if (startMinutes > endMinutes) {
+                    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        function getDishScheduleBadgeMeta(item) {
+            if (!item || item.inStock === false) {
+                return {
+                    text: '🔴 Manual Out Of Stock',
+                    bg: 'rgba(231, 76, 60, 0.12)',
+                    color: '#c0392b',
+                    border: 'rgba(231, 76, 60, 0.25)'
+                };
+            }
+
+            const mode = item.scheduleMode || 'FOREVER';
+            if (mode !== 'TIMED') {
+                return {
+                    text: '♾️ Always Live (24/7 In Stock)',
+                    bg: 'rgba(46, 204, 113, 0.12)',
+                    color: '#1e8449',
+                    border: 'rgba(46, 204, 113, 0.25)'
+                };
+            }
+
+            const startLabel = formatTime12Hr(item.startTime || '09:00');
+            const endLabel = formatTime12Hr(item.endTime || '22:00');
+            if (isDishCurrentlyAvailable(item)) {
+                return {
+                    text: `🟢 Active Now (${startLabel} - ${endLabel})`,
+                    bg: 'rgba(46, 204, 113, 0.15)',
+                    color: '#15803d',
+                    border: 'rgba(34, 197, 94, 0.35)'
+                };
+            }
+
+            return {
+                text: `⏳ Auto-Paused (Live at ${startLabel} - ${endLabel})`,
+                bg: 'rgba(243, 156, 18, 0.15)',
+                color: '#b45309',
+                border: 'rgba(245, 158, 11, 0.35)'
+            };
+        }
+
+        function applyScheduleBadgeMetaToEl(badgeEl, meta) {
+            if (!badgeEl || !meta) return;
+            badgeEl.textContent = meta.text;
+            badgeEl.style.background = meta.bg;
+            badgeEl.style.color = meta.color;
+            badgeEl.style.borderColor = meta.border;
+        }
+
+        function updateDishScheduleField(cIdx, iIdx, field, value, shouldRebuildForm) {
+            const item = menuCategories && menuCategories[cIdx] && menuCategories[cIdx].items ? menuCategories[cIdx].items[iIdx] : null;
+            if (!item) return;
+
+            if ((field === 'startTime' || field === 'endTime') && !/^\d{1,2}:\d{2}$/.test(String(value || '').trim())) {
+                return;
+            }
+
+            if (!item.scheduleMode) item.scheduleMode = 'FOREVER';
+            if (!item.startTime) item.startTime = '09:00';
+            if (!item.endTime) item.endTime = '22:00';
+            item[field] = value;
+
+            if (typeof saveAdminConfig === 'function') saveAdminConfig();
+            if (typeof renderCustomerMenu === 'function') renderCustomerMenu();
+
+            if (shouldRebuildForm && typeof populateAdminForms === 'function') {
+                populateAdminForms();
+            } else {
+                const badgeEl = document.getElementById(`dishScheduleBadge_${cIdx}_${iIdx}`);
+                if (badgeEl) applyScheduleBadgeMetaToEl(badgeEl, getDishScheduleBadgeMeta(item));
+            }
+        }
+
+        function computeMenuAvailabilitySignature() {
+            if (!Array.isArray(menuCategories)) return '';
+            return menuCategories.map(cat => {
+                const items = Array.isArray(cat && cat.items) ? cat.items : [];
+                return items.map(it => isDishCurrentlyAvailable(it) ? '1' : '0').join('');
+            }).join('|');
+        }
+
+        function refreshAdminScheduleBadgesOnly() {
+            if (!Array.isArray(menuCategories)) return;
+            menuCategories.forEach((cat, cIdx) => {
+                const items = Array.isArray(cat && cat.items) ? cat.items : [];
+                items.forEach((item, iIdx) => {
+                    const badgeEl = document.getElementById(`dishScheduleBadge_${cIdx}_${iIdx}`);
+                    if (badgeEl) applyScheduleBadgeMetaToEl(badgeEl, getDishScheduleBadgeMeta(item));
+                });
+            });
+        }
+
+        function syncScheduledMenuAvailability() {
+            try {
+                const nextSig = computeMenuAvailabilitySignature();
+                if (nextSig !== window.__lastRenderedMenuAvailSig && typeof renderCustomerMenu === 'function') {
+                    renderCustomerMenu();
+                }
+                const adminDash = document.getElementById('adminDashboard');
+                if (adminDash && adminDash.style.display === 'block') {
+                    refreshAdminScheduleBadgesOnly();
+                }
+            } catch (syncErr) {
+                console.warn('Scheduled menu auto-refresh check handled:', syncErr);
+            }
+        }
+
+        window.isDishCurrentlyAvailable = isDishCurrentlyAvailable;
+        window.updateDishScheduleField = updateDishScheduleField;
+        window.refreshAdminScheduleBadgesOnly = refreshAdminScheduleBadgesOnly;
+        window.syncScheduledMenuAvailability = syncScheduledMenuAvailability;
         // ===================================================================
         // ðŸ• CUSTOMER MENU PAINTER ENGINE: WITH MOBILE-RESPONSIVE QUANTITY SELECTOR
         // ===================================================================
@@ -5473,6 +5756,7 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             const itemContainer = document.getElementById('menuContainer');
 
             if (!tabsWrapper || !itemContainer) return;
+            window.__lastRenderedMenuAvailSig = computeMenuAvailabilitySignature();
             tabsWrapper.innerHTML = '';
             itemContainer.innerHTML = '';
             if (!menuCategories || menuCategories.length === 0) return;
@@ -5489,9 +5773,14 @@ async function appendDishToBillInvoice(dishName, selectedSize, fixedUnitPrice, t
             let cIdx = menuCategories.indexOf(currentSelectedCategoryObj);
             const safeItems = Array.isArray(currentSelectedCategoryObj.items) ? currentSelectedCategoryObj.items : [];
 
+            if (safeItems.length > 0 && !safeItems.some(item => isDishCurrentlyAvailable(item))) {
+                itemContainer.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 36px 18px; color: #64748b; font-weight: 600; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e1;">⏳ No dishes are currently available in this category right now. Please check back during scheduled hours or choose another category.</div>`;
+                return;
+            }
+
             safeItems.forEach((item, iIdx) => {
                 try {
-                    if (!item || item.inStock === false) return;
+                    if (!item || !isDishCurrentlyAvailable(item)) return;
 
                     let defaultSize = item.mActive && item.m > 0 ? 'm' : (item.sActive && item.s > 0 ? 's' : 'l');
                     let defaultPrice = item[defaultSize] || 0;
@@ -5957,6 +6246,19 @@ async function initApp() {
     } catch (renderError) {
         console.error("Structural engine alert execution handled:", renderError.message);
     }
+
+    // 🕒 60-Second Live Auto-Refresh Engine (Auto Stock In / Stock Out without page reload)
+    if (window.menuScheduleAutoRefreshTimer) {
+        clearInterval(window.menuScheduleAutoRefreshTimer);
+    }
+    window.menuScheduleAutoRefreshTimer = setInterval(syncScheduledMenuAvailability, 60000);
+
+    if (!window.hasMenuVisibilityRefreshBound) {
+        window.hasMenuVisibilityRefreshBound = true;
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) syncScheduledMenuAvailability();
+        });
+    }
 }
 
         // ===================================================================
@@ -6045,7 +6347,10 @@ function resolveTableAlertAndCycleState(floorIdx, tableIdx) {
                     s: 0, m: 0, l: 0,
                     sActive: false, mActive: true, lActive: false, // Default M size ON rakha hai
                     image: "",
-                    inStock: true
+                    inStock: true,
+                    scheduleMode: "FOREVER",
+                    startTime: "09:00",
+                    endTime: "22:00"
                 });
                 saveAdminConfig();
                 populateAdminForms();
