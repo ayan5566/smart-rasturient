@@ -881,7 +881,7 @@
         input[type="number"],
         input[type="text"],
         input[type="password"],
-        select {
+        select:not(.brick-select) {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
@@ -889,6 +889,50 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 14px;
+        }
+
+        /* Coin Discount Badge & Reward Rules List */
+        .arcade-top-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 460px;
+            margin: 2px auto 4px auto;
+            flex-shrink: 0;
+        }
+
+        .discount-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            min-width: 46px;
+            height: 25px;
+            padding: 0 9px;
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            color: #0b0d14;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+            border: 1.5px solid #ffffff;
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+        }
+
+        .discount-badge::before {
+            content: "🪙";
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .discount-badge:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 14px rgba(241, 196, 15, 0.75);
         }
 
         button.action-btn {
@@ -928,23 +972,45 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.72);
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
-            backdrop-filter: blur(4px);
+            z-index: 100050;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         .modal-overlay .modal-content {
             background: white;
-            padding: 25px;
+            color: #1e293b;
+            padding: 24px;
             border-radius: 20px;
-            width: 85%;
-            max-width: 360px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            max-height: 90vh;
+            width: 88%;
+            max-width: 380px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+            max-height: 88vh;
             overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .rules-list {
+            text-align: left;
+            padding: 0;
+            list-style: none;
+            margin: 14px 0;
+        }
+
+        .rules-list li {
+            background: #f8f9fa;
+            color: #0f172a;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border-left: 4px solid #f1c40f;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
 
         /* ================================================================= */
@@ -1008,6 +1074,12 @@
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            will-change: transform;
+            image-rendering: -webkit-optimize-contrast;
         }
 
         .control-pad {
@@ -1142,11 +1214,11 @@
         .game-box.fullscreen-arcade-active #exitGameBtn {
             width: auto !important;
             max-width: fit-content !important;
-            padding: 3px 10px !important;
+            padding: 4px 11px !important;
             font-size: 11px !important;
             font-weight: 600 !important;
             line-height: 1.2 !important;
-            margin: 1px auto 3px auto !important;
+            margin: 0 !important;
             border-radius: 6px !important;
             display: inline-flex !important;
             align-items: center !important;
@@ -1175,6 +1247,11 @@
             box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 255, 255, 0.2) !important;
             margin: 2px auto !important;
             object-fit: contain !important;
+        }
+
+        .game-box.fullscreen-arcade-active #brickCanvas {
+            max-height: calc(100vh - 205px) !important;
+            max-height: calc(100dvh - 205px) !important;
         }
 
         /* ðŸ’¥ IN-GAME ON-SCREEN LOSS OVERLAY */
@@ -1214,7 +1291,7 @@
             }
         }
 
-        .game-box.fullscreen-arcade-active .control-pad,
+        .game-box.fullscreen-arcade-active .control-pad:not(.brick-controls-panel),
         .game-box.fullscreen-arcade-active .snake-grid-pad {
             margin: 8px auto !important;
             width: 100% !important;
@@ -1222,10 +1299,115 @@
             gap: 8px !important;
         }
 
+        .game-box.fullscreen-arcade-active .brick-controls-panel {
+            display: none;
+            flex-direction: column;
+            gap: 6px !important;
+            width: 100% !important;
+            max-width: min(96vw, 450px) !important;
+            margin: 6px auto 0 auto !important;
+            box-sizing: border-box !important;
+        }
+
+        .brick-btn-row {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+        }
+
         .game-box.fullscreen-arcade-active .ctrl-btn {
             padding: 12px !important;
             font-size: 14px !important;
             border-radius: 10px !important;
+        }
+
+        .game-box.fullscreen-arcade-active .ctrl-btn.brick-ctrl-btn {
+            padding: 9px 10px !important;
+            font-size: 13px !important;
+            white-space: nowrap !important;
+            line-height: 1.15 !important;
+        }
+
+        .ctrl-btn.brick-launch-btn {
+            flex: 1.05;
+            background: linear-gradient(135deg, #ff793f, #ff3838);
+            box-shadow: 0 0 10px rgba(255, 121, 63, 0.4);
+        }
+
+        .brick-level-toolbar {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(8, 14, 28, 0.92);
+            padding: 5px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 210, 255, 0.35);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .brick-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .brick-toolbar-group.level-group {
+            flex: 1 1 auto;
+            justify-content: flex-end;
+        }
+
+        .brick-pack-label {
+            font-size: 10px;
+            color: #8395a7;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            flex-shrink: 0;
+        }
+
+        select.brick-select {
+            width: auto !important;
+            margin: 0 !important;
+            background: #04070f !important;
+            border-radius: 6px !important;
+            padding: 4px 6px !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            line-height: 1.25 !important;
+            cursor: pointer;
+            outline: none;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        select.brick-select.pack-select {
+            color: #feca57;
+            border: 1px solid rgba(254, 202, 87, 0.45);
+            max-width: 145px;
+        }
+
+        select.brick-select.level-select {
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.45);
+            flex: 1 1 115px;
+            max-width: 165px;
+        }
+
+        .brick-step-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #00d2d3;
+            padding: 4px 7px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 11px;
+            line-height: 1.2;
+            cursor: pointer;
+            flex-shrink: 0;
         }
 
         .game-box.fullscreen-arcade-active .snk-btn {
@@ -1265,7 +1447,7 @@
                 margin: 0 auto !important;
             }
 
-            .control-pad,
+            .control-pad:not(.brick-controls-panel),
             .snake-grid-pad {
                 width: 100% !important;
                 max-width: 320px;
@@ -1276,7 +1458,7 @@
             input[type="number"],
             input[type="text"],
             input[type="password"],
-            select,
+            select:not(.brick-select),
             button.action-btn,
             .order-btn {
                 padding: 12px !important;
@@ -1289,12 +1471,7 @@
 <body>
 
 
-    <!-- Floating Coin Badge (Extracted from main file.html) -->
-    <div class="discount-badge" id="liveCoinBadge"
-        onclick="if(typeof refreshDiscountRulesUI === 'function') refreshDiscountRulesUI(); document.getElementById('discountSheetModal').style.display='flex'">
-        0%</div>
-
-    <!-- ðŸ§± HTML ELEMENTS -->
+    <!-- 🧱 HTML ELEMENTS -->
     <div class="game-box fullscreen-arcade-active" id="arcadeGameWrapper">
         <div class="game-nav">
             <button id="navBRICK" onclick="switchGameMode('BRICK')"><img
@@ -1316,14 +1493,20 @@
                     src="data:image/png;base64,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"
                     alt="Hockey" class="game-nav-icon"><span>Hockey</span></button>
         </div>
-        <button id="exitGameBtn" onclick="exitGameEngine()">🔙 Back to Table Menu</button>
+        <div class="arcade-top-actions">
+            <button type="button" id="exitGameBtn" onclick="exitGameEngine()">🔙 Back to Table Menu</button>
+            <div class="discount-badge" id="liveCoinBadge" role="button" tabindex="0" title="View Game Reward Matrix"
+                onclick="if(typeof refreshDiscountRulesUI === 'function') refreshDiscountRulesUI(); document.getElementById('discountSheetModal').style.display='flex'">
+                0%</div>
+        </div>
+
         <div id="gameWindow"
             style="position: relative; text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <div id="gameScreenStatusMsg" style="display: none; color: white; font-weight: bold; margin-bottom: 2px;">
             </div>
 
-            <!-- 💥 In-Game Loss / Game Over Screen Overlay (Directly On Game Screen) -->
-            <div id="inGameLossOverlay">
+            <!-- 💥 In-Game Loss / Game Over Screen Overlay -->
+            <div id="inGameLossOverlay" style="display: none;">
                 <div
                     style="font-size: 30px; line-height: 1; margin-bottom: 4px; filter: drop-shadow(0 2px 8px rgba(255,77,77,0.7));">
                     &#128165;</div>
@@ -1334,10 +1517,10 @@
                     style="color: #f1f5f9; font-size: 13px; font-weight: 600; line-height: 1.35; margin-bottom: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
                 </div>
                 <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">
-                    <button onclick="startSelectedGame()"
+                    <button type="button" onclick="startSelectedGame()"
                         style="flex: 1; background: linear-gradient(135deg, #f1c40f, #e67e22); color: #0b0d14; border: none; font-weight: 800; font-size: 12px; padding: 8px 14px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(241,196,15,0.4); transition: transform 0.15s ease;">&#128260;
                         Try Again</button>
-                    <button onclick="exitGameEngine()"
+                    <button type="button" onclick="exitGameEngine()"
                         style="background: rgba(255,255,255,0.12); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; font-size: 11px; padding: 8px 12px; border-radius: 8px; cursor: pointer;">&#128281;
                         Exit</button>
                 </div>
@@ -1348,40 +1531,61 @@
             <canvas id="spaceCanvas" width="320" height="400"
                 style="background: radial-gradient(circle at 50% 30%, #0c1220 0%, #060810 70%, #020306 100%); border: 1.5px solid rgba(0, 242, 254, 0.35); box-shadow: 0 0 25px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.85); border-radius: 10px;"></canvas>
             <canvas id="snakeCanvas" width="320" height="320" style="background:#0f111a;"></canvas>
-            <canvas id="brickCanvas" width="380" height="560" style="background:#04070f; border-radius: 12px; box-shadow: 0 0 25px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.85); border: 1.5px solid rgba(0, 242, 254, 0.35);"></canvas>
+            <canvas id="brickCanvas" width="380" height="560"
+                style="background:#04070f; border-radius: 12px; box-shadow: 0 0 25px rgba(0, 210, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.85); border: 1.5px solid rgba(0, 242, 254, 0.35);"></canvas>
             <canvas id="towerCanvas" width="320" height="400" style="background:#1a252f;"></canvas>
-            <canvas id="hockeyCanvas" width="480" height="680" style="background:#080a14 url('./assets/game_hockey_field4.jpg') center/cover no-repeat; border-radius: 14px; box-shadow: 0 0 30px rgba(0, 242, 254, 0.25), inset 0 0 20px rgba(0, 0, 0, 0.8); border: 2px solid rgba(0, 242, 254, 0.4);"></canvas>
+            <!-- ✅ FIXED PATH: './assets/game_hockey_field4.jpg' ko './game_hockey_field4.jpg' kar diya hai -->
+            <canvas id="hockeyCanvas" width="480" height="680"
+                style="background:#080a14 url('./game_hockey_field4.jpg') center/cover no-repeat; border-radius: 14px; box-shadow: 0 0 30px rgba(0, 242, 254, 0.25), inset 0 0 20px rgba(0, 0, 0, 0.8); border: 2px solid rgba(0, 242, 254, 0.4);"></canvas>
 
-            <!-- Touch Controls -->
-            <div class="control-pad" id="brickControls">
-                <button class="ctrl-btn" id="brickLeftBtn">◀ Left</button>
-                <button class="ctrl-btn" id="brickRightBtn">Right ▶</button>
+            <!-- Touch Controls & Level Toolbar for Brick Breaker -->
+            <div class="control-pad brick-controls-panel" id="brickControls" style="display: none;">
+                <div class="brick-btn-row">
+                    <button type="button" class="ctrl-btn brick-ctrl-btn" id="brickLeftBtn" style="flex: 1;">◀ Left</button>
+                    <button type="button" class="ctrl-btn brick-ctrl-btn brick-launch-btn" id="brickFireBtn"
+                        onclick="if(typeof launchBrickBall === 'function' && !isBallLaunched) launchBrickBall();">🚀 Launch</button>
+                    <button type="button" class="ctrl-btn brick-ctrl-btn" id="brickRightBtn" style="flex: 1;">Right ▶</button>
+                </div>
+                <div class="brick-level-toolbar">
+                    <div class="brick-toolbar-group">
+                        <span class="brick-pack-label">PACK:</span>
+                        <select id="brickPackSelect" class="brick-select pack-select" onchange="selectBrickPack(this.value)">
+                            <option value="A">Pack A: Legends (10 Lvl)</option>
+                            <option value="B">Pack B: Treats (8 Lvl)</option>
+                            <option value="C">Pack C: Mythic (8 Lvl)</option>
+                            <option value="D">Pack D: Odyssey (8 Lvl)</option>
+                        </select>
+                    </div>
+                    <div class="brick-toolbar-group level-group">
+                        <button type="button" class="brick-step-btn" onclick="changeBrickLevel(-1)" title="Previous Level">⏮️</button>
+                        <select id="brickLevelSelect" class="brick-select level-select" onchange="selectBrickLevel(parseInt(this.value))">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button type="button" class="brick-step-btn" onclick="changeBrickLevel(1)" title="Next Level">⏭️</button>
+                    </div>
+                </div>
             </div>
 
-            <!-- Touch Controls: direct screen drag & swipe replace button pads -->
-            <!-- spaceControls removed: Space Shooter is controlled directly by screen drag -->
-            <!-- snakeControls removed: Snake game is controlled directly by canvas swipe -->
-
-            <button id="startBtn" class="action-btn" onclick="startSelectedGame()"
+            <button type="button" id="startBtn" class="action-btn" onclick="startSelectedGame()"
                 style="display:inline-block; margin-top:15px; background: var(--accent-gold, #f1c40f); color:black; max-width: 220px;">Start Game</button>
         </div>
         <div id="couponDisplay" style="display:none; margin-top:12px; font-size:15px; color:#2ecc71; font-weight:bold;">
         </div>
     </div>
 
-    <!-- Discount Sheet Modal (Extracted from main file.html) -->
+    <!-- Discount Sheet Modal -->
     <div class="modal-overlay" id="discountSheetModal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="color: black;">🎁 Game Reward Matrix</h3>
             <ul class="rules-list" id="rulesListDisplay">
-                <!-- ðŸ›¡ï¸ Rules are dynamically populated from DB â€” see refreshDiscountRulesUI() below -->
+                <!-- 🛡️ Rules are dynamically populated from DB — see refreshDiscountRulesUI() below -->
             </ul>
-            <button class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'"
+            <button type="button" class="action-btn" onclick="document.getElementById('discountSheetModal').style.display='none'"
                 style="background:#2c3e50; color:white;">Start Playing!</button>
         </div>
     </div>
 
-    <!-- âš™ï¸ JAVASCRIPT LOGIC -->
+    <!-- ⚙️ JAVASCRIPT LOGIC -->
     <script>
 
         // ===================================================================
@@ -1570,6 +1774,59 @@
         var activeGameMode = (urlParamsGame.get('mode') || 'FLAPPY').toUpperCase();
         var realtimeRenderTimeout = null;
         var loopTimerInstance = null;
+
+        // ===================================================================
+        // 🚀 AAA ULTRA-SMOOTH ARCADE LOOP ENGINE (60-120FPS VSYNC & ZERO JITTER)
+        // ===================================================================
+        var arcadeActiveRaf = null;
+        var arcadeLastFrameTimestamp = 0;
+
+        function startArcadeLoop(frameUpdateFn, targetIntervalMs) {
+            stopArcadeLoop();
+
+            var baseInterval = typeof targetIntervalMs === 'number' && targetIntervalMs > 0 ? targetIntervalMs : 16.666;
+            arcadeLastFrameTimestamp = performance.now();
+            var isRunning = true;
+
+            function renderFrame(now) {
+                if (!isRunning) return;
+                arcadeActiveRaf = requestAnimationFrame(renderFrame);
+                loopTimerInstance = arcadeActiveRaf;
+
+                var elapsed = now - arcadeLastFrameTimestamp;
+                if (elapsed > 100) elapsed = baseInterval;
+                arcadeLastFrameTimestamp = now;
+
+                var dtScale = elapsed / baseInterval;
+                if (dtScale < 0.2) dtScale = 0.2;
+                if (dtScale > 2.0) dtScale = 2.0;
+
+                try {
+                    frameUpdateFn(dtScale, elapsed);
+                } catch (err) {
+                    // Handled safely
+                }
+            }
+
+            arcadeActiveRaf = requestAnimationFrame(renderFrame);
+            loopTimerInstance = arcadeActiveRaf;
+            return arcadeActiveRaf;
+        }
+
+        function stopArcadeLoop() {
+            if (arcadeActiveRaf) {
+                cancelAnimationFrame(arcadeActiveRaf);
+                arcadeActiveRaf = null;
+            }
+            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+                clearInterval(loopTimerInstance);
+                cancelAnimationFrame(loopTimerInstance);
+                loopTimerInstance = null;
+            }
+        }
+        window.startArcadeLoop = startArcadeLoop;
+        window.stopArcadeLoop = stopArcadeLoop;
+
         var customerActiveCategoryName = "";
         var configSaveTimeout = null;
         var isAuthPortalInSignUpMode = false;
@@ -1702,7 +1959,9 @@
             activeGameMode = selectedTargetMode;
 
             //STAGE SFAI: Hard kill any active background frames animation tickers instantly
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+            if (typeof stopArcadeLoop === 'function') {
+                stopArcadeLoop();
+            } else if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
                 clearInterval(loopTimerInstance);
                 cancelAnimationFrame(loopTimerInstance);
             }
@@ -1743,8 +2002,10 @@
         //FIXED: WATER LIQUID RESPONSIVE ENGINE (DYNAMIC CANVAS ENGINE)
         // ===================================================================
         function startSelectedGame() {
-            // 1. Clear any active loops/tickers
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+            // 1. Clear any active loops/tickers cleanly
+            if (typeof stopArcadeLoop === 'function') {
+                stopArcadeLoop();
+            } else if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
                 clearInterval(loopTimerInstance);
                 if (typeof cancelAnimationFrame === 'function') {
                     cancelAnimationFrame(loopTimerInstance);
@@ -1781,7 +2042,7 @@
             if (gameBox && activeGameMode !== 'MATH') {
                 gameBox.classList.add('fullscreen-arcade-active');
                 const exitBtn = document.getElementById('exitGameBtn');
-                if (exitBtn) exitBtn.style.display = "block";
+                if (exitBtn) exitBtn.style.display = "inline-flex";
             }
 
             // 6. Dynamic liquid dimensions calculation (Spacious, responsive court sizes)
@@ -1879,7 +2140,9 @@
         // ===================================================================
         function exitGameEngine() {
             // 1. Clear any running game loops
-            if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
+            if (typeof stopArcadeLoop === 'function') {
+                stopArcadeLoop();
+            } else if (typeof loopTimerInstance !== 'undefined' && loopTimerInstance) {
                 clearInterval(loopTimerInstance);
                 if (typeof cancelAnimationFrame === 'function') {
                     cancelAnimationFrame(loopTimerInstance);
@@ -1938,9 +2201,10 @@
         window.exitGameEngine = exitGameEngine;
         window.calculateUnifiedMasterInvoice = calculateUnifiedMasterInvoice;
 
-        // Navigation buttons click binding
+        // Navigation buttons click binding (avoid duplicate trigger for buttons with inline onclick)
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.game-nav button[id^="nav"]').forEach(button => {
+                if (button.hasAttribute('onclick')) return;
                 button.addEventListener('click', () => {
                     const mode = button.id.replace('nav', '');
                     if (mode === 'HOME') {
@@ -2755,8 +3019,8 @@
 
             generateSnakeFoodLocation();
 
-            //FRAME UPGRADE: Engine runs at 16ms (~60 FPS) for smooth visual interpolation
-            loopTimerInstance = setInterval(frameUpdateSnake, 16);
+            //FRAME UPGRADE: Engine runs at 60-120 FPS VSYNC for buttery-smooth visual interpolation
+            loopTimerInstance = startArcadeLoop(frameUpdateSnake, 16);
         }
         window.initSnakeGameLoop = initSnakeGameLoop;
 
@@ -2791,15 +3055,16 @@
         // ===================================================================
         //AAA RENDERING & LOGIC TICK ENGINE (60 FPS + INTERPOLATION)
         // ===================================================================
-        function frameUpdateSnake() {
+        function frameUpdateSnake(dtScale, elapsedMs) {
             if (!snakeCanvasElement || !snCtx || !snakeArr || snakeArr.length === 0) return;
 
-            snakeTimeVisual += 0.05;
-            snakeTickAccumulator += 16; // 16ms rendering delta
+            var frameDelta = (typeof elapsedMs === 'number' && elapsedMs > 0) ? elapsedMs : 16.666;
+            snakeTimeVisual += 0.05 * (dtScale || 1.0);
+            snakeTickAccumulator += frameDelta;
 
             // --- COMBO TIMERS ---
             if (snakeComboTimeLeft > 0) {
-                snakeComboTimeLeft -= 16;
+                snakeComboTimeLeft -= frameDelta;
                 if (snakeComboTimeLeft <= 0) snakeComboCount = 1; // Reset combo if too slow
             }
 
@@ -3512,10 +3777,14 @@
                 }
             };
 
+            const onTowerTouch = (e) => {
+                if (e.cancelable && e.type && e.type.startsWith('touch')) e.preventDefault();
+                handleDropAction();
+            };
             towerCanvasElement.onclick = handleDropAction;
-            towerCanvasElement.ontouchstart = handleDropAction;
+            towerCanvasElement.ontouchstart = onTowerTouch;
 
-            loopTimerInstance = setInterval(frameUpdateTowerBloxx, 16);
+            loopTimerInstance = startArcadeLoop(frameUpdateTowerBloxx, 16);
         }
 
         //Calculate Level based on placed floors
@@ -4500,8 +4769,9 @@
             }
         }
 
-        function frameUpdateTowerBloxx() {
+        function frameUpdateTowerBloxx(dtScale) {
             if (!towerCanvasElement || !twCtx) return;
+            var dt = (typeof dtScale === 'number' && dtScale > 0) ? dtScale : 1.0;
 
             twCtx.clearRect(0, 0, towerCanvasElement.width, towerCanvasElement.height);
 
@@ -4520,9 +4790,9 @@
             // Progressive altitude zoom (subtle 0.88 cap at high altitude)
             towerTargetZoom = Math.max(0.88, 1.0 - (towerScoreCounter * 0.0025));
 
-            // Smooth Lerp Interpolation
-            towerSmoothCameraY += (towerTargetCameraY - towerSmoothCameraY) * 0.085;
-            towerCameraZoom += (towerTargetZoom - towerCameraZoom) * 0.05;
+            // Smooth Lerp Interpolation with VSYNC Delta
+            towerSmoothCameraY += (towerTargetCameraY - towerSmoothCameraY) * (0.085 * dt);
+            towerCameraZoom += (towerTargetZoom - towerCameraZoom) * (0.05 * dt);
             towerCameraOffsetOffsetY = towerSmoothCameraY;
 
             // 2. Render 50-Floor Continuous Dynamic Atmosphere
@@ -4669,7 +4939,7 @@
 
             if (!isTowerBlockDropping && towerGameState === 'PLAYING') {
                 // â™¾ï¸ Mathematical Lemniscate (Infinity Symbol âˆž) Harmonic Motion
-                currentSwingingBlock.swingTimer += currentSwingingBlock.speed;
+                currentSwingingBlock.swingTimer += currentSwingingBlock.speed * dt;
                 let t = currentSwingingBlock.swingTimer;
 
                 // Horizontal Infinity âˆž Path: X ~ sin(t), Y ~ sin(2t)
@@ -4733,8 +5003,8 @@
 
             } else if (isTowerBlockDropping && towerGameState === 'PLAYING') {
                 // 8. â›“ï¸ FREE FALL ACCELERATING GRAVITY PHYSICS
-                currentSwingingBlock.dropSpeedY = Math.min(16.0, currentSwingingBlock.dropSpeedY + currentSwingingBlock.dropAccY);
-                currentSwingingBlock.dropY += currentSwingingBlock.dropSpeedY;
+                currentSwingingBlock.dropSpeedY = Math.min(16.0, currentSwingingBlock.dropSpeedY + currentSwingingBlock.dropAccY * dt);
+                currentSwingingBlock.dropY += currentSwingingBlock.dropSpeedY * dt;
 
                 // Draw Clean Suspension Cable from Sky (No top bar)
                 twCtx.save();
@@ -5074,6 +5344,10 @@
         safeExport('createBrickExplosion', typeof createBrickExplosion !== 'undefined' ? createBrickExplosion : undefined);
         safeExport('initBrickBreakerGame', typeof initBrickBreakerGame !== 'undefined' ? initBrickBreakerGame : undefined);
         safeExport('frameUpdateBrickBreaker', typeof frameUpdateBrickBreaker !== 'undefined' ? frameUpdateBrickBreaker : undefined);
+        safeExport('selectBrickLevel', typeof selectBrickLevel !== 'undefined' ? selectBrickLevel : undefined);
+        safeExport('changeBrickLevel', typeof changeBrickLevel !== 'undefined' ? changeBrickLevel : undefined);
+        safeExport('selectBrickPack', typeof selectBrickPack !== 'undefined' ? selectBrickPack : undefined);
+        safeExport('updateBrickLevelUI', typeof updateBrickLevelUI !== 'undefined' ? updateBrickLevelUI : undefined);
 
         safeExport('setupLevelParameters', typeof setupLevelParameters !== 'undefined' ? setupLevelParameters : undefined);
         safeExport('initSpaceShooterGame', typeof initSpaceShooterGame !== 'undefined' ? initSpaceShooterGame : undefined);
@@ -5172,10 +5446,20 @@
                 // L4: Aurora Borealis Haven (Cosmic dark cyan shimmer)
                 { top: '#020814', mid: '#051822', bot: '#02050b', glow: 'rgba(0, 242, 254, 0.11)', mist: 'rgba(8, 42, 54, 0.35)', tree: '#03090e' },
                 // L5: Crimson Twilight Sunset (Charcoal to deep ruby ember)
-                { top: '#0e0407', mid: '#18070c', bot: '#050102', glow: 'rgba(255, 71, 87, 0.09)', mist: 'rgba(45, 12, 20, 0.35)', tree: '#0a0204' }
+                { top: '#0e0407', mid: '#18070c', bot: '#050102', glow: 'rgba(255, 71, 87, 0.09)', mist: 'rgba(45, 12, 20, 0.35)', tree: '#0a0204' },
+                // L6: Cyber Neon Matrix (Deep navy obsidian to electric cyan & magenta glow)
+                { top: '#050518', mid: '#0a0d2a', bot: '#02020a', glow: 'rgba(0, 242, 254, 0.14)', mist: 'rgba(20, 15, 60, 0.40)', tree: '#060614' },
+                // L7: Golden Celestial Citadel (Deep cosmic bronze to amber starlight)
+                { top: '#100a04', mid: '#1f1406', bot: '#080401', glow: 'rgba(254, 202, 87, 0.12)', mist: 'rgba(50, 35, 12, 0.38)', tree: '#0c0702' },
+                // L8: Volcanic Nether Abyss (Charcoal obsidian with molten lava glow)
+                { top: '#120404', mid: '#220808', bot: '#060101', glow: 'rgba(255, 56, 56, 0.14)', mist: 'rgba(60, 15, 15, 0.40)', tree: '#0a0202' },
+                // L9: Prismatic Crystal Cavern (Deep indigo amethyst to fluorescent teal)
+                { top: '#080318', mid: '#13092e', bot: '#04010e', glow: 'rgba(224, 86, 253, 0.13)', mist: 'rgba(40, 18, 70, 0.38)', tree: '#080214' },
+                // L10: Galactic Supernova Core (Ultra-deep void with pulsing cosmic rainbow corona)
+                { top: '#020914', mid: '#061a2b', bot: '#010408', glow: 'rgba(0, 210, 211, 0.16)', mist: 'rgba(10, 45, 65, 0.42)', tree: '#020810' }
             ];
 
-            const theme = naturalThemes[Math.min(themeIdx, naturalThemes.length - 1)] || naturalThemes[0];
+            const theme = naturalThemes[(themeIdx >= 0 ? themeIdx : 0) % naturalThemes.length];
 
             // 1. Deep atmospheric natural sky gradient
             let skyGrd = ctx.createLinearGradient(0, 0, 0, height);
@@ -5318,7 +5602,18 @@
         var totalBrickPacksDataMatrix = {
             'A': {
                 name: "Pixel Legends Pack",
-                themes: ["Forest Creature", "Burger & Chef Hat", "8-Bit Space Invader", "Mystic Forest Owl", "Royal King's Crown"],
+                themes: [
+                    "Forest Creature",
+                    "Burger & Chef Hat",
+                    "8-Bit Space Invader",
+                    "Mystic Forest Owl",
+                    "Royal King's Crown",
+                    "Cyber Mecha Dragon",
+                    "Neon Space Battleship",
+                    "Golden Cloche & Chef",
+                    "Galactic Phoenix Sun",
+                    "Arcade Titan Boss"
+                ],
                 layouts: [
                     // L1: Forest Creature (Faithful reproduction of user screenshot creature: 26 cols x 22 rows)
                     [
@@ -5432,12 +5727,128 @@
                         "07777777777777777777770000",
                         "00000000000000000000000000",
                         "00000000000000000000000000"
+                    ],
+                    // L6: Cyber Mecha Dragon (26 cols x 20 rows)
+                    [
+                        "00007700000000000000770000",
+                        "00077770000000000007777000",
+                        "00777337000000000073377700",
+                        "07773333770000007733337770",
+                        "07733333337777773333333770",
+                        "00773333333333333333337700",
+                        "00077766333333336677700000",
+                        "00007766333333336677000000",
+                        "00000777333333337770000000",
+                        "0000111177TTTT771111000000",
+                        "0011111111TTTT111111110000",
+                        "01111111111111111111111100",
+                        "11112211111111111122111110",
+                        "11122221111PP1111222211110",
+                        "11122221111PP1111222211110",
+                        "01112211111111111122111100",
+                        "00111111111111111111111000",
+                        "00011110011111100111100000",
+                        "00001100001111000011000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L7: Neon Space Battleship (26 cols x 20 rows)
+                    [
+                        "00000000000990000000000000",
+                        "00000000009999000000000000",
+                        "00000000099339900000000000",
+                        "00000000999339990000000000",
+                        "00000000555555550000000000",
+                        "00000005555555555000000000",
+                        "00030055555555555500300000",
+                        "0033055555TTTT555550330000",
+                        "0333555555TTTT555555333000",
+                        "33335555555555555555333300",
+                        "03335555PP5555PP5555333000",
+                        "00335555PP5555PP5555330000",
+                        "00005555555555555555000000",
+                        "00077555555555555555770000",
+                        "00777755555555555577770000",
+                        "07777775555555555777777000",
+                        "77777777555555557777777700",
+                        "00000000666666660000000000",
+                        "00000000066006600000000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L8: Golden Cloche & Restro Chef (26 cols x 20 rows)
+                    [
+                        "00000000000990000000000000",
+                        "00000000009999000000000000",
+                        "00000000000990000000000000",
+                        "00000000444444440000000000",
+                        "00000044444444444400000000",
+                        "00000444499444444440000000",
+                        "00004444999944444444000000",
+                        "00044444499444444444400000",
+                        "00444444444444444444440000",
+                        "04444444444444444444444000",
+                        "44444444444444444444444400",
+                        "04444444444444444444444000",
+                        "55555555555555555555555550",
+                        "05555555555555555555555500",
+                        "00000000000000000000000000",
+                        "00660000999999990000660000",
+                        "06666009999999999006666000",
+                        "00660009999999999000660000",
+                        "00000000999999990000000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L9: Galactic Phoenix Sun (26 cols x 20 rows)
+                    [
+                        "00000000000440000000000000",
+                        "00000000004444000000000000",
+                        "00200000044994400000020000",
+                        "02220000044994400000222000",
+                        "22222000004444000002222200",
+                        "02222200022662200022222000",
+                        "00222220226666220222220000",
+                        "00022222266TT6622222200000",
+                        "0000222226TTTT622222000000",
+                        "00000222266TT6622220000000",
+                        "00000022226666222200000000",
+                        "00000002222222222000000000",
+                        "00000000222PP2220000000000",
+                        "00000000022PP2200000000000",
+                        "00000000002222000000000000",
+                        "00000000022002200000000000",
+                        "00000000220000220000000000",
+                        "00000002200000022000000000",
+                        "00000022000000002200000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L10: Arcade Titan Boss (26 cols x 21 rows)
+                    [
+                        "00000000999999990000000000",
+                        "00000009999999999000000000",
+                        "00000099944994499900000000",
+                        "00000999944994499990000000",
+                        "00009999999999999999000000",
+                        "00009999966996699999000000",
+                        "00009999966996699999000000",
+                        "00000999999999999990000000",
+                        "00000099933333399900000000",
+                        "00000009930303990000000000",
+                        "00555555555555555555555500",
+                        "055TT55555PPPP55555TT55500",
+                        "555TT55555PPPP55555TT55550",
+                        "55555555555555555555555550",
+                        "0555555555TTTT555555555500",
+                        "0055555555TTTT555555550000",
+                        "00077755555555555577700000",
+                        "00777777555555557777770000",
+                        "07770077755555577700777000",
+                        "77700007770000777000077700",
+                        "00000000000000000000000000"
                     ]
                 ]
             },
             'B': {
                 name: "Food & Treats Pack",
-                themes: ["Pizza Slice & Cocktail", "Hot Espresso Mug", "Ice Cream Sundae", "Fiesta Crunchy Taco", "Master Chef Trophy"],
+                themes: ["Pizza Slice & Cocktail", "Hot Espresso Mug", "Ice Cream Sundae", "Fiesta Crunchy Taco", "Master Chef Trophy", "Sushi Bento & Chopsticks", "Gourmet Donut & Sprinkles", "Midnight Ramen Bowl"],
                 layouts: [
                     // L1: Pizza Slice & Cocktail
                     [
@@ -5500,21 +5911,72 @@
                         "00004444444444444444440000",
                         "00444444444444444444444400",
                         "04444444444444444444444440",
-                        "0440044444444444444400440",
-                        "0440044444444444444400440",
-                        "0044004444444444440044000",
+                        "04400444444444444444004400",
+                        "04400444444444444444004400",
+                        "00440044444444444400440000",
                         "00000004444444444000000000",
                         "00000000044444400000000000",
                         "00000000004444000000000000",
                         "00000000044444400000000000",
                         "00000008888888888000000000",
                         "00000088888888888800000000"
+                    ],
+                    // L6: Sushi Bento & Chopsticks (26 cols x 14 rows)
+                    [
+                        "00000000000000000000000000",
+                        "00000000888888888888888800",
+                        "00000008888888888888888800",
+                        "00000000000000000000000000",
+                        "00055555555000555555550000",
+                        "00599999995005999999950000",
+                        "00599666995005992229950000",
+                        "00599666995005992229950000",
+                        "00599999995005999999950000",
+                        "00055555555000555555550000",
+                        "00000000000000000000000000",
+                        "00111111111111111111111100",
+                        "00011111111111111111111000",
+                        "00000000000000000000000000"
+                    ],
+                    // L7: Gourmet Donut & Sprinkles (26 cols x 14 rows)
+                    [
+                        "00000008888888888880000000",
+                        "00000888888888888888800000",
+                        "00088877777777777777888000",
+                        "00887779774776779777788000",
+                        "08877777777777777777778800",
+                        "08877777000000007777778800",
+                        "08877777000000007777778800",
+                        "08877777000000007777778800",
+                        "08877777777777777777778800",
+                        "00887747767797747767788000",
+                        "00088877777777777777888000",
+                        "00000888888888888888800000",
+                        "00000008888888888880000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L8: Midnight Ramen Bowl (26 cols x 14 rows)
+                    [
+                        "00000000000000000000000000",
+                        "00000000888888888888000000",
+                        "00000008888888888888000000",
+                        "00000044444444444444440000",
+                        "00004444444444444444444400",
+                        "00044499446644224444444400",
+                        "00044999946642222444444400",
+                        "00666666666666666666666600",
+                        "00066666666666666666666000",
+                        "00006666666666666666660000",
+                        "00000666666666666666600000",
+                        "00000066666666666666000000",
+                        "00000000555555550000000000",
+                        "00000000000000000000000000"
                     ]
                 ]
             },
             'C': {
                 name: "Mythic & Wild Pack",
-                themes: ["Fiery Phoenix", "Woodland Toadstool", "Heart of Gaia", "Bioluminescent Moth", "Ancient Temple"],
+                themes: ["Fiery Phoenix", "Woodland Toadstool", "Heart of Gaia", "Bioluminescent Moth", "Ancient Temple", "Crystal Unicorn", "Thunder Griffin", "Kraken Ocean Guardian"],
                 layouts: [
                     // L1: Fiery Phoenix
                     [
@@ -5587,12 +6049,66 @@
                         "55555555550000005555555555",
                         "55555555550000005555555555",
                         "55555555550000005555555555"
+                    ],
+                    // L6: Crystal Unicorn (26 cols x 15 rows)
+                    [
+                        "00000000000077000000000000",
+                        "00000000000777000000000000",
+                        "00000000007777000000000000",
+                        "00000000099999900000000000",
+                        "00000000999339990000000000",
+                        "00000009999999990000000000",
+                        "00000077799999900000000000",
+                        "00000777779999000000000000",
+                        "00007777777999990000000000",
+                        "00077777777999999000000000",
+                        "00777777777799999900000000",
+                        "00077777777779999990000000",
+                        "00000000000099000990000000",
+                        "00000000000099000990000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L7: Thunder Griffin (26 cols x 15 rows)
+                    [
+                        "00000000002220000000000000",
+                        "00000000022442200000000000",
+                        "00000000224444220000000000",
+                        "00440000222222220000440000",
+                        "04444000222222220004444000",
+                        "44444400226666220044444400",
+                        "44444440266TT6620444444400",
+                        "0444444426TTTT624444444000",
+                        "00444444426TT6244444440000",
+                        "00044444442222444444400000",
+                        "00004444444444444444000000",
+                        "00000444444444444440000000",
+                        "00000004440004440000000000",
+                        "00000004400000440000000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L8: Kraken Ocean Guardian (26 cols x 15 rows)
+                    [
+                        "00000000033333330000000000",
+                        "00000003333333333300000000",
+                        "00000033333333333330000000",
+                        "00000333366336633330000000",
+                        "00000333366336633330000000",
+                        "00000333333333333330000000",
+                        "00000033331111333300000000",
+                        "00000003333333333000000000",
+                        "00300300333333300300300000",
+                        "03303300033333000330330000",
+                        "03303300003330000330330000",
+                        "33000330000300003300033000",
+                        "33000330000000003300033000",
+                        "03000300000000000300030000",
+                        "00000000000000000000000000"
                     ]
                 ]
             },
             'D': {
                 name: "Arcade Odyssey Pack",
-                themes: ["Retro Gamepad", "Cosmic Rocket Shuttle", "Cyber Skull Matrix", "Power Star", "Prismatic Shield"],
+                themes: ["Retro Gamepad", "Cosmic Rocket Shuttle", "Cyber Skull Matrix", "Power Star", "Prismatic Shield", "Arcade Joystick Cabinet", "Cyber Katana Sword", "Pixel UFO Mothership"],
                 layouts: [
                     // L1: Retro Gamepad
                     [
@@ -5666,6 +6182,60 @@
                         "00003311111111111111330000",
                         "00000333111111111133300000",
                         "00000003333333333330000000"
+                    ],
+                    // L6: Arcade Joystick Cabinet (26 cols x 15 rows)
+                    [
+                        "00000000000066000000000000",
+                        "00000000000666600000000000",
+                        "00000000000066000000000000",
+                        "00000000000055000000000000",
+                        "00000000000055000000000000",
+                        "00055555555555555555550000",
+                        "00555555555555555555555000",
+                        "05555555555555555555555500",
+                        "55555555566004400335555550",
+                        "55555555566004400335555550",
+                        "55555555555555555555555550",
+                        "05555555555555555555555500",
+                        "00555555555555555555555000",
+                        "00055555555555555555550000",
+                        "00000000000000000000000000"
+                    ],
+                    // L7: Cyber Katana Sword (26 cols x 15 rows)
+                    [
+                        "00000000000000000000000099",
+                        "00000000000000000000009990",
+                        "00000000000000000000999000",
+                        "00000000000000000099900000",
+                        "00000000000000009990000000",
+                        "00000000000000999000000000",
+                        "00000000000099900000000000",
+                        "00000000009990000000000000",
+                        "00000000999000000000000000",
+                        "00000044400000000000000000",
+                        "00004444000000000000000000",
+                        "00077000000000000000000000",
+                        "00770000000000000000000000",
+                        "07700000000000000000000000",
+                        "00000000000000000000000000"
+                    ],
+                    // L8: Pixel UFO Mothership (26 cols x 15 rows)
+                    [
+                        "00000000000333300000000000",
+                        "00000000033333333000000000",
+                        "00000003333333333330000000",
+                        "00000555555555555555500000",
+                        "00055555555555555555555000",
+                        "05555555555555555555555550",
+                        "55555555555555555555555555",
+                        "05555995559955599555995550",
+                        "00555995559955599555995500",
+                        "00055555555555555555555000",
+                        "00000000044444444000000000",
+                        "00000000444444444400000000",
+                        "00000004400444400440000000",
+                        "00000044000044000044000000",
+                        "00000000000000000000000000"
                     ]
                 ]
             }
@@ -5673,27 +6243,102 @@
 
         var isBrickKeyboardBound = false;
 
+        // --- 4B. BRICK BREAKER LEVEL & PACK MANAGER ---
+        function updateBrickLevelUI() {
+            const sel = document.getElementById('brickLevelSelect');
+            const packSel = document.getElementById('brickPackSelect');
+            let targetPack = totalBrickPacksDataMatrix[currentSelectedPackName] || totalBrickPacksDataMatrix['A'];
+            if (packSel && packSel.value !== currentSelectedPackName) {
+                packSel.value = currentSelectedPackName;
+            }
+            if (sel) {
+                sel.innerHTML = '';
+                for (let i = 0; i < targetPack.layouts.length; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = i + 1;
+                    let themeName = targetPack.themes[i] || `Level ${i + 1}`;
+                    opt.textContent = `L${i + 1}: ${themeName}`;
+                    if (i + 1 === currentActiveLevelIndex) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+            }
+        }
+        window.updateBrickLevelUI = updateBrickLevelUI;
+
+        function selectBrickLevel(lvlIndex) {
+            let targetPack = totalBrickPacksDataMatrix[currentSelectedPackName] || totalBrickPacksDataMatrix['A'];
+            let maxLevels = targetPack.layouts.length;
+            let newLevel = Math.max(1, Math.min(lvlIndex, maxLevels));
+            currentActiveLevelIndex = newLevel;
+            updateBrickLevelUI();
+            if (typeof showOnScreenNotification === 'function') {
+                let themeName = targetPack.themes[newLevel - 1] || 'Level ' + newLevel;
+                showOnScreenNotification(`🧱 Level ${newLevel}: ${themeName}`);
+            }
+            if (typeof initBrickBreakerGame === 'function') {
+                initBrickBreakerGame();
+            }
+        }
+        window.selectBrickLevel = selectBrickLevel;
+
+        function changeBrickLevel(delta) {
+            let targetPack = totalBrickPacksDataMatrix[currentSelectedPackName] || totalBrickPacksDataMatrix['A'];
+            let maxLevels = targetPack.layouts.length;
+            let nextLevel = currentActiveLevelIndex + delta;
+            if (nextLevel > maxLevels) nextLevel = 1;
+            if (nextLevel < 1) nextLevel = maxLevels;
+            selectBrickLevel(nextLevel);
+        }
+        window.changeBrickLevel = changeBrickLevel;
+
+        function selectBrickPack(packKey) {
+            if (totalBrickPacksDataMatrix[packKey]) {
+                currentSelectedPackName = packKey;
+                currentActiveLevelIndex = 1;
+                updateBrickLevelUI();
+                if (typeof showOnScreenNotification === 'function') {
+                    showOnScreenNotification(`📦 Pack Selected: ${totalBrickPacksDataMatrix[packKey].name}`);
+                }
+                if (typeof initBrickBreakerGame === 'function') {
+                    initBrickBreakerGame();
+                }
+            }
+        }
+        window.selectBrickPack = selectBrickPack;
+
         // --- 5. TOUCH & DIRECT SCREEN CONTROL ENGINE ---
         function bindBrickCanvasDirectControls(canvas) {
             if (brickCanvasTouchBound || !canvas) return;
 
             let isDragging = false;
+            let cachedBrickRect = null;
+
+            const updateBrickRect = () => {
+                if (!canvas) return;
+                const r = canvas.getBoundingClientRect();
+                cachedBrickRect = {
+                    left: r.left,
+                    top: r.top,
+                    scaleX: canvas.width / (r.width || 1),
+                    scaleY: canvas.height / (r.height || 1)
+                };
+            };
 
             const getCanvasPos = (e) => {
-                const rect = canvas.getBoundingClientRect();
+                if (!cachedBrickRect) updateBrickRect();
+                const rect = cachedBrickRect;
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
                 return {
-                    x: (clientX - rect.left) * scaleX,
-                    y: (clientY - rect.top) * scaleY
+                    x: (clientX - rect.left) * rect.scaleX,
+                    y: (clientY - rect.top) * rect.scaleY
                 };
             };
 
             const handleStart = (e) => {
                 if (activeGameMode !== 'BRICK') return;
                 if (e.cancelable) e.preventDefault();
+                updateBrickRect();
                 const pos = getCanvasPos(e);
 
                 // Pause button toggle (top-right icon)
@@ -5705,6 +6350,12 @@
                 // Audio Mute toggle (top-right second icon)
                 if (pos.x > canvas.width - 80 && pos.x <= canvas.width - 45 && pos.y < 42) {
                     brickAudioMuted = !brickAudioMuted;
+                    return;
+                }
+
+                // Level selector click on HUD Level Chip (cycles to next level)
+                if (pos.y < 42 && pos.x >= 145 && pos.x <= 275) {
+                    changeBrickLevel(1);
                     return;
                 }
 
@@ -5843,6 +6494,7 @@
             const bCanvas = document.getElementById('brickCanvas');
             if (!bCanvas) return;
             brCtx = bCanvas.getContext('2d');
+            if (typeof updateBrickLevelUI === 'function') updateBrickLevelUI();
 
             if (currentActiveLevelIndex === 1) {
                 if (!currentSelectedPackName) currentSelectedPackName = 'A';
@@ -5919,6 +6571,10 @@
                             if (!isBallLaunched) launchBrickBall();
                         }
                         if (e.key === 'p' || e.key === 'P') isBrickPaused = !isBrickPaused;
+                        if (e.key === 'n' || e.key === 'N') changeBrickLevel(1);
+                        if (e.key === 'b' || e.key === 'B') changeBrickLevel(-1);
+                        if (e.key >= '1' && e.key <= '9') selectBrickLevel(parseInt(e.key));
+                        if (e.key === '0') selectBrickLevel(10);
                     }
                 });
                 window.addEventListener('keyup', (e) => {
@@ -5932,15 +6588,16 @@
                 isBrickKeyboardBound = true;
             }
 
-            loopTimerInstance = setInterval(frameUpdateBrickBreaker, 16);
+            loopTimerInstance = startArcadeLoop(frameUpdateBrickBreaker, 16);
         }
 
         // ===================================================================
-        // 7. HIGH-PERFORMANCE 60 FPS AAA CANVAS RENDER & PHYSICS LOOP
+        // 7. HIGH-PERFORMANCE 60-120 FPS AAA CANVAS RENDER & PHYSICS LOOP
         // ===================================================================
-        function frameUpdateBrickBreaker() {
+        function frameUpdateBrickBreaker(dtScale) {
             if (!brickCanvasElement) brickCanvasElement = document.getElementById('brickCanvas');
             if (!brickCanvasElement || !brCtx) return;
+            var dt = (typeof dtScale === 'number' && dtScale > 0) ? dtScale : 1.0;
 
             // --- A. CAMERA SHAKE SETUP ---
             let camOffsetX = 0, camOffsetY = 0;
@@ -6479,12 +7136,24 @@
                     }
                 }
 
-                if (currentActiveLevelIndex < 5) {
+                let targetPack = totalBrickPacksDataMatrix[currentSelectedPackName] || totalBrickPacksDataMatrix['A'];
+                let totalLevelsInPack = targetPack.layouts.length;
+
+                if (currentActiveLevelIndex < totalLevelsInPack) {
                     currentActiveLevelIndex++;
+                    let nextTheme = targetPack.themes[currentActiveLevelIndex - 1] || 'NEXT LEVEL';
+                    if (typeof showOnScreenNotification === 'function') {
+                        showOnScreenNotification(`🎉 Stage Cleared! Welcome to Level ${currentActiveLevelIndex}: ${nextTheme}`);
+                    }
+                    if (typeof updateBrickLevelUI === 'function') updateBrickLevelUI();
                     initBrickBreakerGame();
                 } else {
                     currentActiveLevelIndex = 1;
-                    alert(`🎉 GRAND VICTORY! You mastered Pack ${currentSelectedPackName}!`);
+                    if (typeof updateBrickLevelUI === 'function') updateBrickLevelUI();
+                    alert(`🎉 GRAND CHAMPION! You mastered all ${totalLevelsInPack} Levels of Pack ${currentSelectedPackName} (${targetPack.name})!`);
+                    if (typeof showOnScreenNotification === 'function') {
+                        showOnScreenNotification(`🏆 ALL ${totalLevelsInPack} LEVELS CONQUERED!`);
+                    }
                     if (typeof switchGameMode === 'function') switchGameMode('FLAPPY');
                 }
                 return;
@@ -6554,13 +7223,27 @@
             brCtx.fill();
             brCtx.shadowBlur = 0;
 
-            // Level Title & Theme Name
-            brCtx.fillStyle = "rgba(255, 255, 255, 0.95)";
-            brCtx.font = "bold 11px Segoe UI, sans-serif";
-            brCtx.textAlign = "left";
+            // Level Title & Interactive Theme Chip
             let activePackMetadata = totalBrickPacksDataMatrix[currentSelectedPackName] || totalBrickPacksDataMatrix['A'];
-            let activeLevelNameString = activePackMetadata.themes[Math.min(currentActiveLevelIndex - 1, activePackMetadata.themes.length - 1)];
-            brCtx.fillText(`L${currentActiveLevelIndex} : ${activeLevelNameString.toUpperCase()}`, barX + barW + 10, 25);
+            let activeLevelNameString = activePackMetadata.themes[Math.min(currentActiveLevelIndex - 1, activePackMetadata.themes.length - 1)] || ('LEVEL ' + currentActiveLevelIndex);
+
+            brCtx.save();
+            let lvlChipX = barX + barW + 8;
+            let lvlChipW = 125;
+            brCtx.fillStyle = 'rgba(0, 210, 255, 0.15)';
+            brCtx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+            brCtx.lineWidth = 1;
+            brCtx.beginPath();
+            brCtx.roundRect(lvlChipX, 10, lvlChipW, 22, 5);
+            brCtx.fill();
+            brCtx.stroke();
+
+            brCtx.fillStyle = '#00f2fe';
+            brCtx.font = "bold 10px Segoe UI, sans-serif";
+            brCtx.textAlign = "center";
+            brCtx.textBaseline = "middle";
+            brCtx.fillText(`L${currentActiveLevelIndex}/${activePackMetadata.layouts.length}: ${activeLevelNameString.substring(0, 12).toUpperCase()}`, lvlChipX + (lvlChipW / 2), 21);
+            brCtx.restore();
 
             // Score with padded digits
             brCtx.fillStyle = "#ffffff";
@@ -6658,13 +7341,13 @@
             flappyScoreTracker = 0;
             flappyTime = 0;
 
-            const handleFlappyJump = (e) => {
+            const onFlappyTouch = (e) => {
                 if (e && e.cancelable && e.type && e.type.startsWith('touch')) e.preventDefault();
                 fBird.velocity = -4.6;
             };
 
-            fCanvas.onclick = handleFlappyJump;
-            fCanvas.ontouchstart = handleFlappyJump;
+            fCanvas.onclick = onFlappyTouch;
+            fCanvas.ontouchstart = onFlappyTouch;
 
             if (!window.isFlappyInputBound) {
                 window.addEventListener('keydown', (e) => {
@@ -6675,17 +7358,18 @@
                 window.isFlappyInputBound = true;
             }
 
-            loopTimerInstance = setInterval(frameUpdateFlappy, 22);
+            loopTimerInstance = startArcadeLoop(frameUpdateFlappy, 22);
         }
         window.initFlappyBirdGame = initFlappyBirdGame;
 
         // ===================================================================
         //FIXED: FLAPPY BIRD FLUID PHYSICS ENGINE (AAA UPGRADE)
         // ===================================================================
-        function frameUpdateFlappy() {
+        function frameUpdateFlappy(dtScale) {
             if (!flappyCanvasElement || !flCtx) return;
+            var dt = (typeof dtScale === 'number' && dtScale > 0) ? dtScale : 1.0;
 
-            flappyTime += 0.05;
+            flappyTime += 0.05 * dt;
 
             // --- 1. DYNAMIC DIFFICULTY PROGRESSION ---
             let difficultyLevel = Math.floor(flappyScoreTracker / 5);
@@ -6718,7 +7402,7 @@
             // Parallax Clouds
             flCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             flappyClouds.forEach(cloud => {
-                cloud.x -= cloud.speed;
+                cloud.x -= cloud.speed * dt;
                 if (cloud.x + cloud.size < 0) { cloud.x = flappyCanvasElement.width + cloud.size; cloud.y = Math.random() * 150 + 20; }
                 flCtx.beginPath();
                 flCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
@@ -6728,8 +7412,8 @@
 
             // --- 3. BIRD PHYSICS & ANIMATION ---
             let previousVelocity = fBird.velocity;
-            fBird.velocity += 0.23;
-            fBird.y += fBird.velocity;
+            fBird.velocity += 0.23 * dt;
+            fBird.y += fBird.velocity * dt;
 
             if (previousVelocity > 0 && fBird.velocity < -3) onFlappyJump();
 
@@ -6824,7 +7508,7 @@
 
             // --- 5. PREMIUM PIPES & COLLISION (3D Cylindrical Shader) ---
             fPipes.forEach((p, idx) => {
-                p.x -= currentSpeed;
+                p.x -= currentSpeed * dt;
                 let pipeW = 50;
 
                 // 3D Cylindrical Pipe Gradients
@@ -6971,9 +7655,13 @@
                 refreshDiscountRulesUI();
             }
             const urlParams = new URLSearchParams(window.location.search);
-            const modeParam = urlParams.get('mode');
-            if (modeParam && typeof switchGameMode === 'function') {
-                switchGameMode(modeParam.toUpperCase());
+            const validModes = ['BRICK', 'FLAPPY', 'SPACE', 'SNAKE', 'TOWER', 'HOCKEY'];
+            const modeParam = (urlParams.get('mode') || '').toUpperCase();
+            const bootMode = validModes.includes(modeParam)
+                ? modeParam
+                : (validModes.includes(String(activeGameMode || '').toUpperCase()) ? String(activeGameMode).toUpperCase() : 'FLAPPY');
+            if (typeof switchGameMode === 'function') {
+                switchGameMode(bootMode);
             }
 
             const discParam = urlParams.get('discount');
@@ -7093,20 +7781,31 @@
 
             // Bind canvas direct touch/drag follow system
             if (!spaceCanvasTouchBound) {
+                let cachedSpaceRect = null;
+                const updateSpaceRect = () => {
+                    if (!spCanvasElement) return;
+                    const r = spCanvasElement.getBoundingClientRect();
+                    cachedSpaceRect = {
+                        left: r.left,
+                        scaleX: spCanvasElement.width / (r.width || 1)
+                    };
+                };
+
                 const getCanvasTouchX = (e) => {
-                    const rect = spCanvasElement.getBoundingClientRect();
+                    if (!cachedSpaceRect) updateSpaceRect();
+                    const rect = cachedSpaceRect;
                     let clientX = e.clientX;
                     if (e.touches && e.touches.length > 0) {
                         clientX = e.touches[0].clientX;
                     } else if (e.changedTouches && e.changedTouches.length > 0) {
                         clientX = e.changedTouches[0].clientX;
                     }
-                    const scaleX = spCanvasElement.width / (rect.width || 1);
-                    return (clientX - rect.left) * scaleX;
+                    return (clientX - rect.left) * rect.scaleX;
                 };
 
                 const onTouchStart = (e) => {
                     if (e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+                    updateSpaceRect();
                     spaceTouchActive = true;
                     spaceTouchTargetX = getCanvasTouchX(e) - (pShipObj.w / 2);
                 };
@@ -7120,6 +7819,9 @@
                 const onTouchEnd = (e) => {
                     spaceTouchActive = false;
                 };
+
+                window.addEventListener('resize', updateSpaceRect, { passive: true });
+                window.addEventListener('scroll', updateSpaceRect, { passive: true });
 
                 // Touch events on canvas and window
                 spCanvasElement.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -7153,16 +7855,17 @@
                 setupLevelParameters();
             }
 
-            // 20ms fixed interval ticker loop
-            loopTimerInstance = setInterval(frameUpdateSpace, 20);
+            // 60-120 FPS high-refresh VSYNC loop
+            loopTimerInstance = startArcadeLoop(frameUpdateSpace, 20);
         }
 
         window.initSpaceShooterGame = initSpaceShooterGame;
         // ===================================================================
         //FIXED: SPACE SHOOTER AAA PHYSICS, VFX, & COMBAT ENGINE
         // ===================================================================
-        function frameUpdateSpace() {
+        function frameUpdateSpace(dtScale) {
             if (!spCanvasElement || !spCtx) return;
+            var dt = (typeof dtScale === 'number' && dtScale > 0) ? dtScale : 1.0;
 
             // --- 1. CAMERA SHAKE & CONTEXT SETUP ---
             let camOffsetX = 0, camOffsetY = 0;
@@ -9231,14 +9934,25 @@
 
             // Bind Zero-Button Direct Touch / Pointer Controls
             if (!isHockeyInputBound) {
+                let cachedHkRect = null;
+                const updateHkRect = () => {
+                    if (!canvas) return;
+                    const r = canvas.getBoundingClientRect();
+                    cachedHkRect = {
+                        left: r.left,
+                        top: r.top,
+                        scaleX: canvas.width / (r.width || 1),
+                        scaleY: canvas.height / (r.height || 1)
+                    };
+                };
+
                 const updatePointerPos = (e) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const scaleX = canvas.width / rect.width;
-                    const scaleY = canvas.height / rect.height;
+                    if (!cachedHkRect) updateHkRect();
+                    const rect = cachedHkRect;
                     const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : hkPlayer.x);
                     const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : hkPlayer.y);
-                    const canvasX = (clientX - rect.left) * scaleX;
-                    const canvasY = (clientY - rect.top) * scaleY;
+                    const canvasX = (clientX - rect.left) * rect.scaleX;
+                    const canvasY = (clientY - rect.top) * rect.scaleY;
 
                     const minX = hkPlayer.radius + 10;
                     const maxX = hkTable.width - hkPlayer.radius - 10;
@@ -9252,6 +9966,7 @@
                 const handleStart = (e) => {
                     if (activeGameMode !== 'HOCKEY') return;
                     if (e.cancelable) e.preventDefault();
+                    updateHkRect();
                     getHkAudioCtx();
                     hkPlayer.isDragging = true;
                     updatePointerPos(e);
@@ -9272,6 +9987,9 @@
                     hkPlayer.vy = 0;
                 };
 
+                window.addEventListener('resize', updateHkRect, { passive: true });
+                window.addEventListener('scroll', updateHkRect, { passive: true });
+
                 canvas.addEventListener('pointerdown', handleStart, { passive: false });
                 window.addEventListener('pointermove', handleMove, { passive: false });
                 window.addEventListener('pointerup', handleEnd, { passive: false });
@@ -9284,14 +10002,15 @@
                 isHockeyInputBound = true;
             }
 
-            loopTimerInstance = setInterval(frameUpdateAirHockey, 16);
+            loopTimerInstance = startArcadeLoop(frameUpdateAirHockey, 16);
         }
 
         // ===================================================================
         //AIR HOCKEY MAIN LOOP: PHYSICS, CHEF AI & RENDERING
         // ===================================================================
-        function frameUpdateAirHockey() {
+        function frameUpdateAirHockey(dtScale) {
             if (!hockeyCanvasElement || !hkCtx || activeGameMode !== 'HOCKEY') return;
+            var dt = (typeof dtScale === 'number' && dtScale > 0) ? dtScale : 1.0;
 
             hkChefAuraAngle += 0.05;
             if (hkChefAI.dialogueTimer > 0) hkChefAI.dialogueTimer--;
@@ -9390,8 +10109,8 @@
                 const nDiag = 0.70710678; // 1 / Math.sqrt(2)
 
                 for (let step = 0; step < subSteps; step++) {
-                    hkPuck.x += (hkPuck.vx / subSteps);
-                    hkPuck.y += (hkPuck.vy / subSteps);
+                    hkPuck.x += (hkPuck.vx / subSteps) * dt;
+                    hkPuck.y += (hkPuck.vy / subSteps) * dt;
 
                     hkPuck.vx *= Math.pow(hkPuck.friction, 1 / subSteps);
                     hkPuck.vy *= Math.pow(hkPuck.friction, 1 / subSteps);
